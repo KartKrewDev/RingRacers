@@ -1615,7 +1615,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 				x - 9, y - 13,
 				(baseflags|((menuqueue.entries[i].encore) ? V_FLIP : 0)),
 				menuqueue.entries[i].mapnum,
-				NULL
+				NULL, FRACUNIT, 1
 			);
 
 			x += 24;

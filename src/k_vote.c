@@ -705,7 +705,7 @@ static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t widt
 				fy + fh - whiteSq + dupy,
 				flags | V_NOSCALESTART | ((encore == true) ? V_FLIP : 0),
 				g_voteLevels[v][0],
-				NULL
+				NULL, FRACUNIT, 1
 			);
 		}
 	}

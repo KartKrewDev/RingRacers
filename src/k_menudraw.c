@@ -1862,6 +1862,9 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 	follower_t *fl;
 	UINT8 rotation = (charflip ? 1 : 7);
 
+	if (horngoner)
+		return false;
+
 	if (p != NULL)
 		followernum = p->followern;
 	else
@@ -2406,7 +2409,7 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
 
-		if (fln >= 0)
+		if (!horngoner && fln >= 0)
 		{
 			UINT16 fcol = K_GetEffectiveFollowerColor(
 				p->followercolor,
@@ -6722,7 +6725,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	fixed_t siz, accordion;
 	UINT16 id, num;
 	boolean unlockedyet;
-	boolean categoryside;
 
 	id = (i * CHALLENGEGRIDHEIGHT) + j;
 	num = gamedata->challengegrid[id];
@@ -6797,20 +6799,88 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 
 	accordion = FRACUNIT;
 
-	if (challengesmenu.extradata[id].flip != 0
+	boolean categoryside = (challengesmenu.extradata[id].flip == 0);
+
+	if (!categoryside // optimised, this is not the true value with anything but instaflip
 		&& challengesmenu.extradata[id].flip != (TILEFLIP_MAX/2))
 	{
-		angle_t bad = (FixedAngle(FixedMul(challengesmenu.extradata[id].flip * FRACUNIT + rendertimefrac, 360*FRACUNIT/TILEFLIP_MAX)) >> ANGLETOFINESHIFT) & FINEMASK;
-		accordion = FINECOSINE(bad);
+		fixed_t bad = challengesmenu.extradata[id].flip * FRACUNIT + rendertimefrac;
+		angle_t worse = (FixedAngle(FixedMul(bad, 360*FRACUNIT/TILEFLIP_MAX)) >> ANGLETOFINESHIFT) & FINEMASK;
+		accordion = FINECOSINE(worse);
 		if (accordion < 0)
 			accordion = -accordion;
+
+		// NOW we set it in an interp-friendly way
+		categoryside = (bad <= FRACUNIT*TILEFLIP_MAX/4
+			|| bad > (3*FRACUNIT*TILEFLIP_MAX)/4);
 	}
 
 	pat = W_CachePatchName(
 		(ref->majorunlock ? "UN_BORDB" : "UN_BORDA"),
 		PU_CACHE);
 
-	bgmap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
+	UINT8 iconid = 0;
+
+	{
+		UINT16 bcol = SKINCOLOR_SILVER;
+		switch (ref->type)
+		{
+			case SECRET_SKIN:
+				bcol = SKINCOLOR_NOVA;
+				iconid = 1;
+				break;
+			case SECRET_FOLLOWER:
+				if (horngoner)
+				{
+					bcol = SKINCOLOR_BLACK;
+				}
+				else
+				{
+					bcol = SKINCOLOR_SAPPHIRE;
+					iconid = 2;
+				}
+				break;
+			case SECRET_COLOR:
+				//bcol = SKINCOLOR_SILVER;
+				iconid = 3;
+				break;
+			case SECRET_CUP:
+				bcol = SKINCOLOR_GOLD;
+				iconid = 4;
+				break;
+			case SECRET_MAP:
+				bcol = SKINCOLOR_PURPLE;
+				iconid = 8;
+				break;
+			case SECRET_HARDSPEED:
+			case SECRET_MASTERMODE:
+			case SECRET_ENCORE:
+				bcol = SKINCOLOR_RUBY;
+				iconid = 5;
+				break;
+			case SECRET_ONLINE:
+			case SECRET_ADDONS:
+			case SECRET_EGGTV:
+			case SECRET_SOUNDTEST:
+			case SECRET_ALTTITLE:
+				bcol = SKINCOLOR_BLUEBERRY;
+				iconid = 6;
+				break;
+			case SECRET_TIMEATTACK:
+			case SECRET_PRISONBREAK:
+			case SECRET_SPECIALATTACK:
+			case SECRET_SPBATTACK:
+				bcol = SKINCOLOR_PERIDOT;
+				iconid = 7;
+				break;
+			case SECRET_ALTMUSIC:
+				bcol = SKINCOLOR_MAGENTA;
+				iconid = 9;
+				break;
+		}
+
+		bgmap = R_GetTranslationColormap(TC_DEFAULT, bcol, GTC_MENUCACHE);
+	}
 
 	V_DrawStretchyFixedPatch(
 		(x*FRACUNIT) + (SHORT(pat->width)*(FRACUNIT-accordion)/2), y*FRACUNIT,
@@ -6822,65 +6892,25 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 
 	pat = missingpat;
 
-	categoryside = (challengesmenu.extradata[id].flip <= TILEFLIP_MAX/4
-		|| challengesmenu.extradata[id].flip > (3*TILEFLIP_MAX)/4);
-
 #ifdef DEVELOP
 	if (cv_debugchallenges.value)
 	{
-		// Show the content of every tile without needing to
-		// flip them.
+		// Show the content of every tile without needing to flip them.
 		categoryside = false;
 	}
 #endif
 
-	if (categoryside)
+	if (horngoner && ref->type == SECRET_FOLLOWER)
+		goto drawborder;
+	else if (categoryside)
 	{
-		char categoryid = '0';
-		colormap = bgmap;
-		switch (ref->type)
-		{
-			case SECRET_SKIN:
-				categoryid = '1';
-				break;
-			case SECRET_FOLLOWER:
-				categoryid = '2';
-				break;
-			case SECRET_COLOR:
-				categoryid = '3';
-				break;
-			case SECRET_CUP:
-				categoryid = '4';
-				break;
-			case SECRET_MAP:
-				categoryid = '8';
-				break;
-			case SECRET_HARDSPEED:
-			case SECRET_MASTERMODE:
-			case SECRET_ENCORE:
-				categoryid = '5';
-				break;
-			case SECRET_ONLINE:
-			case SECRET_ADDONS:
-			case SECRET_EGGTV:
-			case SECRET_SOUNDTEST:
-			case SECRET_ALTTITLE:
-				categoryid = '6';
-				break;
-			case SECRET_TIMEATTACK:
-			case SECRET_PRISONBREAK:
-			case SECRET_SPECIALATTACK:
-			case SECRET_SPBATTACK:
-				categoryid = '7';
-				break;
-			case SECRET_ALTMUSIC:
-				categoryid = '9';
-				break;
-		}
-		pat = challengesmenu.tile_category[categoryid - '0'][ref->majorunlock ? 1 : 0];
+		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
+
+		// iconid is already prepopulated because we had to draw the border
+		pat = challengesmenu.tile_category[iconid][ref->majorunlock ? 1 : 0];
 		if (pat == missingpat)
 		{
-			pat = challengesmenu.tile_category[categoryid - '0'][ref->majorunlock ? 0 : 1];
+			pat = challengesmenu.tile_category[iconid][ref->majorunlock ? 0 : 1];
 		}
 	}
 	else if (ref->icon != NULL && ref->icon[0])
@@ -6893,7 +6923,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	}
 	else
 	{
-		UINT8 iconid = 0;
+		iconid = 0; // reuse
 		switch (ref->type)
 		{
 			case SECRET_SKIN:
@@ -6930,8 +6960,42 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 			}
 
 			case SECRET_MAP:
-				iconid = 14;
+			{
+				UINT16 mapnum = M_UnlockableMapNum(ref);
+				if (mapnum < nummapheaders && mapheaderinfo[mapnum]
+					&& (
+					( // Check for visitation
+						(mapheaderinfo[mapnum]->menuflags & LF2_NOVISITNEEDED)
+						|| (mapheaderinfo[mapnum]->records.mapvisited & MV_VISITED)
+					) && ( // Check for completion
+						!(mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
+						|| (mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN)
+					)
+				))
+				{
+					if (ref->majorunlock)
+					{
+						K_DrawMapAsFace(
+							(x + 5) + (32*(FRACUNIT-accordion))/(2*FRACUNIT), (y + 5),
+							tileflags,
+							mapnum,
+							NULL, accordion, 2
+						);
+					}
+					else
+					{
+						K_DrawMapAsFace(
+							(x + 2) + (16*(FRACUNIT-accordion))/(2*FRACUNIT), (y + 2),
+							tileflags,
+							mapnum,
+							NULL, accordion, 1
+						);
+					}
+					pat = NULL;
+				}
+				iconid = 0; //14; -- This one suits a little better for "go complete this level normally"
 				break;
+			}
 			case SECRET_ALTMUSIC:
 				iconid = 16;
 				break;
@@ -7001,29 +7065,32 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 		}
 	}
 
-	siz = (SHORT(pat->width) << FRACBITS);
+	if (pat)
+	{
+		siz = (SHORT(pat->width) << FRACBITS);
 
-	if (!siz)
-		; // prevent div/0
-	else if (ref->majorunlock)
-	{
-		V_DrawStretchyFixedPatch(
-			((x + 5)*FRACUNIT) + (32*(FRACUNIT-accordion)/2), (y + 5)*FRACUNIT,
-			FixedDiv(32*accordion, siz),
-			FixedDiv(32 << FRACBITS, siz),
-			tileflags, pat,
-			colormap
-		);
-	}
-	else
-	{
-		V_DrawStretchyFixedPatch(
-			((x + 2)*FRACUNIT) + (16*(FRACUNIT-accordion)/2), (y + 2)*FRACUNIT,
-			FixedDiv(16*accordion, siz),
-			FixedDiv(16 << FRACBITS, siz),
-			tileflags, pat,
-			colormap
-		);
+		if (!siz)
+			; // prevent div/0
+		else if (ref->majorunlock)
+		{
+			V_DrawStretchyFixedPatch(
+				((x + 5)*FRACUNIT) + (32*(FRACUNIT-accordion))/2, (y + 5)*FRACUNIT,
+				FixedDiv(32*accordion, siz),
+				FixedDiv(32 << FRACBITS, siz),
+				tileflags, pat,
+				colormap
+			);
+		}
+		else
+		{
+			V_DrawStretchyFixedPatch(
+				((x + 2)*FRACUNIT) + (16*(FRACUNIT-accordion))/2, (y + 2)*FRACUNIT,
+				FixedDiv(16*accordion, siz),
+				FixedDiv(16 << FRACBITS, siz),
+				tileflags, pat,
+				colormap
+			);
+		}
 	}
 
 drawborder:
@@ -7154,7 +7221,7 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap,
 	V_DrawFill(x+16 + (s*5), y + (w*5), 6, 6, 0);
 }
 
-static void M_DrawChallengePreview(INT32 x, INT32 y)
+static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 {
 	unlockable_t *ref = NULL;
 	UINT8 *colormap = NULL;
@@ -7162,11 +7229,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
-		return;
+		return NULL;
 	}
-
-	// Okay, this is what we want to draw.
-	ref = &unlockables[challengesmenu.currentunlock];
 
 	// Funny question mark?
 	if (!gamedata->unlocked[challengesmenu.currentunlock])
@@ -7179,7 +7243,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 		if (!sprdef->numframes)
 		{
-			return;
+			return NULL;
 		}
 
 		useframe = (challengesmenu.ticker / 2) % sprdef->numframes;
@@ -7193,8 +7257,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 
 		V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
-		return;
+		return NULL;
 	}
+
+	// Okay, this is what we want to draw.
+	ref = &unlockables[challengesmenu.currentunlock];
+
+	const char *actiontext = NULL;
 
 	switch (ref->type)
 	{
@@ -7206,6 +7275,19 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			{
 				colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 				M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
+
+				y = (BASEVIDHEIGHT-14);
+
+				if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
+				{
+					profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+					actiontext = (pr && strcmp(pr->skinname, skins[skin]->name))
+						? "<a> <sky>Set on Profile"
+						: "<a_pressed> <gray>Set on Profile";
+
+					y -= 14;
+				}
 
 				for (i = 0; i < skin; i++)
 				{
@@ -7220,7 +7302,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					break;
 				}
 
-				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, skin);
+				M_DrawCharacterIconAndEngine(4, y-6, i, colormap, skin);
 			}
 			break;
 		}
@@ -7235,6 +7317,11 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			colormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
 			M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 
+			if (horngoner)
+			{
+				return "<a_pressed> <gray>MISSING.";
+			}
+
 			// Draw follower next to them
 			if (fskin != -1)
 			{
@@ -7242,9 +7329,69 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				M_DrawFollowerSprite(x - 16, y, fskin, false, 0, colormap, NULL);
 
+				y = (BASEVIDHEIGHT-14);
+
+				if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
+				{
+					profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+					if (pr && strcmp(pr->follower, followers[fskin].name))
+					{
+						actiontext = (followers[fskin].hornsound == sfx_melody)
+							? "<a> <aqua>Set on Profile"
+							: "<a> <sky>Set on Profile";
+					}
+				}
+
+				if (!actiontext)
+				{
+					if (followers[fskin].hornsound == sfx_melody)
+					{
+						actiontext = "<a_animated> <aqua>Play Ancient Melody?";
+					}
+					else if (challengesmenu.hornposting >= EASEOFFHORN)
+						actiontext = "<a> <red>Time to die";
+					else if (challengesmenu.hornposting >= (EASEOFFHORN-5))
+					{
+						if (challengesmenu.hornposting == EASEOFFHORN)
+							actiontext = "Time to die";
+						else
+							actiontext = "I asked politely";
+						actiontext = va("%s%s",
+							(M_MenuConfirmPressed(0)
+								? "<a_pressed> <yellow>"
+								: "<a> <red>"
+							), actiontext
+						);
+					}
+					else if (challengesmenu.hornposting >= (EASEOFFHORN-10))
+					{
+						actiontext = M_MenuConfirmPressed(0)
+							? "<a_pressed> <yellow>Ease off the horn"
+							: "<a> <orange>Ease off the horn";
+					}
+					else switch (challengesmenu.hornposting % 4)
+					{
+						default:
+							actiontext = "<a_animated> <sky>Say hello";
+							break;
+						case 1:
+							actiontext = "<a_animated> <sky>Express your feelings";
+							break;
+						case 2:
+							actiontext = "<a_animated> <sky>Celebrate victory";
+							break;
+						case 3:
+							actiontext = "<a_animated> <sky>Announce you are pressing horn";
+							break;
+					}
+				}
+
+				y -= 14;
+
 				if (followers[fskin].category < numfollowercategories)
 				{
-					V_DrawFixedPatch(4*FRACUNIT, (BASEVIDHEIGHT-(4+16))*FRACUNIT,
+					V_DrawFixedPatch(4*FRACUNIT, (y - 6)*FRACUNIT,
 						FRACUNIT,
 						0, W_CachePatchName(followercategories[followers[fskin].category].icon, PU_CACHE),
 						NULL);
@@ -7264,6 +7411,16 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 			// Draw reference for character bathed in coloured slime
 			M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
+
+			if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
+			{
+				profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+				actiontext = (pr && pr->color != colorid)
+					? "<a> <sky>Set on Profile"
+					: "<a_pressed> <gray>Set on Profile";
+			}
+
 			break;
 		}
 		case SECRET_CUP:
@@ -7346,6 +7503,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			const char *gtname = "Find your prize...";
 			UINT16 mapnum = M_UnlockableMapNum(ref);
 
+			y = (BASEVIDHEIGHT-14);
+
 			if (mapnum >= nummapheaders
 				|| mapheaderinfo[mapnum] == NULL
 				|| mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
@@ -7389,7 +7548,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 						guessgt = GT_SPECIAL;
 					}
 
-					if (guessgt == GT_SPECIAL && !M_SecretUnlocked(SECRET_SPECIALATTACK, true))
+					if (setup_numplayers <= 1 && guessgt == GT_TUTORIAL)
+					{
+						// Only for 1p
+						actiontext = "<a_animated> <orange>Play Tutorial";
+						gtname = NULL;
+					}
+					else if (guessgt == GT_SPECIAL && !M_SecretUnlocked(SECRET_SPECIALATTACK, true))
 					{
 						gtname = "???";
 					}
@@ -7409,7 +7574,10 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					NULL);
 			}
 
-			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), 0, gtname);
+			if (gtname)
+			{
+				V_DrawThinString(4, y, 0, gtname);
+			}
 
 			break;
 		}
@@ -7519,8 +7687,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_ALTTITLE:
 		{
-			x = 8;
-			y = BASEVIDHEIGHT-16;
+			x = 4;
+			y = BASEVIDHEIGHT-14;
 			V_DrawGamemodeString(x, y - 33, 0, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), M_UseAlternateTitleScreen() ? "On" : "Off");
 
 			K_DrawGameControl(x, y, 0, "<a_animated> Toggle", 0, TINY_FONT, 0);
@@ -7537,7 +7705,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			if (map >= nummapheaders
 				|| !mapheaderinfo[map])
 			{
-				return;
+				break;
 			}
 
 			UINT8 musicid;
@@ -7549,78 +7717,104 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 			if (musicid == MAXMUSNAMES)
 			{
-				return;
+				break;
 			}
 
-			spritedef_t *sprdef = &sprites[SPR_ALTM];
-			spriteframe_t *sprframe;
-			patch_t *patch;
-			UINT32 addflags = 0;
+			const char *tune = "challenge_altmusic";
 
-			x -= 10;
-			y += 15;
+			SINT8 pushed = 0;
+			const boolean epossible = (M_SecretUnlocked(SECRET_ENCORE, true)
+				&& musicid < mapheaderinfo[map]->encoremusname_size);
 
-			if (sprdef->numframes)
+			if (challengesmenu.nowplayingtile == ((challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy)
+			&& Music_Playing(tune))
 			{
-				sprframe = &sprdef->spriteframes[0];
-				patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
-
-				if (sprframe->flip & 1) // Only for first sprite
-				{
-					addflags ^= V_FLIP; // This sprite is left/right flipped!
-				}
-
-				V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT/2, addflags, patch, NULL);
+				const char *song = Music_Song(tune);
+				if (epossible
+				&& strcmp(song, mapheaderinfo[map]->encoremusname[musicid]) == 0)
+					pushed = -1;
+				else if (musicid < mapheaderinfo[map]->musname_size
+				&& strcmp(song, mapheaderinfo[map]->musname[musicid]) == 0)
+					pushed = 1;
 			}
 
-			x = 8;
-			y = BASEVIDHEIGHT-16;
-
-			const boolean thismusplaying = Music_Playing("challenge_altmusic");
-			boolean pushed = false;
-			const char *song = NULL;
-
-			if (M_SecretUnlocked(SECRET_ENCORE, true)
-				&& musicid < mapheaderinfo[map]->encoremusname_size)
+			// Draw CD
 			{
-				if (thismusplaying)
+				spritedef_t *sprdef = &sprites[SPR_ALTM];
+				spriteframe_t *sprframe;
+				patch_t *patch = NULL;
+				UINT32 addflags = 0;
+
+				x -= 10;
+				y += 15;
+
+				if (sprdef->numframes)
 				{
-					song = Music_Song("challenge_altmusic");
-					pushed = strcmp(song, mapheaderinfo[map]->encoremusname[musicid]) == 0;
+#ifdef ROTSPRITE
+					spriteinfo_t *sprinfo = &spriteinfo[SPR_ALTM];
+					INT32 rollangle = 0;
+					if (pushed != 0)
+					{
+						rollangle = (Music_Elapsed(tune) % (ROTANGLES/2))*2;
+						if (rendertimefrac >= FRACUNIT/2)
+						{
+							// A fun interp ability: inbetweens
+							rollangle++;
+						}
+						if (pushed > 0)
+						{
+							rollangle = ((ROTANGLES-1) - rollangle);
+						}
+					}
+#endif
+
+					sprframe = &sprdef->spriteframes[0];
+
+#ifdef ROTSPRITE
+					if (rollangle)
+					{
+						patch = Patch_GetRotatedSprite(sprframe, 0, 0, (sprframe->flip & 1), false, sprinfo, rollangle);
+					}
+#endif
+					if (!patch)
+					{
+						patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
+						if (sprframe->flip & 1) // Only for first sprite
+						{
+							addflags ^= V_FLIP; // This sprite is left/right flipped!
+						}
+					}
+
+					V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT/2, addflags, patch, NULL);
 				}
-
-				if (!pushed)
-					K_DrawGameControl(x, y, 0, "<l> <sky>E Side", 0, TINY_FONT, 0);
-				else
-					K_DrawGameControl(x, y, 0, "<l_pressed> <gray>E Side", 0, TINY_FONT, 0);
-				// K_drawButton(x&FRACUNIT, y*FRACUNIT, 0, kp_button_l, pushed);
-				// x += SHORT(kp_button_l[0]->width);
-				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "E Side");
-
-				x = 8;
-				y -= 10;
 			}
 
 			if (musicid < mapheaderinfo[map]->musname_size)
 			{
-				if (pushed || !thismusplaying)
-				{
-					pushed = false;
-				}
-				else
-				{
-					if (!song)
-						song = Music_Song("challenge_altmusic");
-					pushed = strcmp(song, mapheaderinfo[map]->musname[musicid]) == 0;
-				}
+				actiontext = (pushed > 0)
+					? "<a_animated> <sky>Stop CD"
+					: "<a_animated> <sky>Play CD";
+			}
 
-				if (!pushed)
-					K_DrawGameControl(x, y, 0, "<a> <sky>Play CD", 0, TINY_FONT, 0);
+			if (epossible)
+			{
+				const char *secondtext = (pushed < 0)
+					? "<l_animated> <magenta>E Stop"
+					: "<l_animated> <magenta>E Side";
+				if (actiontext)
+				{
+					// weird encoded height
+					actiontext = va("\x1""%s\n%s",
+						(pushed < 0)
+							? "<l_animated> <magenta>E Stop"
+							: "<l_animated> <magenta>E Side",
+						actiontext
+					);
+				}
 				else
-					K_DrawGameControl(x, y, 0, "<a_pressed> <gray>Play CD", 0, TINY_FONT, 0);
-				// K_drawButton(x*FRACUNIT, y*FRACUNIT, 0, kp_button_a[1], pushed);
-				// x += SHORT(kp_button_a[1][0]->width);
-				// V_DrawThinString(x, y + 1, (pushed ? V_GRAYMAP : highlightflags), "Play CD");
+				{
+					actiontext = secondtext;
+				}
 			}
 		}
 		default:
@@ -7630,7 +7824,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	}
 
 	if (specialmap == NEXTMAP_INVALID || !ref)
-		return;
+		return actiontext;
 
 	x -= 50;
 	y = 146+2;
@@ -7678,6 +7872,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			W_CachePatchName("K_LAPE02", PU_CACHE),
 			colormap);
 	}
+
+	return actiontext;
 }
 
 #define challengesgridstep 22
@@ -7914,11 +8110,6 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 	V_DrawFill(barx + hilix, bary-1,    hiliw, 1, 0);
 	V_DrawFill(barx + hilix, bary+barh, hiliw, 1, 0);
 
-	INT32 mindiscouragement = 2; // skipping major unlocks is just a LITTLE cringe
-	if (challengesmenu.unlockcount[CMC_PERCENT] == 100
-	&& challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
-		mindiscouragement = 1; // so someone looking for 101% isn't hunting forever
-
 	// unbounded so that we can do the last remaining completionamount draw
 	nextstep = numincolumn = completionamount = skiplevel = 0;
 	for (i = 0; ; i++)
@@ -7932,7 +8123,7 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 				if (completionamount >= numincolumn)
 				{
 					// If any have been skipped, we subtract a little for awareness...
-					completionamount = (skiplevel >= mindiscouragement) ? 9 : 10;
+					completionamount = skiplevel ? 9 : 10;
 				}
 				else
 				{
@@ -7969,6 +8160,14 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 		}
 #endif
 
+		if (i == challengesmenu.nowplayingtile && Music_Playing("challenge_altmusic"))
+		{
+			V_DrawFill(barx + hilix, bary, hiliw, barh, (challengesmenu.ticker & 2) ? 177 : 122);
+
+			// The now-playing fill overrides everything else.
+			completionamount = -1;
+		}
+
 		if (completionamount == -1)
 			continue;
 
@@ -7978,9 +8177,9 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 
 			unlockable_t *ref = &unlockables[gamedata->challengegrid[i]];
 
-			if (skiplevel < 2 && M_Achieved(ref->conditionset - 1) == false)
+			if (!skiplevel && M_Achieved(ref->conditionset - 1) == false)
 			{
-				skiplevel = ref->majorunlock ? 2 : 1;
+				skiplevel = 1;
 			}
 		}
 
@@ -8231,9 +8430,10 @@ challengedesc:
 	y = BASEVIDHEIGHT-16;
 
 	// Unlock preview
-	M_DrawChallengePreview(x, y);
+	const char *actiontext = M_DrawChallengePreview(x, y);
 
 	// Conditions for unlock
+	// { -- please don't call va() anywhere between here...
 	i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	if (challengesmenu.unlockcondition != NULL
@@ -8245,6 +8445,25 @@ challengedesc:
 	)
 	{
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 120 + 32, 0, challengesmenu.unlockcondition);
+	}
+
+	// Extracted from M_DrawCharSelectPreview for ordering reasons
+	if (actiontext && actiontext[0])
+	{
+		x = 4;
+		y = (BASEVIDHEIGHT-14);
+		if (actiontext[0] < '\x5')
+		{
+			// weird encoded height, supports max 5 rows
+			y -= (13 * actiontext[0]);
+			actiontext++;
+		}
+		K_DrawGameControl(
+			x, y, 0,
+			actiontext,
+			0, TINY_FONT, 0
+		);
+		// } -- ...and here (since actiontext needs it)
 	}
 }
 

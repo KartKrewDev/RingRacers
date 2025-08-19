@@ -82,6 +82,10 @@ static void M_UpdateChallengeGridVisuals(void)
 
 	challengesmenu.unlockcount[CMC_UNLOCKED] = 0;
 	challengesmenu.unlockcount[CMC_TOTAL] = 0;
+	challengesmenu.unlockcount[CMC_KEYED] = 0;
+	challengesmenu.unlockcount[CMC_MAJORSKIPPED] = 0;
+
+//#define MAJORDISTINCTION -- The "basic" medal is basically never seen because Major challenges are usually completed last before 101%. Correct that with this
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -106,12 +110,14 @@ static void M_UpdateChallengeGridVisuals(void)
 
 		challengesmenu.unlockcount[CMC_KEYED]++;
 
+#ifdef MAJORDISTINCTION
 		if (unlockables[i].majorunlock == false)
 		{
 			continue;
 		}
 
 		challengesmenu.unlockcount[CMC_MAJORSKIPPED]++;
+#endif
 	}
 
 	challengesmenu.unlockcount[CMC_PERCENT] =
@@ -125,7 +131,9 @@ static void M_UpdateChallengeGridVisuals(void)
 	challengesmenu.unlockcount[CMC_MEDALFILLED] =
 		(medalheight * (
 			challengesmenu.unlockcount[CMC_UNLOCKED]
+#ifdef MAJORDISTINCTION
 			- challengesmenu.unlockcount[CMC_MAJORSKIPPED]
+#endif
 		)) / challengesmenu.unlockcount[CMC_TOTAL];
 
 	if (challengesmenu.unlockcount[CMC_PERCENT] == 100)
@@ -135,7 +143,10 @@ static void M_UpdateChallengeGridVisuals(void)
 			challengesmenu.unlockcount[CMC_MEDALID] = 2;
 			challengesmenu.unlockcount[CMC_PERCENT]++; // 101%
 		}
-		else if (challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
+		else
+#ifdef MAJORDISTINCTION
+			if (challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
+#endif
 		{
 			challengesmenu.unlockcount[CMC_MEDALID] = 1;
 		}
@@ -364,10 +375,13 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 	if ((challengesmenu.pending = (newunlock != MAXUNLOCKABLES)))
 	{
 		Music_StopAll();
-		MISC_ChallengesDef.prevMenu = desiredmenu;
+		if (desiredmenu && desiredmenu != &MISC_ChallengesDef)
+		{
+			MISC_ChallengesDef.prevMenu = desiredmenu;
+		}
 	}
 
-	if (challengesmenu.pending || desiredmenu == NULL)
+	if (challengesmenu.pending || desiredmenu == &MISC_ChallengesDef)
 	{
 		static boolean firstopen = true;
 
@@ -379,10 +393,12 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.tutorialfound = NEXTMAP_INVALID;
 		challengesmenu.chaokeyhold = 0;
 		challengesmenu.unlockcondition = NULL;
+		challengesmenu.hornposting = 0;
 
 		if (firstopen)
 		{
 			challengesmenu.currentunlock = MAXUNLOCKABLES;
+			challengesmenu.nowplayingtile = UINT16_MAX;
 			firstopen = false;
 		}
 
@@ -402,9 +418,14 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		if (challengesmenu.pending)
 			M_ChallengesAutoFocus(newunlock, true);
-		else if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
-			&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
-			challengesmenu.chaokeyadd = true;
+		else
+		{
+			if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
+				&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
+				challengesmenu.chaokeyadd = true;
+
+			M_ChallengesAutoFocus(UINT16_MAX, true);
+		}
 
 		M_CacheChallengeTiles();
 
@@ -418,15 +439,22 @@ void M_Challenges(INT32 choice)
 {
 	(void)choice;
 
-	M_InterruptMenuWithChallenges(NULL);
+	M_InterruptMenuWithChallenges(&MISC_ChallengesDef);
 	MISC_ChallengesDef.prevMenu = currentMenu;
 
-	if (gamedata->challengegrid != NULL && !challengesmenu.pending)
-	{
-		M_ChallengesAutoFocus(UINT16_MAX, true);
-	}
-
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
+}
+
+static void M_CloseChallenges(void)
+{
+	Music_Stop("challenge_altmusic");
+	challengesmenu.nowplayingtile = UINT16_MAX;
+
+	Z_Free(challengesmenu.extradata);
+	challengesmenu.extradata = NULL;
+
+	Z_Free(challengesmenu.unlockcondition);
+	challengesmenu.unlockcondition = NULL;
 }
 
 boolean M_CanKeyHiliTile(void)
@@ -569,13 +597,20 @@ void M_ChallengesTick(void)
 	{
 		UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 		boolean seeeveryone = challengesmenu.requestflip;
-		boolean allthewaythrough;
+		boolean allthewaythrough = allthewaythrough = (!seeeveryone && !challengesmenu.pending);
+
 		UINT8 maxflip;
+
+		if (id == challengesmenu.nowplayingtile)
+		{
+			// Don't permit the active song to stop spinning
+			id = UINT16_MAX;
+		}
+
 		for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
 		{
-			allthewaythrough = (!seeeveryone && !challengesmenu.pending && i != id);
-			maxflip = ((seeeveryone || !allthewaythrough) ? (TILEFLIP_MAX/2) : TILEFLIP_MAX);
-			if ((seeeveryone || (i == id) || (challengesmenu.extradata[i].flip > 0))
+			maxflip = ((allthewaythrough && i != id) ? TILEFLIP_MAX : (TILEFLIP_MAX/2));
+			if ((seeeveryone || (i == id) || (i == challengesmenu.nowplayingtile) || (challengesmenu.extradata[i].flip > 0))
 				&& (challengesmenu.extradata[i].flip != maxflip))
 			{
 				challengesmenu.extradata[i].flip++;
@@ -943,19 +978,12 @@ boolean M_ChallengesInputs(INT32 ch)
 	{
 		if (M_MenuBackPressed(pid) || start)
 		{
-			Music_Stop("challenge_altmusic");
-
 			currentMenu->prevMenu = M_SpecificMenuRestore(currentMenu->prevMenu);
 
 			M_GoBack(0);
 			M_SetMenuDelay(pid);
 
-			Z_Free(challengesmenu.extradata);
-			challengesmenu.extradata = NULL;
-
-			if (challengesmenu.unlockcondition)
-				Z_Free(challengesmenu.unlockcondition);
-			challengesmenu.unlockcondition = NULL;
+			M_CloseChallenges();
 
 			return true;
 		}
@@ -1137,8 +1165,56 @@ boolean M_ChallengesInputs(INT32 ch)
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES
 			&& gamedata->unlocked[challengesmenu.currentunlock])
 		{
+			unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
+
+			boolean forceflip = false;
+
 			switch (unlockables[challengesmenu.currentunlock].type)
 			{
+				case SECRET_MAP:
+				{
+					// Only for 1p
+					if (setup_numplayers <= 1 && M_MenuConfirmPressed(pid))
+					{
+						// Map exists...
+						UINT16 mapnum = M_UnlockableMapNum(ref);
+						if (mapnum < nummapheaders && mapheaderinfo[mapnum])
+						{
+							// is tutorial...
+							INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
+							if (guessgt == GT_TUTORIAL)
+							{
+								M_SetMenuDelay(pid);
+
+								multiplayer = true;
+
+								restoreMenu = currentMenu;
+								restorelevellist = levellist;
+
+								// mild hack
+								levellist.newgametype = guessgt;
+								levellist.netgame = false;
+								M_MenuToLevelPreamble(0, false);
+
+								D_MapChange(
+									mapnum+1,
+									guessgt,
+									false,
+									true,
+									1,
+									false,
+									false
+								);
+
+								M_CloseChallenges();
+								M_ClearMenus(true);
+
+								return false; // DO NOT
+							}
+						}
+					}
+					break;
+				}
 				case SECRET_ALTTITLE:
 				{
 					if (M_MenuConfirmPressed(pid))
@@ -1147,6 +1223,103 @@ boolean M_ChallengesInputs(INT32 ch)
 						CV_AddValue(&cv_alttitle, 1);
 						S_StartSound(NULL, sfx_s3kc3s);
 						M_SetMenuDelay(pid);
+
+						forceflip = true;
+					}
+					break;
+				}
+				case SECRET_SKIN:
+				{
+					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
+					{
+						INT32 skin = M_UnlockableSkinNum(ref);
+						if (skin != -1)
+						{
+							profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+							if (pr && strcmp(pr->skinname, skins[skin]->name))
+							{
+								strcpy(pr->skinname, skins[skin]->name);
+								CV_Set(&cv_skin[0], skins[skin]->name);
+
+								S_StartSound(NULL, sfx_s3k63);
+								S_StartSound(NULL, skins[skin]->soundsid[S_sfx[sfx_kattk1].skinsound]);
+								M_SetMenuDelay(pid);
+
+								forceflip = true;
+							}
+						}
+					}
+					break;
+				}
+				case SECRET_FOLLOWER:
+				{
+					if (!horngoner && M_MenuConfirmPressed(pid))
+					{
+						INT32 fskin = M_UnlockableFollowerNum(ref);
+						if (fskin != -1)
+						{
+							if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
+							{
+								profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+								if (pr && strcmp(pr->follower, followers[fskin].name))
+								{
+									strcpy(pr->follower, followers[fskin].name);
+									CV_Set(&cv_follower[0], followers[fskin].name);
+
+									challengesmenu.hornposting = 0;
+
+									S_StartSound(NULL, sfx_s3k63);
+									forceflip = true;
+								}
+							}
+
+							if (!forceflip)
+								challengesmenu.hornposting++;
+
+							if (challengesmenu.hornposting > EASEOFFHORN)
+							{
+								challengesmenu.hornposting = 0;
+								horngoner = true;
+								S_StartSound(NULL, sfx_s3k72);
+							}
+							else
+							{
+								S_StartSound(NULL, followers[fskin].hornsound);
+							}
+
+							M_SetMenuDelay(pid);
+
+							forceflip = true;
+						}
+					}
+					break;
+				}
+				case SECRET_COLOR:
+				{
+					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
+					{
+						INT32 colorid = M_UnlockableColorNum(ref);
+						if (colorid != SKINCOLOR_NONE)
+						{
+							profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
+
+							if (pr && pr->color != colorid)
+							{
+								pr->color = colorid;
+								CV_SetValue(&cv_playercolor[0], colorid);
+								if (setup_numplayers)
+								{
+									G_SetPlayerGamepadIndicatorToPlayerColor(0);
+								}
+
+								S_StartSound(NULL, sfx_s3k63);
+								M_SetMenuDelay(pid);
+
+								forceflip = true;
+							}
+						}
 					}
 					break;
 				}
@@ -1167,7 +1340,7 @@ boolean M_ChallengesInputs(INT32 ch)
 					{
 						const char *trymusname = NULL;
 
-						UINT16 map = M_UnlockableMapNum(&unlockables[challengesmenu.currentunlock]);
+						UINT16 map = M_UnlockableMapNum(ref);
 						if (map >= nummapheaders
 							|| !mapheaderinfo[map])
 						{
@@ -1196,15 +1369,18 @@ boolean M_ChallengesInputs(INT32 ch)
 
 						if (trymusname)
 						{
-							if (!Music_Playing("challenge_altmusic")
-								|| strcmp(Music_Song("challenge_altmusic"), trymusname))
+							const char *tune = "challenge_altmusic";
+							if (!Music_Playing(tune)
+								|| strcmp(Music_Song(tune), trymusname))
 							{
-								Music_Remap("challenge_altmusic", trymusname);
-								Music_Play("challenge_altmusic");
+								Music_Remap(tune, trymusname);
+								Music_Play(tune);
+								challengesmenu.nowplayingtile = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 							}
 							else
 							{
-								Music_Stop("challenge_altmusic");
+								Music_Stop(tune);
+								challengesmenu.nowplayingtile = UINT16_MAX;
 							}
 
 							M_SetMenuDelay(pid);
@@ -1215,6 +1391,16 @@ boolean M_ChallengesInputs(INT32 ch)
 				}
 				default:
 					break;
+			}
+
+			if (forceflip)
+			{
+				UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+				// This construction helps pressing too early
+				if (challengesmenu.extradata[id].flip <= TILEFLIP_MAX/2)
+				{
+					challengesmenu.extradata[id].flip = 1 + (TILEFLIP_MAX/2);
+				}
 			}
 
 			return true;

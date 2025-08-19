@@ -304,47 +304,6 @@ void M_CharacterSelectInit(void)
 	memset(setup_explosions, 0, sizeof(setup_explosions));
 	setup_animcounter = 0;
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		// Default to no follower / match colour.
-		setup_player[i].followern = -1;
-		setup_player[i].followercategory = -1;
-		setup_player[i].followercolor = SKINCOLOR_NONE;
-
-		setup_player[i].profilen_slide.start = 0;
-		setup_player[i].profilen_slide.dist = 0;
-
-		// If we're on prpfile select, skip straight to CSSTEP_CHARS
-		// do the same if we're midgame, but make sure to consider splitscreen properly.
-		if (optionsmenu.profile && i == 0)
-		{
-			setup_player[i].profilen = optionsmenu.profilen;
-			//PR_ApplyProfileLight(setup_player[i].profilen, 0);
-			M_SetupProfileGridPos(&setup_player[i]);
-			setup_player[i].mdepth = CSSTEP_CHARS;
-		}
-		else
-		{
-			// Set default selected profile to the last used profile for each player:
-			// (Make sure we don't overshoot it somehow if we deleted profiles or whatnot)
-			setup_player[i].profilen = min(cv_lastprofile[i].value, PR_GetNumProfiles());
-
-			if (gamestate != GS_MENU && i <= splitscreen)
-			{
-				M_SetupMidGameGridPos(&setup_player[i], i);
-				setup_player[i].mdepth = CSSTEP_CHARS;
-			}
-			else
-			{
-				// Un-set devices
-				G_SetDeviceForPlayer(i, -1);
-#ifdef CHARSELECT_DEVICEDEBUG
-				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
-#endif
-			}
-		}
-	}
-
 	for (i = 0; i < numskins; i++)
 	{
 		UINT8 x = skins[i]->kartspeed-1;
@@ -391,6 +350,47 @@ void M_CharacterSelectInit(void)
 	}
 
 	setup_page = 0;
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		// Default to no follower / match colour.
+		setup_player[i].followern = -1;
+		setup_player[i].followercategory = -1;
+		setup_player[i].followercolor = SKINCOLOR_NONE;
+
+		setup_player[i].profilen_slide.start = 0;
+		setup_player[i].profilen_slide.dist = 0;
+
+		// If we're on prpfile select, skip straight to CSSTEP_CHARS
+		// do the same if we're midgame, but make sure to consider splitscreen properly.
+		if (optionsmenu.profile && i == 0)
+		{
+			setup_player[i].profilen = optionsmenu.profilen;
+			//PR_ApplyProfileLight(setup_player[i].profilen, 0);
+			M_SetupProfileGridPos(&setup_player[i]);
+			setup_player[i].mdepth = CSSTEP_CHARS;
+		}
+		else
+		{
+			// Set default selected profile to the last used profile for each player:
+			// (Make sure we don't overshoot it somehow if we deleted profiles or whatnot)
+			setup_player[i].profilen = min(cv_lastprofile[i].value, PR_GetNumProfiles());
+
+			if (gamestate != GS_MENU && i <= splitscreen)
+			{
+				M_SetupMidGameGridPos(&setup_player[i], i);
+				setup_player[i].mdepth = CSSTEP_CHARS;
+			}
+			else
+			{
+				// Un-set devices
+				G_SetDeviceForPlayer(i, -1);
+#ifdef CHARSELECT_DEVICEDEBUG
+				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
+#endif
+			}
+		}
+	}
 }
 
 
@@ -777,7 +777,7 @@ static boolean M_HandleBeginningColors(setup_player_t *p)
 
 static void M_HandleBeginningFollowers(setup_player_t *p)
 {
-	if (setup_numfollowercategories == 0)
+	if (horngoner || setup_numfollowercategories == 0)
 	{
 		p->followern = -1;
 		M_HandlePlayerFinalise(p);
@@ -1392,7 +1392,9 @@ static void M_MPConfirmCharacterSelection(void)
 		CV_StealthSetValue(&cv_playercolor[i], col);
 
 		// follower
-		if (setup_player[i].followern < 0)
+		if (horngoner)
+			;
+		else if (setup_player[i].followern < 0)
 			CV_StealthSet(&cv_follower[i], "None");
 		else
 			CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
@@ -1457,9 +1459,12 @@ void M_CharacterSelectTick(void)
 				strcpy(optionsmenu.profile->skinname, skins[setup_player[0].skin]->name);
 				optionsmenu.profile->color = setup_player[0].color;
 
-				// save follower
-				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].name);
-				optionsmenu.profile->followercolor = setup_player[0].followercolor;
+				if (!horngoner) // so you don't lose your choice after annoying the game
+				{
+					// save follower
+					strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].name);
+					optionsmenu.profile->followercolor = setup_player[0].followercolor;
+				}
 
 				// reset setup_player
 				memset(setup_player, 0, sizeof(setup_player));
@@ -1475,7 +1480,9 @@ void M_CharacterSelectTick(void)
 					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin]->name);
 					CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
 
-					if (setup_player[i].followern < 0)
+					if (horngoner)
+						;
+					else if (setup_player[i].followern < 0)
 						CV_StealthSet(&cv_follower[i], "None");
 					else
 						CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);

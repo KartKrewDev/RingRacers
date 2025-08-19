@@ -1526,7 +1526,7 @@ static void K_initKartHUD(void)
 	}
 }
 
-void K_DrawMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT16 map, const UINT8 *colormap)
+void K_DrawMapThumbnail2(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT16 map, const UINT8 *colormap, fixed_t accordion)
 {
 	patch_t *PictureOfLevel = NULL;
 
@@ -1543,58 +1543,79 @@ void K_DrawMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT1
 		PictureOfLevel = static_cast<patch_t*>(mapheaderinfo[map]->thumbnailPic);
 	}
 
-	K_DrawLikeMapThumbnail(x, y, width, flags, PictureOfLevel, colormap);
+	K_DrawLikeMapThumbnail(x, y, width, flags, PictureOfLevel, colormap, accordion);
 }
 
-void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, patch_t *patch, const UINT8 *colormap)
+void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, patch_t *patch, const UINT8 *colormap, fixed_t accordion)
 {
-	if (flags & V_FLIP)
-		x += width;
+	fixed_t scale = FixedDiv(width, (320 << FRACBITS));
 
-	V_DrawFixedPatch(
+	if (flags & V_FLIP)
+		x += FixedMul(width, accordion);
+
+	V_DrawStretchyFixedPatch(
 		x, y,
-		FixedDiv(width, (320 << FRACBITS)),
+		FixedMul(scale, accordion),
+		scale,
 		flags,
 		patch,
 		colormap
 	);
 }
 
-void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *colormap)
+void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *colormap, fixed_t accordion, INT32 scalefactor)
 {
-	const fixed_t iconHeight = (14 << FRACBITS);
+	const fixed_t iconHeight = ((16 * scalefactor) - 2) << FRACBITS;
 	const fixed_t iconWidth = (iconHeight * 320) / 200;
-	INT32 unit = 1;
 	fixed_t mul = FRACUNIT;
+
+	INT32 dup = 1;
 	if (flags & V_NOSCALESTART)
 	{
-		unit = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+		dup = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 		mul = 1;
 	}
+
+	INT32 hdup = (dup * accordion);
 
 	V_DrawFill(
 		x,
 		y,
-		16 * unit,
-		16 * unit,
+		(16 * scalefactor * hdup)/FRACUNIT,
+		16 * scalefactor * dup,
 		(flags & ~V_FLIP)
 	);
+
+	INT32 xclip = ((16 * scalefactor) - 2) * dup * mul;
+
+	if (flags & V_NOSCALESTART)
+	{
+		hdup /= FRACUNIT;
+	}
+	else
+	{
+		hdup = FixedMul(hdup, mul);
+		xclip = FixedMul(xclip, accordion);
+	}
+
+	dup *= mul;
 
 	V_SetClipRect(
-		(x + unit) * mul,
-		(y + unit) * mul,
-		(14 * unit) * mul,
-		(14 * unit) * mul,
+		(x * mul) + hdup,
+		(y * mul) + dup,
+		xclip,
+		((16 * scalefactor) - 2) * dup,
 		(flags & ~V_FLIP)
 	);
 
-	K_DrawMapThumbnail(
-		((x + unit) * FRACUNIT) - (iconWidth - iconHeight)/2,
-		((y + unit) * FRACUNIT),
+	K_DrawMapThumbnail2(
+		(x * mul) + hdup - FixedMul(iconWidth - iconHeight, accordion)/2,
+		(y * mul) + dup,
 		iconWidth,
 		flags,
 		map,
-		colormap
+		colormap,
+		accordion
 	);
 
 	V_ClearClipRect();

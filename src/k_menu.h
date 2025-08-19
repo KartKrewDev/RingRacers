@@ -1428,6 +1428,8 @@ typedef enum
 #define CHAOHOLD_END (3)
 #define CHAOHOLD_PADDING (CHAOHOLD_BEGIN + CHAOHOLD_END)
 
+#define EASEOFFHORN 50
+
 extern struct timeattackmenu_s {
 
 	tic_t ticker;		// How long the menu's been open for
@@ -1461,10 +1463,13 @@ extern struct challengesmenu_s {
 	UINT16 tutorialfound;
 
 	boolean requestflip;
+	UINT16 nowplayingtile;
 
 	UINT16 unlockcount[CMC_MAX];
 
 	UINT8 fade;
+
+	UINT8 hornposting;
 
 	boolean cache_secondrowlocked;
 
