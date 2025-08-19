@@ -4452,7 +4452,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	UINT32 newRenderFlags = 0;
 	boolean colorized;
 
-	if (itemType < 1 || itemType >= NUMKARTITEMS)
+	if (itemType < 1 || (itemType >= NUMKARTITEMS && itemType != KCAPSULE_RING))
 		itemType = KITEM_SAD;
 
 	// update invincibility properties
@@ -4471,7 +4471,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	// update cap colors
 	if (mobj->extravalue2)
 		color = mobj->extravalue2;
-	else if (itemType == KITEM_SUPERRING)
+	else if (itemType == KCAPSULE_RING)
 	{
 		color = SKINCOLOR_GOLD;
 		newRenderFlags |= RF_SEMIBRIGHT;
@@ -4514,7 +4514,8 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 				if (mobj->movecount - 1 > K_GetOrbinautItemFrame(mobj->movecount))
 					count = mobj->movecount;
 				break;
-			case KITEM_SUPERRING: // always display the number, and multiply it by 5
+			case KCAPSULE_RING:
+				// always display the number, and multiply it by 5
 				if (mobj->flags2 & MF2_STRONGBOX)
 					count = mobj->movecount * 20; // give Super Rings
 				else
@@ -11519,7 +11520,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			// set default item & count
 #if 0 // set to 1 to test capsules with random items, e.g. with objectplace
 			if (P_RandomChance(PR_ITEM_SPAWNER, FRACUNIT/3))
-				mobj->threshold = KITEM_SUPERRING;
+				mobj->threshold = KCAPSULE_RING;
 			else if (P_RandomChance(PR_ITEM_SPAWNER, FRACUNIT/3))
 				mobj->threshold = KITEM_SPB;
 			else if (P_RandomChance(PR_ITEM_SPAWNER, FRACUNIT/3))
@@ -11528,7 +11529,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				mobj->threshold = P_RandomRange(PR_ITEM_SPAWNER, 1, NUMKARTITEMS - 1);
 			mobj->movecount = P_RandomChance(PR_ITEM_SPAWNER, FRACUNIT/3) ? 1 : P_RandomKey(PR_ITEM_SPAWNER, 32) + 1;
 #else
-			mobj->threshold = KITEM_SUPERRING; // default item is super ring
+			mobj->threshold = KCAPSULE_RING; // default item is ring
 			mobj->movecount = 1;
 #endif
 
@@ -14118,9 +14119,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		if (!P_IsObjectOnGround(mobj))
 			mobj->flags |= MF_NOGRAVITY;
 
-		// Angle = item type
+		// First argument = item type (or 0 for KCAPSULE_RING)
 		if (mthing->thing_args[0] > 0 && mthing->thing_args[0] < NUMKARTITEMS)
+		{
 			mobj->threshold = mthing->thing_args[0];
+		}
 
 		// Parameter = extra items (x5 for rings)
 		mobj->movecount += mthing->thing_args[1];

@@ -533,7 +533,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					if (K_IsSPBInGame()) // don't spawn a second SPB
 						return;
 					break;
-				case KITEM_SUPERRING:
+				case KCAPSULE_RING:
 					if (!P_CanPickupItem(player, PICKUP_RINGORSPHERE)) // no cheaty rings
 						return;
 					break;
@@ -546,7 +546,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 
 			// Ring Capsules shouldn't affect pickup cheese, they're just used as condensed ground-ring placements.
-			if (special->threshold != KITEM_SUPERRING)
+			if (special->threshold != KCAPSULE_RING)
 				P_UpdateLastPickup(player, 3);
 
 			S_StartSound(toucher, special->info->deathsound);
@@ -2052,7 +2052,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				target->fuse = 5*TICRATE;
 			else if (K_CapsuleTimeAttackRules() == true)
 				; // Don't respawn (internal)
-			else if (target->threshold == KITEM_SUPERRING)
+			else if (target->threshold == KCAPSULE_RING)
 				target->fuse = 20*TICRATE;
 			else
 				target->fuse = 40*TICRATE;
@@ -2119,7 +2119,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				if (!(target->flags2 & MF2_STRONGBOX))
 				{
 					// special behavior for ring capsules
-					if (target->threshold == KITEM_SUPERRING)
+					if (target->threshold == KCAPSULE_RING)
 					{
 						K_AwardPlayerRings(player, 5 * target->movecount, true);
 						break;
