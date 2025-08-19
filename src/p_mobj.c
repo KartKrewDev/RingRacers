@@ -2398,6 +2398,14 @@ boolean P_ZMovement(mobj_t *mo)
 				return false;
 			}
 			break;
+		case MT_MONITOR:
+			// Prevent battle monitors getting stuck in pits
+			if (P_CheckDeathPitCollide(mo))
+			{
+				P_RemoveMobj(mo);
+				return false;
+			}
+			break;
 		default:
 			// SRB2kart stuff that should die in pits
 			// Shouldn't stop moving along the Z if there's no speed though!
