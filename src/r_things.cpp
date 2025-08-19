@@ -3809,6 +3809,10 @@ boolean R_ThingVisible (mobj_t *thing)
 			case MT_SSMINE:
 			case MT_SSMINE_SHIELD:
 			case MT_MINERADIUS:
+			case MT_POGOSPRING:
+			case MT_DROPTARGET:
+			case MT_HYUDORO:
+			case MT_SHADOW: // hyuu fake shadow
 			// Checkpoints
 			case MT_CHECKPOINT_END:
 			case MT_SIGNSPARKLE:
