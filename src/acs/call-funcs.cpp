@@ -1645,7 +1645,7 @@ bool CallFunc_PlayerSkin(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
 		&& (info->mo->player != NULL))
 	{
-		UINT8 skin = info->mo->player->skin;
+		UINT16 skin = info->mo->player->skin;
 		thread->dataStk.push(~env->getString( skins[skin]->name )->idx);
 		return false;
 	}

@@ -522,7 +522,7 @@ void level_tally_t::Init(player_t *player)
 		// It'd be neat to add all of the grade sounds,
 		// but not this close to release
 
-		UINT8 skinid = player->skin;
+		UINT16 skinid = player->skin;
 		if (skinid >= numskins || R_CanShowSkinInDemo(skinid) == false)
 			;
 		else if (rank < GRADE_C)

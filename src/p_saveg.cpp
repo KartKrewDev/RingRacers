@@ -175,7 +175,7 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 	memset(&savedata.bots, 0, sizeof(savedata.bots));
 
 	UINT8 pid;
-	const UINT8 defaultbotskin = R_BotDefaultSkin();
+	const UINT16 defaultbotskin = R_BotDefaultSkin();
 
 	while ((pid = READUINT8(save->p)) < MAXPLAYERS)
 	{
@@ -260,8 +260,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 			WRITEUINT8(save->p, players[i].availabilities[j]);
 		}
 
-		WRITEUINT8(save->p, players[i].fakeskin);
-		WRITEUINT8(save->p, players[i].lastfakeskin);
+		WRITEUINT16(save->p, players[i].fakeskin);
+		WRITEUINT16(save->p, players[i].lastfakeskin);
 
 		WRITEUINT16(save->p, players[i].prefcolor);
 		WRITEINT32(save->p, players[i].prefskin);
@@ -987,8 +987,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 			players[i].availabilities[j] = READUINT8(save->p);
 		}
 
-		players[i].fakeskin = READUINT8(save->p);
-		players[i].lastfakeskin = READUINT8(save->p);
+		players[i].fakeskin = READUINT16(save->p);
+		players[i].lastfakeskin = READUINT16(save->p);
 
 		players[i].prefcolor = READUINT16(save->p);
 		players[i].prefskin = READINT32(save->p);
@@ -3535,7 +3535,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff2 & MD2_CVMEM)
 		WRITEINT32(save->p, mobj->cvmem);
 	if (diff2 & MD2_SKIN)
-		WRITEUINT8(save->p, (UINT8)((skin_t *)mobj->skin)->skinnum);
+		WRITEUINT16(save->p, (UINT16)((skin_t *)mobj->skin)->skinnum);
 	if (diff2 & MD2_COLOR)
 		WRITEUINT16(save->p, mobj->color);
 	if (diff2 & MD2_EXTVAL1)
@@ -4834,7 +4834,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff2 & MD2_CVMEM)
 		mobj->cvmem = READINT32(save->p);
 	if (diff2 & MD2_SKIN)
-		mobj->skin = skins[READUINT8(save->p)];
+		mobj->skin = skins[READUINT16(save->p)];
 	if (diff2 & MD2_COLOR)
 		mobj->color = READUINT16(save->p);
 	if (diff2 & MD2_EXTVAL1)
@@ -6434,7 +6434,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT8(save->p, rank->totalPlayers);
 
 		WRITEUINT8(save->p, rank->position);
-		WRITEUINT8(save->p, rank->skin);
+		WRITEUINT16(save->p, rank->skin);
 
 		WRITEUINT32(save->p, rank->winPoints);
 		WRITEUINT32(save->p, rank->totalPoints);
@@ -6700,7 +6700,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		rank->totalPlayers = READUINT8(save->p);
 
 		rank->position = READUINT8(save->p);
-		rank->skin = READUINT8(save->p);
+		rank->skin = READUINT16(save->p);
 
 		rank->winPoints = READUINT32(save->p);
 		rank->totalPoints = READUINT32(save->p);

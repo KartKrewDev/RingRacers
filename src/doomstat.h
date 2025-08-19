@@ -145,7 +145,7 @@ extern unloaded_skin_t *unloadedskins;
 struct skinreference_t
 {
 	unloaded_skin_t *unloaded;
-	UINT8 id;
+	UINT16 id;
 };
 
 // mapvisited is now a set of flags that says what we've done in the map.

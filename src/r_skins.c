@@ -139,7 +139,7 @@ static void Sk_SetDefaultValue(skin_t *skin)
 
 // Grab the default skin
 #define DEFAULTBOTSKINNAME "eggrobo"
-UINT8 R_BotDefaultSkin(void)
+UINT16 R_BotDefaultSkin(void)
 {
 	static INT32 defaultbotskin = -1;
 
@@ -157,7 +157,7 @@ UINT8 R_BotDefaultSkin(void)
 		}
 	}
 
-	return (UINT8)defaultbotskin;
+	return (UINT16)defaultbotskin;
 }
 #undef DEFAULTBOTSKINNAME
 
@@ -205,7 +205,7 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter)
 
 		skinid = M_UnlockableSkinNum(&unlockables[i]);
 
-		if (skinid < 0 || skinid >= MAXSKINS)
+		if (skinid < 0 || skinid >= MAXSKINUNAVAILABLE)
 			continue;
 
 		if ((forbots
@@ -247,6 +247,12 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 	if (gametype == GT_TUTORIAL)
 	{
 		// Being forced to play as this character by the tutorial
+		return true;
+	}
+
+	if (skinnum >= MAXSKINUNAVAILABLE)
+	{
+		// Keeping our packet size nice and sane in the wake of MAXSKINS increase
 		return true;
 	}
 
@@ -308,8 +314,8 @@ boolean R_CanShowSkinInDemo(INT32 skinnum)
 // Returns a random unlocked skin ID.
 UINT32 R_GetLocalRandomSkin(void)
 {
-	UINT8 i, usableskins = 0;
-	UINT8 grabskins[MAXSKINS];
+	UINT16 i, usableskins = 0;
+	UINT16 grabskins[MAXSKINS];
 
 	for (i = 0; i < numskins; i++)
 	{
@@ -512,8 +518,8 @@ void SetFakePlayerSkin(player_t* player, INT32 skinid)
 void SetRandomFakePlayerSkin(player_t* player, boolean fast, boolean instant)
 {
 	INT32 i;
-	UINT8 usableskins = 0, maxskinpick;
-	UINT8 grabskins[MAXSKINS];
+	UINT16 usableskins = 0, maxskinpick;
+	UINT16 grabskins[MAXSKINS];
 
 	maxskinpick = (demo.playback ? demo.numskins : numskins);
 
@@ -594,7 +600,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast, boolean instant)
 // Return to base skin from an SF_IRONMAN randomization
 void ClearFakePlayerSkin(player_t* player)
 {
-	UINT8 skinid;
+	UINT16 skinid;
 	UINT32 flags;
 
 	if (demo.playback)

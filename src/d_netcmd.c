@@ -1048,13 +1048,13 @@ static void SendNameAndColor(const UINT8 n)
 		CleanupPlayerName(playernum, cv_playername[n].zstring);
 	}
 
-	char buf[MAXPLAYERNAME+12];
+	char buf[MAXPLAYERNAME+13];
 	char *p = buf;
 
 	// Finally write out the complete packet and send it off.
 	WRITESTRINGN(p, cv_playername[n].zstring, MAXPLAYERNAME);
 	WRITEUINT16(p, sendColor);
-	WRITEUINT8(p, (UINT8)cv_skin[n].value);
+	WRITEUINT16(p, (UINT16)cv_skin[n].value);
 	if (horngoner)
 	{
 		WRITEINT16(p, (-1));
@@ -1135,7 +1135,7 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 	player_t *p = &players[playernum];
 	char name[MAXPLAYERNAME+1];
 	UINT16 color, followercolor;
-	UINT8 skin;
+	UINT16 skin;
 	INT16 follower;
 	UINT8 i;
 
@@ -1164,7 +1164,7 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 
 	READSTRINGN(*cp, name, MAXPLAYERNAME);
 	color = READUINT16(*cp);
-	skin = READUINT8(*cp);
+	skin = READUINT16(*cp);
 	follower = READINT16(*cp);
 	followercolor = READUINT16(*cp);
 

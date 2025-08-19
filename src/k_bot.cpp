@@ -49,7 +49,7 @@
 extern "C" consvar_t cv_forcebots;
 
 /*--------------------------------------------------
-	void K_SetNameForBot(UINT8 playerNum, UINT8 skinnum)
+	void K_SetNameForBot(UINT8 playerNum, const char *realname)
 
 		See header file for description.
 --------------------------------------------------*/
@@ -102,11 +102,11 @@ void K_SetNameForBot(UINT8 newplayernum, const char *realname)
 }
 
 /*--------------------------------------------------
-	void K_SetBot(UINT8 playerNum, UINT8 skinnum, UINT8 difficulty, botStyle_e style)
+	void K_SetBot(UINT8 playerNum, UINT16 skinnum, UINT8 difficulty, botStyle_e style)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e style)
+void K_SetBot(UINT8 newplayernum, UINT16 skinnum, UINT8 difficulty, botStyle_e style)
 {
 	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
 
@@ -197,11 +197,11 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 }
 
 /*--------------------------------------------------
-	boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+	boolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+boolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 {
 	UINT8 newplayernum = *p;
 
@@ -237,16 +237,16 @@ boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 --------------------------------------------------*/
 void K_UpdateMatchRaceBots(void)
 {
-	const UINT8 defaultbotskin = R_BotDefaultSkin();
+	const UINT16 defaultbotskin = R_BotDefaultSkin();
 	UINT8 difficulty;
 	UINT8 pmax = (dedicated ? MAXPLAYERS-1 : MAXPLAYERS);
 	UINT8 numplayers = 0;
 	UINT8 numbots = 0;
 	UINT8 numwaiting = 0;
 	SINT8 wantedbots = 0;
-	UINT8 usableskins = 0, skincount = (demo.playback ? demo.numskins : numskins);;
-	UINT8 grabskins[MAXSKINS+1];
-	UINT8 i;
+	UINT16 usableskins = 0, skincount = (demo.playback ? demo.numskins : numskins);;
+	UINT16 grabskins[MAXSKINS+1];
+	UINT16 i;
 
 	// Init usable bot skins list
 	for (i = 0; i < skincount; i++)
@@ -385,11 +385,11 @@ void K_UpdateMatchRaceBots(void)
 
 		while (numbots < wantedbots)
 		{
-			UINT8 skinnum = defaultbotskin;
+			UINT16 skinnum = defaultbotskin;
 
 			if (usableskins > 0)
 			{
-				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
+				UINT16 index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}

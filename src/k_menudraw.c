@@ -3057,7 +3057,7 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 	}
 	else
 	{
-		UINT8 skin = windata->best_skin.id;
+		UINT16 skin = windata->best_skin.id;
 
 		colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 
@@ -7149,7 +7149,7 @@ drawborder:
 
 #define challengetransparentstrength 8
 
-void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap, UINT8 baseskin)
+void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT16 skin, UINT8 *colormap, UINT16 baseskin)
 {
 	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT,
 		FRACUNIT,

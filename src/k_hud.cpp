@@ -2795,7 +2795,7 @@ void PositionFacesInfo::draw_1p()
 	INT32 i, j;
 	INT32 bumperx, emeraldx;
 	INT32 xoff, yoff, flipflag = 0;
-	UINT8 workingskin;
+	UINT16 workingskin;
 	UINT8 *colormap;
 	UINT32 skinflags;
 
@@ -3542,7 +3542,7 @@ static void K_drawKartDuelScores(void)
 	// minirankings shamelessly copypasted because i know that shit works already
 	// and SURELY we will never need to use this somewhere else, right?
 
-	UINT8 workingskin;
+	UINT16 workingskin;
 	UINT8 *colormap;
 	INT32 xoff, yoff, flipflag, skinflags;
 
@@ -5957,7 +5957,7 @@ static void K_drawKartMinimap(void)
 	INT32 minimaptrans;
 	INT32 splitflags;
 
-	UINT8 skin = 0;
+	UINT16 skin = 0;
 	UINT8 *colormap = NULL;
 
 	SINT8 localplayers[MAXSPLITSCREENPLAYERS];

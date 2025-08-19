@@ -3813,6 +3813,11 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock)
 		skinnum = R_SkinAvailableEx(unlock->stringVar, false);
 		if (skinnum != -1)
 		{
+			if (skinnum >= MAXSKINUNAVAILABLE)
+			{
+				CONS_Alert(CONS_WARNING,"Unlockable ID %s: Skin %s (id %d) is greater than %u, and will not be locked in this session.", sizeu1((unlock-unlockables)+1), unlock->stringVar, skinnum, MAXSKINUNAVAILABLE);
+			}
+
 			unlock->stringVarCache = skinnum;
 			return skinnum;
 		}

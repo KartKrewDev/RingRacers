@@ -1208,7 +1208,7 @@ static void SV_SendPlayerInfo(INT32 node)
 
 		netbuffer->u.playerinfo[i].score = LONG(players[i].score);
 		netbuffer->u.playerinfo[i].timeinserver = SHORT((UINT16)(players[i].jointime / TICRATE));
-		netbuffer->u.playerinfo[i].skin = (UINT8)(players[i].skin);
+		netbuffer->u.playerinfo[i].deprecated_skin = 0xFF;
 
 		// Extra data
 		netbuffer->u.playerinfo[i].data = 0; //players[i].skincolor;
@@ -3863,7 +3863,7 @@ static void Got_RemovePlayer(const UINT8 **p, INT32 playernum)
 static void Got_AddBot(const UINT8 **p, INT32 playernum)
 {
 	INT16 newplayernum;
-	UINT8 skinnum = 0;
+	UINT16 skinnum = 0;
 	UINT8 difficulty = DIFFICULTBOT;
 	botStyle_e style = BOT_STYLE_NORMAL;
 
@@ -3879,7 +3879,7 @@ static void Got_AddBot(const UINT8 **p, INT32 playernum)
 	}
 
 	newplayernum = READUINT8(*p);
-	skinnum = READUINT8(*p);
+	skinnum = READUINT16(*p);
 	difficulty = READUINT8(*p);
 	style = READUINT8(*p);
 
@@ -4050,11 +4050,11 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 }
 
 /*--------------------------------------------------
-	boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+	boolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+boolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 {
 	UINT8 newplayernum = *p;
 
@@ -4095,7 +4095,7 @@ boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8
 
 	if (server)
 	{
-		UINT8 buf[4];
+		UINT8 buf[5];
 		UINT8 *buf_p = buf;
 
 		WRITEUINT8(buf_p, newplayernum);
@@ -4105,7 +4105,7 @@ boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8
 			skin = numskins;
 		}
 
-		WRITEUINT8(buf_p, skin);
+		WRITEUINT16(buf_p, skin);
 
 		if (difficulty < 1)
 		{
@@ -4555,8 +4555,7 @@ static void HandleConnect(SINT8 node)
 				/// \todo fix this !!!
 				return; // restart the while
 			}
-			//if (gamestate != GS_LEVEL) // GS_INTERMISSION, etc?
-			//	SV_SendPlayerConfigs(node); // send bare minimum player info
+
 			G_SetGamestate(backupstate);
 			DEBFILE("new node joined\n");
 		}

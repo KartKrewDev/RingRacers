@@ -2261,8 +2261,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 skincolor;
 	INT32 skin;
 	UINT8 availabilities[MAXAVAILABILITY];
-	UINT8 fakeskin;
-	UINT8 lastfakeskin;
+	UINT16 fakeskin;
+	UINT16 lastfakeskin;
 
 	tic_t jointime;
 
@@ -5226,7 +5226,7 @@ void G_DirtyGameData(void)
 // Can be called by the startup code or the menu task.
 //
 
-#define SAV_VERSIONMINOR 6
+#define SAV_VERSIONMINOR 7
 
 void G_LoadGame(void)
 {
