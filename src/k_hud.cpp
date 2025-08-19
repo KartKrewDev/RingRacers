@@ -7670,6 +7670,20 @@ void K_drawKartHUD(void)
 		return;
 	}
 
+	if (staffsync)
+	{
+		V_DrawFadeScreen(31, 8);
+		V_DrawCenteredGamemodeString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 - 30, 0, 0, "Staff Ghost Sync Test");
+		UINT16 barw = BASEVIDWIDTH/2;
+		UINT16 barh = 8;
+		UINT16 bary = 10;
+		V_DrawFill(BASEVIDWIDTH/2 - barw/2, BASEVIDHEIGHT/2 - barh/2 + bary, barw, barh, 199);
+		V_DrawFill(BASEVIDWIDTH/2 - barw/2 + 1, BASEVIDHEIGHT/2 - barh/2 + 1 + bary, barw * staffsync_done / staffsync_total - 2, barh - 2, 176);
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 + 20, 0, va("Testing ghost %d of %d (%d failed). Choppy visuals are normal!\n", staffsync_done, staffsync_total, staffsync_failed));
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 + 30, 0, "See \"latest-log.txt\" for information on failing ghosts.\n");
+		return;
+	}
+
 	// Draw full screen stuff that turns off the rest of the HUD
 	if (R_GetViewNumber() == 0)
 	{

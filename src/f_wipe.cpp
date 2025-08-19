@@ -460,6 +460,9 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 	lumpnum_t clump = LUMPERROR;
 	lighttable_t *fcolor = NULL;
 
+	if (staffsync)
+		return;
+
 	if (colormap != NULL)
 		clump = W_GetNumForName(colormap);
 

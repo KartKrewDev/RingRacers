@@ -2656,6 +2656,12 @@ void Y_StartIntermission(void)
 		return;
 	}
 
+	if (staffsync)
+	{
+		Y_EndIntermission();
+		return;
+	}
+
 	G_SetGamestate(GS_INTERMISSION);
 
 	if (demo.playback)

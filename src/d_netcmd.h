@@ -255,6 +255,17 @@ void Automate_Clear(void);
 extern UINT32 livestudioaudience_timer;
 void LiveStudioAudience(void);
 
+typedef enum
+{
+	SYNC_NONE,
+	SYNC_RNG,
+	SYNC_HEALTH,
+	SYNC_POSITION,
+	SYNC_ITEM,
+	SYNC_CHARACTER,
+	SYNC__MAX
+} staffsync_reason_t;
+
 void D_Cheat(INT32 playernum, INT32 cheat, ...);
 
 // used for the player setup menu

@@ -1882,7 +1882,14 @@ void G_Ticker(boolean run)
 
 	P_MapStart();
 
-	if (gamestate == GS_LEVEL && G_GetRetryFlag())
+	extern boolean demosynced;
+	if (demo.playback && staffsync && !demosynced)
+	{
+		G_ClearRetryFlag();
+		G_StopDemo();
+		Command_ExitGame_f();
+	}
+	else if (gamestate == GS_LEVEL && G_GetRetryFlag())
 	{
 		if (demo.playback == true)
 		{
@@ -2042,6 +2049,8 @@ void G_Ticker(boolean run)
 			break;
 
 		case GS_MENU:
+			if (staffsync)
+				COM_BufInsertText("staffsync");
 			break;
 
 		case GS_INTRO:
@@ -2075,6 +2084,9 @@ void G_Ticker(boolean run)
 				P_Ticker(run);
 
 			F_TitleScreenTicker(run);
+
+			if (staffsync)
+				COM_BufInsertText("staffsync");
 			break;
 
 		case GS_CEREMONY:

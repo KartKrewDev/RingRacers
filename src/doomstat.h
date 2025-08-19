@@ -238,6 +238,17 @@ extern UINT8 splitscreen;
 extern int r_splitscreen;
 
 extern boolean forceresetplayers, deferencoremode, forcespecialstage;
+extern boolean staffsync;
+extern UINT32 staffsync_map, staffsync_ghost, staffsync_done, staffsync_total, staffsync_failed;
+
+struct staffsync_t
+{
+	UINT32 map;
+	char name[MAXPLAYERNAME+1];
+	UINT32 reason;
+	UINT32 extra;
+};
+extern staffsync_t staffsync_results[1024];
 
 // ========================================
 // Internal parameters for sound rendering.
