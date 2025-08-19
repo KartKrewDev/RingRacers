@@ -37,6 +37,15 @@ menuitem_t OPTIONS_HUD[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Race Splits", "Display time comparisons during races. Next = closest leading player.",
+		NULL, {.cvar = &cv_racesplits}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Time Attack Splits", "Display time comparisons during Time Attack. Next = closest leading player.",
+		NULL, {.cvar = &cv_attacksplits}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_SUBMENU, "Online Chat Options...", "Visual options for the online chat box.",
 		NULL, {.submenu = &OPTIONS_HUDOnlineDef}, 0, 0},
 };

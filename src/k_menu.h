@@ -738,6 +738,8 @@ extern consvar_t cv_showfocuslost;
 extern consvar_t cv_chooseskin, cv_serversort, cv_menujam_update, cv_menujam;
 extern consvar_t cv_autorecord;
 
+extern consvar_t cv_racesplits, cv_attacksplits;
+
 void M_SetMenuDelay(UINT8 i);
 
 void M_SortServerList(void);

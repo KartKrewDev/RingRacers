@@ -359,6 +359,7 @@ typedef enum
 	khud_splittimer, // How long to show splits HUD
 	khud_splitskin, // Skin index of the leading player
 	khud_splitcolor, // Skincolor of the leading player
+	khud_splitposition, // Who are we comparing to?
 
 	NUMKARTHUD
 } karthudtype_t;

@@ -448,6 +448,9 @@ consvar_t cv_seenames = Player("seenames", "On").on_off();
 consvar_t cv_shadow = Player("shadow", "On").on_off();
 consvar_t cv_showfocuslost = Player("showfocuslost", "Yes").yes_no();
 
+consvar_t cv_racesplits = Player("racesplits", "Leader").values({{0, "Off"}, {1, "Next"}, {2, "Leader"}}).save();
+consvar_t cv_attacksplits = Player("attacksplits", "Next").values({{0, "Off"}, {1, "Next"}, {2, "Leader"}}).save();
+
 void R_SetViewSize(void);
 consvar_t cv_showhud = Player("showhud", "Yes").yes_no().onchange(R_SetViewSize).dont_save();
 

@@ -7792,6 +7792,7 @@ void K_drawKartHUD(void)
 				INT32 skin = stplyr->karthud[khud_splitskin];
 				INT32 color = stplyr->karthud[khud_splitcolor];
 				INT32 ahead = stplyr->karthud[khud_splitwin];
+				INT32 pos = stplyr->karthud[khud_splitposition];
 
 				// debug
 				if (!stplyr->karthud[khud_splittimer])
@@ -7831,6 +7832,9 @@ void K_drawKartHUD(void)
 
 				// vibes offset
 				row.x(-35).colormap(skincolor).patch(R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap);
+
+				if (pos > 1)
+					row.x(-35).font(Draw::Font::kPing).text(va("%d", pos));
 
 				Draw::TextElement text = Draw::TextElement(
 					std::string(ahead >= 0 ? "-" : "+") + " " + "{:02}'{:02}\"{:02} " + arrow,
