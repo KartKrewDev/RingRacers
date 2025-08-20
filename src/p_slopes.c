@@ -307,7 +307,8 @@ static inline void P_AddDynLineSlopeThinker (pslope_t* slope, dynplanetype_t typ
 	th->type = type;
 	th->sourceline = sourceline;
 	th->extent = extent;
-	P_AddThinker(THINK_DYNSLOPE, &th->thinker);
+	// Handle old demos as well.
+	P_AddThinker(/*G_CompatLevel(0x000D) ? THINK_DYNSLOPEDEMO :*/ THINK_DYNSLOPE, &th->thinker);
 
 	// interpolation
 	R_CreateInterpolator_DynSlope(&th->thinker, slope);
@@ -337,7 +338,8 @@ static inline void P_AddDynVertexSlopeThinker (pslope_t* slope, const INT16 tags
 		if (lines[l].args[0])
 			th->relative |= 1<<i;
 	}
-	P_AddThinker(THINK_DYNSLOPE, &th->thinker);
+	// Handle old demos as well.
+	P_AddThinker(/*G_CompatLevel(0x000D) ? THINK_DYNSLOPEDEMO :*/ THINK_DYNSLOPE, &th->thinker);
 }
 
 /// Create a new slope and add it to the slope list.

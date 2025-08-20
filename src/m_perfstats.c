@@ -453,7 +453,7 @@ static void M_DrawTickStats(void)
 						regularcount++;
 				}
 			}
-			else if (i == THINK_DYNSLOPE)
+			else if (i == THINK_DYNSLOPE || i == THINK_DYNSLOPEDEMO)
 				dynslopethcount++;
 			else if (i == THINK_PRECIP)
 				precipcount++;
