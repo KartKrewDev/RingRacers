@@ -2292,11 +2292,11 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 	{
 		tic_t lowestend = UINT32_MAX;
 
+		UINT32 points = K_GetNumGradingPoints();
+
 		for (g = ghosts; g; g = g->next)
 		{
 			boolean newtargetghost = false;
-
-			UINT32 points = K_GetNumGradingPoints();
 
 			tic_t endtime = UINT32_MAX;
 			if (points <= MAXSPLITS)
@@ -2734,7 +2734,9 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 	extrainfo_p = info.buffer + READUINT32(info.p); // The extra UINT32 read is for a blank 4 bytes?
 	info.p += 4; // attack start
 	for (i = 0; i < MAXSPLITS; i++)
+	{
 		info.p += 4; // splits
+	}
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
 	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
@@ -3599,10 +3601,10 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	p += 4; // Extra data location reference
 	tic_t attackstart = READUINT32(p);
 
-	UINT8 *splits = p;
+	UINT32 splits[MAXSPLITS];
 	for (i = 0; i < MAXSPLITS; i++)
 	{
-		p += 4;
+		splits[i] = READUINT32(p);
 	}
 
 	// net var data
@@ -3688,21 +3690,25 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 
 
 	gh = static_cast<demoghost*>(Z_Calloc(sizeof(demoghost), PU_LEVEL, NULL));
-	gh->sizes = ghostsizes;
-	gh->next = ghosts;
+
+	// buffer
 	gh->buffer = buffer->buffer;
 	M_Memcpy(gh->checksum, md5, 16);
 	gh->p = p;
 
+	// meta
 	gh->numskins = worknumskins;
 	gh->skinlist = skinlist;
-
 	gh->attackstart = attackstart;
 	std::memcpy(gh->splits, splits, sizeof(tic_t) * MAXSPLITS);
 
+	// versioning
+	gh->version = ghostversion;
+	gh->sizes = ghostsizes;
+
+	gh->next = ghosts;
 	ghosts = gh;
 
-	gh->version = ghostversion;
 	mthing = playerstarts[0] ? playerstarts[0] : deathmatchstarts[0]; // todo not correct but out of scope
 	I_Assert(mthing);
 	{ // A bit more complex than P_SpawnPlayer because ghosts aren't solid and won't just push themselves out of the ceiling.
