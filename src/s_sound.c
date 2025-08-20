@@ -262,7 +262,8 @@ boolean S_SoundDisabled(void)
 	return (
 			sound_disabled ||
 			( window_notinfocus && ! (cv_bgaudio.value & 2) ) ||
-			(g_fast_forward > 0)
+			(g_fast_forward > 0) ||
+			staffsync
 	);
 }
 

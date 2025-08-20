@@ -6808,6 +6808,10 @@ static void Command_Staffsync(void)
 
 	mapheader = mapheaderinfo[staffsync_map];
 
+	// Test exit
+	if (false && staffsync_done == 9)
+		mapheader = NULL;
+
 	// Start of the run, init progress and report vars
 	if (staffsync_map == 0 && staffsync_ghost == 0)
 	{
@@ -6820,6 +6824,10 @@ static void Command_Staffsync(void)
 			if (mapheaderinfo[i] != NULL)
 				staffsync_total += mapheaderinfo[i]->ghostCount;
 		}
+
+		soundtest.shuffle = true;
+		S_UpdateSoundTestDef(false, false, true);
+		S_SoundTestPlay();
 	}
 
 	// The current configuration corresponds to a valid staff ghost, play it
@@ -6835,6 +6843,12 @@ static void Command_Staffsync(void)
 
 		staffsync_ghost++;
 		staffsync_done++;
+
+		if (staffsync_done % 50 == 0)
+		{
+			S_UpdateSoundTestDef(false, true, true);
+			S_SoundTestPlay();
+		}
 	}
 
 	// We've exhausted map headers, report
@@ -6880,6 +6894,12 @@ static void Command_Staffsync(void)
 		staffsync_ghost = 0;
 		staffsync_map = 0;
 		staffsync = false;
+
+		S_SoundTestTogglePause();
+		S_StartSound(NULL, sfx_tmxsuc);
+		S_StartSound(NULL, sfx_cftbl2);
+
+		CONS_Printf("%d / %d ghosts desync.\n", staffsync_failed, staffsync_done);
 		return;
 	}
 
