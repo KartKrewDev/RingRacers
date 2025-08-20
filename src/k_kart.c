@@ -4459,6 +4459,8 @@ static void K_SetupSplitForPlayer(player_t *us, player_t *them, tic_t ourtime, t
 	us->karthud[khud_splitwin] = winning;
 	us->karthud[khud_splitskin] = them->skin;
 	us->karthud[khud_splitcolor] = them->skincolor;
+	if (us->position != 1)
+		us->karthud[khud_splitposition] = them->position;
 }
 
 static void K_HandleRaceSplits(player_t *player, tic_t time, UINT8 checkpoint)
@@ -4469,6 +4471,7 @@ static void K_HandleRaceSplits(player_t *player, tic_t time, UINT8 checkpoint)
 	player->splits[checkpoint] = time;
 
 	player_t *lowest = player;
+	player_t *next = player;
 	UINT8 numrealsplits = 0;
 
 	// find fastest player for this checkpoint and # players who have already crossed
@@ -4490,6 +4493,9 @@ static void K_HandleRaceSplits(player_t *player, tic_t time, UINT8 checkpoint)
 
 		if (check->splits[checkpoint] < lowest->splits[checkpoint])
 			lowest = check;
+
+		if (check->splits[checkpoint] > next->splits[checkpoint] || next == player)
+			next = check;
 	}
 
 	// no one to compare against yet
@@ -4503,9 +4509,11 @@ static void K_HandleRaceSplits(player_t *player, tic_t time, UINT8 checkpoint)
 		K_SetupSplitForPlayer(lowest, player, lowest->splits[checkpoint], player->splits[checkpoint]);
 	}
 
-	if (numrealsplits)
+	extern consvar_t cv_racesplits;
+	if (numrealsplits && cv_racesplits.value)
 	{
-		K_SetupSplitForPlayer(player, lowest, player->splits[checkpoint], lowest->splits[checkpoint]);
+		player_t *target = (cv_racesplits.value == 2) ? lowest : next;
+		K_SetupSplitForPlayer(player, target, player->splits[checkpoint], target->splits[checkpoint]);
 	}
 }
 

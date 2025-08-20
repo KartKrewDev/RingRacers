@@ -66,6 +66,7 @@
 #include "k_vote.h"
 #include "k_credits.h"
 #include "k_grandprix.h"
+#include "p_setup.h" // oldbest
 
 static menuitem_t TitleEntry[] =
 {
@@ -2087,7 +2088,7 @@ void G_BeginRecording(void)
 	demosplits_p = demobuf.p;
 	for (i = 0; i < MAXSPLITS; i++)
 	{
-		WRITEUINT32(demobuf.p, INT32_MAX);
+		WRITEUINT32(demobuf.p, UINT32_MAX);
 	}
 
 
@@ -2275,26 +2276,99 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 	UINT32 *splits = (UINT32 *)demosplits_p;
 	splits[checkpoint] = time;
 
+	if (!cv_attacksplits.value)
+		return;
+
 	demoghost *g;
-	tic_t lowest = INT32_MAX;
+	tic_t lowest = UINT32_MAX;
 	UINT32 lowestskin = ((skin_t*)player->mo->skin)->skinnum;
 	UINT32 lowestcolor = player->skincolor;
-	for (g = ghosts; g; g = g->next)
+
+	boolean polite = (cv_attacksplits.value == 1);
+
+	// "Next" Mode: Find the weakest ghost who beats our best time.
+	// Don't set a ghost if we have no set time (oldbest == UINT32_MAX)
+	if (polite)
 	{
-		if (lowest > g->splits[checkpoint])
+		tic_t lowestend = UINT32_MAX;
+
+		for (g = ghosts; g; g = g->next)
 		{
-			lowest = g->splits[checkpoint];
-			lowestskin = g->initialskin;
-			lowestcolor = g->initialcolor;
+			boolean newtargetghost = false;
+
+			UINT32 points = K_GetNumGradingPoints();
+
+			tic_t endtime = UINT32_MAX;
+			if (points <= MAXSPLITS)
+				endtime = g->splits[points-1];
+
+			// Staff ghost oopsie. Fuckin, uh,
+			if (endtime == INT32_MAX)
+				endtime = UINT32_MAX;
+
+			if (lowestend > oldbest) // Not losing to any ghost
+			{
+				// Not currently losing to a ghost
+				if (endtime < oldbest)
+				{
+					// Show us any ghost who finishes faster than us
+					newtargetghost = true;
+				}
+			}
+			else
+			{
+				// Losing to a ghost already
+				if (endtime > lowestend && endtime < oldbest)
+				{
+					// Pick a slower ghost we are still losing to
+					newtargetghost = true;
+				}
+			}
+
+			if (newtargetghost)
+			{
+				lowest = g->splits[checkpoint];
+				lowestskin = g->initialskin;
+				lowestcolor = g->initialcolor;
+				lowestend = endtime;
+			}
 		}
 	}
 
-	if (lowest != INT32_MAX)
+	// If no ghost has been assigned to split against, and we are either
+	//   - in "Leader" mode
+	//   - in "Next" mode, but failed to find a ghost we lose to
+	// just split against the moment-to-moment leading ghost.
+	if (lowest == UINT32_MAX && (!polite || oldbest != UINT32_MAX))
+	{
+		for (g = ghosts; g; g = g->next)
+		{
+			if (lowest > g->splits[checkpoint])
+			{
+				lowest = g->splits[checkpoint];
+				lowestskin = g->initialskin;
+				lowestcolor = g->initialcolor;
+			}
+		}
+	}
+
+	// Final check: Where is our target ghost relative to other ghosts?
+	UINT32 ghostsbeatingtarget = 0;
+	for (g = ghosts; g; g = g->next)
+	{
+		if (g->splits[checkpoint] < lowest)
+		{
+			ghostsbeatingtarget++;
+		}
+	}
+
+	if (lowest != UINT32_MAX)
 	{
 		player->karthud[khud_splittimer] = 3*TICRATE;
 		player->karthud[khud_splitskin] = lowestskin;
 		player->karthud[khud_splitcolor] = lowestcolor;
 		player->karthud[khud_splittime] = (INT32)time - (INT32)lowest;
+		player->karthud[khud_splitposition] = ghostsbeatingtarget + 1;
 
 		if (lowest < time)
 		{
