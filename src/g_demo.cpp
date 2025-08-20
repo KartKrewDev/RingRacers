@@ -169,8 +169,11 @@ demoghost *ghosts = NULL;
 //   - Slope physics changed with a scaling fix
 // - 0x000C (Ring Racers v2.2)
 // - 0x000D (Ring Racers v2.3)
+// - 0x000E (Ring Racers v2.4 in-dev before DYNSLOPE thinker change)
+// - 0x000F (Ring Racers v2.4)
 
-#define DEMOVERSION 0x000E
+#define MINDEMOVERSION 0x000E
+#define DEMOVERSION 0x000F
 
 boolean G_CompatLevel(UINT16 level)
 {
@@ -2440,7 +2443,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	c = READUINT8(p); // SUBVERSION
 	I_Assert(c == SUBVERSION);
 	s = READUINT16(p);
-	I_Assert(s == DEMOVERSION);
+	I_Assert(s >= MINDEMOVERSION && s <= DEMOVERSION);
 	p += 64; // full demo title
 	p += 16; // demo checksum
 	I_Assert(!memcmp(p, "PLAY", 4));
@@ -2488,6 +2491,8 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	oldversion = READUINT16(p);
 	switch(oldversion) // demoversion
 	{
+	case 0x000E:
+		/* fallthru */
 	case DEMOVERSION: // latest always supported
 		break;
 	// too old, cannot support.
@@ -2636,6 +2641,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 
 	switch(pdemoversion)
 	{
+	case 0x000E:
+		/* fallthru */
 	case DEMOVERSION: // latest always supported
 		if (P_SaveBufferRemaining(&info) < 64)
 		{
@@ -3033,6 +3040,8 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	demo.version = READUINT16(demobuf.p);
 	switch(demo.version)
 	{
+	case 0x000E:
+		/* fallthru */
 	case DEMOVERSION: // latest always supported
 		break;
 	// too old, cannot support.
@@ -3521,6 +3530,8 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	ghostversion = READUINT16(p);
 	switch(ghostversion)
 	{
+	case 0x000E:
+		/* fallthru */
 	case DEMOVERSION: // latest always supported
 		break;
 	// too old, cannot support.
@@ -3805,6 +3816,8 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	ghostversion = READUINT16(p);
 	switch(ghostversion)
 	{
+		case 0x000E:
+			/* fallthru */
 		case DEMOVERSION: // latest always supported
 			break;
 

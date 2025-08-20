@@ -13,6 +13,7 @@
 
 #include "d_think.h"
 #include "doomdef.h"
+#include "g_demo.h"
 #include "r_defs.h"
 #include "r_state.h"
 #include "m_bbox.h"
@@ -308,7 +309,7 @@ static inline void P_AddDynLineSlopeThinker (pslope_t* slope, dynplanetype_t typ
 	th->sourceline = sourceline;
 	th->extent = extent;
 	// Handle old demos as well.
-	P_AddThinker(/*G_CompatLevel(0x000D) ? THINK_DYNSLOPEDEMO :*/ THINK_DYNSLOPE, &th->thinker);
+	P_AddThinker(G_CompatLevel(0x000E) ? THINK_DYNSLOPEDEMO : THINK_DYNSLOPE, &th->thinker);
 
 	// interpolation
 	R_CreateInterpolator_DynSlope(&th->thinker, slope);
@@ -339,7 +340,7 @@ static inline void P_AddDynVertexSlopeThinker (pslope_t* slope, const INT16 tags
 			th->relative |= 1<<i;
 	}
 	// Handle old demos as well.
-	P_AddThinker(/*G_CompatLevel(0x000D) ? THINK_DYNSLOPEDEMO :*/ THINK_DYNSLOPE, &th->thinker);
+	P_AddThinker(G_CompatLevel(0x000E) ? THINK_DYNSLOPEDEMO : THINK_DYNSLOPE, &th->thinker);
 }
 
 /// Create a new slope and add it to the slope list.
