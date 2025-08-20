@@ -1114,14 +1114,27 @@ void D_SRB2Loop(void)
 		//
 		// Wipes run an inner loop and artificially increase
 		// the measured time.
-		if (!ranwipe && frameskip < 3 && deltatics > 1.0)
+		if (staffsync)
 		{
-			frameskip++;
+			// SPECIAL: When checking staff demos for sync,
+			// draw as little as possible for speeeeeeed
+			if (frameskip < TICRATE*10)
+				frameskip++;
+			else
+				frameskip = 0;
 		}
 		else
 		{
-			frameskip = 0;
+			if (!ranwipe && frameskip < 3 && deltatics > 1.0)
+			{
+				frameskip++;
+			}
+			else
+			{
+				frameskip = 0;
+			}
 		}
+
 
 		if (world)
 		{

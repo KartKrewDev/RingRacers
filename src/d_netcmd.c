@@ -193,6 +193,7 @@ static void Command_Eval(void);
 
 static void Command_WriteTextmap(void);
 static void Command_SnapshotMaps(void);
+static void Command_Staffsync(void);
 
 #ifdef DEVELOP
 static void Command_FastForward(void);
@@ -255,6 +256,8 @@ INT16 numgametypes = GT_FIRSTFREESLOT;
 boolean forceresetplayers = false;
 boolean deferencoremode = false;
 boolean forcespecialstage = false;
+
+boolean staffsync = false;
 
 UINT8 splitscreen = 0;
 INT32 adminplayers[MAXPLAYERS];
@@ -451,6 +454,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("snapshotmap", Command_SnapshotMaps);
 	COM_AddCommand("snapshotmaps", Command_SnapshotMaps); // alias
+	COM_AddCommand("staffsync", Command_Staffsync);
 
 	// for master server connection
 	AddMServCommands();
@@ -6774,6 +6778,141 @@ static void Command_SnapshotMaps(void)
 	D_MapChange(1 + roundqueue.entries[0].mapnum, roundqueue.entries[0].gametype, false, true, 1, false, false);
 
 	CON_ToggleOff();
+}
+
+UINT32 staffsync_map = 0;
+UINT32 staffsync_ghost = 0;
+UINT32 staffsync_done = 0;
+UINT32 staffsync_total = 0;
+UINT32 staffsync_failed = 0;
+staffsync_t staffsync_results[1024];
+
+static void Command_Staffsync(void)
+{
+	if (Playing())
+	{
+		CONS_Alert(CONS_ERROR, "This command cannot be used in-game. Return to the titlescreen first!\n");
+		return;
+	}
+
+	staffsync = true;
+
+	if (demo.playback)
+		return;
+
+	mapheader_t *mapheader;
+	staffbrief_t *staffbrief;
+
+	demo.loadfiles = false;
+	demo.ignorefiles = true;
+
+	mapheader = mapheaderinfo[staffsync_map];
+
+	// Test exit
+	if (false && staffsync_done == 9)
+		mapheader = NULL;
+
+	// Start of the run, init progress and report vars
+	if (staffsync_map == 0 && staffsync_ghost == 0)
+	{
+		staffsync_done = 0;
+		staffsync_total = 0;
+		staffsync_failed = 0;
+		memset(staffsync_results, 0, sizeof(staffsync_results));
+		for (INT32 i = 0; i < nummapheaders; i++)
+		{
+			if (mapheaderinfo[i] != NULL)
+				staffsync_total += mapheaderinfo[i]->ghostCount;
+		}
+
+		soundtest.shuffle = true;
+		S_UpdateSoundTestDef(false, false, true);
+		S_SoundTestPlay();
+	}
+
+	// The current configuration corresponds to a valid staff ghost, play it
+	if (mapheader != NULL && mapheader->ghostCount > 0 && staffsync_ghost < mapheader->ghostCount)
+	{
+		demo.timing = true;
+		g_singletics = true;
+		framecount = 0;
+		demostarttime = I_GetTime();
+
+		staffbrief = mapheader->ghostBrief[staffsync_ghost];
+		G_DoPlayDemoEx("", (staffbrief->wad << 16) | staffbrief->lump);
+
+		staffsync_ghost++;
+		staffsync_done++;
+
+		if (staffsync_done % 50 == 0)
+		{
+			S_UpdateSoundTestDef(false, true, true);
+			S_SoundTestPlay();
+		}
+	}
+
+	// We've exhausted map headers, report
+	if (mapheader == NULL)
+	{
+
+		CONS_Printf("========================================\n");
+		CONS_Printf("DESYNCING STAFF GHOSTS:\n");
+
+		UINT32 i = 0;
+		while (staffsync_results[i].reason != SYNC_NONE)
+		{
+			staffsync_t *result = &staffsync_results[i];
+
+			CONS_Printf("%s [%s] ", G_BuildMapName(result->map), result->name);
+
+			switch (result->reason)
+			{
+				case SYNC_CHARACTER:
+					CONS_Printf("(character/stats)");
+					break;
+				case SYNC_HEALTH:
+					CONS_Printf("(health)");
+					break;
+				case SYNC_ITEM:
+					CONS_Printf("(item/bumpers)");
+					break;
+				case SYNC_POSITION:
+					CONS_Printf("(position)");
+					break;
+				case SYNC_RNG:
+					CONS_Printf("(RNG class %d)", result->extra);
+					break;
+			}
+
+			CONS_Printf("\n");
+
+			i++;
+		}
+
+		CONS_Printf("========================================\n");
+
+		staffsync_ghost = 0;
+		staffsync_map = 0;
+		staffsync = false;
+
+		S_SoundTestTogglePause();
+		S_StartSound(NULL, sfx_tmxsuc);
+		S_StartSound(NULL, sfx_cftbl2);
+
+		CONS_Printf("%d / %d ghosts desync.\n", staffsync_failed, staffsync_done);
+		return;
+	}
+
+	// Out of ghosts for the current map, switch to the next map and re-exec
+	if (staffsync_ghost >= mapheader->ghostCount)
+	{
+		staffsync_ghost = 0;
+		staffsync_map++;
+
+		Command_Staffsync();
+	}
+
+	return;
 }
 
 #ifdef DEVELOP

@@ -287,6 +287,21 @@ boolean G_ConsiderEndingDemoRead(void)
 	return true;
 }
 
+// Demo failed sync during a sync test! Log the failure to be reported later.
+static void G_FailStaffSync(staffsync_reason_t reason, UINT32 extra)
+{
+	if (!staffsync)
+		return;
+
+	if (staffsync_results[staffsync_failed].reason != 0)
+		return;
+
+	staffsync_results[staffsync_failed].map = gamemap;
+	memcpy(&staffsync_results[staffsync_failed].name, player_names[consoleplayer], sizeof(player_names[consoleplayer]));
+	staffsync_results[staffsync_failed].reason = reason;
+	staffsync_results[staffsync_failed].extra = extra;
+}
+
 void G_ReadDemoExtraData(void)
 {
 	INT32 p, extradata, i;
@@ -449,7 +464,11 @@ void G_ReadDemoExtraData(void)
 						P_SetRandSeed(static_cast<pr_class_t>(i), rng);
 
 						if (demosynced)
+						{
 							CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
+							G_FailStaffSync(SYNC_RNG, i);
+						}
+
 						storesynced = false;
 					}
 				}
@@ -1118,7 +1137,10 @@ void G_ConsGhostTic(INT32 playernum)
 				if (th != &thlist[THINK_MOBJ] && mobj->health != health) // Wasn't damaged?! This is desync! Fix it!
 				{
 					if (demosynced)
+					{
 						CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (health)!\n"));
+						G_FailStaffSync(SYNC_HEALTH, 0);
+					}
 					demosynced = false;
 					P_DamageMobj(mobj, players[0].mo, players[0].mo, 1, DMG_NORMAL);
 				}
@@ -1180,7 +1202,10 @@ void G_ConsGhostTic(INT32 playernum)
 			if (ghostext[playernum].desyncframes >= 2)
 			{
 				if (demosynced)
+				{
 					CONS_Alert(CONS_WARNING, "Demo playback has desynced (player %s)!\n", player_names[playernum]);
+					G_FailStaffSync(SYNC_POSITION, 0);
+				}
 				demosynced = false;
 
 				P_UnsetThingPosition(testmo);
@@ -1203,7 +1228,11 @@ void G_ConsGhostTic(INT32 playernum)
 			|| testmo->health != ghostext[playernum].health)
 		{
 			if (demosynced)
+			{
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (item/bumpers)!\n"));
+				G_FailStaffSync(SYNC_HEALTH, 0);
+			}
+
 			demosynced = false;
 
 			players[playernum].itemtype = ghostext[playernum].itemtype;
@@ -1217,7 +1246,11 @@ void G_ConsGhostTic(INT32 playernum)
 			demo.skinlist[ghostext[playernum].skinid].mapping != (UINT8)(((skin_t *)testmo->skin)->skinnum))
 		{
 			if (demosynced)
+			{
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (Character/stats)!\n"));
+				G_FailStaffSync(SYNC_CHARACTER, 0);
+			}
+
 			demosynced = false;
 
 			testmo->skin = skins[demo.skinlist[ghostext[playernum].skinid].mapping];
@@ -3903,6 +3936,12 @@ void G_StopDemo(void)
 	demo.timing = false;
 	demo.waitingfortally = false;
 	g_singletics = false;
+
+	if (!demosynced && staffsync)
+	{
+		staffsync_failed++;
+		CONS_Printf("STAFF GHOST DESYNC on %s (%s)\n", G_BuildMapName(gamemap), player_names[consoleplayer]);
+	}
 
 	{
 		UINT8 i;

@@ -41,6 +41,7 @@ TYPEDEF (xcommand_t);
 TYPEDEF (changeteam_packet_t);
 TYPEDEF (changeteam_value_t);
 TYPEDEF (scheduleTask_t);
+TYPEDEF (staffsync_t);
 
 // discord.h
 TYPEDEF (discordRequest_t);
