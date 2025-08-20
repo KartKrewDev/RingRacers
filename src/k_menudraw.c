@@ -376,7 +376,7 @@ static void M_DrawMenuParty(void)
 	UINT16 color;
 	UINT8 *colormap;
 
-	if (setup_numplayers == 0 || currentMenu == &PLAY_CharSelectDef || currentMenu == &MISC_ChallengesDef)
+	if (setup_numplayers == 0 || currentMenu == &PLAY_CharSelectDef || currentMenu == &OPTIONS_GameplayItemsDef || currentMenu == &MISC_ChallengesDef)
 	{
 		return;
 	}
@@ -5721,13 +5721,16 @@ void M_DrawItemToggles(void)
 	const INT32 height = 4;
 	const INT32 spacing = 35;
 	const INT32 column = itemOn/height;
-	//const INT32 row = itemOn%height;
+	const INT32 row = itemOn%height;
 	INT32 leftdraw, rightdraw, totaldraw;
-	INT32 x = currentMenu->x + M_EaseWithTransition(Easing_Linear, 5 * 64), y = currentMenu->y;
+	INT32 x, y = currentMenu->y;
 	INT32 onx = 0, ony = 0;
 	consvar_t *cv;
 	INT32 i, drawnum;
 	patch_t *pat;
+
+	x = currentMenu->x
+		+ M_EaseWithTransition(Easing_Linear, 5 * 64);
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
@@ -5775,14 +5778,6 @@ void M_DrawItemToggles(void)
 
 			if (currentMenu->menuitems[thisitem].mvar1 == 0)
 			{
-				V_DrawScaledPatch(x, y, 0, isbg);
-				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISTOGL", PU_CACHE));
-				y += spacing;
-				continue;
-			}
-
-			if (currentMenu->menuitems[thisitem].mvar1 == 255)
-			{
 				V_DrawScaledPatch(x, y, 0, isbgd);
 				y += spacing;
 				continue;
@@ -5822,13 +5817,10 @@ void M_DrawItemToggles(void)
 		y = currentMenu->y;
 	}
 
+	drawnum = 0;
+
 	{
 		if (currentMenu->menuitems[itemOn].mvar1 == 0)
-		{
-			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBG", PU_CACHE));
-			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITTOGL", PU_CACHE));
-		}
-		else if (currentMenu->menuitems[itemOn].mvar1 == 255)
 		{
 			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBGD", PU_CACHE));
 			if (shitsfree)
@@ -5880,6 +5872,18 @@ void M_DrawItemToggles(void)
 			}
 		}
 	}
+
+	// Button prompts
+	K_DrawGameControl(
+		(BASEVIDWIDTH/2) - cv_kartfrantic.value, BASEVIDHEIGHT-20, 0, 
+		va(
+			"<c_animated> Toggle All %s<white>   <r_animated> Frantic Mode: %s",
+			cv_thunderdome.value ? "<yellow>(Ring Box Mode) " : "<gold>(Item Box Mode)",
+			cv_kartfrantic.value ? "<red> On" : "<gray>Off"
+		),
+		1, TINY_FONT,
+		(((row == height-1) && (drawnum > 1)) ? V_TRANSLUCENT : 0)
+	);
 }
 
 

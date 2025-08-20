@@ -18,8 +18,8 @@ menuitem_t OPTIONS_GameplayItems[] =
 	// Mostly handled by the drawing function.
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Ring",			NULL, {.routine = M_HandleItemToggles}, KITEM_SUPERRING, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Self-Propelled Bomb",	NULL, {.routine = M_HandleItemToggles}, KITEM_SPB, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0}, // maybe KITEM_PUYO eventually?
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toggle All / Ring Box Only", NULL, {.routine = M_HandleItemToggles}, 0, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoro",				NULL, {.routine = M_HandleItemToggles}, KITEM_HYUDORO, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sink",			NULL, {.routine = M_HandleItemToggles}, KITEM_KITCHENSINK, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneaker",				NULL, {.routine = M_HandleItemToggles}, KITEM_SNEAKER, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneaker x2",			NULL, {.routine = M_HandleItemToggles}, KRITEM_DUALSNEAKER, 0},
@@ -28,7 +28,7 @@ menuitem_t OPTIONS_GameplayItems[] =
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Banana",				NULL, {.routine = M_HandleItemToggles}, KITEM_BANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Banana x3",				NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEBANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Eggmark",				NULL, {.routine = M_HandleItemToggles}, KITEM_EGGMAN, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Stone Shoe",		 	NULL, {.routine = M_HandleItemToggles}, KITEM_STONESHOE, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Gachabom",				NULL, {.routine = M_HandleItemToggles}, KITEM_GACHABOM, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinaut",				NULL, {.routine = M_HandleItemToggles}, KITEM_ORBINAUT, 0},
@@ -41,10 +41,10 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Proximity Mine",		NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Ballhog",				NULL, {.routine = M_HandleItemToggles}, KITEM_BALLHOG, 0},
 
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoro",				NULL, {.routine = M_HandleItemToggles}, KITEM_HYUDORO, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toxomister",			NULL, {.routine = M_HandleItemToggles}, KITEM_TOXOMISTER, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Drop Target",			NULL, {.routine = M_HandleItemToggles}, KITEM_DROPTARGET, sfx_s258},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Land Mine",				NULL, {.routine = M_HandleItemToggles}, KITEM_LANDMINE, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Spring",		 	NULL, {.routine = M_HandleItemToggles}, KITEM_POGOSPRING, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Eggmark",				NULL, {.routine = M_HandleItemToggles}, KITEM_EGGMAN, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Invincibility",			NULL, {.routine = M_HandleItemToggles}, KITEM_INVINCIBILITY, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Grow",					NULL, {.routine = M_HandleItemToggles}, KITEM_GROW, 0},
@@ -54,7 +54,10 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Lightning Shield",		NULL, {.routine = M_HandleItemToggles}, KITEM_LIGHTNINGSHIELD, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bubble Shield",			NULL, {.routine = M_HandleItemToggles}, KITEM_BUBBLESHIELD, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Flame Shield",			NULL, {.routine = M_HandleItemToggles}, KITEM_FLAMESHIELD, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sink",			NULL, {.routine = M_HandleItemToggles}, KITEM_KITCHENSINK, 0}
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Spring",		 	NULL, {.routine = M_HandleItemToggles}, KITEM_POGOSPRING, 0},
+
+//	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 0, 0}, -- next time, gadget
+
 };
 
 static void init_routine(void)
@@ -69,7 +72,7 @@ menu_t OPTIONS_GameplayItemsDef = {
 	&OPTIONS_GameplayDef,
 	0,
 	OPTIONS_GameplayItems,
-	14, 40,
+	14, 32,
 	SKINCOLOR_SCARLET, 0,
 	MBF_DRAWBGWHILEPLAYING,
 	NULL,
@@ -109,7 +112,35 @@ void M_HandleItemToggles(INT32 choice)
 
 	(void) choice;
 
-	if (menucmd[pid].dpad_lr > 0)
+	if (M_MenuExtraPressed(pid))
+	{
+		INT32 v = !M_AnyItemsEnabled();
+		for (i = 0; i < NUMKARTRESULTS-1; i++)
+		{
+			CV_SetValue(&cv_items[i], v);
+		}
+		M_ToggleThunderdome();
+		if (cv_thunderdome.value)
+		{
+			S_StartSoundAtVolume(NULL, sfx_slot02, 80);
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_itrolf);
+		}
+
+		M_SetMenuDelay(pid);
+	}
+
+	else if (M_MenuButtonPressed(pid, MBT_R))
+	{
+		CV_AddValue(&cv_kartfrantic, 1);
+		S_StartSound(NULL, (cv_kartfrantic.value ? sfx_noooo2 : sfx_kc48));
+
+		M_SetMenuDelay(pid);
+	}
+
+	else if (menucmd[pid].dpad_lr > 0)
 	{
 		S_StartSound(NULL, sfx_s3k5b);
 		column++;
@@ -168,7 +199,7 @@ void M_HandleItemToggles(INT32 choice)
 	else if (M_MenuConfirmPressed(pid))
 	{
 		M_SetMenuDelay(pid);
-		if (currentMenu->menuitems[itemOn].mvar1 == 255)
+		if (currentMenu->menuitems[itemOn].mvar1 == 0)
 		{
 			//S_StartSound(NULL, sfx_s26d);
 			if (!shitsfree)
@@ -176,17 +207,6 @@ void M_HandleItemToggles(INT32 choice)
 				shitsfree = TICRATE;
 				S_StartSound(NULL, sfx_itfree);
 			}
-		}
-		else
-		if (currentMenu->menuitems[itemOn].mvar1 == 0)
-		{
-			INT32 v = !M_AnyItemsEnabled();
-			S_StartSound(NULL, sfx_s1b4);
-			for (i = 0; i < NUMKARTRESULTS-1; i++)
-			{
-				CV_SetValue(&cv_items[i], v);
-			}
-			M_ToggleThunderdome();
 		}
 		else
 		{
