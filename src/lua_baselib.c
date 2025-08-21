@@ -3683,6 +3683,17 @@ static int lib_kKartPainEnergyFling(lua_State *L)
 	return 0;
 }
 
+static int lib_kFlipFromObject(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *master = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mo || !master)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_FlipFromObject(mo, master);
+	return 0;
+}
 
 static int lib_kMatchGenericExtraFlags(lua_State *L)
 {
@@ -4637,6 +4648,7 @@ static luaL_Reg lib[] = {
 	{"K_GetMobjWeight",lib_kGetMobjWeight},
 	{"K_KartBouncing",lib_kKartBouncing},
 	{"K_KartPainEnergyFling",lib_kKartPainEnergyFling},
+	{"K_FlipFromObject",lib_kFlipFromObject},
 	{"K_MatchGenericExtraFlags",lib_kMatchGenericExtraFlags},
 	{"K_SpawnDashDustRelease",lib_kSpawnDashDustRelease},
 	{"K_SpawnDriftBoostClip",lib_kSpawnDriftBoostClip},
