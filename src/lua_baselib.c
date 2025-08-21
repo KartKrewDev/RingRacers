@@ -232,6 +232,9 @@ static const struct {
 	{META_ACTIVATOR,    "activator_t"},
 	
 	{META_FOLLOWER,    "follower_t"},
+	
+	{META_SONICLOOPVARS,	"sonicloopvars_t"},
+	{META_SONICLOOPCAMVARS,	"sonicloopcamvars_t"},
 	{NULL,              NULL}
 };
 

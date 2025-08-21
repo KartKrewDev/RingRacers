@@ -679,6 +679,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, playerpingtable[( plr - players )]);
 	else if (fastcmp(field, "publickey"))
 		lua_pushstring(L, GetPrettyRRID(plr->public_key, false));
+	else if (fastcmp(field, "loop"))
+		LUA_PushUserdata(L, &plr->loop, META_SONICLOOPVARS);
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -1239,6 +1241,8 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"fovadd"))
 		plr->fovadd = luaL_checkfixed(L, 3);
 #endif
+	else if (fastcmp(field, "loop"))
+		return NOSET;
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -1444,6 +1448,162 @@ static int respawn_set(lua_State *L)
 #undef RNOFIELD
 #undef RUNIMPLEMENTED
 
+enum sonicloopvars {
+	sonicloopvars_radius = 0,
+	sonicloopvars_revolution,
+	sonicloopvars_min_revolution,
+	sonicloopvars_max_revolution,
+	sonicloopvars_yaw,
+	sonicloopvars_origin_x,
+	sonicloopvars_origin_y,
+	sonicloopvars_origin_z,
+	sonicloopvars_origin_shift_x,
+	sonicloopvars_origin_shift_y,
+	sonicloopvars_shift_x,
+	sonicloopvars_shift_y,
+	sonicloopvars_flip,
+	sonicloopvars_camera,
+};
+
+static const char *const sonicloopvars_opt[] = {
+	"radius",
+	"revolution",
+	"min_revolution",
+	"max_revolution",
+	"yaw",
+	"origin_x",
+	"origin_y",
+	"origin_z",
+	"origin_shift_x",
+	"origin_shift_y",
+	"shift_x",
+	"shift_y",
+	"flip",
+	"camera",
+	NULL
+};
+
+static int sonicloopvars_get(lua_State *L)
+{
+	sonicloopvars_t *sonicloopvars = *((sonicloopvars_t **)luaL_checkudata(L, 1, META_SONICLOOPVARS));
+	enum sonicloopvars field = luaL_checkoption(L, 2, NULL, sonicloopvars_opt);
+
+	// This should always be valid.
+	I_Assert(sonicloopvars != NULL);
+
+	switch (field)
+	{
+	case sonicloopvars_radius:
+		lua_pushfixed(L, sonicloopvars->radius);
+		break;
+	case sonicloopvars_revolution:
+		lua_pushfixed(L, sonicloopvars->revolution);
+		break;
+	case sonicloopvars_min_revolution:
+		lua_pushfixed(L, sonicloopvars->min_revolution);
+		break;
+	case sonicloopvars_max_revolution:
+		lua_pushfixed(L, sonicloopvars->max_revolution);
+		break;
+	case sonicloopvars_yaw:
+		lua_pushangle(L, sonicloopvars->yaw);
+		break;
+	case sonicloopvars_origin_x:
+		lua_pushfixed(L, sonicloopvars->origin.x);
+		break;
+	case sonicloopvars_origin_y:
+		lua_pushfixed(L, sonicloopvars->origin.y);
+		break;
+	case sonicloopvars_origin_z:
+		lua_pushfixed(L, sonicloopvars->origin.z);
+		break;
+	case sonicloopvars_origin_shift_x:
+		lua_pushfixed(L, sonicloopvars->origin_shift.x);
+		break;
+	case sonicloopvars_origin_shift_y:
+		lua_pushfixed(L, sonicloopvars->origin_shift.y);
+		break;
+	case sonicloopvars_shift_x:
+		lua_pushfixed(L, sonicloopvars->shift.x);
+		break;
+	case sonicloopvars_shift_y:
+		lua_pushfixed(L, sonicloopvars->shift.y);
+		break;
+	case sonicloopvars_flip:
+		lua_pushboolean(L, sonicloopvars->flip);
+		break;
+	case sonicloopvars_camera:
+		LUA_PushUserdata(L, &sonicloopvars->camera, META_SONICLOOPCAMVARS);
+		break;
+	}
+	return 1;
+}
+
+enum sonicloopcamvars {
+	sonicloopcamvars_enter_tic = 0,
+	sonicloopcamvars_exit_tic,
+	sonicloopcamvars_zoom_in_speed,
+	sonicloopcamvars_zoom_out_speed,
+	sonicloopcamvars_dist,
+	sonicloopcamvars_pan,
+	sonicloopcamvars_pan_speed,
+	sonicloopcamvars_pan_accel,
+	sonicloopcamvars_pan_back,
+};
+
+static const char *const sonicloopcamvars_opt[] = {
+	"enter_tic",
+	"exit_tic",
+	"zoom_in_speed",
+	"zoom_out_speed",
+	"dist",
+	"pan",
+	"pan_speed",
+	"pan_accel",
+	"pan_back",
+	NULL
+};
+
+static int sonicloopcamvars_get(lua_State *L)
+{
+	sonicloopcamvars_t *sonicloopcamvars = *((sonicloopcamvars_t **)luaL_checkudata(L, 1, META_SONICLOOPCAMVARS));
+	enum sonicloopcamvars field = luaL_checkoption(L, 2, NULL, sonicloopcamvars_opt);
+
+	// This should always be valid.
+	I_Assert(sonicloopcamvars != NULL);
+
+	switch (field)
+	{
+	case sonicloopcamvars_enter_tic:
+		lua_pushinteger(L, sonicloopcamvars->enter_tic);
+		break;
+	case sonicloopcamvars_exit_tic:
+		lua_pushinteger(L, sonicloopcamvars->exit_tic);
+		break;
+	case sonicloopcamvars_zoom_in_speed:
+		lua_pushinteger(L, sonicloopcamvars->zoom_in_speed);
+		break;
+	case sonicloopcamvars_zoom_out_speed:
+		lua_pushinteger(L, sonicloopcamvars->zoom_out_speed);
+		break;
+	case sonicloopcamvars_dist:
+		lua_pushfixed(L, sonicloopcamvars->dist);
+		break;
+	case sonicloopcamvars_pan:
+		lua_pushangle(L, sonicloopcamvars->pan);
+		break;
+	case sonicloopcamvars_pan_speed:
+		lua_pushfixed(L, sonicloopcamvars->pan_speed);
+		break;
+	case sonicloopcamvars_pan_accel:
+		lua_pushinteger(L, sonicloopcamvars->pan_accel);
+		break;
+	case sonicloopcamvars_pan_back:
+		lua_pushinteger(L, sonicloopcamvars->pan_back);
+		break;
+	}
+	return 1;
+}
 
 int LUA_PlayerLib(lua_State *L)
 {
@@ -1483,6 +1643,16 @@ int LUA_PlayerLib(lua_State *L)
 
 		lua_pushcfunction(L, ticcmd_set);
 		lua_setfield(L, -2, "__newindex");
+	lua_pop(L,1);
+	
+	luaL_newmetatable(L, META_SONICLOOPVARS);
+		lua_pushcfunction(L, sonicloopvars_get);
+		lua_setfield(L, -2, "__index");
+	lua_pop(L,1);
+	
+	luaL_newmetatable(L, META_SONICLOOPCAMVARS);
+		lua_pushcfunction(L, sonicloopcamvars_get);
+		lua_setfield(L, -2, "__index");
 	lua_pop(L,1);
 
 	lua_newuserdata(L, 0);
