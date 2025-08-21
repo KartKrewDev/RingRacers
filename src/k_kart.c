@@ -10220,6 +10220,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	if (player->itemtype != KITEM_BALLHOG || player->itemamount == 0 || P_PlayerInPain(player))
+	{
+		player->ballhogcharge = 0;
+		player->ballhogburst = 0;
+		S_StopSoundByID(player->mo, sfx_gshda);
+	}
 
 	if (player->wavedashboost == 0 || player->wavedashpower > FRACUNIT)
 	{
@@ -12524,6 +12530,12 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->wavedashright = 0;
 		player->wavedashboost = 0;
 		player->trickcharge = 0;
+
+		S_StopSoundByID(player->mo, sfx_waved1);
+		S_StopSoundByID(player->mo, sfx_waved2);
+		S_StopSoundByID(player->mo, sfx_waved3);
+		S_StopSoundByID(player->mo, sfx_waved4);
+		S_StopSoundByID(player->mo, sfx_waved5);
 	}
 	else if ((player->pflags & PF_DRIFTINPUT) && player->drift != 0)
 	{
