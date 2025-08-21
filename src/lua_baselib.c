@@ -3785,6 +3785,18 @@ static int lib_kSpawnBumpEffect(lua_State *L)
 	return 0;
 }
 
+static int lib_kGenericExtraFlagsNoZAdjust(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *master = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mo || !master)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_GenericExtraFlagsNoZAdjust(mo, master);
+	return 0;
+}
+
 static int lib_kDoInstashield(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4657,6 +4669,7 @@ static luaL_Reg lib[] = {
 	{"K_SpawnGardenTopSpeedLines",lib_kSpawnGardenTopSpeedLines},
 	{"K_SpawnInvincibilitySpeedLines",lib_kSpawnInvincibilitySpeedLines},
 	{"K_SpawnBumpEffect",lib_kSpawnBumpEffect},
+	{"K_GenericExtraFlagsNoZAdjust",lib_kGenericExtraFlagsNoZAdjust},
 	{"K_DoInstashield",lib_kDoInstashield},
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
 	{"K_SpinPlayer",lib_kSpinPlayer},
