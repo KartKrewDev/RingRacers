@@ -3563,6 +3563,16 @@ static int lib_kGetPlayerDontDrawFlag(lua_State *L)
 	return 1;
 }
 
+static int lib_kReflectAngle(lua_State *L)
+{	
+	angle_t angle = luaL_checkangle(L, 1);
+	angle_t against = luaL_checkangle(L, 2);
+	fixed_t maxspeed = luaL_optinteger(L, 3, 0);
+	fixed_t yourspeed = luaL_optinteger(L, 4, 0);
+	lua_pushangle(L, K_ReflectAngle(angle, against, maxspeed, yourspeed));
+	return 1;
+}
+
 static int lib_kGetKartGameSpeedScalar(lua_State *L)
 {
 	SINT8 value = luaL_optinteger(L, 1, gamespeed);
@@ -4558,6 +4568,7 @@ static luaL_Reg lib[] = {
 	{"K_PlayHitEmSound", lib_kHitEmSound},
 	{"K_TryHurtSoundExchange", lib_kTryHurtSoundExchange},
 	{"K_GetPlayerDontDrawFlag", lib_kGetPlayerDontDrawFlag},
+	{"K_ReflectAngle",lib_kReflectAngle},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_GetKartGameSpeedScalar",lib_kGetKartGameSpeedScalar},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
