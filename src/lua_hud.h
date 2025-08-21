@@ -39,6 +39,7 @@ enum hud {
 	hud_speedometer,
 	hud_freeplay,
 	hud_rankings,		// Tab rankings
+	hud_rings,			// Rings and Spheres HUD element
 
 	// Intermission
 	hud_intermissiontally,
