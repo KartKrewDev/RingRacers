@@ -4616,6 +4616,16 @@ static int lib_kUpdateMobjItemOverlay(lua_State *L)
 	return 0;
 }
 
+static int lib_kPlayerEBrake(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, player->mo ? K_PlayerEBrake(player) : false);
+	return 1;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5090,6 +5100,7 @@ static luaL_Reg lib[] = {
 	{"K_GetOrbinautItemFrame",lib_kGetOrbinautItemFrame},
 	{"K_UpdateMobjItemOverlay",lib_kUpdateMobjItemOverlay},
 	
+	{"K_PlayerEBrake",lib_kPlayerEBrake},
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
 
