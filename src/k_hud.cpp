@@ -4574,6 +4574,22 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
             mirror = true;
         }
     }
+	
+	// Adjust for Lua disabling things underneath or to the left of the speedometer.
+	if (!LUA_HudEnabled(hud_rings))
+	{		
+		if (r_splitscreen < 2)
+		{
+			fy += 14;
+		}
+		// For 4P race, only check if it's a race.
+		// For 4P battle/capsules, check if it's either prisons or battle, AND check if that element isn't disabled.
+		else if ((gametyperules & GTR_CIRCUIT) == GTR_CIRCUIT || 
+		((battleprisons || (gametyperules & GTR_BUMPERS) == GTR_BUMPERS) && !LUA_HudEnabled(hud_gametypeinfo)))
+		{
+			fx -= 44;
+		}
+	}
 
     // Kickstart Accel
     if (stplyr->pflags & PF_KICKSTARTACCEL)
@@ -4699,6 +4715,12 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 	else
 	{
 		fy += 9;
+	}
+	
+	// Adjust for Lua disabling things underneath the speedometer.
+	if (!LUA_HudEnabled(hud_rings))
+	{
+		fy += 14;
 	}
 
 	using srb2::Draw;
@@ -8062,13 +8084,16 @@ void K_drawKartHUD(void)
 				K_drawKartAccessibilityIcons(gametypeinfoshown, 0);
 			}
 
-			if (gametyperules & GTR_SPHERES)
+			if (LUA_HudEnabled(hud_rings))
 			{
-				K_drawBlueSphereMeter(gametypeinfoshown);
-			}
-			else
-			{
-				K_drawRingCounter(gametypeinfoshown);
+				if (gametyperules & GTR_SPHERES)
+				{
+					K_drawBlueSphereMeter(gametypeinfoshown);
+				}
+				else
+				{
+					K_drawRingCounter(gametypeinfoshown);
+				}
 			}
 
 			// This sucks, but we need to draw rings before EXP because 4P amps

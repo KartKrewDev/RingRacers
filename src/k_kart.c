@@ -6707,7 +6707,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	if (leveltime & 2)
 		index = 1;
 
-	invtime = mo->player->invincibilitytimer/TICRATE+1;
+	invtime = mo->player ? mo->player->invincibilitytimer/TICRATE+1 : 11;
 
 	//CONS_Printf("%d\n", index);
 
@@ -6737,7 +6737,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 
 	P_SetMobjState(sparkle, K_SparkleTrailStartStates[invanimnum][index]);
 
-	if (mo->player->invincibilitytimer > itemtime+(2*TICRATE))
+	if (mo->player && mo->player->invincibilitytimer > itemtime+(2*TICRATE))
 	{
 		sparkle->color = mo->color;
 		sparkle->colorized = true;
@@ -8634,7 +8634,7 @@ static void K_MoveHeldObjects(player_t *player)
 				mobj_t *curnext;
 				mobj_t *targ = player->mo;
 
-				if (P_IsObjectOnGround(player->mo) && player->speed > 0)
+				if (P_IsObjectOnGround(player->mo) && player->speed > 0 && player->bananadrag < 255)
 					player->bananadrag++;
 
 				while (cur && !P_MobjWasRemoved(cur))
