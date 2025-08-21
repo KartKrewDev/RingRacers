@@ -1316,7 +1316,7 @@ void G_GhostTicker(void)
 			continue;
 		}
 		// Pause jhosts that cross until the timer starts.
-		if (g->attackstart != INT32_MAX && leveltime < starttime && leveltime >= g->attackstart && G_TimeAttackStart())
+		if (g->attackstart != UINT32_MAX && leveltime < starttime && leveltime >= g->attackstart && G_TimeAttackStart())
 		{
 			continue;
 		}
@@ -1664,10 +1664,10 @@ skippedghosttic:
 			I_Error("Ghost is not a record attack ghost GHOSTEND"); //@TODO lmao don't blow up like this
 
 		// If the timer started, skip ahead until the ghost starts too.
-		if (!fastforward && attacktimingstarted && g->attackstart != INT32_MAX && leveltime < g->attackstart && G_TimeAttackStart())
+		if (!fastforward && attacktimingstarted && g->attackstart != UINT32_MAX && leveltime < g->attackstart && G_TimeAttackStart())
 		{
 			fastforward = g->attackstart - leveltime;
-			g->attackstart = INT32_MAX;
+			g->attackstart = UINT32_MAX;
 		}
 
 		if (fastforward)
@@ -2144,7 +2144,7 @@ void G_BeginRecording(void)
 
 	// If special attack-start timing applies, we need to know where to skip the ghost to
 	demoattack_p = demobuf.p;
-	WRITEUINT32(demobuf.p, INT32_MAX);
+	WRITEUINT32(demobuf.p, UINT32_MAX);
 
 	demosplits_p = demobuf.p;
 	for (i = 0; i < MAXSPLITS; i++)
@@ -2362,10 +2362,6 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 			tic_t endtime = UINT32_MAX;
 			if (points <= MAXSPLITS)
 				endtime = g->splits[points-1];
-
-			// Staff ghost oopsie. Fuckin, uh,
-			if (endtime == INT32_MAX)
-				endtime = UINT32_MAX;
 
 			if (lowestend > oldbest) // Not losing to any ghost
 			{
@@ -3668,6 +3664,21 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	for (i = 0; i < MAXSPLITS; i++)
 	{
 		splits[i] = READUINT32(p);
+	}
+
+	if (ghostversion < 0x0010)
+	{
+		// Staff ghost oopsie. Fuckin, uh,
+
+		if (attackstart == INT32_MAX)
+			attackstart = UINT32_MAX;
+
+		for (i = 0; i < MAXSPLITS; i++)
+		{
+			if (splits[i] != INT32_MAX)
+				continue;
+			splits[i] = UINT32_MAX;
+		}
 	}
 
 	// net var data
