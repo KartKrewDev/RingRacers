@@ -7712,7 +7712,7 @@ static void K_MoveHeldObjects(player_t *player)
 				mobj_t *curnext;
 				mobj_t *targ = player->mo;
 
-				if (P_IsObjectOnGround(player->mo) && player->speed > 0)
+				if (P_IsObjectOnGround(player->mo) && player->speed > 0 && player->bananadrag < 255)
 					player->bananadrag++;
 
 				while (cur && !P_MobjWasRemoved(cur))
