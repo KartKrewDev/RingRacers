@@ -235,6 +235,11 @@ static const struct {
 	
 	{META_SONICLOOPVARS,	"sonicloopvars_t"},
 	{META_SONICLOOPCAMVARS,	"sonicloopcamvars_t"},
+	
+	{META_SPLASH,       "t_splash_t"},
+	{META_FOOTSTEP,     "t_footstep_t"},
+	{META_OVERLAY,      "t_overlay_t"},
+	{META_TERRAIN,      "terrain_t"},
 	{NULL,              NULL}
 };
 
