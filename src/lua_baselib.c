@@ -3550,6 +3550,16 @@ static int lib_kIsPlayerLosing(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetPlayerDontDrawFlag(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_GetPlayerDontDrawFlag(player));
+	return 1;
+}
+
 static int lib_kIsPlayerWanted(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -3573,6 +3583,18 @@ static int lib_kKartBouncing(lua_State *L)
 	return 0;
 }
 
+static int lib_kKartPainEnergyFling(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_KartPainEnergyFling(player);
+	return 0;
+}
+
+
 static int lib_kMatchGenericExtraFlags(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3586,10 +3608,88 @@ static int lib_kMatchGenericExtraFlags(lua_State *L)
 	return 0;
 }
 
+static int lib_kSpawnDashDustRelease(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_SpawnDashDustRelease(player);
+	return 0;
+}
+
+static int lib_kSpawnDriftBoostClip(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_SpawnDriftBoostClip(player);
+	return 0;
+}
+
+static int lib_kSpawnDriftBoostClipSpark(lua_State *L)
+{
+	mobj_t *clip = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!clip)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnDriftBoostClipSpark(clip);
+	return 0;
+}
+
+static int lib_kSpawnNormalSpeedLines(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_SpawnNormalSpeedLines(player);
+	return 0;
+}
+
+static int lib_kSpawnGardenTopSpeedLines(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_SpawnGardenTopSpeedLines(player);
+	return 0;
+}
+
+static int lib_kSpawnInvincibilitySpeedLines(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnInvincibilitySpeedLines(mo);
+	return 0;
+}
+
+static int lib_kSpawnBumpEffect(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnBumpEffect(mo);
+	return 0;
+}
+
 static int lib_kDoInstashield(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	NOHUD
+	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	K_DoInstashield(player);
@@ -3685,16 +3785,51 @@ static int lib_kTakeBumpersFromPlayer(lua_State *L)
 	return 0;
 }
 
+static int lib_kMineFlashScreen(lua_State *L)
+{
+	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	INLEVEL
+	NOHUD
+	if (!source)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_MineFlashScreen(source);
+	return 0;
+}
+
 static int lib_kSpawnMineExplosion(lua_State *L)
 {
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	UINT8 color = (UINT8)luaL_optinteger(L, 2, SKINCOLOR_KETCHUP);
+	skincolornum_t color = luaL_optinteger(L, 2, SKINCOLOR_KETCHUP);
 	tic_t delay = (tic_t)luaL_optinteger(L, 3, 0);
 	NOHUD
 	if (!source)
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_SpawnMineExplosion(source, color, delay);
 	return 0;
+}
+
+static int lib_kSpawnLandMineExplosion(lua_State *L)
+{
+	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	skincolornum_t color = luaL_optinteger(L, 2, SKINCOLOR_KETCHUP);
+	tic_t delay = (tic_t)luaL_optinteger(L, 3, 0);
+	NOHUD
+	INLEVEL
+	if (!source)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnLandMineExplosion(source, color, delay);
+	return 0;
+}
+
+static int lib_kDriftSparkColor(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INT32 charge = luaL_checkinteger(L, 2);
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_DriftSparkColor(player, charge));
+	return 1;
 }
 
 static int lib_kSpawnBoostTrail(lua_State *L)
@@ -3727,6 +3862,29 @@ static int lib_kSpawnWipeoutTrail(lua_State *L)
 	return 0;
 }
 
+static int lib_kSpawnDraftDust(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnDraftDust(mo);
+	return 0;
+}
+
+static int lib_kSpawnMagicianParticles(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	INT32 spread = luaL_optinteger(L, 2, 5);
+	NOHUD
+	INLEVEL
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnMagicianParticles(mo, spread);
+	return 0;
+}
+
 static int lib_kDriftDustHandling(lua_State *L)
 {
 	mobj_t *spawner = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3734,6 +3892,17 @@ static int lib_kDriftDustHandling(lua_State *L)
 	if (!spawner)
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_DriftDustHandling(spawner);
+	return 0;
+}
+
+static int lib_kSquish(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_Squish(mo);
 	return 0;
 }
 
@@ -3809,6 +3978,39 @@ static int lib_kGetKartDriftSparkValue(lua_State *L)
 	return 1;
 }
 
+static int lib_kStairJankFlip(lua_State *L)
+{
+	INT32 value = luaL_checkinteger(L, 1);
+	INLEVEL
+	lua_pushinteger(L, K_StairJankFlip(value));
+	return 1;
+}
+
+static int lib_kSpawnDriftBoostExplosion(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT8 stage = luaL_checkinteger(L, 2);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_SpawnDriftBoostExplosion(player, stage);
+	return 0;
+}
+
+static int lib_kSpawnDriftElectricSparks(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	skincolornum_t color = luaL_checkinteger(L, 2);
+	boolean shockwave = lua_optboolean(L, 3);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_SpawnDriftElectricSparks(player, color, shockwave);
+	return 0;
+}
+
 static int lib_kKartUpdatePosition(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -3879,6 +4081,17 @@ static int lib_kMomentumToFacing(lua_State *L)
 	return 0;
 }
 
+static int lib_kSpawnWaterRunParticles(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnWaterRunParticles(mobj);
+	return 0;
+}
+
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -3918,6 +4131,33 @@ static int lib_kGetItemPatch(lua_State *L)
 	//HUDSAFE
 	lua_pushstring(L, K_GetItemPatch(item, tiny));
 	return 1;
+}
+
+static int lib_kGetInvincibilityItemFrame(lua_State *L)
+{
+	INLEVEL
+	lua_pushinteger(L, K_GetInvincibilityItemFrame());
+	return 1;
+}
+
+static int lib_kGetOrbinautItemFrame(lua_State *L)
+{
+	UINT8 count = luaL_optinteger(L, 1, 1);
+	lua_pushinteger(L, K_GetOrbinautItemFrame(count));
+	return 1;
+}
+
+static int lib_kUpdateMobjItemOverlay(lua_State *L)
+{
+	mobj_t *part = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	SINT8 itemType = luaL_optinteger(L, 2, 0);
+	UINT8 itemCount = luaL_optinteger(L, 3, 0);
+	NOHUD
+	INLEVEL
+	if (!part)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_UpdateMobjItemOverlay(part, itemType, itemCount);
+	return 0;
 }
 
 static int lib_kGetCollideAngle(lua_State *L)
@@ -4293,10 +4533,19 @@ static luaL_Reg lib[] = {
 	{"K_PlayPainSound", lib_kPainSound},
 	{"K_PlayHitEmSound", lib_kHitEmSound},
 	{"K_TryHurtSoundExchange", lib_kTryHurtSoundExchange},
+	{"K_GetPlayerDontDrawFlag", lib_kGetPlayerDontDrawFlag},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
 	{"K_KartBouncing",lib_kKartBouncing},
+	{"K_KartPainEnergyFling",lib_kKartPainEnergyFling},
 	{"K_MatchGenericExtraFlags",lib_kMatchGenericExtraFlags},
+	{"K_SpawnDashDustRelease",lib_kSpawnDashDustRelease},
+	{"K_SpawnDriftBoostClip",lib_kSpawnDriftBoostClip},
+	{"K_SpawnDriftBoostClipSpark",lib_kSpawnDriftBoostClipSpark},
+	{"K_SpawnNormalSpeedLines",lib_kSpawnNormalSpeedLines},
+	{"K_SpawnGardenTopSpeedLines",lib_kSpawnGardenTopSpeedLines},
+	{"K_SpawnInvincibilitySpeedLines",lib_kSpawnInvincibilitySpeedLines},
+	{"K_SpawnBumpEffect",lib_kSpawnBumpEffect},
 	{"K_DoInstashield",lib_kDoInstashield},
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
 	{"K_SpinPlayer",lib_kSpinPlayer},
@@ -4304,17 +4553,26 @@ static luaL_Reg lib[] = {
 	{"K_StumblePlayer",lib_kStumblePlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
+	{"K_MineFlashScreen",lib_kMineFlashScreen},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
+	{"K_SpawnLandMineExplosion",lib_kSpawnLandMineExplosion},
+	{"K_DriftSparkColor",lib_kDriftSparkColor},
 	{"K_SpawnBoostTrail",lib_kSpawnBoostTrail},
 	{"K_SpawnSparkleTrail",lib_kSpawnSparkleTrail},
 	{"K_SpawnWipeoutTrail",lib_kSpawnWipeoutTrail},
+	{"K_SpawnDraftDust",lib_kSpawnDraftDust},
+	{"K_SpawnMagicianParticles",lib_kSpawnMagicianParticles},
 	{"K_DriftDustHandling",lib_kDriftDustHandling},
+	{"K_Squish",lib_kSquish},
 	{"K_DoSneaker",lib_kDoSneaker},
 	{"K_DoPogoSpring",lib_kDoPogoSpring},
 	{"K_KillBananaChain",lib_kKillBananaChain},
 	{"K_RepairOrbitChain",lib_kRepairOrbitChain},
 	{"K_FindJawzTarget",lib_kFindJawzTarget},
 	{"K_GetKartDriftSparkValue",lib_kGetKartDriftSparkValue},
+	{"K_StairJankFlip",lib_kStairJankFlip},
+	{"K_SpawnDriftBoostExplosion",lib_kSpawnDriftBoostExplosion},
+	{"K_SpawnDriftElectricSparks",lib_kSpawnDriftElectricSparks},
 	{"K_KartUpdatePosition",lib_kKartUpdatePosition},
 	{"K_PopPlayerShield",lib_kPopPlayerShield},
 	{"K_DropHnextList",lib_kDropHnextList},
@@ -4322,11 +4580,15 @@ static luaL_Reg lib[] = {
 	{"K_StripItems",lib_kStripItems},
 	{"K_StripOther",lib_kStripOther},
 	{"K_MomentumToFacing",lib_kMomentumToFacing},
+	{"K_SpawnWaterRunParticles",lib_kSpawnWaterRunParticles},
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
 	{"K_GetItemPatch",lib_kGetItemPatch},
-
+	{"K_GetInvincibilityItemFrame",lib_kGetInvincibilityItemFrame},
+	{"K_GetOrbinautItemFrame",lib_kGetOrbinautItemFrame},
+	{"K_UpdateMobjItemOverlay",lib_kUpdateMobjItemOverlay},
+	
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
 

@@ -5973,7 +5973,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	if (leveltime & 2)
 		index = 1;
 
-	invtime = mo->player->invincibilitytimer/TICRATE+1;
+	invtime = mo->player ? mo->player->invincibilitytimer/TICRATE+1 : 11;
 
 	//CONS_Printf("%d\n", index);
 
@@ -6003,7 +6003,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 
 	P_SetMobjState(sparkle, K_SparkleTrailStartStates[invanimnum][index]);
 
-	if (mo->player->invincibilitytimer > itemtime+(2*TICRATE))
+	if (mo->player && mo->player->invincibilitytimer > itemtime+(2*TICRATE))
 	{
 		sparkle->color = mo->color;
 		sparkle->colorized = true;
