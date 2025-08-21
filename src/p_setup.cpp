@@ -9501,6 +9501,67 @@ void Command_dumprrautomedaltimes(void)
 	fclose(out);
 }
 
+void Command_Platinums(void)
+{
+	srb2::Vector<std::string> platinums;
+
+	for (INT32 j = 0; j < nummapheaders; j++)
+	{
+		mapheader_t *map = mapheaderinfo[j];
+
+		if (map == NULL || map->ghostCount < 1)
+			continue;
+
+		// Gather staff ghost times
+		srb2::Vector<tic_t> stafftimes;
+		for (int i = 0; i < map->ghostCount; i++)
+		{
+			tic_t time = map->ghostBrief[i]->time;
+			if (time <= 0)
+			{
+				continue;
+			}
+
+			stafftimes.push_back(map->ghostBrief[i]->time);
+		}
+
+		if (stafftimes.empty())
+		{
+			continue;
+		}
+
+		std::sort(stafftimes.begin(), stafftimes.end());
+
+		for (int i = 0; i < map->ghostCount; i++)
+		{
+			tic_t time = map->ghostBrief[i]->time;
+			if (time == stafftimes.at(0))
+			{
+				tic_t delta = map->automedaltime[1] - map->automedaltime[0];
+
+				CONS_Printf("%s: %s (-%s)\n", map->lumpname, map->ghostBrief[i]->name, va("%d\"%02d",
+					G_TicsToSeconds(delta),
+					G_TicsToCentiseconds(delta))
+				);
+				platinums.push_back(map->ghostBrief[i]->name);
+				break;
+			}
+		}
+	}
+
+	std::unordered_map<std::string, int> frequency;
+
+    for (const auto& platinum : platinums)
+	{
+        frequency[platinum]++;
+    }
+
+    for (const auto& pair : frequency)
+	{
+		CONS_Printf("%s: %d\n", pair.first.c_str(), pair.second);
+    }
+}
+
 //
 // Add a wadfile to the active wad files,
 // replace sounds, musics, patches, textures, sprites and maps
