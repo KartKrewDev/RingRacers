@@ -301,7 +301,7 @@ struct Cloud : Mobj
 
 		bob_in_place(this, 8, 64);
 		voice_loop(sfx_s3kcfl);
-		
+
 		if (leveltime % (TICRATE/3) == 0 && follow()->player->rings > -20) // toxomister ring drain
 		{
 			follow()->player->rings--;
@@ -358,6 +358,9 @@ struct Cloud : Mobj
 		if (K_PuntCollide(this, toucher))
 			return true;
 
+		if (toucher->player && target() && !P_MobjWasRemoved(target()) && target()->player && G_SameTeam(toucher->player, target()->player))
+			return false;
+
 		if (toucher->player)
 		{
 			if (this == toucher->player->toxomisterCloud)  // already attached
@@ -411,6 +414,12 @@ void Pole::spawn_clouds_in_orbit()
 		cloud->hitlag(2 + i * 4);
 		cloud->scale_between(1, cloud->scale(), cloud->scale() / 5);
 		cloud->fuse = 15*TICRATE;
+
+		if (target()->player && target()->player->team)
+		{
+			cloud->colorized = true;
+			cloud->color = target()->color;
+		}
 
 		a += a_incr;
 	}
