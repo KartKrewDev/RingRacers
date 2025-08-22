@@ -10003,7 +10003,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
 				continue;
 
-			if (players[i].position != 1 && players[i].position >= (D_NumPlayersInRace()*3)/4) //Not in 1st, but also back quarter of the average
+			if (players[i].position != 1 && players[i].position >= ((D_NumPlayersInRace()*3)/4) - 1) // Not in 1st, but also back quarter of the average (-1 guy, for leeway)
 			{
 				counted++;
 				average += K_UndoMapScaling(players[i].distancetofinish);
@@ -10020,7 +10020,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			average = firstRaw;
 		}
-
+		
 		UINT32 REALLY_FAR = average + 10000; // This far back, get max gain
 		UINT32 TOO_CLOSE = average + 7000; // Start gaining here, lose if closer
 		UINT32 WAY_TOO_CLOSE = average + 6000; // Lose at max rate here
