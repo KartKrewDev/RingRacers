@@ -4410,6 +4410,17 @@ static int lib_kCheckPlayersRespawnColliding(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetKartRingPower(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	boolean boosted = lua_opttrueboolean(L, 2);
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_GetKartRingPower(player, boosted));
+	return 1;
+}
+
 static int lib_kGetKartDriftSparkValue(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5784,6 +5795,7 @@ static luaL_Reg lib[] = {
 	{"K_RepairOrbitChain",lib_kRepairOrbitChain},
 	{"K_FindJawzTarget",lib_kFindJawzTarget},
 	{"K_CheckPlayersRespawnColliding",lib_kCheckPlayersRespawnColliding},
+	{"K_GetKartRingPower",lib_kGetKartRingPower},
 	{"K_GetKartDriftSparkValue",lib_kGetKartDriftSparkValue},
 	{"K_StairJankFlip",lib_kStairJankFlip},
 	{"K_SpawnDriftBoostExplosion",lib_kSpawnDriftBoostExplosion},
