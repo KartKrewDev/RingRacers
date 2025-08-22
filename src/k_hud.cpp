@@ -4574,17 +4574,17 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
             mirror = true;
         }
     }
-	
+
 	// Adjust for Lua disabling things underneath or to the left of the speedometer.
 	if (!LUA_HudEnabled(hud_rings))
-	{		
+	{
 		if (r_splitscreen < 2)
 		{
 			fy += 14;
 		}
 		// For 4P race, only check if it's a race.
 		// For 4P battle/capsules, check if it's either prisons or battle, AND check if that element isn't disabled.
-		else if ((gametyperules & GTR_CIRCUIT) == GTR_CIRCUIT || 
+		else if ((gametyperules & GTR_CIRCUIT) == GTR_CIRCUIT ||
 		((battleprisons || (gametyperules & GTR_BUMPERS) == GTR_BUMPERS) && !LUA_HudEnabled(hud_gametypeinfo)))
 		{
 			fx -= 44;
@@ -4716,7 +4716,7 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 	{
 		fy += 9;
 	}
-	
+
 	// Adjust for Lua disabling things underneath the speedometer.
 	if (!LUA_HudEnabled(hud_rings))
 	{
@@ -4729,6 +4729,9 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 	V_DrawScaledPatch(LAPS_X+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
 	V_DrawScaledPatch(LAPS_X+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
 	V_DrawScaledPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
+
+	// debug
+	V_DrawThinString(LAPS_X+7, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d\%", stplyr->loneliness*100/FRACUNIT));
 
 	K_drawKartAccessibilityIcons(gametypeinfoshown, 56);
 }

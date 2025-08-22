@@ -3964,7 +3964,7 @@ static fixed_t K_GetKartSpeedAssist(const player_t *player)
 	if (player->loneliness < 0)
 		return FRACUNIT;
 
-	fixed_t MAX_SPEED_ASSIST = FRACUNIT;
+	fixed_t MAX_SPEED_ASSIST = FRACUNIT/3;
 
 	return FRACUNIT + FixedMul(player->loneliness, MAX_SPEED_ASSIST);
 }
@@ -10021,17 +10021,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			average = firstRaw;
 		}
 
-		UINT32 REALLY_FAR = average + 3000; // This far back, get max gain
-		UINT32 TOO_CLOSE = average + 1000; // Start gaining here, lose if closer
+		UINT32 REALLY_FAR = average + 6000; // This far back, get max gain
+		UINT32 TOO_CLOSE = average + 3000; // Start gaining here, lose if closer
 		UINT32 WAY_TOO_CLOSE = average; // Lose at max rate here
 
-		fixed_t MAX_GAIN_PER_SEC = FRACUNIT/10; // % assist to gain per sec when REALLY_FAR
-		fixed_t MAX_LOSS_PER_SEC = FRACUNIT/10; // % assist to lose per sec when WAY_TOO_CLOSE
+		fixed_t MAX_GAIN_PER_SEC = FRACUNIT/40; // % assist to gain per sec when REALLY_FAR
+		fixed_t MAX_LOSS_PER_SEC = FRACUNIT/20; // % assist to lose per sec when WAY_TOO_CLOSE
 
 		UINT32 gaingap = REALLY_FAR - TOO_CLOSE;
 		UINT32 lossgap = TOO_CLOSE - WAY_TOO_CLOSE;
-
-		CONS_Printf("Mine %d - %d / %d / %d\n", player->distancetofinish, WAY_TOO_CLOSE, TOO_CLOSE, REALLY_FAR);
 
 		UINT32 mydist = K_UndoMapScaling(player->distancetofinish);
 
@@ -10045,12 +10043,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			gain = FixedMul(gain, gainrate);
 
 			player->loneliness += gain;
-
-			CONS_Printf("gaining @ %d - %d\n", gainrate, player->loneliness);
 		}
 		else
 		{
 			fixed_t loss = MAX_LOSS_PER_SEC / TICRATE;
+			if (mydist < WAY_TOO_CLOSE)
+				mydist = WAY_TOO_CLOSE;
 			fixed_t lossrate = FRACUNIT * (mydist - WAY_TOO_CLOSE) / lossgap;
 			lossrate = FRACUNIT - clamp(lossrate, 0, FRACUNIT);
 			lossrate = Easing_InCubic(lossrate, 0, FRACUNIT);
@@ -10058,7 +10056,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			loss = FixedMul(loss, lossrate);
 
 			player->loneliness -= loss;
-			CONS_Printf("LOSING @ %d - %d\n", lossrate, player->loneliness);
 		}
 
 		player->loneliness = clamp(player->loneliness, 0, FRACUNIT);
