@@ -4303,6 +4303,21 @@ static int lib_kDropPaperItem(lua_State *L)
 	return 0;
 }
 
+static int lib_kCreatePaperItem(lua_State *L)
+{
+	fixed_t x = luaL_checkfixed(L, 1);
+	fixed_t y = luaL_checkfixed(L, 2);
+	fixed_t z = luaL_checkfixed(L, 3);
+	angle_t angle = luaL_optinteger(L, 4, 0);
+	SINT8 flip = luaL_optinteger(L, 5, 0);
+	UINT8 type = luaL_optinteger(L, 6, 0);
+	UINT16 amount = luaL_optinteger(L, 7, 1);
+	NOHUD
+	INLEVEL
+	LUA_PushUserdata(L, K_CreatePaperItem(x, y, z, angle, flip, type, amount), META_MOBJ);
+	return 1;
+}
+
 static int lib_kPopPlayerShield(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5536,6 +5551,7 @@ static luaL_Reg lib[] = {
 	{"K_SpawnDriftElectricSparks",lib_kSpawnDriftElectricSparks},
 	{"K_KartUpdatePosition",lib_kKartUpdatePosition},
 	{"K_DropPaperItem",lib_kDropPaperItem},
+	{"K_CreatePaperItem",lib_kCreatePaperItem},
 	{"K_PopPlayerShield",lib_kPopPlayerShield},
 	{"K_DropHnextList",lib_kDropHnextList},
 	{"K_DropItems",lib_kDropItems},
