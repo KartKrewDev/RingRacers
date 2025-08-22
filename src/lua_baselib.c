@@ -3751,6 +3751,20 @@ static int lib_kSpawnDashDustRelease(lua_State *L)
 	return 0;
 }
 
+static int lib_kAwardPlayerRings(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT16 rings = luaL_checkinteger(L, 2);
+	boolean overload = lua_opttrueboolean(L, 3);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_AwardPlayerRings(player, rings, overload);
+	return 0;
+}
+
 static int lib_kSpawnDriftBoostClip(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5474,6 +5488,7 @@ static luaL_Reg lib[] = {
 	{"K_MomentumAngleEx",lib_kMomentumAngleEx},
 	{"K_MomentumAngleReal",lib_kMomentumAngleReal},
 	{"K_MomentumAngle",lib_kMomentumAngle},
+	{"K_AwardPlayerRings",lib_kAwardPlayerRings},
 	{"K_DoInstashield",lib_kDoInstashield},
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
 	{"K_RemoveGrowShrink",lib_kRemoveGrowShrink},
