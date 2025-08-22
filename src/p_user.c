@@ -4355,6 +4355,19 @@ void P_PlayerThink(player_t *player)
 		else if (player->kickstartaccel < ACCEL_KICKSTART)
 		{
 			player->kickstartaccel++;
+
+			if ((
+				player->kickstartaccel < ACCEL_KICKSTART
+				&& player->spindash != 0 // spindashings
+			) && (
+				player->rings <= 0 // desperation
+				|| (G_TimeAttackStart() && leveltime < starttime) // TA
+			))
+			{
+				// Double speed fill
+				player->kickstartaccel++;
+			}
+
 			if ((player->kickstartaccel == ACCEL_KICKSTART) && !K_PlayerUsesBotMovement(player) && P_IsDisplayPlayer(player))
 			{
 				S_StartSound(NULL, sfx_ding);
