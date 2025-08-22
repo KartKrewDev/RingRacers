@@ -3998,6 +3998,17 @@ static int lib_kStumbleSlope(lua_State *L)
 	return 1;
 }
 
+static int lib_kTumbleInterrupt(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_TumbleInterrupt(player);
+	return 0;
+}
+
 static int lib_kStumblePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5573,6 +5584,7 @@ static luaL_Reg lib[] = {
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_StumbleSlope",lib_kStumbleSlope},
+	{"K_TumbleInterrupt",lib_kTumbleInterrupt},
 	{"K_StumblePlayer",lib_kStumblePlayer},
 	{"K_CheckStumble",lib_kCheckStumble},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
