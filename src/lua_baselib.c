@@ -31,7 +31,9 @@
 #include "k_boss.h"
 #include "k_collide.h"
 #include "k_color.h"
+#include "k_endcam.h"
 #include "k_hud.h"
+#include "k_specialstage.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "k_menu.h" // Player Setup menu color stuff
 #include "p_spec.h" // P_StartQuake
@@ -1680,6 +1682,18 @@ static int lib_pGivePlayerRings(lua_State *L)
 	return 1;
 }
 
+static int lib_pGivePlayerSpheres(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INT32 num_spheres = (INT32)luaL_checkinteger(L, 2);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, P_GivePlayerSpheres(player, num_spheres));
+	return 1;
+}
+
 static int lib_pGivePlayerLives(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1714,6 +1728,16 @@ static int lib_pDoPlayerExit(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	P_DoPlayerExit(player, flags);
+	return 0;
+}
+
+static int lib_pDoAllPlayersExit(lua_State *L)
+{
+	pflags_t flags = luaL_checkinteger(L, 1);
+	boolean trygivelife = lua_optboolean(L, 2);
+	NOHUD
+	INLEVEL
+	P_DoAllPlayersExit(flags, trygivelife);
 	return 0;
 }
 
@@ -3463,6 +3487,29 @@ static int lib_gTicsToMilliseconds(lua_State *L)
 	return 1;
 }
 
+// K_ENDCAM
+////////////
+
+static int lib_kStartRoundWinCamera(lua_State *L)
+{
+	mobj_t *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t focusAngle = luaL_checkangle(L, 2);
+	fixed_t finalRadius = luaL_checkfixed(L, 3);
+	tic_t panDuration = luaL_checkinteger(L, 4);
+	fixed_t panSpeed = luaL_checkfixed(L, 5);
+	NOHUD
+	INLEVEL
+	K_StartRoundWinCamera(origin, focusAngle, finalRadius, panDuration, panSpeed);
+	return 0;
+}
+
+static int lib_kEndCameraIsFreezing(lua_State *L)
+{
+	INLEVEL
+	lua_pushboolean(L, K_EndCameraIsFreezing());
+	return 1;
+}
+
 // K_HUD
 ////////////
 
@@ -3676,6 +3723,17 @@ static int lib_kGetMobjWeight(lua_State *L)
 	return 1;
 }
 
+static int lib_kPlayerJustBumped(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_PlayerJustBumped(player);
+	return 0;
+}
+
 static int lib_kKartBouncing(lua_State *L)
 {
 	mobj_t *mobj1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3713,6 +3771,20 @@ static int lib_kFlipFromObject(lua_State *L)
 	return 0;
 }
 
+static int lib_kKartSolidBounce(lua_State *L)
+{
+	mobj_t *bounceMobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *solidMobj = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!bounceMobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	if (!solidMobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushboolean(L, K_KartSolidBounce(bounceMobj, solidMobj));
+	return 1;
+}
+
 static int lib_kMatchGenericExtraFlags(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3734,6 +3806,20 @@ static int lib_kSpawnDashDustRelease(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	K_SpawnDashDustRelease(player);
+	return 0;
+}
+
+static int lib_kAwardPlayerRings(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT16 rings = luaL_checkinteger(L, 2);
+	boolean overload = lua_opttrueboolean(L, 3);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	
+	K_AwardPlayerRings(player, rings, overload);
 	return 0;
 }
 
@@ -3867,6 +3953,46 @@ static int lib_kDoInstashield(lua_State *L)
 	return 0;
 }
 
+static int lib_kDoPowerClash(lua_State *L)
+{
+	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *t2 = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!t1 || !t2)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_DoPowerClash(t1, t2);
+	return 0;
+}
+
+static int lib_kDoGuardBreak(lua_State *L)
+{
+	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *t2 = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!t1 || !t2)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_DoGuardBreak(t1, t2);
+	return 0;
+}
+
+static int lib_kBattleAwardHit(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	player_t *victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));;
+	mobj_t *inflictor = NULL;
+	INT32 damage = (INT32)luaL_optinteger(L, 4, 0);
+	NOHUD
+	INLEVEL
+	if (!player || !victim)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+		inflictor = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+	K_BattleAwardHit(player, victim, inflictor, damage);
+	return 0;
+}
+
 static int lib_kSpawnBattlePoints(lua_State *L)
 {
 	player_t *source = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -3947,6 +4073,17 @@ static int lib_kStumbleSlope(lua_State *L)
 	return 1;
 }
 
+static int lib_kTumbleInterrupt(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_TumbleInterrupt(player);
+	return 0;
+}
+
 static int lib_kStumblePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -3987,6 +4124,35 @@ static int lib_kExplodePlayer(lua_State *L)
 	return 1;
 }
 
+static int lib_kDebtStingPlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	mobj_t *source = NULL;
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		source = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_DebtStingPlayer(player, source);
+	return 0;
+}
+
+static int lib_kGiveBumpersToPlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	player_t *victim = NULL;
+	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+	K_GiveBumpersToPlayer(player, victim, amount);
+	return 0;
+}
+
 static int lib_kTakeBumpersFromPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4009,6 +4175,21 @@ static int lib_kMineFlashScreen(lua_State *L)
 	if (!source)
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_MineFlashScreen(source);
+	return 0;
+}
+
+static int lib_kGivePointsToPlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	player_t *victim = NULL;
+	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+	K_GivePointsToPlayer(player, victim, amount);
 	return 0;
 }
 
@@ -4122,6 +4303,27 @@ static int lib_kSquish(lua_State *L)
 	return 0;
 }
 
+static int lib_kThrowKartItem(lua_State *L)
+{
+	tm_t ptm = g_tm;
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	boolean missile = luaL_checkboolean(L, 2);
+	mobjtype_t mapthing = luaL_checkinteger(L, 3);
+	INT32 defaultDir = luaL_optinteger(L, 4, 0);
+	INT32 altthrow = luaL_optinteger(L, 5, 0);
+	angle_t angleOffset = luaL_optinteger(L, 6, 0);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (mapthing >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", mapthing, NUMMOBJTYPES-1);
+	LUA_PushUserdata(L, K_ThrowKartItem(player, missile, mapthing, 
+		defaultDir, altthrow, angleOffset), META_MOBJ);
+	P_RestoreTMStruct(ptm); // This avoids a g_tm assert.
+	return 1;
+}
+
 static int lib_kDoSneaker(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4142,6 +4344,18 @@ static int lib_kDoPogoSpring(lua_State *L)
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_DoPogoSpring(mo, vertispeed, sound);
+	return 0;
+}
+
+static int lib_kDoInvincibility(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	tic_t time = luaL_checkinteger(L, 2);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_DoInvincibility(player, time);
 	return 0;
 }
 
@@ -4175,12 +4389,13 @@ static int lib_kFindJawzTarget(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	player_t *source = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
-	//HUDSAFE
+	angle_t angle = luaL_checkangle(L, 3);
+	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (!source)
 		return LUA_ErrInvalid(L, "player_t");
-	LUA_PushUserdata(L, K_FindJawzTarget(actor, source, ANGLE_45), META_PLAYER);
+	LUA_PushUserdata(L, K_FindJawzTarget(actor, source, angle), META_MOBJ);
 	return 1;
 }
 
@@ -4193,6 +4408,49 @@ static int lib_kCheckPlayersRespawnColliding(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	lua_pushboolean(L, K_CheckPlayersRespawnColliding(player-players, x, y));
+	return 1;
+}
+
+static int lib_kGetKartRingPower(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	boolean boosted = lua_opttrueboolean(L, 2);
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_GetKartRingPower(player, boosted));
+	return 1;
+}
+
+static int lib_kUpdateSteeringValue(lua_State *L)
+{
+	fixed_t inputSteering = luaL_checkinteger(L, 1);
+	fixed_t destSteering = luaL_checkinteger(L, 2);
+	lua_pushinteger(L, K_UpdateSteeringValue(inputSteering, destSteering));
+	return 1;
+}
+
+static int lib_kGetKartTurnValue(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INT16 turnvalue = luaL_checkinteger(L, 2);
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_GetKartTurnValue(player, turnvalue));
+	return 1;
+}
+
+static int lib_kGetUnderwaterTurnAdjust(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (player->mo) // the function itself doesn't do this check.
+		lua_pushinteger(L, K_GetUnderwaterTurnAdjust(player));
+	else
+		lua_pushinteger(L, 0);
 	return 1;
 }
 
@@ -4239,6 +4497,17 @@ static int lib_kSpawnDriftElectricSparks(lua_State *L)
 	return 0;
 }
 
+static int lib_kGetKartDriftSparkValueForStage(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT8 stage = luaL_checkinteger(L, 2);
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_GetKartDriftSparkValueForStage(player, stage));
+	return 1;
+}
+
 static int lib_kKartUpdatePosition(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4260,6 +4529,60 @@ static int lib_kDropPaperItem(lua_State *L)
 		return LUA_ErrInvalid(L, "player_t");
 	K_DropPaperItem(player, itemtype, itemamount);
 	return 0;
+}
+
+static int lib_kUpdateAllPlayerPositions(lua_State *L)
+{
+	NOHUD
+	INLEVEL
+	K_UpdateAllPlayerPositions();
+	return 0;
+}
+
+static int lib_kGetTotallyRandomResult(lua_State *L)
+{
+	UINT32 useodds = luaL_optinteger(L, 1, 0);
+	NOHUD
+	INLEVEL
+	// useodds can't be higher than these values to prevent an assert:
+	useodds = min(7, useodds); // race
+	if (gametype == GT_BATTLE) // battle
+		useodds = min(1, useodds);
+	else if (specialstageinfo.valid == true) // special
+		useodds = min(3, useodds);
+	
+	lua_pushinteger(L, K_GetTotallyRandomResult(useodds));
+	return 1;
+}
+
+static int lib_kCreatePaperItem(lua_State *L)
+{
+	fixed_t x = luaL_checkfixed(L, 1);
+	fixed_t y = luaL_checkfixed(L, 2);
+	fixed_t z = luaL_checkfixed(L, 3);
+	angle_t angle = luaL_optinteger(L, 4, 0);
+	SINT8 flip = luaL_optinteger(L, 5, 0);
+	UINT8 type = luaL_optinteger(L, 6, 0);
+	UINT16 amount = luaL_optinteger(L, 7, 1);
+	NOHUD
+	INLEVEL
+	LUA_PushUserdata(L, K_CreatePaperItem(x, y, z, angle, flip, type, amount), META_MOBJ);
+	return 1;
+}
+
+static int lib_kFlingPaperItem(lua_State *L)
+{
+	fixed_t x = luaL_checkfixed(L, 1);
+	fixed_t y = luaL_checkfixed(L, 2);
+	fixed_t z = luaL_checkfixed(L, 3);
+	angle_t angle = luaL_optinteger(L, 4, 0);
+	SINT8 flip = luaL_optinteger(L, 5, 0);
+	UINT8 type = luaL_optinteger(L, 6, 0);
+	UINT16 amount = luaL_optinteger(L, 7, 1);
+	NOHUD
+	INLEVEL
+	LUA_PushUserdata(L, K_FlingPaperItem(x, y, z, angle, flip, type, amount), META_MOBJ);
+	return 1;
 }
 
 static int lib_kPopPlayerShield(lua_State *L)
@@ -4506,6 +4829,18 @@ static int lib_kGetKartSpeedFromStat(lua_State *L)
 	return 1;
 }
 
+static int lib_kApplyTripwire(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	tripwirestate_t state = luaL_checkinteger(L, 2);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_ApplyTripWire(player, state);
+	return 0;
+}
+
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4644,6 +4979,16 @@ static int lib_kPlayerEBrake(lua_State *L)
 	return 1;
 }
 
+static int lib_kPlayerGuard(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_PlayerGuard(player));
+	return 1;
+}
+
 static int lib_kSliptiding(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4701,6 +5046,17 @@ static int lib_kSetItemOut(lua_State *L)
 		return LUA_ErrInvalid(L, "player_t");
 	K_SetItemOut(player);
 	return 0;
+}
+
+static int lib_kFastFallBounce(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_FastFallBounce(player));
+	return 1;
 }
 
 static int lib_kUnsetItemOut(lua_State *L)
@@ -4804,6 +5160,30 @@ static int lib_kPlayerCanUseItem(lua_State *L)
 	return 1;
 }
 
+static int lib_kEggmanTransfer(lua_State *L)
+{
+	player_t *source = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	player_t *victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!source || !victim)
+		return LUA_ErrInvalid(L, "player_t");
+	K_EggmanTransfer(source, victim);
+	return 0;
+}
+
+static int lib_kSetTireGrease(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	tic_t tics = luaL_checkinteger(L, 2);
+	INLEVEL
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_SetTireGrease(player, tics);
+	return 0;
+}
+
 static int lib_kGetCollideAngle(lua_State *L)
 {
 	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -4829,6 +5209,20 @@ static int lib_kAddHitLag(lua_State *L)
 	return 0;
 }
 
+static int lib_kSetHitLagForObjects(lua_State *L)
+{
+	mobj_t *victim = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+	tic_t tics = (tic_t)luaL_checkinteger(L, 4);
+	boolean fromdamage = lua_opttrueboolean(L, 5);
+	INLEVEL
+	NOHUD
+	if (!victim || !inflictor || !source)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SetHitLagForObjects(victim, inflictor, source, tics, fromdamage);
+	return 0;
+}
 
 static int lib_kPowerUpRemaining(lua_State *L)
 {
@@ -5296,9 +5690,11 @@ static luaL_Reg lib[] = {
 	{"P_SpawnGhostMobj",lib_pSpawnGhostMobj},
 	{"P_SpawnFakeShadow",lib_pSpawnFakeShadow},
 	{"P_GivePlayerRings",lib_pGivePlayerRings},
+	{"P_GivePlayerSpheres",lib_pGivePlayerSpheres},
 	{"P_GivePlayerLives",lib_pGivePlayerLives},
 	{"P_MovePlayer",lib_pMovePlayer},
 	{"P_DoPlayerExit",lib_pDoPlayerExit},
+	{"P_DoAllPlayersExit",lib_pDoAllPlayersExit},
 	{"P_InstaThrust",lib_pInstaThrust},
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
@@ -5420,6 +5816,10 @@ static luaL_Reg lib[] = {
 	{"G_TicsToMilliseconds",lib_gTicsToMilliseconds},
 	{"getTimeMicros",lib_getTimeMicros},
 
+	// k_endcam
+	{"K_StartRoundWinCamera",lib_kStartRoundWinCamera},
+	{"K_EndCameraIsFreezing",lib_kEndCameraIsFreezing},
+
 	// k_hud
 	{"K_AddMessage", lib_kAddMessage},
 	{"K_AddMessageForPlayer", lib_kAddMessageForPlayer},
@@ -5442,9 +5842,11 @@ static luaL_Reg lib[] = {
 	{"K_GetKartGameSpeedScalar",lib_kGetKartGameSpeedScalar},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
 	{"K_GetMobjWeight",lib_kGetMobjWeight},
+	{"K_PlayerJustBumped",lib_kPlayerJustBumped},
 	{"K_KartBouncing",lib_kKartBouncing},
 	{"K_KartPainEnergyFling",lib_kKartPainEnergyFling},
 	{"K_FlipFromObject",lib_kFlipFromObject},
+	{"K_KartSolidBounce",lib_kKartSolidBounce},
 	{"K_MatchGenericExtraFlags",lib_kMatchGenericExtraFlags},
 	{"K_SpawnDashDustRelease",lib_kSpawnDashDustRelease},
 	{"K_SpawnDriftBoostClip",lib_kSpawnDriftBoostClip},
@@ -5458,18 +5860,26 @@ static luaL_Reg lib[] = {
 	{"K_MomentumAngleEx",lib_kMomentumAngleEx},
 	{"K_MomentumAngleReal",lib_kMomentumAngleReal},
 	{"K_MomentumAngle",lib_kMomentumAngle},
+	{"K_AwardPlayerRings",lib_kAwardPlayerRings},
 	{"K_DoInstashield",lib_kDoInstashield},
+	{"K_DoPowerClash",lib_kDoPowerClash},
+	{"K_DoGuardBreak",lib_kDoGuardBreak},
+	{"K_BattleAwardHit",lib_kBattleAwardHit},
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
 	{"K_RemoveGrowShrink",lib_kRemoveGrowShrink},
 	{"K_IsBigger",lib_kIsBigger},
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_StumbleSlope",lib_kStumbleSlope},
+	{"K_TumbleInterrupt",lib_kTumbleInterrupt},
 	{"K_StumblePlayer",lib_kStumblePlayer},
 	{"K_CheckStumble",lib_kCheckStumble},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
+	{"K_DebtStingPlayer",lib_kDebtStingPlayer},
+	{"K_GiveBumpersToPlayer",lib_kGiveBumpersToPlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_MineFlashScreen",lib_kMineFlashScreen},
+	{"K_GivePointsToPlayer",lib_kGivePointsToPlayer},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
 	{"K_SpawnLandMineExplosion",lib_kSpawnLandMineExplosion},
 	{"K_DriftSparkColor",lib_kDriftSparkColor},
@@ -5480,18 +5890,29 @@ static luaL_Reg lib[] = {
 	{"K_SpawnMagicianParticles",lib_kSpawnMagicianParticles},
 	{"K_DriftDustHandling",lib_kDriftDustHandling},
 	{"K_Squish",lib_kSquish},
+	{"K_ThrowKartItem",lib_kThrowKartItem},
 	{"K_DoSneaker",lib_kDoSneaker},
 	{"K_DoPogoSpring",lib_kDoPogoSpring},
+	{"K_DoInvincibility",lib_kDoInvincibility},
 	{"K_KillBananaChain",lib_kKillBananaChain},
 	{"K_RepairOrbitChain",lib_kRepairOrbitChain},
 	{"K_FindJawzTarget",lib_kFindJawzTarget},
 	{"K_CheckPlayersRespawnColliding",lib_kCheckPlayersRespawnColliding},
+	{"K_GetKartRingPower",lib_kGetKartRingPower},
+	{"K_UpdateSteeringValue",lib_kUpdateSteeringValue},
+	{"K_GetKartTurnValue",lib_kGetKartTurnValue},
+	{"K_GetUnderwaterTurnAdjust",lib_kGetUnderwaterTurnAdjust},
 	{"K_GetKartDriftSparkValue",lib_kGetKartDriftSparkValue},
 	{"K_StairJankFlip",lib_kStairJankFlip},
 	{"K_SpawnDriftBoostExplosion",lib_kSpawnDriftBoostExplosion},
 	{"K_SpawnDriftElectricSparks",lib_kSpawnDriftElectricSparks},
+	{"K_GetKartDriftSparkValueForStage",lib_kGetKartDriftSparkValueForStage},
 	{"K_KartUpdatePosition",lib_kKartUpdatePosition},
 	{"K_DropPaperItem",lib_kDropPaperItem},
+	{"K_UpdateAllPlayerPositions",lib_kUpdateAllPlayerPositions},
+	{"K_GetTotallyRandomResult",lib_kGetTotallyRandomResult},
+	{"K_CreatePaperItem",lib_kCreatePaperItem},
+	{"K_FlingPaperItem",lib_kFlingPaperItem},
 	{"K_PopPlayerShield",lib_kPopPlayerShield},
 	{"K_DropHnextList",lib_kDropHnextList},
 	{"K_DropItems",lib_kDropItems},
@@ -5516,6 +5937,7 @@ static luaL_Reg lib[] = {
 	{"K_GetSpindashChargeSpeed",lib_kGetSpindashChargeSpeed},
 	{"K_GrowShrinkSpeedMul",lib_kGrowShrinkSpeedMul},
 	{"K_GetKartSpeedFromStat",lib_kGetKartSpeedFromStat},
+	{"K_ApplyTripWire",lib_kApplyTripwire},
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
@@ -5547,9 +5969,16 @@ static luaL_Reg lib[] = {
 	{"K_BumperInflate",lib_kBumperInflate},
 	{"K_ThunderDome",lib_kThunderDome},
 	{"K_PlayerCanUseItem",lib_kPlayerCanUseItem},
+	{"K_PlayerGuard",lib_kPlayerGuard},
+	{"K_FastFallBounce",lib_kFastFallBounce},
+	{"K_EggmanTransfer",lib_kEggmanTransfer},
+	{"K_SetTireGrease",lib_kSetTireGrease},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
+	
+	// k_hitlag
 	{"K_AddHitLag",lib_kAddHitLag},
+	{"K_SetHitLagForObjects",lib_kSetHitLagForObjects},
 
 	// k_powerup
 	{"K_PowerUpRemaining",lib_kPowerUpRemaining},

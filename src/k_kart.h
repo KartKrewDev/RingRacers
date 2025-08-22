@@ -107,6 +107,7 @@ boolean K_TimeAttackRules(void);
 boolean K_CapsuleTimeAttackRules(void);
 
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
+void K_PlayerJustBumped(player_t *player);
 boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2);
 boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj);
 void K_KartPainEnergyFling(player_t *player);

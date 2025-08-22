@@ -815,7 +815,7 @@ static void K_SpawnBumpForObjs(mobj_t *mobj1, mobj_t *mobj2)
 	}
 }
 
-static void K_PlayerJustBumped(player_t *player)
+void K_PlayerJustBumped(player_t *player)
 {
 	mobj_t *playerMobj = NULL;
 
@@ -5008,7 +5008,7 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 {
 	INT32 length = TICRATE;
 
-	if (source->player)
+	if (source && source->player)
 	{
 		length += (4 * (source->player->kartweight - player->kartweight));
 	}
