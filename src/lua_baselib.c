@@ -4829,6 +4829,18 @@ static int lib_kGetKartSpeedFromStat(lua_State *L)
 	return 1;
 }
 
+static int lib_kApplyTripwire(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	tripwirestate_t state = luaL_checkinteger(L, 2);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_ApplyTripWire(player, state);
+	return 0;
+}
+
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5902,6 +5914,7 @@ static luaL_Reg lib[] = {
 	{"K_GetSpindashChargeSpeed",lib_kGetSpindashChargeSpeed},
 	{"K_GrowShrinkSpeedMul",lib_kGrowShrinkSpeedMul},
 	{"K_GetKartSpeedFromStat",lib_kGetKartSpeedFromStat},
+	{"K_ApplyTripWire",lib_kApplyTripwire},
 	{"K_GetKartSpeed",lib_kGetKartSpeed},
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
