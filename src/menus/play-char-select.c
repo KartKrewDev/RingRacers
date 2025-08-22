@@ -406,6 +406,8 @@ void M_CharacterSelect(INT32 choice)
 // Gets the selected follower's state for a given setup player.
 static void M_GetFollowerState(setup_player_t *p)
 {
+	if (p->followern < 0 || p->followern >= numfollowers)
+		return;
 
 	p->follower_state = &states[followers[p->followern].followstate];
 
