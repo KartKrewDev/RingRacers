@@ -454,7 +454,11 @@ Visibility is_object_visible(const mobj_t* mobj)
 	case MT_SPRAYCAN:
 	case MT_SUPER_FLICKY:
 		// Always flickers.
-		return Visibility::kFlicker;
+		// Actually no, it gave my friend a migraine, this will *not* always flicker
+		if (cv_reducevfx.value)
+			return Visibility::kTransparent;
+		else
+			return Visibility::kFlicker;
 
 	default:
 		// Transparent when not visible.
