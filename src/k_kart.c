@@ -16274,8 +16274,8 @@ void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount)
 			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|4;
 			break;
 		case KCAPSULE_RING:
-			part->sprite = SPR_ICAP;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|6;
+			part->sprite = SPR_IBON;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
 			break;
 		default:
 			if (itemType >= FIRSTPOWERUP)
