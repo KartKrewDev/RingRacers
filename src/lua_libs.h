@@ -107,6 +107,11 @@ extern lua_State *gL;
 #define META_SONICLOOPVARS "SONICLOOPVARS_T*"
 #define META_SONICLOOPCAMVARS "SONICLOOPCAMVARS_T*"
 
+#define META_SPLASH "T_SPLASH_T*"
+#define META_FOOTSTEP "T_FOOTSTEP_T*"
+#define META_OVERLAY "T_OVERLAY_T*"
+#define META_TERRAIN "TERRAIN_T*"
+
 boolean luaL_checkboolean(lua_State *L, int narg);
 
 int LUA_EnumLib(lua_State *L);
@@ -126,6 +131,7 @@ int LUA_PolyObjLib(lua_State *L);
 int LUA_BlockmapLib(lua_State *L);
 int LUA_HudLib(lua_State *L);
 int LUA_FollowerLib(lua_State *L);
+int LUA_TerrainLib(lua_State *L);
 
 #ifdef __cplusplus
 } // extern "C"
