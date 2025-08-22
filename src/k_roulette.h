@@ -109,6 +109,21 @@ fixed_t K_ItemOddsScale(UINT8 playerCount);
 UINT32 K_ScaleItemDistance(INT32 distance, UINT8 numPlayers);
 
 /*--------------------------------------------------
+	UINT32 K_UndoMapScaling(UINT32 distance)
+
+		Takes a raw map distance and adjusts it to
+		be in x1 scale.
+
+	Input Arguments:-
+		distance - Original distance.
+
+	Return:-
+		Distance unscaled by mapobjectscale.
+--------------------------------------------------*/
+
+UINT32 K_UndoMapScaling(UINT32 distance);
+
+/*--------------------------------------------------
 	void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 
 		Pushes a new item to the end of the item

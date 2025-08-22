@@ -874,6 +874,8 @@ struct player_t
 	UINT16 invincibilitytimer;	// Invincibility timer
 	UINT16 invincibilityextensions;	// Used to control invinc time gains when it's already been extended.
 
+	fixed_t loneliness;		// How long has a player been too far to interact? Do they need speed assist?
+
 	UINT8 eggmanexplode;	// Fake item recieved, explode in a few seconds
 	SINT8 eggmanblame;		// (-1 to 15) - Fake item recieved, who set this fake
 

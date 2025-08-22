@@ -77,7 +77,7 @@
 #define ROULETTE_SPEED_TIMEATTACK (9)
 #define ROULETTE_SPEED_VERSUS_SLOWEST (12)
 
-static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] = 
+static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 {
 	// distance, duplication tolerance
 	{20, 10}, // sneaker
@@ -104,7 +104,7 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{43, 5}, // gardentop
 	{0, 0}, // gachabom
 	{1, 2}, // stoneshoe
-	{1, 2}, // toxomister 
+	{1, 2}, // toxomister
 	{45, 6}, // dualsneaker
 	{55, 8}, // triplesneaker
 	{25, 2}, // triplebanana
@@ -114,7 +114,7 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{0, 0}, // triplegachabom
 };
 
-static UINT32 K_DynamicItemOddsBattle[NUMKARTRESULTS-1][2] = 
+static UINT32 K_DynamicItemOddsBattle[NUMKARTRESULTS-1][2] =
 {
 	// distance, duplication tolerance
 	{20, 1}, // sneaker
@@ -141,7 +141,7 @@ static UINT32 K_DynamicItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{0, 0}, // gardentop
 	{10, 5}, // gachabom
 	{0, 0}, // stoneshoe
-	{0, 0}, // toxomister 
+	{0, 0}, // toxomister
 	{0, 0}, // dualsneaker
 	{20, 1}, // triplesneaker
 	{0, 0}, // triplebanana
@@ -151,7 +151,7 @@ static UINT32 K_DynamicItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{10, 2}, // triplegachabom
 };
 
-static UINT32 K_DynamicItemOddsSpecial[NUMKARTRESULTS-1][2] = 
+static UINT32 K_DynamicItemOddsSpecial[NUMKARTRESULTS-1][2] =
 {
 	// distance, duplication tolerance
 	{15, 2}, // sneaker
@@ -178,7 +178,7 @@ static UINT32 K_DynamicItemOddsSpecial[NUMKARTRESULTS-1][2] =
 	{0, 0}, // gardentop
 	{0, 0}, // gachabom
 	{0, 0}, // stoneshoe
-	{0, 0}, // toxomister 
+	{0, 0}, // toxomister
 	{35, 2}, // dualsneaker
 	{0, 0}, // triplesneaker
 	{0, 0}, // triplebanana
@@ -277,7 +277,7 @@ static kartslotmachine_t K_KartItemReelRingBox[] =
 	KSM__MAX
 };
 
-static sfxenum_t ringboxsound[] = 
+static sfxenum_t ringboxsound[] =
 {
 	sfx_slot00,
 	sfx_slot01,
@@ -436,7 +436,7 @@ fixed_t K_ItemOddsScale(UINT8 playerCount)
 }
 
 /*--------------------------------------------------
-	static UINT32 K_UndoMapScaling(UINT32 distance)
+	UINT32 K_UndoMapScaling(UINT32 distance)
 
 		Takes a raw map distance and adjusts it to
 		be in x1 scale.
@@ -447,7 +447,7 @@ fixed_t K_ItemOddsScale(UINT8 playerCount)
 	Return:-
 		Distance unscaled by mapobjectscale.
 --------------------------------------------------*/
-static UINT32 K_UndoMapScaling(UINT32 distance)
+UINT32 K_UndoMapScaling(UINT32 distance)
 {
 	if (mapobjectscale != FRACUNIT)
 	{
@@ -1115,7 +1115,7 @@ static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roule
 
 	boolean notNearEnd = false;
 	boolean cooldownOnStart = false;
-	
+
 	switch (item)
 	{
 		case KITEM_BANANA:
@@ -1154,7 +1154,7 @@ static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roule
 		{
 			// In Race, we reintroduce and reenable this item to counter breakaway frontruns.
 			// No need to roll it if that's not the case.
-			return false; 
+			return false;
 			break;
 		}
 
@@ -1210,7 +1210,7 @@ void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, 
 	if (player != NULL)
 	{
 		roulette->baseDist = K_UndoMapScaling(player->distancetofinish);
-		
+
 		if (player->pflags & PF_AUTOROULETTE)
 			roulette->autoroulette = true;
 
@@ -1219,7 +1219,7 @@ void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, 
 
 	// Lua may want to intercept reelbuilder entirely.
 	LUA_HookPreFillItemRoulette(player, roulette, ringbox);
-	
+
 	// If prehook did something, no need to continue.
 	if (roulette->itemList.len != 0) {
 		return;
@@ -1229,7 +1229,7 @@ void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, 
 
 	// Lua can modify the final result.
 	LUA_HookFillItemRoulette(player, roulette, ringbox);
-	
+
 	// If somehow there's no items, add sad.
 	if (roulette->itemList.len == 0) {
 		if (roulette->ringbox)
@@ -1259,7 +1259,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	{
 		K_InitRoulette(roulette);
 	}
-	
+
 	if (ringbox == true)
 	{
 		// If this is being invoked by a Ring Box, it should literally never produce items.
@@ -1504,7 +1504,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		{
 			permit[i] = false;
 		}
-	}	
+	}
 
 	// == REEL CANDIDATE PREP
 	// Dynamic Roulette works by comparing an item's "ideal" distance to our current distance from 1st.
@@ -1548,7 +1548,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	if (player->position > 1) // Loneliness is expected when frontrunnning, don't influence their item table.
 	{
 		if ((gametyperules & GTR_CIRCUIT) && specialstageinfo.valid == false)
-		{	
+		{
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
@@ -1583,7 +1583,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	// incredibly forceful; there's a truly forced special case above.
 	fixed_t spb_odds = K_PercentSPBOdds(roulette, player->position);
 
-	if ((gametyperules & GTR_CIRCUIT) 
+	if ((gametyperules & GTR_CIRCUIT)
 		&& specialstageinfo.valid == false
 		&& (spb_odds > 0) & (spbplace == -1)
 		&& (roulette->preexpdist >= powers[KITEM_SPB]) // SPECIAL CASE: Check raw distance instead of EXP-influenced target distance.
@@ -1689,7 +1689,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	// This fills the spawnChance array with a rolling count of items,
 	// so that we can loop upward through it until we hit our random index.
 	for (i = 1; i < NUMKARTRESULTS; i++)
-	{	
+	{
 		// If an item is far too week for this reel, reject it.
 		// This can happen in regions of the odds with a lot of items that
 		// don't really like to be duplicated. Favor the player; high-rolling
@@ -1736,7 +1736,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 
 	// == FINALLY ADD THIS SHIT TO THE REEL
 	// Super simple: generate a random index,
-	// count up until we hit that index, 
+	// count up until we hit that index,
 	// insert that item and decrement everything after.
 	while (totalSpawnChance > 0)
 	{
@@ -2041,7 +2041,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 				S_StartSound(NULL, sfx_s240);
 			else
 				S_StartSound(NULL, sfx_itrol1 + roulette->sound);
-			
+
 			if (roulette->index == 0 && roulette->itemList.len > 1)
 			{
 				S_StartSound(NULL, sfx_kc50);

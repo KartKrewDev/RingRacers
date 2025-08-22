@@ -102,16 +102,16 @@ static int lib_iterateDisplayplayers(lua_State *L)
 	INT32 i = lua_tonumber(L, lua_upvalueindex(1));
 
 	if (lua_gettop(L) < 2)
-	{ 
+	{
 		lua_pushcclosure(L, lib_iterateDisplayplayers, 1);
 		return 1;
 	}
-		
+
 	if (i <= r_splitscreen)
 	{
 		if (!playeringame[displayplayers[i]])
 			return 0;
-		
+
 		// Return player and splitscreen index.
 		LUA_PushUserdata(L, &players[displayplayers[i]], META_PLAYER);
 		lua_pushnumber(L, i);
@@ -515,6 +515,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->invincibilitytimer);
 	else if (fastcmp(field,"invincibilityextensions"))
 		lua_pushinteger(L, plr->invincibilityextensions);
+	else if (fastcmp(field,"loneliness"))
+		lua_pushinteger(L, plr->loneliness);
 	else if (fastcmp(field,"eggmanexplode"))
 		lua_pushinteger(L, plr->eggmanexplode);
 	else if (fastcmp(field,"eggmanblame"))
@@ -748,7 +750,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"griefstrikes"))
 		lua_pushinteger(L, plr->griefStrikes);
 	else if (fastcmp(field,"griefwarned"))
-		lua_pushinteger(L, plr->griefWarned);		
+		lua_pushinteger(L, plr->griefWarned);
 	else if (fastcmp(field,"stairjank"))
 		lua_pushinteger(L, plr->stairjank);
 	else if (fastcmp(field,"splitscreenindex"))
@@ -947,9 +949,9 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"amps"))
 		plr->amps = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"amppickup"))
-		plr->amppickup = luaL_checkinteger(L, 3);	
+		plr->amppickup = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ampspending"))
-		plr->ampspending = luaL_checkinteger(L, 3);		
+		plr->ampspending = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"itemflags"))
 		plr->itemflags = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"outrun"))
@@ -1166,6 +1168,8 @@ static int player_set(lua_State *L)
 		plr->invincibilitytimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"invincibilityextensions"))
 		plr->invincibilityextensions = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"loneliness"))
+		plr->loneliness = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"eggmanexplode"))
 		plr->eggmanexplode = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"eggmanblame"))
@@ -1813,12 +1817,12 @@ int LUA_PlayerLib(lua_State *L)
 		lua_pushcfunction(L, ticcmd_set);
 		lua_setfield(L, -2, "__newindex");
 	lua_pop(L,1);
-	
+
 	luaL_newmetatable(L, META_SONICLOOPVARS);
 		lua_pushcfunction(L, sonicloopvars_get);
 		lua_setfield(L, -2, "__index");
 	lua_pop(L,1);
-	
+
 	luaL_newmetatable(L, META_SONICLOOPCAMVARS);
 		lua_pushcfunction(L, sonicloopcamvars_get);
 		lua_setfield(L, -2, "__index");
