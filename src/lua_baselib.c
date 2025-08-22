@@ -4302,6 +4302,27 @@ static int lib_kSquish(lua_State *L)
 	return 0;
 }
 
+static int lib_kThrowKartItem(lua_State *L)
+{
+	tm_t ptm = g_tm;
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	boolean missile = luaL_checkboolean(L, 2);
+	mobjtype_t mapthing = luaL_checkinteger(L, 3);
+	INT32 defaultDir = luaL_optinteger(L, 4, 0);
+	INT32 altthrow = luaL_optinteger(L, 5, 0);
+	angle_t angleOffset = luaL_optinteger(L, 6, 0);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (mapthing >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", mapthing, NUMMOBJTYPES-1);
+	LUA_PushUserdata(L, K_ThrowKartItem(player, missile, mapthing, 
+		defaultDir, altthrow, angleOffset), META_MOBJ);
+	P_RestoreTMStruct(ptm); // This avoids a g_tm assert.
+	return 1;
+}
+
 static int lib_kDoSneaker(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5755,6 +5776,7 @@ static luaL_Reg lib[] = {
 	{"K_SpawnMagicianParticles",lib_kSpawnMagicianParticles},
 	{"K_DriftDustHandling",lib_kDriftDustHandling},
 	{"K_Squish",lib_kSquish},
+	{"K_ThrowKartItem",lib_kThrowKartItem},
 	{"K_DoSneaker",lib_kDoSneaker},
 	{"K_DoPogoSpring",lib_kDoPogoSpring},
 	{"K_DoInvincibility",lib_kDoInvincibility},
