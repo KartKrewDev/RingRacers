@@ -79,6 +79,7 @@ automatically.
 	X (GameQuit),\
 	X (PlayerCmd),/* building the player's ticcmd struct */\
 	X (VoteThinker),/* Y_VoteTicker */\
+	X (GPRankPoints),/* K_CalculateGPRankPoints */\
 
 #define STRING_HOOK_LIST(X) \
 	X (SpecialExecute),\
@@ -146,6 +147,7 @@ void LUA_HookPlayerQuit(player_t *, kickreason_t);
 int  LUA_HookTeamSwitch(player_t *, int newteam, boolean fromspectators, boolean tryingautobalance, boolean tryingscramble);
 int  LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced);
 int  LUA_HookSeenPlayer(player_t *player, player_t *seenfriend);
+int LUA_HookGPRankPoints(UINT8 position, UINT8 numplayers, INT16 *points);
 
 #ifdef __cplusplus
 } // extern "C"
