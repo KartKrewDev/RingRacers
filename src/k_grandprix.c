@@ -21,7 +21,7 @@
 #include "m_random.h"
 #include "p_local.h"
 #include "r_things.h"
-#include "lua_hook.h" // LUA_HookGPRankPoints
+#include "lua_hook.h"
 
 struct grandprixinfo grandprixinfo;
 
@@ -799,6 +799,7 @@ void K_RetireBots(void)
 			K_SetNameForBot(i, skins[skinnum]->realname);
 
 			bot->score = 0;
+			LUA_HookPlayer(bot, HOOK(BotJoin));
 			bot->pflags &= ~PF_NOCONTEST;
 		}
 	}

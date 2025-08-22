@@ -2144,6 +2144,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	boolean spectator;
 	boolean bot;
 	UINT8 botdifficulty;
+	botStyle_e style;
 
 	INT16 rings;
 	INT16 spheres;
@@ -2242,6 +2243,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	followitem = players[player].followitem;
 
 	bot = players[player].bot;
+	style = players[player].botvars.style;
 	botdifficulty = players[player].botvars.difficulty;
 
 	botdiffincrease = players[player].botvars.diffincrease;
@@ -2474,6 +2476,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 
 	p->bot = bot;
+	p->botvars.style = style;
 	p->botvars.difficulty = botdifficulty;
 	p->rings = rings;
 	p->spheres = spheres;
