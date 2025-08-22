@@ -29,7 +29,7 @@
 INT32 numfollowers = 0;
 follower_t followers[MAXFOLLOWERS];
 
-INT32 numfollowercategories;
+INT32 numfollowercategories = 0;
 followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
 
 boolean horngoner = false;
