@@ -4530,6 +4530,14 @@ static int lib_kDropPaperItem(lua_State *L)
 	return 0;
 }
 
+static int lib_kUpdateAllPlayerPositions(lua_State *L)
+{
+	NOHUD
+	INLEVEL
+	K_UpdateAllPlayerPositions();
+	return 0;
+}
+
 static int lib_kCreatePaperItem(lua_State *L)
 {
 	fixed_t x = luaL_checkfixed(L, 1);
@@ -5849,6 +5857,7 @@ static luaL_Reg lib[] = {
 	{"K_GetKartDriftSparkValueForStage",lib_kGetKartDriftSparkValueForStage},
 	{"K_KartUpdatePosition",lib_kKartUpdatePosition},
 	{"K_DropPaperItem",lib_kDropPaperItem},
+	{"K_UpdateAllPlayerPositions",lib_kUpdateAllPlayerPositions},
 	{"K_CreatePaperItem",lib_kCreatePaperItem},
 	{"K_FlingPaperItem",lib_kFlingPaperItem},
 	{"K_PopPlayerShield",lib_kPopPlayerShield},
