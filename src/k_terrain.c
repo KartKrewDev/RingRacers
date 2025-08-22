@@ -1617,7 +1617,7 @@ boolean K_TerrainHasAffect(terrain_t *terrain, boolean badonly)
 	|| terrain->trickPanel != 0
 	|| terrain->speedPad != 0
 	|| terrain->springStrength != 0
-	|| terrain->flags != 0);
+	|| (terrain->flags & (TRF_LIQUID|TRF_SNEAKERPANEL|TRF_TRIPWIRE)));
 }
 
 /*--------------------------------------------------

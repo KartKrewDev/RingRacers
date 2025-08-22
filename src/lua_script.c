@@ -62,6 +62,7 @@ static lua_CFunction liblist[] = {
 	LUA_HudLib, // HUD stuff
 	LUA_FollowerLib, // follower_t, followers[]
 	LUA_ItemRouletteLib, // itemroulette_t
+	LUA_TerrainLib, // t_splash_t, t_footstep_t, t_overlay_t, terrain_t
 	NULL
 };
 
@@ -1644,7 +1645,7 @@ void LUA_Archive(savebuffer_t *save, boolean network)
 				ArchiveExtVars(&save->p, th, "mobj");
 			}
 		}
-		
+
 		WRITEUINT32(save->p, UINT32_MAX); // end of mobjs marker, replaces mobjnum.
 
 		LUA_HookNetArchive(NetArchive, save); // call the NetArchive hook in archive mode
