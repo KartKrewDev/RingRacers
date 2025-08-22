@@ -3964,7 +3964,7 @@ static fixed_t K_GetKartSpeedAssist(const player_t *player)
 	if (player->loneliness < 0)
 		return FRACUNIT;
 
-	fixed_t MAX_SPEED_ASSIST = FRACUNIT/10;
+	fixed_t MAX_SPEED_ASSIST = FRACUNIT/7;
 
 	return FRACUNIT + FixedMul(player->loneliness, MAX_SPEED_ASSIST);
 }
@@ -10025,7 +10025,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT32 TOO_CLOSE = average + 7000; // Start gaining here, lose if closer
 		UINT32 WAY_TOO_CLOSE = average + 6000; // Lose at max rate here
 
-		fixed_t MAX_GAIN_PER_SEC = FRACUNIT/40; // % assist to gain per sec when REALLY_FAR
+		fixed_t MAX_GAIN_PER_SEC = FRACUNIT/30; // % assist to gain per sec when REALLY_FAR
 		fixed_t MAX_LOSS_PER_SEC = FRACUNIT/5; // % assist to lose per sec when WAY_TOO_CLOSE
 
 		UINT32 gaingap = REALLY_FAR - TOO_CLOSE;
