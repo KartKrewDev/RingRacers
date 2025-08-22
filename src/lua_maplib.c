@@ -57,6 +57,7 @@ enum sector_e {
 	sector_triggerer,
 	sector_friction,
 	sector_gravity,
+	sector_botcontroller,
 	sector_action,
 	sector_args,
 	sector_stringargs,
@@ -91,6 +92,7 @@ static const char *const sector_opt[] = {
 	"triggerer",
 	"friction",
 	"gravity",
+	"botcontroller",
 	"action",
 	"args"
 	"stringargs",
@@ -392,6 +394,20 @@ static const char *const activator_opt[] = {
 	"side",
 	"sector",
 	"po",
+	NULL};
+	
+enum botcontroller_e {
+	botcontroller_valid = 0,
+	botcontroller_trick,
+	botcontroller_flags,
+	botcontroller_forceangle,
+};
+
+static const char *const botcontroller_opt[] = {
+	"valid",
+	"trick",
+	"flags",
+	"forceangle",
 	NULL};
 
 static const char *const array_opt[] ={"iterate",NULL};
@@ -750,6 +766,9 @@ static int sector_get(lua_State *L)
 		return 1;
 	case sector_gravity: // gravity
 		lua_pushfixed(L, sector->gravity);
+		return 1;
+	case sector_botcontroller: // botController
+		LUA_PushUserdata(L, &sector->botController, META_BOTCONTROLLER);
 		return 1;
 	case sector_action: // action
 		lua_pushinteger(L, (INT16)sector->action);
@@ -2639,6 +2658,49 @@ static int activator_get(lua_State *L)
 	return 0;
 }
 
+/////////////////////
+// botcontroller_t //
+/////////////////////
+
+static int botcontroller_get(lua_State *L)
+{
+	botcontroller_t *botcontroller = *((botcontroller_t **)luaL_checkudata(L, 1, META_BOTCONTROLLER));
+	enum botcontroller_e field = luaL_checkoption(L, 2, botcontroller_opt[0], botcontroller_opt);
+
+	if (!botcontroller)
+	{
+		if (field == botcontroller_valid) {
+			lua_pushboolean(L, false);
+			return 1;
+		}
+		return luaL_error(L, "accessed botcontroller_t doesn't exist anymore.");
+	}
+
+	switch (field)
+	{
+		case botcontroller_valid:
+			lua_pushboolean(L, true);
+			return 1;
+
+		case botcontroller_trick:
+			lua_pushinteger(L, botcontroller->trick);
+			return 1;
+
+		case botcontroller_flags:
+			lua_pushinteger(L, botcontroller->flags);
+			return 1;
+
+		case botcontroller_forceangle:
+			lua_pushangle(L, botcontroller->forceAngle);
+			return 1;
+
+		default:
+			break;
+	}
+
+	return 0;
+}
+
 int LUA_MapLib(lua_State *L)
 {
 	luaL_newmetatable(L, META_SECTORLINES);
@@ -2805,6 +2867,12 @@ int LUA_MapLib(lua_State *L)
 		lua_pushcfunction(L, activator_get);
 		lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
+	
+	luaL_newmetatable(L, META_BOTCONTROLLER);
+		lua_pushcfunction(L, botcontroller_get);
+		lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
+	
 
 	LUA_PushTaggableObjectArray(L, "sectors",
 			lib_iterateSectors,

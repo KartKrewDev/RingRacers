@@ -121,6 +121,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	lua_terrainlib.c
 	lua_polyobjlib.c
 	lua_blockmaplib.c
+	lua_botvarslib.c
 	lua_hudlib.c
 	lua_hudlib_drawlist.c
 	lua_followerlib.c

@@ -179,6 +179,8 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 
 	SetPlayerSkinByNum(newplayernum, skinnum);
 
+	LUA_HookPlayer(&players[newplayernum], HOOK(BotJoin));
+
 	for (UINT8 i = 0; i < PWRLV_NUMTYPES; i++)
 	{
 		clientpowerlevels[newplayernum][i] = 0;
@@ -422,6 +424,18 @@ boolean K_PlayerUsesBotMovement(const player_t *player)
 	if (K_PodiumSequence() == true)
 		return true;
 
+	// Lua can't override the podium sequence result, but it can
+	// override the following results:
+	{
+		UINT8 shouldOverride = LUA_HookPlayerForceResults(const_cast<player_t*>(player),
+			HOOK(PlayerUsesBotMovement));
+		if (shouldOverride == 1)
+			return true;
+		if (shouldOverride == 2)
+			return false;
+	}
+
+
 	if (player->exiting)
 		return true;
 
@@ -523,11 +537,11 @@ static fixed_t K_BotSpeedScaled(const player_t *player, fixed_t speed)
 }
 
 /*--------------------------------------------------
-	const botcontroller_t *K_GetBotController(const mobj_t *mobj)
+	botcontroller_t *K_GetBotController(const mobj_t *mobj)
 
 		See header file for description.
 --------------------------------------------------*/
-const botcontroller_t *K_GetBotController(const mobj_t *mobj)
+botcontroller_t *K_GetBotController(const mobj_t *mobj)
 {
 	botcontroller_t *ret = nullptr;
 
