@@ -4177,6 +4177,21 @@ static int lib_kMineFlashScreen(lua_State *L)
 	return 0;
 }
 
+static int lib_kGivePointsToPlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	player_t *victim = NULL;
+	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+	K_GivePointsToPlayer(player, victim, amount);
+	return 0;
+}
+
 static int lib_kSpawnMineExplosion(lua_State *L)
 {
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -5729,6 +5744,7 @@ static luaL_Reg lib[] = {
 	{"K_GiveBumpersToPlayer",lib_kGiveBumpersToPlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_MineFlashScreen",lib_kMineFlashScreen},
+	{"K_GivePointsToPlayer",lib_kGivePointsToPlayer},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
 	{"K_SpawnLandMineExplosion",lib_kSpawnLandMineExplosion},
 	{"K_DriftSparkColor",lib_kDriftSparkColor},
