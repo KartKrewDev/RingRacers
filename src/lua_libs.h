@@ -109,6 +109,9 @@ extern lua_State *gL;
 #define META_SONICLOOPVARS "SONICLOOPVARS_T*"
 #define META_SONICLOOPCAMVARS "SONICLOOPCAMVARS_T*"
 
+#define META_BOTVARS "BOTVARS_T*"
+#define META_BOTCONTROLLER "BOTCONTROLLER_T*"
+
 #define META_SPLASH "T_SPLASH_T*"
 #define META_FOOTSTEP "T_FOOTSTEP_T*"
 #define META_OVERLAY "T_OVERLAY_T*"
@@ -134,6 +137,7 @@ int LUA_BlockmapLib(lua_State *L);
 int LUA_HudLib(lua_State *L);
 int LUA_FollowerLib(lua_State *L);
 int LUA_ItemRouletteLib(lua_State *L);
+int LUA_BotVarsLib(lua_State *L);
 int LUA_TerrainLib(lua_State *L);
 
 #ifdef __cplusplus

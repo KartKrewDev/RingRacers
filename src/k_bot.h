@@ -93,7 +93,7 @@ boolean K_BotCanTakeCut(const player_t *player);
 
 
 /*--------------------------------------------------
-	const botcontroller_t *K_GetBotController(const mobj_t *mobj);
+	botcontroller_t *K_GetBotController(const mobj_t *mobj);
 
 		Retrieves the current bot controller values from
 		the player's current sector.
@@ -105,7 +105,7 @@ boolean K_BotCanTakeCut(const player_t *player);
 		Pointer to the sector's bot controller struct.
 --------------------------------------------------*/
 
-const botcontroller_t *K_GetBotController(const mobj_t *mobj);
+botcontroller_t *K_GetBotController(const mobj_t *mobj);
 
 
 /*--------------------------------------------------

@@ -240,11 +240,15 @@ static const struct {
 
 	{META_SONICLOOPVARS,	"sonicloopvars_t"},
 	{META_SONICLOOPCAMVARS,	"sonicloopcamvars_t"},
-	
+
+	{META_BOTVARS,    "botvars_t"},
+	{META_BOTCONTROLLER,    "botcontroller_t"},
+
 	{META_SPLASH,       "t_splash_t"},
 	{META_FOOTSTEP,     "t_footstep_t"},
 	{META_OVERLAY,      "t_overlay_t"},
 	{META_TERRAIN,      "terrain_t"},
+
 	{NULL,              NULL}
 };
 
@@ -2740,7 +2744,6 @@ static int lib_rSetPlayerSkin(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	INT32 i = -1, j = -1;
 	NOHUD
-	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 
@@ -5422,6 +5425,151 @@ static int lib_kCanChangeRules(lua_State *L)
 	return 1;
 }
 
+static int lib_kPlayerUsesBotMovement(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+
+	lua_pushboolean(L, K_PlayerUsesBotMovement(player));
+	return 1;
+}
+
+static int lib_kBotCanTakeCut(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+
+	lua_pushboolean(L, K_BotCanTakeCut(player));
+	return 1;
+}
+
+static int lib_kGetBotController(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+
+	botcontroller_t *botController = K_GetBotController(mobj);
+	if (botController != NULL)
+		LUA_PushUserdata(L, botController, META_BOTCONTROLLER);
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int lib_kBotMapModifier(lua_State *L)
+{
+	INLEVEL
+	lua_pushfixed(L, K_BotMapModifier());
+	return 1;
+}
+
+static int lib_kBotRubberband(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+
+	lua_pushfixed(L, K_BotRubberband(player));
+	return 1;
+}
+
+static int lib_kUpdateRubberband(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+
+	lua_pushfixed(L, K_UpdateRubberband(player));
+	return 1;
+}
+
+static int lib_kDistanceOfLineFromPoint(lua_State *L)
+{
+	fixed_t v1x = luaL_checkfixed(L, 1);
+	fixed_t v1y = luaL_checkfixed(L, 2);
+	fixed_t v2x = luaL_checkfixed(L, 3);
+	fixed_t v2y = luaL_checkfixed(L, 4);
+	fixed_t cx = luaL_checkfixed(L, 5);
+	fixed_t cy = luaL_checkfixed(L, 6);
+	lua_pushfixed(L, K_DistanceOfLineFromPoint(v1x, v1y, v2x, v2y, cx, cy));
+	return 1;
+}
+
+static int lib_kAddBot(lua_State *L)
+{
+	INT32 skinid = -1;
+	UINT8 difficulty = luaL_checkinteger(L, 2);
+	botStyle_e style = luaL_checkinteger(L, 3);
+	UINT8 newplayernum = 0;
+
+	// Copypaste of libd_getSprite2Patch, but fails loudly on each fail state instead.
+	// get skin first!
+	if (lua_isnumber(L, 1)) // find skin by number
+	{
+		skinid = lua_tonumber(L, 1);
+		if (skinid < 0 || skinid >= MAXSKINS)
+			return luaL_error(L, "skin number %d out of range (0 - %d)", skinid, MAXSKINS-1);
+		if (skinid >= (demo.playback ? demo.numskins : numskins))
+			return luaL_error(L, "skin number %d out of range in demo (0 - %d)",
+				skinid, (demo.playback ? demo.numskins : numskins));
+	}
+	else // find skin by name
+	{
+		const char *name = luaL_checkstring(L, 1);
+		skinid = R_SkinAvailable(name);
+		if (skinid == -1)
+			return luaL_error(L, "could not find skin %s by name", name);
+	}
+
+	INLEVEL
+
+	boolean success = K_AddBot(skinid, difficulty, style, &newplayernum);
+	lua_pushboolean(L, success);
+	if (success)
+		LUA_PushUserdata(L, &players[newplayernum - 1], META_PLAYER);
+	else
+		lua_pushnil(L);
+
+	return 2;
+}
+
+static int lib_kSetNameForBot(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	const char *realname = luaL_checkstring(L, 2);
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!player->bot)
+		return luaL_error(L, "You may only change bot names.");
+
+	K_SetNameForBot(player-players, realname);
+
+	return 0;
+}
+
+static int lib_kRemoveBot(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!player->bot)
+		return luaL_error(L, "You may only remove bots.");
+
+	CL_RemovePlayer(player-players, KR_LEAVE);
+
+	return 0;
+}
+
 static int lib_getTimeMicros(lua_State *L)
 {
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
@@ -5462,13 +5610,13 @@ static int lib_kGetTerrainForTextureNum(lua_State *L)
 static int lib_kProcessTerrainEffect(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	
+
 	NOHUD
 	INLEVEL
-	
+
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	
+
 	K_ProcessTerrainEffect(mo);
 	return 0;
 }
@@ -5476,13 +5624,13 @@ static int lib_kProcessTerrainEffect(lua_State *L)
 static int lib_kSetDefaultFriction(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	
+
 	NOHUD
 	INLEVEL
-	
+
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	
+
 	K_SetDefaultFriction(mo);
 	return 0;
 }
@@ -5491,13 +5639,13 @@ static int lib_kSpawnSplashForMobj(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t impact = luaL_optinteger(L, 2, FRACUNIT);
-	
+
 	NOHUD
 	INLEVEL
-	
+
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	
+
 	K_SpawnSplashForMobj(mo, impact);
 	return 0;
 }
@@ -5505,13 +5653,13 @@ static int lib_kSpawnSplashForMobj(lua_State *L)
 static int lib_kHandleFootstepParticles(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	
+
 	NOHUD
 	INLEVEL
-	
+
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	
+
 	K_HandleFootstepParticles(mo);
 	return 0;
 }
@@ -5519,13 +5667,13 @@ static int lib_kHandleFootstepParticles(lua_State *L)
 static int lib_kUpdateTerrainOverlay(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	
+
 	NOHUD
 	INLEVEL
-	
+
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	
+
 	K_UpdateTerrainOverlay(mo);
 	return 0;
 }
@@ -5534,13 +5682,13 @@ static int lib_kTerrainHasAffect(lua_State *L)
 {
 	terrain_t *terrain = *((terrain_t **)luaL_checkudata(L, 1, META_TERRAIN));
 	boolean badonly = lua_optboolean(L, 2);
-	
+
 	NOHUD
 	INLEVEL
-	
+
 	if (!terrain)
 		return LUA_ErrInvalid(L, "terrain_t");
-	
+
 	lua_pushboolean(L, K_TerrainHasAffect(terrain, badonly));
 	return 1;
 }
@@ -5936,6 +6084,19 @@ static luaL_Reg lib[] = {
 	// k_grandprix
 	{"K_CanChangeRules", lib_kCanChangeRules},
 
+	// k_bot
+	{"K_PlayerUsesBotMovement", lib_kPlayerUsesBotMovement},
+	{"K_BotCanTakeCut", lib_kBotCanTakeCut},
+	{"K_GetBotController", lib_kGetBotController},
+	{"K_BotMapModifier", lib_kBotMapModifier},
+	{"K_BotRubberband", lib_kBotRubberband},
+	{"K_UpdateRubberband", lib_kUpdateRubberband},
+	{"K_DistanceOfLineFromPoint", lib_kDistanceOfLineFromPoint},
+	{"K_AddBot", lib_kAddBot},
+	{"K_SetNameForBot", lib_kSetNameForBot},
+	// Lua-only function to allow safely removing bots.
+	{"K_RemoveBot", lib_kRemoveBot},
+
 	// hu_stuff technically?
 	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
 
@@ -5958,7 +6119,7 @@ static luaL_Reg lib[] = {
 	{"Music_UnPauseAll", lib_mMusicUnPauseAll},
 	{"Music_Loop", lib_mMusicLoop},
 	{"Music_BatchExempt", lib_mMusicBatchExempt},
-	
+
 	// k_terrain
 	{"K_GetDefaultTerrain", lib_kGetDefaultTerrain},
 	{"K_GetTerrainForTextureName", lib_kGetTerrainForTextureName},

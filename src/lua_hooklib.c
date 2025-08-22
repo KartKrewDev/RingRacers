@@ -661,6 +661,17 @@ int LUA_HookPlayer(player_t *player, int hook_type)
 	return hook.status;
 }
 
+int LUA_HookPlayerForceResults(player_t *player, int hook_type)
+{
+	Hook_State hook;
+	if (prepare_hook(&hook, 0, hook_type))
+	{
+		LUA_PushUserdata(gL, player, META_PLAYER);
+		call_hooks(&hook, 1, res_force);
+	}
+	return hook.status;
+}
+
 int LUA_HookTiccmd(player_t *player, ticcmd_t *cmd, int hook_type)
 {
 	Hook_State hook;

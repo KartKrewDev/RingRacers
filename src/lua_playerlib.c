@@ -737,6 +737,8 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->spectator);
 	else if (fastcmp(field,"bot"))
 		lua_pushboolean(L, plr->bot);
+	else if (fastcmp(field,"botvars"))
+		LUA_PushUserdata(L, &plr->botvars, META_BOTVARS);
 	else if (fastcmp(field,"jointime"))
 		lua_pushinteger(L, plr->jointime);
 	else if (fastcmp(field,"spectatorreentry"))
@@ -1380,6 +1382,8 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"spectator"))
 		plr->spectator = lua_toboolean(L, 3);
 	else if (fastcmp(field,"bot"))
+		return NOSET;
+	else if (fastcmp(field,"botvars"))
 		return NOSET;
 	else if (fastcmp(field,"jointime"))
 		return NOSET;

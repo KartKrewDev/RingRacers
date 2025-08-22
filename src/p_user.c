@@ -3387,6 +3387,12 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 	else
 	{
+		// Players-turned-bots outside of end of race contexts (Lua)
+		// don't update their local camera angle, so it should be updated
+		// somewhere - I choose here because it makes the most sense.
+		if (K_PlayerUsesBotMovement(player) && !player->bot)
+			P_ForceLocalAngle(player, mo->angle);
+
 		focusangle = localangle[num];
 		focusaiming = localaiming[num];
 	}

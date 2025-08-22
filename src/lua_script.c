@@ -62,6 +62,7 @@ static lua_CFunction liblist[] = {
 	LUA_HudLib, // HUD stuff
 	LUA_FollowerLib, // follower_t, followers[]
 	LUA_ItemRouletteLib, // itemroulette_t
+	LUA_BotVarsLib, // botvars_t
 	LUA_TerrainLib, // t_splash_t, t_footstep_t, t_overlay_t, terrain_t
 	NULL
 };

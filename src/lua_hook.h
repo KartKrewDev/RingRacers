@@ -81,6 +81,8 @@ automatically.
 	X (VoteThinker),/* Y_VoteTicker */\
 	X (PreFillItemRoulette),/* K_FillItemRouletteData, before attempted reel build */\
 	X (FillItemRoulette),/* K_FillItemRouletteData, after built reel is in place */\
+	X (PlayerUsesBotMovement),/* K_PlayerUsesBotMovement */\
+	X (BotJoin),\
 	X (GPRankPoints),/* K_CalculateGPRankPoints */\
 
 #define STRING_HOOK_LIST(X) \
@@ -129,6 +131,7 @@ int  LUA_Hook2Mobj(mobj_t *, mobj_t *, int hook);
 void LUA_HookInt(INT32 integer, int hook);
 void LUA_HookBool(boolean value, int hook);
 int  LUA_HookPlayer(player_t *, int hook);
+int  LUA_HookPlayerForceResults(player_t *, int hook);
 int  LUA_HookTiccmd(player_t *, ticcmd_t *, int hook);
 int  LUA_HookKey(event_t *event, int hook); // Hooks for key events
 
