@@ -3253,14 +3253,28 @@ void M_DrawCupSelect(void)
 
 			if (windata)
 			{
-				M_DrawCupWinData(
-					x,
-					y,
-					templevelsearch.cup,
-					cv_dummygpdifficulty.value,
-					(cupgrid.previewanim & 1),
-					false
-				);
+				if (cv_reducevfx.value)
+				{
+					M_DrawCupWinData(
+						x,
+						y,
+						templevelsearch.cup,
+						cv_dummygpdifficulty.value,
+						false,
+						false
+					);
+				}
+				else
+				{
+					M_DrawCupWinData(
+						x,
+						y,
+						templevelsearch.cup,
+						cv_dummygpdifficulty.value,
+						(cupgrid.previewanim & 1),
+						false
+					);
+				}
 			}
 		}
 	}
