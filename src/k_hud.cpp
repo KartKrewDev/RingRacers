@@ -7722,8 +7722,10 @@ void K_drawKartHUD(void)
 		{
 			V_DrawFadeScreen(31, dfade); // Fade out
 
+			const INT32 gutter = (vid.width/vid.dupx) - BASEVIDWIDTH;
+
 			srb2::Draw normiedraw = srb2::Draw()
-					.clipx(0.f, BASEVIDWIDTH)
+					.x(-gutter/2)
 					.y((BASEVIDHEIGHT - 36)/2)
 					.flags((10 - dfade)<<FF_TRANSSHIFT)
 					.font(srb2::Draw::Font::kGenesis);
@@ -7732,7 +7734,7 @@ void K_drawKartHUD(void)
 			INT32 normiew = srb2::Draw::TextElement(normietext).font(srb2::Draw::Font::kGenesis).width();
 			INT32 normiex = -((static_cast<INT32>(timeinmap)) % normiew);
 
-			while (normiex < BASEVIDWIDTH)
+			while (normiex < BASEVIDWIDTH + gutter)
 			{
 				normiedraw
 					.x(normiex)
