@@ -3964,7 +3964,7 @@ static fixed_t K_GetKartSpeedAssist(const player_t *player)
 	if (player->loneliness < 0)
 		return FRACUNIT;
 
-	fixed_t MAX_SPEED_ASSIST = FRACUNIT/4;
+	fixed_t MAX_SPEED_ASSIST = FRACUNIT/5;
 
 	return FRACUNIT + FixedMul(player->loneliness, MAX_SPEED_ASSIST);
 }
