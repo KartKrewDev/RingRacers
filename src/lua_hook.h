@@ -81,6 +81,7 @@ automatically.
 	X (VoteThinker),/* Y_VoteTicker */\
 	X (PreFillItemRoulette),/* K_FillItemRouletteData, before attempted reel build */\
 	X (FillItemRoulette),/* K_FillItemRouletteData, after built reel is in place */\
+	X (GPRankPoints),/* K_CalculateGPRankPoints */\
 
 #define STRING_HOOK_LIST(X) \
 	X (SpecialExecute),\
@@ -150,6 +151,7 @@ int  LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, boole
 int  LUA_HookSeenPlayer(player_t *player, player_t *seenfriend);
 int  LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
 int  LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
+int LUA_HookGPRankPoints(UINT8 position, UINT8 numplayers, INT16 *points);
 
 #ifdef __cplusplus
 } // extern "C"

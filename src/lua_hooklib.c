@@ -691,7 +691,7 @@ void LUA_HookHUD(huddrawlist_h list, int hook_type)
 
 		init_hook_call(&hook, 0, res_none);
 		call_mapped(&hook, &hudHookIds[hook_type]);
-		
+
 		// Catch runaway clipping rectangles.
 		V_ClearClipRect();
 
@@ -1042,6 +1042,30 @@ int LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette
 int LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox)
 {
 	return roulette_hook(player, roulette, ringbox, HOOK(FillItemRoulette), res_true);
+}
+
+static void res_gprankpoints(Hook_State *hook)
+{
+	if (!lua_isnil(gL, -1))
+	{
+		INT16 *points = (INT16*)hook->userdata;
+		*points = lua_tointeger(gL, -1);
+		hook->status = true;
+	}
+}
+
+int LUA_HookGPRankPoints(UINT8 position, UINT8 numplayers, INT16 *points)
+{
+	Hook_State hook;
+	if (prepare_hook(&hook, 0, HOOK(GPRankPoints)))
+	{
+		hook.userdata = points;
+		lua_pushinteger(gL, position);
+		lua_pushinteger(gL, numplayers);
+		lua_pushinteger(gL, *points);
+		call_hooks(&hook, 1, res_gprankpoints);
+	}
+	return hook.status;
 }
 
 boolean hook_cmd_running = false;
