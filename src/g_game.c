@@ -1801,6 +1801,8 @@ void G_FixCamera(UINT8 view)
 
 void G_UpdatePlayerPreferences(player_t *const player)
 {
+	player->followerready = true; // we are ready to perform follower related actions in the player thinker, now.
+
 	if (demo.playback)
 		return;
 

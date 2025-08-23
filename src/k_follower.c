@@ -176,8 +176,6 @@ void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
 
-	player->followerready = true; // we are ready to perform follower related actions in the player thinker, now.
-
 	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
 	{
 		/*
@@ -898,6 +896,26 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 	}
 }
 
+#define AUTORINGFOLLOWERNAME "goddess"
+static INT32 K_AutoRingFollower(void)
+{
+	static INT32 autoringfollower = -2;
+
+	if (autoringfollower == -2)
+	{
+		autoringfollower = K_FollowerAvailable(AUTORINGFOLLOWERNAME);
+
+		if (autoringfollower == -2)
+		{
+			// This shouldn't happen, but just in case
+			autoringfollower = -1;
+		}
+	}
+
+	return (INT32)autoringfollower;
+}
+#undef AUTORINGFOLLOWERNAME
+
 /*--------------------------------------------------
 	INT32 K_GetEffectiveFollowerSkin(const player_t *player);
 
@@ -905,8 +923,8 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 --------------------------------------------------*/
 INT32 K_GetEffectiveFollowerSkin(const player_t *player)
 {
-	if ((player->pflags & PF_AUTORING) && player->followerskin == -1)
-		return K_FollowerAvailable("Goddess");
-	else
-		return player->followerskin;
+	if (player->followerskin == -1 && ((player->pflags & PF_AUTORING) == PF_AUTORING))
+		return K_AutoRingFollower();
+
+	return player->followerskin;
 }
