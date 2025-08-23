@@ -3954,19 +3954,19 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 static fixed_t K_GetKartSpeedAssist(const player_t *player)
 {
 	if (modeattacking)
-		return FRACUNIT;
+		return 0;
 	if (gametype && GTR_BUMPERS)
-		return FRACUNIT;
+		return 0;
 	if (specialstageinfo.valid)
-		return FRACUNIT;
+		return 0;
 	if (K_PlayerUsesBotMovement(player))
-		return FRACUNIT;
+		return 0;
 	if (player->loneliness < 0)
-		return FRACUNIT;
+		return 0;
 
 	fixed_t MAX_SPEED_ASSIST = FRACUNIT/4;
 
-	return FRACUNIT + FixedMul(player->loneliness, MAX_SPEED_ASSIST);
+	return FixedMul(player->loneliness, MAX_SPEED_ASSIST);
 }
 
 fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dorubberband)
@@ -4035,7 +4035,39 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 		finalspeed += FixedMul(player->outrun, physicsScale);
 	}
 
-	finalspeed = FixedMul(finalspeed, K_GetKartSpeedAssist(player));
+	// Speed Assist pt.3: How much of our potential assist do we apply?
+	if (doboostpower && K_GetKartSpeedAssist(player))
+	{
+		fixed_t assist = K_GetKartSpeedAssist(player);
+
+		// Don't use all of our speed assist if we're already under boost effect.
+		fixed_t START_ASSIST_ROLLOFF = 3*FRACUNIT/2; // Don't roll off at below this speed
+		fixed_t END_ASSIST_ROLLOFF = 5*FRACUNIT/2; // Use minimum assist power at above this speed
+		fixed_t MIN_ASSIST_POWER = 0; // % assist to apply while going fast (FRACUNIT=full, 0=none)
+
+		fixed_t speedgap = END_ASSIST_ROLLOFF - START_ASSIST_ROLLOFF;
+
+		fixed_t bonusspeed = FixedDiv(player->speed, K_GetKartSpeed(player, false, false));
+
+		if (doboostpower)
+		{
+			if (bonusspeed < START_ASSIST_ROLLOFF)
+			{
+				// :)
+			}
+			else if (bonusspeed > END_ASSIST_ROLLOFF)
+			{
+				assist = FixedMul(assist, MIN_ASSIST_POWER);
+			}
+			else
+			{
+				fixed_t normalizer = FixedDiv((bonusspeed - START_ASSIST_ROLLOFF), speedgap);
+				assist = Easing_Linear(normalizer, assist, FixedMul(assist, MIN_ASSIST_POWER));
+			}
+		}
+
+		finalspeed = FixedMul(finalspeed, FRACUNIT + assist);
+	}
 
 	return finalspeed;
 }
@@ -9977,6 +10009,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	// Speed Assist pt.1
 	if (!K_PlayerUsesBotMovement(player))
 	{
 		UINT32 toDefender = 0;
@@ -10020,7 +10053,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			average = firstRaw;
 		}
-		
+
 		UINT32 REALLY_FAR = average + 10000; // This far back, get max gain
 		UINT32 TOO_CLOSE = average + 7000; // Start gaining here, lose if closer
 		UINT32 WAY_TOO_CLOSE = average + 6000; // Lose at max rate here
