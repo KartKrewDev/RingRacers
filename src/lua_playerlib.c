@@ -219,10 +219,16 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastpickupdistance);
 	else if (fastcmp(field,"lastpickuptype"))
 		lua_pushinteger(L, plr->lastpickuptype);
+	else if (fastcmp(field,"currentwaypoint"))
+		LUA_PushUserdata(L, plr->currentwaypoint, META_WAYPOINT);
+	else if (fastcmp(field,"nextwaypoint"))
+		LUA_PushUserdata(L, plr->nextwaypoint, META_WAYPOINT);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"lastairtime"))
 		lua_pushinteger(L, plr->lastairtime);
+	else if (fastcmp(field,"bigwaypointgap"))
+		lua_pushinteger(L, plr->bigwaypointgap);
 	else if (fastcmp(field,"flashing"))
 		lua_pushinteger(L, plr->flashing);
 	else if (fastcmp(field,"spinouttimer"))
@@ -283,6 +289,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"startboost"))
 		lua_pushinteger(L, plr->startboost);
+	else if (fastcmp(field,"dropdashboost"))
+		lua_pushinteger(L, plr->dropdashboost);
 	else if (fastcmp(field,"aizdriftstrat"))
 		lua_pushinteger(L, plr->aizdriftstrat);
 	else if (fastcmp(field,"aizdriftextend"))
@@ -788,15 +796,17 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"positiondelay"))
 		plr->positiondelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"distancetofinish"))
-		return NOSET;
+		plr->distancetofinish = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"distancetofinishprev"))
-		return NOSET;
+		plr->distancetofinishprev = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"lastpickupdistance"))
 		plr->lastpickupdistance = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"airtime"))
 		plr->airtime = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastairtime"))
 		plr->lastairtime = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"bigwaypointgap"))
+		plr->bigwaypointgap = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flashing"))
 		plr->flashing = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spinouttimer"))
@@ -857,6 +867,8 @@ static int player_set(lua_State *L)
 		plr->gateSound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"startboost"))
 		plr->startboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"dropdashboost"))
+		plr->dropdashboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdriftstrat"))
 		plr->aizdriftstrat = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdrifttilt"))
@@ -1385,81 +1397,6 @@ static int ticcmd_set(lua_State *L)
 
 #undef NOFIELD
 
-// Same shit for player.respawn variable... Why is everything in different sub-variables again now???
-#define RNOFIELD luaL_error(L, LUA_QL("respawnvars_t") " has no field named " LUA_QS, field)
-#define RUNIMPLEMENTED luaL_error(L, LUA_QL("respawnvars_t") " unimplemented field " LUA_QS " cannot be read or set.", field)
-// @TODO: Waypoints in Lua possibly maybe? No don't count on me to do it...
-
-static int respawn_get(lua_State *L)
-{
-	respawnvars_t *rsp = *((respawnvars_t **)luaL_checkudata(L, 1, META_RESPAWN));
-	const char *field = luaL_checkstring(L, 2);
-	if (!rsp)
-		return LUA_ErrInvalid(L, "player_t");
-
-	if (fastcmp(field,"state"))
-		lua_pushinteger(L, rsp->state);
-	else if (fastcmp(field,"waypoint"))
-		return RUNIMPLEMENTED;
-	else if (fastcmp(field,"pointx"))
-		lua_pushfixed(L, rsp->pointx);
-	else if (fastcmp(field,"pointy"))
-		lua_pushfixed(L, rsp->pointy);
-	else if (fastcmp(field,"pointz"))
-		lua_pushfixed(L, rsp->pointz);
-	else if (fastcmp(field,"flip"))
-		lua_pushboolean(L, rsp->flip);
-	else if (fastcmp(field,"timer"))
-		lua_pushinteger(L, rsp->timer);
-	else if (fastcmp(field,"distanceleft"))
-		lua_pushinteger(L, rsp->distanceleft);	// Can't possibly foresee any problem when pushing UINT32 to Lua's INT32 hahahahaha, get ready for dumb hacky shit on high distances.
-	else if (fastcmp(field,"dropdash"))
-		lua_pushinteger(L, rsp->dropdash);
-	else
-		return RNOFIELD;
-
-	return 1;
-}
-
-static int respawn_set(lua_State *L)
-{
-	respawnvars_t *rsp = *((respawnvars_t **)luaL_checkudata(L, 1, META_RESPAWN));
-	const char *field = luaL_checkstring(L, 2);
-	if (!rsp)
-		return LUA_ErrInvalid(L, "respawnvars_t");
-
-	if (hud_running)
-		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
-	if (hook_cmd_running)
-		return luaL_error(L, "Do not alter player_t in CMD building code!");
-
-	if (fastcmp(field,"state"))
-		rsp->state = (UINT8)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"waypoint"))
-		return RUNIMPLEMENTED;
-	else if (fastcmp(field,"pointx"))
-		rsp->pointx = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"pointy"))
-		rsp->pointy = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"pointz"))
-		rsp->pointz = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"flip"))
-		rsp->flip = luaL_checkboolean(L, 3);
-	else if (fastcmp(field,"timer"))
-		rsp->timer = (tic_t)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"distanceleft"))
-		rsp->distanceleft = (UINT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"dropdash"))
-		rsp->dropdash = (tic_t)luaL_checkinteger(L, 3);
-	else
-		return RNOFIELD;
-
-	return 0;
-}
-
-#undef RNOFIELD
-#undef RUNIMPLEMENTED
-
 enum sonicloopvars {
 	sonicloopvars_radius = 0,
 	sonicloopvars_revolution,
@@ -1639,14 +1576,6 @@ int LUA_PlayerLib(lua_State *L)
 
 		lua_pushcfunction(L, karthud_len);
 		lua_setfield(L, -2, "__len");
-	lua_pop(L,1);
-
-	luaL_newmetatable(L, META_RESPAWN);
-		lua_pushcfunction(L, respawn_get);
-		lua_setfield(L, -2, "__index");
-
-		lua_pushcfunction(L, respawn_set);
-		lua_setfield(L, -2, "__newindex");
 	lua_pop(L,1);
 
 	luaL_newmetatable(L, META_TICCMD);

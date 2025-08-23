@@ -26,6 +26,8 @@
 #include "k_boss.h" // spottype_t (for lua)
 #include "k_follower.h" // followermode_t (for lua)
 #include "music.h" // tune flags (for lua)
+#include "k_respawn.h" // respawn values (for lua)
+#include "k_waypoint.h" // waypoint values (for lua)
 
 #include "deh_tables.h"
 
@@ -5214,6 +5216,16 @@ struct int_const_s const INT_CONST[] = {
 	{"TN_NIGHTCOREABLE",TN_NIGHTCOREABLE},
 	{"TN_CHANGEPITCH",TN_CHANGEPITCH},
 	{"TN_LOOPING",TN_LOOPING},
+	
+	// k_respawn.h values
+	{"RESPAWN_DIST",RESPAWN_DIST},
+	{"RESPAWN_TIME",RESPAWN_TIME},
+	{"RESPAWNST_NONE",RESPAWNST_NONE},
+	{"RESPAWNST_MOVE",RESPAWNST_MOVE},
+	{"RESPAWNST_DROP",RESPAWNST_DROP},
+	
+	// k_waypoint.h values
+	{"DEFAULT_WAYPOINT_RADIUS",DEFAULT_WAYPOINT_RADIUS},
 
 	// k_bot.h constants
 	{"MAXBOTDIFFICULTY",MAXBOTDIFFICULTY},

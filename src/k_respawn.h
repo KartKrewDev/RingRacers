@@ -42,6 +42,19 @@ extern "C" {
 
 fixed_t K_RespawnOffset(player_t *player, boolean flip);
 
+/*--------------------------------------------------
+	void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
+
+		Updates a player's respawn variables to go to the provided waypoint.
+
+	Input Arguments:-
+		player - Player to preform for.
+		waypoint - Waypoint to respawn to.
+
+	Return:-
+		None
+--------------------------------------------------*/
+void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint);
 
 /*--------------------------------------------------
 	void K_DoFault(player_t *player);

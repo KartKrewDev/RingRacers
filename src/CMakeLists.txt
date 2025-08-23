@@ -125,6 +125,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	lua_hudlib.c
 	lua_hudlib_drawlist.c
 	lua_followerlib.c
+	lua_respawnvarslib.c
+	lua_waypointslib.c
 	lua_profile.cpp
 	k_kart.c
 	k_respawn.c
