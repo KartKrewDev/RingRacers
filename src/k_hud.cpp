@@ -1613,8 +1613,8 @@ void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *co
 	);
 
 	K_DrawMapThumbnail2(
-		(x * mul) + hdup - FixedMul(iconWidth - iconHeight, accordion)/2,
-		(y * mul) + dup,
+		(x * FRACUNIT) + hdup - FixedMul(iconWidth - iconHeight, accordion)/2,
+		(y * FRACUNIT) + dup,
 		iconWidth,
 		flags,
 		map,
@@ -4574,17 +4574,17 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
             mirror = true;
         }
     }
-	
+
 	// Adjust for Lua disabling things underneath or to the left of the speedometer.
 	if (!LUA_HudEnabled(hud_rings))
-	{		
+	{
 		if (r_splitscreen < 2)
 		{
 			fy += 14;
 		}
 		// For 4P race, only check if it's a race.
 		// For 4P battle/capsules, check if it's either prisons or battle, AND check if that element isn't disabled.
-		else if ((gametyperules & GTR_CIRCUIT) == GTR_CIRCUIT || 
+		else if ((gametyperules & GTR_CIRCUIT) == GTR_CIRCUIT ||
 		((battleprisons || (gametyperules & GTR_BUMPERS) == GTR_BUMPERS) && !LUA_HudEnabled(hud_gametypeinfo)))
 		{
 			fx -= 44;
@@ -4716,7 +4716,7 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 	{
 		fy += 9;
 	}
-	
+
 	// Adjust for Lua disabling things underneath the speedometer.
 	if (!LUA_HudEnabled(hud_rings))
 	{
@@ -6869,7 +6869,7 @@ static void K_drawKartFirstPerson(void)
 			fixed_t jitters = HITLAGJITTERS;
 			if (R_UsingFrameInterpolation() && !paused)
 				jitters += (rendertimefrac / HITLAGDIV);
-			
+
 			fixed_t mul = stplyr->mo->hitlag * jitters;
 			if (r_splitscreen && mul > FRACUNIT)
 				mul = FRACUNIT;
