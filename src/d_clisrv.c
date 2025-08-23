@@ -137,7 +137,7 @@ UINT32 playerdelaytable[MAXPLAYERS]; // mindelay values.
 #define GENTLEMANSMOOTHING (TICRATE)
 static tic_t reference_lag;
 static UINT8 spike_time;
-static tic_t lowest_lag;
+static tic_t target_lag;
 boolean server_lagless;
 
 SINT8 nodetoplayer[MAXNETNODES];
@@ -5531,9 +5531,26 @@ static void HandlePacketFromPlayer(SINT8 node)
 				|| netbuffer->packettype == PT_NODEKEEPALIVEMIS)
 				break;
 
-			// If we already received a ticcmd for this tic, just submit it for the next one.
+			// When should we REALLY submit this tic?
 			tic_t faketic = maketic;
 
+			// The tic-delay between when this ticcmd was made and now, when the server is processing it.
+			tic_t timegap = maketic - realstart;
+
+			// If we want higher delay than we have, submit this ticcmd for the future.
+			if (timegap < netbuffer->u.clientpak.wantdelay)
+			{
+				faketic += (netbuffer->u.clientpak.wantdelay - timegap);
+				/*
+				if (node != servernode || !netgame)
+					CONS_Printf("wanted %d with gap %d, +%d\n", netbuffer->u.clientpak.wantdelay, timegap, faketic - maketic);
+				*/
+			}
+
+			// And if we already have a ticcmd submitted for that time, it's weird packet pacing
+			// or interp messing with ticcmd send/receive timing. Instead of dropping, submit this
+			// ticcmd for the next tic, giving us 1 tic of "buffer".
+			// Remember, if we submitted 2 ticcmds too fast, the next one will probably be too slow!
 			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].flags & TICCMD_RECEIVED))
 				&& (maketic - firstticstosend < BACKUPTICS))
 				faketic++;
@@ -6336,10 +6353,10 @@ static void CL_SendClientCmd(void)
 	{
 		UINT8 lagDelay = 0;
 
-		if (lowest_lag > 0)
+		if (target_lag > 0)
 		{
 			// Gentlemens' ping.
-			lagDelay = min(lowest_lag, MAXGENTLEMENDELAY);
+			lagDelay = min(target_lag, MAXGENTLEMENDELAY);
 
 			// Is our connection worse than our current gentleman point?
 			// Make sure it stays that way for a bit before increasing delay levels.
@@ -6387,29 +6404,31 @@ static void CL_SendClientCmd(void)
 		}
 
 		packetsize = sizeof (clientcmd_pak);
-		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds[0][lagDelay], 1);
+		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds[0][0], 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic % BACKUPTICS]);
 
 		if (splitscreen) // Send a special packet with 2 cmd for splitscreen
 		{
 			netbuffer->packettype = (mis ? PT_CLIENT2MIS : PT_CLIENT2CMD);
 			packetsize = sizeof (client2cmd_pak);
-			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds[1][lagDelay], 1);
+			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds[1][0], 1);
 
 			if (splitscreen > 1)
 			{
 				netbuffer->packettype = (mis ? PT_CLIENT3MIS : PT_CLIENT3CMD);
 				packetsize = sizeof (client3cmd_pak);
-				G_MoveTiccmd(&netbuffer->u.client3pak.cmd3, &localcmds[2][lagDelay], 1);
+				G_MoveTiccmd(&netbuffer->u.client3pak.cmd3, &localcmds[2][0], 1);
 
 				if (splitscreen > 2)
 				{
 					netbuffer->packettype = (mis ? PT_CLIENT4MIS : PT_CLIENT4CMD);
 					packetsize = sizeof (client4cmd_pak);
-					G_MoveTiccmd(&netbuffer->u.client4pak.cmd4, &localcmds[3][lagDelay], 1);
+					G_MoveTiccmd(&netbuffer->u.client4pak.cmd4, &localcmds[3][0], 1);
 				}
 			}
 		}
+
+		netbuffer->u.clientpak.wantdelay = lagDelay;
 
 		HSendPacket(servernode, false, 0, packetsize);
 	}
@@ -6958,42 +6977,34 @@ static void UpdatePingTable(void)
 		}
 
 		if (server_lagless)
-			lowest_lag = 0;
+			target_lag = 0;
 		else
-			lowest_lag = fastest;
+			target_lag = fastest;
 
 		// Don't gentleman below your mindelay
-		if (lowest_lag < (tic_t)cv_mindelay.value)
-			lowest_lag = (tic_t)cv_mindelay.value;
+		if (target_lag < (tic_t)cv_mindelay.value)
+			target_lag = (tic_t)cv_mindelay.value;
 
 		pingmeasurecount++;
 
 		switch (playerpernode[0])
 		{
 			case 4:
-				playerdelaytable[nodetoplayer4[0]] = lowest_lag;
+				playerdelaytable[nodetoplayer4[0]] = target_lag;
 				/*FALLTHRU*/
 			case 3:
-				playerdelaytable[nodetoplayer3[0]] = lowest_lag;
+				playerdelaytable[nodetoplayer3[0]] = target_lag;
 				/*FALLTHRU*/
 			case 2:
-				playerdelaytable[nodetoplayer2[0]] = lowest_lag;
+				playerdelaytable[nodetoplayer2[0]] = target_lag;
 				/*FALLTHRU*/
 			case 1:
-				playerdelaytable[nodetoplayer[0]] = lowest_lag;
+				playerdelaytable[nodetoplayer[0]] = target_lag;
 		}
 	}
 	else // We're a client, handle mindelay on the way out.
 	{
-		// Previously (neededtic - gametic) - WRONG VALUE!
-		// Pretty sure that's measuring jitter, not RTT.
-		// Stable connections would be punished by adding their mindelay to network delay!
-		tic_t mydelay = playerpingtable[consoleplayer];
-
-		if (mydelay < (tic_t)cv_mindelay.value)
-			lowest_lag = cv_mindelay.value - mydelay;
-		else
-			lowest_lag = 0;
+		target_lag = cv_mindelay.value;
 	}
 }
 
