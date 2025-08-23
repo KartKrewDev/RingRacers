@@ -1674,14 +1674,23 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 
+		angle_t pitchR, rollR, fixedAngY;
+
+		pitchR = 0;
+		rollR = 0;
+		fixedAngY = 0;
+
 		{
 			fixed_t anglef = AngleFixed(R_ModelRotationAngle(spr->mobj, NULL));
 
 			p.rollangle = 0.0f;
 
+			// make fixedAngY a disguised fixed_t first
+			fixedAngY = FLOAT_TO_FIXED(p.angley);
+
 			if (anglef)
 			{
-				fixed_t camAngleDiff = AngleFixed(viewangle) - FLOAT_TO_FIXED(p.angley); // dumb reconversion back, I know
+				fixed_t camAngleDiff = AngleFixed(viewangle) - (fixed_t)(fixedAngY); // dumb reconversion back, I know
 
 				p.rollangle = FIXED_TO_FLOAT(anglef);
 				p.roll = true;
@@ -1691,9 +1700,19 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				p.centery = FIXED_TO_FLOAT(spr->mobj->height / 2);
 
 				// rotation axes relative to camera
-				p.rollx = FIXED_TO_FLOAT(FINECOSINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
-				p.rollz = FIXED_TO_FLOAT(FINESINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
+				pitchR = FINESINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT);
+				rollR = FINECOSINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT);
+
+				p.rollx = FIXED_TO_FLOAT((fixed_t)rollR);
+				p.rollz = FIXED_TO_FLOAT((fixed_t)pitchR);
+
+				// convert to angles
+				pitchR = FixedAngle((fixed_t)pitchR);
+				rollR = FixedAngle((fixed_t)rollR);
 			}
+
+			// make this a proper angle now
+			fixedAngY = FixedAngle(fixedAngY);
 		}
 
 		p.anglez = FIXED_TO_FLOAT(AngleFixed(R_InterpolateAngle(spr->mobj->old_pitch, spr->mobj->pitch)));
@@ -1716,6 +1735,88 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			p.x -= ox * gl_viewsin;
 			p.y += ox * gl_viewcos;
 			p.z += oy;
+
+			if (R_ThingIsUsingBakedOffsets(spr->mobj))
+			{
+				// visoffset stuff
+				float xx, xy, yx, yy;
+				float zx, zy, zz;
+				float xpiv, ypiv, zpiv;
+				fixed_t zh;
+				fixed_t xoffs, yoffs;
+
+				// xoffs = (cos(xoff) + sin(yoff))
+				xoffs =
+					FixedMul(spr->mobj->bakeyoff, -FINECOSINE(fixedAngY >> ANGLETOFINESHIFT)) +
+					FixedMul(spr->mobj->bakexoff, FINESINE(fixedAngY >> ANGLETOFINESHIFT));
+
+				// yoffs = (-sin(xoff) + cos(yoff))
+				yoffs =
+					FixedMul(spr->mobj->bakeyoff, -FINESINE(fixedAngY >> ANGLETOFINESHIFT)) +
+					FixedMul(spr->mobj->bakexoff, FINECOSINE(fixedAngY >> ANGLETOFINESHIFT));
+
+				const fixed_t hflipmul = hflip ? -FRACUNIT : FRACUNIT;
+
+				xpiv = FIXED_TO_FLOAT(
+					FixedMul(
+						FixedMul(spr->mobj->bakeypiv,
+								 -FINECOSINE(fixedAngY >> ANGLETOFINESHIFT)) +
+						FixedMul(spr->mobj->bakexpiv,
+								 FINESINE(fixedAngY >> ANGLETOFINESHIFT)),
+					hflipmul));
+				ypiv = FIXED_TO_FLOAT(
+					FixedMul(
+						FixedMul(spr->mobj->bakeypiv,
+								 -FINESINE(fixedAngY >> ANGLETOFINESHIFT)) +
+						FixedMul(spr->mobj->bakexpiv,
+								 FINECOSINE(fixedAngY >> ANGLETOFINESHIFT)),
+					hflipmul));
+				zpiv = FIXED_TO_FLOAT(spr->mobj->bakezpiv * ((flip) ? -1 : 1));
+
+				pitchR = ((pitchR + spr->mobj->pitch) * ((flip) ? -1 : 1));
+				rollR = ((rollR + spr->mobj->roll) * ((flip) ? -1 : 1));
+
+				// x offset
+				xx = FIXED_TO_FLOAT(FixedMul(FixedMul(
+											FixedMul(xoffs,spr->mobj->spritexscale),
+											hflipmul), 
+											FINECOSINE(pitchR >> ANGLETOFINESHIFT)
+											));
+				xy = FIXED_TO_FLOAT(FixedMul(FixedMul(
+									FixedMul(xoffs,spr->mobj->spritexscale),
+									hflipmul),
+									-FINESINE(pitchR >> ANGLETOFINESHIFT)
+									));
+
+				// y offset
+				yx = FIXED_TO_FLOAT(FixedMul(FixedMul(
+											FixedMul(yoffs,spr->mobj->spritexscale),
+											hflipmul), 
+											FINECOSINE(rollR >> ANGLETOFINESHIFT)
+											));
+
+				yy = FIXED_TO_FLOAT(FixedMul(FixedMul(
+									FixedMul(yoffs,spr->mobj->spritexscale),
+									hflipmul),
+									-FINESINE(rollR >> ANGLETOFINESHIFT)
+									));
+
+				// z offset
+				zh = FixedMul(FixedMul(spr->mobj->bakezoff,spr->mobj->spriteyscale),
+								FINECOSINE(rollR >> ANGLETOFINESHIFT));
+
+				zz = FIXED_TO_FLOAT(FixedMul(zh,
+									FINECOSINE(pitchR >> ANGLETOFINESHIFT)));
+				zx = FIXED_TO_FLOAT(FixedMul(zh,
+									FINESINE(pitchR >> ANGLETOFINESHIFT)));
+				zy = FIXED_TO_FLOAT(FixedMul(zh,
+									FINESINE(rollR >> ANGLETOFINESHIFT)));
+
+				// do these namings even make sense at this point?
+				p.x += xx + zx + xpiv;
+				p.z += (xy + yy + zz * (flip ? -1 : 1)) + zpiv;
+				p.y += yx + zy + ypiv;
+			}
 
 			HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, md2->scale * xs, md2->scale * ys, flip, hflip, &Surf);
 		}

@@ -420,6 +420,8 @@ struct mobj_t
 	UINT8 shadowcolor; // Palette index to use for rendering the shadow
 
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
+	fixed_t bakexoff, bakeyoff, bakezoff; // BAKED sprite offsets. Simulates visuals in real space, and rotates along the object's sprite
+	fixed_t bakexpiv, bakeypiv, bakezpiv; // Pivot points for baked offsets. These are *not* rotated with a sprite
 
 	terrain_t *terrain; // Terrain definition of the floor this object last hit. NULL when in the air.
 	mobj_t *terrainOverlay; // Overlay sprite object for terrain

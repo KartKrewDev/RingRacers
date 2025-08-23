@@ -4670,6 +4670,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	patch_t *rotsprite = NULL;
 	INT32 rollangle = 0;
 	angle_t spriterotangle = 0;
+	vector2_t visoffs;
 #endif
 
 	// uncapped/interpolation
@@ -4869,12 +4870,31 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			flip = 0;
 		}
 	}
+
+	// initialize and rotate pitch/roll vector
+	visoffs.x = 0;
+	visoffs.y = 0;
+
+	const fixed_t visoffymul = (vflip ? -FRACUNIT : FRACUNIT);
+
+	if (R_ThingIsUsingBakedOffsets(thing))
+	{
+		R_RotateSpriteOffsetsByPitchRoll(thing,
+										 vflip,
+										 hflip,
+										 &visoffs);
+	}
 #endif
 
 	if (thing->renderflags & RF_ABSOLUTEOFFSETS)
 	{
 		spr_offset = interp.spritexoffset;
+#ifdef ROTSPRITE
+		spr_topoffset = (interp.spriteyoffset + FixedDiv((visoffs.y * visoffymul),
+																mapobjectscale));
+#else
 		spr_topoffset = interp.spriteyoffset;
+#endif
 	}
 	else
 	{
@@ -4884,7 +4904,13 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			flipoffset = -1;
 
 		spr_offset += interp.spritexoffset * flipoffset;
+#ifdef ROTSPRITE
+		spr_topoffset += (interp.spriteyoffset + FixedDiv((visoffs.y * visoffymul),
+															mapobjectscale))
+																* flipoffset;
+#else
 		spr_topoffset += interp.spriteyoffset * flipoffset;
+#endif
 	}
 
 	if (papersprite)
@@ -4942,17 +4968,28 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	}
 	else
 	{
+#ifdef ROTSPRITE
+		if (visoffs.x)
+		{
+			visoffs.x = (FixedDiv((visoffs.x * FRACUNIT), mapobjectscale));
+		}
+#endif
 		if (flip)
 		{
-			x1 = (FIXED_TO_FLOAT(spr_width - spr_offset) * this_xscale);
+#ifdef ROTSPRITE
+			spr_offset -= visoffs.x;
+#endif
+			x1 = (FIXED_TO_FLOAT((spr_width - spr_offset)) * this_xscale);
 			x2 = (FIXED_TO_FLOAT(spr_offset) * this_xscale);
 		}
 		else
 		{
+#ifdef ROTSPRITE
+			spr_offset += visoffs.x;
+#endif
 			x1 = (FIXED_TO_FLOAT(spr_offset) * this_xscale);
 			x2 = (FIXED_TO_FLOAT(spr_width - spr_offset) * this_xscale);
 		}
-
 		// test if too close
 	/*
 		if (papersprite)
