@@ -207,6 +207,13 @@ struct Mobj : mobj_t
 	FIXED_METHOD(spryoff)
 	FIXED_METHOD(sprzoff)
 
+	FIXED_METHOD(bakexoff)
+	FIXED_METHOD(bakeyoff)
+	FIXED_METHOD(bakezoff)
+	FIXED_METHOD(bakexpiv)
+	FIXED_METHOD(bakeypiv)
+	FIXED_METHOD(bakezpiv)
+
 	vec2 spritescale() const { return {spritexscale(), spriteyscale()}; }
 	void spritescale(const vec2& v)
 	{

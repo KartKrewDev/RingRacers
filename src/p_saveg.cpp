@@ -3063,6 +3063,7 @@ typedef enum
 	MD3_REAPPEAR		= 1<<1,
 	MD3_PUNT_REF		= 1<<2,
 	MD3_OWNER			= 1<<3,
+	MD3_BAKEDOFFSET		= 1<<4,
 } mobj_diff3_t;
 
 typedef enum
@@ -3386,6 +3387,9 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff3 |= MD3_PUNT_REF;
 	if (mobj->owner)
 		diff3 |= MD3_OWNER;
+	if (mobj->bakexoff || mobj->bakeyoff || mobj->bakezoff || mobj->bakexpiv ||
+		mobj->bakeypiv || mobj->bakezpiv)
+		diff3 |= MD3_BAKEDOFFSET;
 
 	if (diff3 != 0)
 		diff2 |= MD2_MORE;
@@ -3675,6 +3679,15 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff3 & MD3_OWNER)
 	{
 		WRITEUINT32(save->p, mobj->owner->mobjnum);
+	}
+	if (diff3 & MD3_BAKEDOFFSET)
+	{
+		WRITEFIXED(save->p, mobj->bakexoff);
+		WRITEFIXED(save->p, mobj->bakeyoff);
+		WRITEFIXED(save->p, mobj->bakezoff);
+		WRITEFIXED(save->p, mobj->bakexpiv);
+		WRITEFIXED(save->p, mobj->bakeypiv);
+		WRITEFIXED(save->p, mobj->bakezpiv);
 	}
 
 	WRITEUINT32(save->p, mobj->mobjnum);
@@ -4988,6 +5001,20 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff3 & MD3_OWNER)
 	{
 		mobj->owner = (mobj_t *)(size_t)READUINT32(save->p);
+	}
+	if (diff3 & MD3_BAKEDOFFSET)
+	{
+		mobj->bakexoff = READFIXED(save->p);
+		mobj->bakeyoff = READFIXED(save->p);
+		mobj->bakezoff = READFIXED(save->p);
+		mobj->bakexpiv = READFIXED(save->p);
+		mobj->bakeypiv = READFIXED(save->p);
+		mobj->bakezpiv = READFIXED(save->p);
+	}
+	else
+	{
+		mobj->bakexoff = mobj->bakeyoff = mobj->bakezoff = 0;
+		mobj->bakexpiv = mobj->bakeypiv = mobj->bakezpiv = 0;
 	}
 
 	// link tid set earlier

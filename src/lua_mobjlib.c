@@ -101,6 +101,12 @@ enum mobj_e {
 	mobj_sprxoff,
 	mobj_spryoff,
 	mobj_sprzoff,
+	mobj_bakexoff,
+	mobj_bakeyoff,
+	mobj_bakezoff,
+	mobj_bakexpiv,
+	mobj_bakeypiv,
+	mobj_bakezpiv,
 	mobj_terrain,
 	mobj_hitlag,
 	mobj_waterskip,
@@ -192,6 +198,12 @@ static const char *const mobj_opt[] = {
 	"sprxoff",
 	"spryoff",
 	"sprzoff",
+	"bakexoff",
+	"bakeyoff",
+	"bakezoff",
+	"bakexpiv",
+	"bakeypiv",
+	"bakezpiv",
 	"terrain",
 	"hitlag",
 	"waterskip",
@@ -480,6 +492,24 @@ static int mobj_get(lua_State *L)
 		break;
 	case mobj_sprzoff:
 		lua_pushfixed(L, mo->sprzoff);
+		break;
+	case mobj_bakexoff:
+		lua_pushfixed(L, mo->bakexoff);
+		break;
+	case mobj_bakeyoff:
+		lua_pushfixed(L, mo->bakeyoff);
+		break;
+	case mobj_bakezoff:
+		lua_pushfixed(L, mo->bakezoff);
+		break;
+	case mobj_bakexpiv:
+		lua_pushfixed(L, mo->bakexpiv);
+		break;
+	case mobj_bakeypiv:
+		lua_pushfixed(L, mo->bakeypiv);
+		break;
+	case mobj_bakezpiv:
+		lua_pushfixed(L, mo->bakezpiv);
 		break;
 	case mobj_terrain:
 		LUA_PushUserdata(L, mo->terrain, META_TERRAIN);
@@ -898,6 +928,24 @@ static int mobj_set(lua_State *L)
 		break;
 	case mobj_sprzoff:
 		mo->sprzoff = luaL_checkfixed(L, 3);
+		break;
+	case mobj_bakexoff:
+		mo->bakexoff = luaL_checkfixed(L, 3);
+		break;
+	case mobj_bakeyoff:
+		mo->bakeyoff = luaL_checkfixed(L, 3);
+		break;
+	case mobj_bakezoff:
+		mo->bakezoff = luaL_checkfixed(L, 3);
+		break;
+	case mobj_bakexpiv:
+		mo->bakexpiv = luaL_checkfixed(L, 3);
+		break;
+	case mobj_bakeypiv:
+		mo->bakeypiv = luaL_checkfixed(L, 3);
+		break;
+	case mobj_bakezpiv:
+		mo->bakezpiv = luaL_checkfixed(L, 3);
 		break;
 	case mobj_terrain:
 		mo->terrain = *((terrain_t **)luaL_checkudata(L, 3, META_TERRAIN));

@@ -105,6 +105,98 @@ INT32 R_GetRollAngle(angle_t rollangle)
 	return ra;
 }
 
+#define VISROTMUL (ANG1 * ROTANGDIFF)
+
+vector2_t* R_RotateSpriteOffsetsByPitchRoll(
+	mobj_t* mobj,
+	boolean vflip,
+	boolean hflip,
+	vector2_t* out)
+{
+	fixed_t rotcos, rotsin, finx, finy;
+	vector2_t xvec, yvec;
+
+	// input offsets
+	fixed_t xoffs, yoffs, xpiv, ypiv;
+
+	// final offsets
+	INT16 visx, visy, visz;
+	INT16 vxpiv, vypiv;
+
+	// visual rotation
+	angle_t visrollang;
+
+	// camera angle
+	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
+
+	// rotate ourselves entirely by the sprite's own rotation angle
+	angle_t visrot = R_SpriteRotationAngle(mobj, NULL);
+
+	// xoffs = (-cos(xoff) + sin(yoff))
+	xoffs =
+		FixedMul(mobj->bakeyoff, -FINECOSINE(mobj->angle >> ANGLETOFINESHIFT)) +
+		FixedMul(mobj->bakexoff, FINESINE(mobj->angle >> ANGLETOFINESHIFT));
+	xpiv =
+		FixedMul(mobj->bakeypiv, -FINECOSINE(mobj->angle >> ANGLETOFINESHIFT)) +
+		FixedMul(mobj->bakexpiv, FINESINE(mobj->angle >> ANGLETOFINESHIFT));
+
+	// yoffs = (-sin(yoff) + cos(xoff))
+	yoffs =
+		FixedMul(mobj->bakeyoff, -FINESINE(mobj->angle >> ANGLETOFINESHIFT)) +
+		FixedMul(mobj->bakexoff, FINECOSINE(mobj->angle >> ANGLETOFINESHIFT));
+	ypiv =
+		FixedMul(mobj->bakeypiv, -FINESINE(mobj->angle >> ANGLETOFINESHIFT)) +
+		FixedMul(mobj->bakexpiv, FINECOSINE(mobj->angle >> ANGLETOFINESHIFT));
+
+	visrollang = (R_GetRollAngle(visrot) * VISROTMUL) * (hflip ? -1 : 1);
+
+	// get pitch and roll multipliers, mainly used to align the
+	// viewpoint with the camera
+	fixed_t pitchMul = -FINESINE(viewingAngle >> ANGLETOFINESHIFT);
+	fixed_t rollMul = FINECOSINE(viewingAngle >> ANGLETOFINESHIFT);
+
+	// get visual positions
+	visz = visy = visx = 0;
+	visz = (INT16)(-(mobj->bakezoff / FRACUNIT));
+	visx = (INT16)(FixedMul((yoffs / FRACUNIT), rollMul));
+	visy = (INT16)(FixedMul((xoffs / FRACUNIT), pitchMul));
+
+	vxpiv = (INT16)(FixedMul((ypiv / FRACUNIT), rollMul));
+	vypiv = (INT16)(FixedMul((xpiv / FRACUNIT), pitchMul));
+
+	// rotate by rollangle
+	finx = (visx + visy);
+	finy = -visz;
+
+	rotcos = FINECOSINE(visrollang >> ANGLETOFINESHIFT);
+	rotsin = FINESINE(visrollang >> ANGLETOFINESHIFT);
+
+	xvec.x = FixedMul(finx, rotcos);
+	xvec.y = FixedMul(finx, -rotsin);
+
+	yvec.x = FixedMul(finy, rotsin);
+	yvec.y = FixedMul(finy, -rotcos);
+
+	// set finalized offsets
+	out->x = (fixed_t)(xvec.x + yvec.x + vxpiv + vypiv);
+	out->y = (fixed_t)(xvec.y - yvec.y) + (mobj->bakezpiv / FRACUNIT);
+
+	// flip based on vflip and hflip
+	// flip the view angle if we're horizontally flipped
+	if (hflip)
+	{
+		out->x *= -1;
+	}
+
+	if (vflip)
+	{
+		out->y *= -1;
+	}
+	return out;
+}
+
+#undef VISROTMUL
+
 patch_t *Patch_GetRotated(patch_t *patch, INT32 angle, boolean flip)
 {
 	rotsprite_t *rotsprite = patch->rotated;

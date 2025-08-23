@@ -116,6 +116,18 @@ boolean K_GetWaypointIsEnabled(waypoint_t *waypoint);
 
 
 /*--------------------------------------------------
+	boolean K_SetWaypointIsEnabled(waypoint_t *waypoint, boolean enabled)
+
+		Sets whether the waypoint is enabled or not.
+
+	Input Arguments:-
+		waypoint - The waypoint to set its enabled status to.
+		enabled - Boolean that sets the waypoint's enabled status.
+--------------------------------------------------*/
+
+void K_SetWaypointIsEnabled(waypoint_t *waypoint, boolean enabled);
+
+/*--------------------------------------------------
 	boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
 
 		Returns whether the waypoint is a spawnpoint.

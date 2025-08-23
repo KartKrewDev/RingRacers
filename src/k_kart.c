@@ -9537,6 +9537,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->mo->spritexoffset = 0;
 	player->mo->spriteyoffset = 0;
 
+	player->mo->bakexoff = 0;
+	player->mo->bakeyoff = 0;
+	player->mo->bakezoff = 0;
+	player->mo->bakexpiv = 0;
+	player->mo->bakeypiv = 0;
+	player->mo->bakezpiv = 0;
+
 	player->cameraOffset = 0;
 
 	player->pflags &= ~(PF_CASTSHADOW);

@@ -1120,6 +1120,15 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprxoff = mobj->sprxoff;
 	ghost->spryoff = mobj->spryoff;
 	ghost->sprzoff = mobj->sprzoff;
+
+	// baked offsets
+	ghost->bakexoff = mobj->bakexoff;
+	ghost->bakeyoff = mobj->bakeyoff;
+	ghost->bakezoff = mobj->bakezoff;
+	ghost->bakexpiv = mobj->bakexpiv;
+	ghost->bakeypiv = mobj->bakeypiv;
+	ghost->bakezpiv = mobj->bakezpiv;
+
 	ghost->rollangle = mobj->rollangle;
 
 	ghost->spritexscale = mobj->spritexscale;

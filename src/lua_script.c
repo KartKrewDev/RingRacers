@@ -64,6 +64,8 @@ static lua_CFunction liblist[] = {
 	LUA_ItemRouletteLib, // itemroulette_t
 	LUA_BotVarsLib, // botvars_t
 	LUA_TerrainLib, // t_splash_t, t_footstep_t, t_overlay_t, terrain_t
+	LUA_RespawnVarsLib, // respawnvars_t
+	LUA_WaypointLib, // waypoint_t
 	NULL
 };
 
@@ -874,6 +876,10 @@ void LUA_InvalidateLevel(void)
 		LUA_InvalidateUserdata(nodes[i].children);
 	}
 #endif
+	for (i = 0; i < K_GetNumWaypoints(); i++)
+	{
+		LUA_InvalidateUserdata(K_GetWaypointFromIndex(i));
+	}
 }
 
 void LUA_InvalidateMapthings(void)

@@ -152,6 +152,27 @@ boolean K_GetWaypointIsEnabled(waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
+	boolean K_SetWaypointIsEnabled(waypoint_t *waypoint, boolean enabled)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_SetWaypointIsEnabled(waypoint_t *waypoint, boolean enabled)
+{
+	if (waypoint == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_SetWaypointIsEnabled.\n");
+	}
+	else if ((waypoint->mobj == NULL) || (P_MobjWasRemoved(waypoint->mobj) == true))
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_SetWaypointIsEnabled.\n");
+	}
+	else
+	{
+		waypoint->mobj->extravalue1 = enabled ? 1 : 0;
+	}
+}
+
+/*--------------------------------------------------
 	boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
 
 		See header file for description.
@@ -162,11 +183,11 @@ boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
 
 	if (waypoint == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointIsEnabled.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointIsSpawnpoint.\n");
 	}
 	else if ((waypoint->mobj == NULL) || (P_MobjWasRemoved(waypoint->mobj) == true))
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointIsEnabled.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint mobj in K_GetWaypointIsSpawnpoint.\n");
 	}
 	else
 	{
@@ -516,7 +537,7 @@ size_t K_GetWaypointHeapIndex(waypoint_t *waypoint)
 
 	if (waypoint == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointID.\n");
+		CONS_Debug(DBG_GAMELOGIC, "NULL waypoint in K_GetWaypointHeapIndex.\n");
 	}
 	else
 	{

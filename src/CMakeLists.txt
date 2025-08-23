@@ -126,6 +126,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	lua_hudlib_drawlist.c
 	lua_followerlib.c
 	lua_itemroulettelib.c
+	lua_respawnvarslib.c
+	lua_waypointslib.c
 	lua_profile.cpp
 	k_kart.c
 	k_respawn.c
@@ -213,7 +215,7 @@ if(("${CMAKE_COMPILER_IS_GNUCC}" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND 
 		target_link_options(SRB2SDL2 PRIVATE -Wl,--add-stdcall-alias -static-libgcc -static-libstdc++ -static -lpthread)
 		set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 		find_package(Threads REQUIRED)
-		target_link_libraries(SRB2SDL2 PRIVATE Threads::Threads) 
+		target_link_libraries(SRB2SDL2 PRIVATE Threads::Threads)
 	endif()
 	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		target_link_options(SRB2SDL2 PRIVATE "-Wl,--large-address-aware")
