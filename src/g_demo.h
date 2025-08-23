@@ -32,7 +32,7 @@ struct StandingJson
 {
 	uint8_t ranking;
 	String name;
-	uint8_t demoskin;
+	uint16_t demoskin;
 	String skincolor;
 	uint32_t timeorscore;
 
@@ -71,7 +71,7 @@ extern tic_t demostarttime;
 struct democharlist_t {
 	char name[SKINNAMESIZE+1];
 	UINT32 namehash;
-	UINT8 mapping; // No, this isn't about levels. It maps to loaded character ID.
+	UINT16 mapping; // No, this isn't about levels. It maps to loaded character ID.
 	UINT8 kartspeed;
 	UINT8 kartweight;
 	UINT32 flags;
@@ -97,9 +97,9 @@ struct demovars_s {
 
 	boolean freecam;
 
-	UINT8 numskins;
+	UINT16 numskins;
 	democharlist_t *skinlist;
-	UINT8 currentskinid[MAXPLAYERS];
+	UINT16 currentskinid[MAXPLAYERS];
 
 	const savebuffer_t *buffer; // debug, valid only if recording or playback
 };
@@ -129,7 +129,7 @@ struct menudemo_t {
 	struct {
 		UINT8 ranking;
 		char name[MAXPLAYERNAME+1];
-		UINT8 skin, color;
+		UINT16 skin, color;
 		UINT32 timeorscore;
 	} standings[MAXPLAYERS];
 };
@@ -194,6 +194,7 @@ struct DemoBufferSizes
 	size_t player_name;
 	size_t skin_name;
 	size_t color_name;
+	size_t availability;
 };
 
 // Your naming conventions are stupid and useless.
@@ -205,7 +206,7 @@ struct demoghost {
 	UINT16 initialcolor;
 	UINT8 fadein;
 	UINT16 version;
-	UINT8 numskins;
+	UINT16 numskins;
 	tic_t attackstart;
 	tic_t splits[MAXSPLITS];
 	boolean done;

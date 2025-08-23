@@ -182,7 +182,7 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 
 
 /*--------------------------------------------------
-	boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
+	boolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
 		Adds a new bot, using code intended to run on all clients.
 
@@ -197,7 +197,7 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 		true if a bot was added, otherwise false.
 --------------------------------------------------*/
 
-boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
+boolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
 
 // NOT AVAILABLE FOR LUA
@@ -222,7 +222,7 @@ void K_SetNameForBot(UINT8 newplayernum, const char *realname);
 
 
 /*--------------------------------------------------
-	void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e style);
+	void K_SetBot(UINT8 newplayernum, UINT16 skinnum, UINT8 difficulty, botStyle_e style);
 
 		Sets a player ID to be a new bot directly. Invoked directly
 		by K_AddBot, and indirectly by K_AddBotFromServer by sending
@@ -238,7 +238,7 @@ void K_SetNameForBot(UINT8 newplayernum, const char *realname);
 		None
 --------------------------------------------------*/
 
-void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e style);
+void K_SetBot(UINT8 newplayernum, UINT16 skinnum, UINT8 difficulty, botStyle_e style);
 
 
 /*--------------------------------------------------

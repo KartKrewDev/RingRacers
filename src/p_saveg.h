@@ -43,7 +43,7 @@ mobj_t *P_FindNewPosition(UINT32 oldposition);
 struct savedata_bot_s
 {
 	boolean valid;
-	UINT8 skin;
+	UINT16 skin;
 	UINT8 difficulty;
 	boolean rival;
 	boolean foe;
@@ -56,7 +56,7 @@ struct savedata_t
 	SINT8 lives;
 	UINT16 totalring;
 
-	UINT8 skin;
+	UINT16 skin;
 	UINT16 skincolor;
 	INT32 followerskin;
 	UINT16 followercolor;

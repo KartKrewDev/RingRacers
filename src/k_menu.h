@@ -793,7 +793,7 @@ UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount
 
 extern struct setup_chargrid_s {
 	INT16 skinlist[MAXCLONES];
-	UINT8 numskins;
+	UINT16 numskins;
 } setup_chargrid[9][9];
 
 extern UINT8 setup_followercategories[MAXFOLLOWERCATEGORIES][2];
@@ -1512,7 +1512,7 @@ void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
 
-void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap, UINT8 baseskin);
+void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT16 skin, UINT8 *colormap, UINT16 baseskin);
 fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, boolean flash, boolean statsmode);
 
 #define MAXWRONGPLAYER MAXSPLITSCREENPLAYERS
@@ -1523,7 +1523,7 @@ extern struct wrongwarp_s {
 	tic_t delaytowrongplayer;
 	struct wrongplayer_s
 	{
-		UINT8 skin;
+		UINT16 skin;
 		INT16 across;
 		boolean spinout;
 	} wrongplayers[MAXWRONGPLAYER];

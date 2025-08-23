@@ -1055,7 +1055,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 
 	UINT8 *colormap = NULL, *oppositemap = NULL;
 	fixed_t playerx = 0, playery = 0;
-	UINT8 pskin = MAXSKINS;
+	UINT16 pskin = MAXSKINS;
 	UINT16 pcolor = SKINCOLOR_WHITE;
 
 	if (standings->mainplayer == MAXPLAYERS)

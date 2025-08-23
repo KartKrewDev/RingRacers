@@ -2863,7 +2863,7 @@ static void K_RegularVoiceTimers(player_t *player)
 		player->karthud[khud_tauntvoices] = 4*TICRATE;
 }
 
-static UINT8 K_ObjectToSkinIDForSounds(mobj_t *source)
+static UINT16 K_ObjectToSkinIDForSounds(mobj_t *source)
 {
 	if (source->player)
 		return source->player->skin;
@@ -2876,7 +2876,7 @@ static UINT8 K_ObjectToSkinIDForSounds(mobj_t *source)
 
 static void K_PlayGenericTastefulTaunt(mobj_t *source, sfxenum_t sfx_id)
 {
-	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	UINT16 skinid = K_ObjectToSkinIDForSounds(source);
 	if (skinid >= numskins)
 		return;
 
@@ -2915,7 +2915,7 @@ void K_PlayBoostTaunt(mobj_t *source)
 
 void K_PlayOvertakeSound(mobj_t *source)
 {
-	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	UINT16 skinid = K_ObjectToSkinIDForSounds(source);
 	if (skinid >= numskins)
 		return;
 
@@ -2940,7 +2940,7 @@ void K_PlayOvertakeSound(mobj_t *source)
 
 static void K_PlayGenericCombatSound(mobj_t *source, mobj_t *other, sfxenum_t sfx_id)
 {
-	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	UINT16 skinid = K_ObjectToSkinIDForSounds(source);
 	if (skinid >= numskins)
 		return;
 
@@ -3010,7 +3010,7 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 
 void K_PlayPowerGloatSound(mobj_t *source)
 {
-	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	UINT16 skinid = K_ObjectToSkinIDForSounds(source);
 	if (skinid >= numskins)
 		return;
 
@@ -3028,7 +3028,7 @@ void K_PlayPowerGloatSound(mobj_t *source)
 // MOVED so we don't have to extern K_ObjectToSkinID
 void P_PlayVictorySound(mobj_t *source)
 {
-	UINT8 skinid = K_ObjectToSkinIDForSounds(source);
+	UINT16 skinid = K_ObjectToSkinIDForSounds(source);
 	if (skinid >= numskins)
 		return;
 

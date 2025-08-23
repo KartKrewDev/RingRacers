@@ -694,8 +694,8 @@ struct player_t
 	INT32 skin;
 	UINT8 availabilities[MAXAVAILABILITY];
 
-	UINT8 fakeskin; // ironman
-	UINT8 lastfakeskin;
+	UINT16 fakeskin; // ironman
+	UINT16 lastfakeskin;
 
 	UINT8 kartspeed; // Kart speed stat between 1 and 9
 	UINT8 kartweight; // Kart weight stat between 1 and 9

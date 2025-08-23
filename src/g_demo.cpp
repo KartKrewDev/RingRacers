@@ -98,11 +98,15 @@ tic_t demostarttime; // for comparative timing purposes
 
 static constexpr DemoBufferSizes get_buffer_sizes(UINT16 version)
 {
-	// These sizes are compatible as of version 0x000A
+	if (version < 0x0010)
+		return {21, 16, 32, 32};
+
+	// These sizes are compatible as of version 0x0010
 	static_assert(MAXPLAYERNAME == 21);
 	static_assert(SKINNAMESIZE == 16);
 	static_assert(MAXCOLORNAME == 32);
-	return {21, 16, 32};
+	static_assert(MAXAVAILABILITY == 16);
+	return {21, 16, 32, 16};
 }
 
 static DemoBufferSizes g_buffer_sizes;
@@ -138,7 +142,8 @@ static struct {
 	INT32 health;
 
 	// EZT_STATDATA
-	UINT8 skinid, kartspeed, kartweight;
+	UINT16 skinid;
+	UINT8 kartspeed, kartweight;
 	UINT32 charflags;
 
 	UINT8 desyncframes; // Don't try to resync unless we've been off for two frames, to monkeypatch a few trouble spots
@@ -169,11 +174,14 @@ demoghost *ghosts = NULL;
 //   - Slope physics changed with a scaling fix
 // - 0x000C (Ring Racers v2.2)
 // - 0x000D (Ring Racers v2.3)
-// - 0x000E (Ring Racers v2.4 in-dev before DYNSLOPE thinker change)
-// - 0x000F (Ring Racers v2.4)
+
+// Currently supported:
+// - 0x000E (Ring Racers 2.4 staff ghosts part 1 - initial recordings)
+// - 0x000F (Ring Racers 2.4 staff ghosts part 2 - dynslopes thinker fix)
+// - 0x0010 (Ring Racers 2.4 staff ghosts part 3 - skinlimit raise. don't say we never did anythin for 'ya)
 
 #define MINDEMOVERSION 0x000E
-#define DEMOVERSION 0x000F
+#define DEMOVERSION 0x0010
 
 boolean G_CompatLevel(UINT16 level)
 {
@@ -330,6 +338,8 @@ void G_ReadDemoExtraData(void)
 			{
 				players[p].availabilities[i] = READUINT8(demobuf.p);
 			}
+			if (g_buffer_sizes.availability > static_cast<size_t>(i))
+				demobuf.p += (g_buffer_sizes.availability - i);
 
 			players[p].bot = !!(READUINT8(demobuf.p));
 			if (players[p].bot)
@@ -389,13 +399,17 @@ void G_ReadDemoExtraData(void)
 		}
 		if (extradata & DXD_SKIN)
 		{
-			UINT8 skinid;
+			UINT16 skinid;
 
 			// Skin
 
-			skinid = READUINT8(demobuf.p);
+			if (demo.version >= 0x0010)
+				skinid = READUINT16(demobuf.p);
+			else
+				skinid = READUINT8(demobuf.p);
 			if (skinid >= demo.numskins)
 				skinid = 0;
+
 			ghostext[p].skinid = demo.currentskinid[p] = skinid;
 			SetPlayerSkinByNum(p, skinid);
 
@@ -537,7 +551,7 @@ void G_WriteDemoExtraData(void)
 			if (demo_extradata[i] & DXD_SKIN)
 			{
 				// Skin
-				WRITEUINT8(demobuf.p, players[i].skin);
+				WRITEUINT16(demobuf.p, players[i].skin);
 			}
 			if (demo_extradata[i] & DXD_COLOR)
 			{
@@ -922,14 +936,14 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	if (ghost->player && (
-			ghostext[playernum].skinid != (UINT8)(((skin_t *)ghost->skin)->skinnum) ||
+			ghostext[playernum].skinid != (UINT16)(((skin_t *)ghost->skin)->skinnum) ||
 			ghostext[playernum].kartspeed != ghost->player->kartspeed ||
 			ghostext[playernum].kartweight != ghost->player->kartweight ||
 			ghostext[playernum].charflags != ghost->player->charflags
 		))
 	{
 		ghostext[playernum].flags |= EZT_STATDATA;
-		ghostext[playernum].skinid = (UINT8)(((skin_t *)ghost->skin)->skinnum);
+		ghostext[playernum].skinid = (UINT16)(((skin_t *)ghost->skin)->skinnum);
 		ghostext[playernum].kartspeed = ghost->player->kartspeed;
 		ghostext[playernum].kartweight = ghost->player->kartweight;
 		ghostext[playernum].charflags = ghost->player->charflags;
@@ -984,7 +998,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		}
 		if (ghostext[playernum].flags & EZT_STATDATA)
 		{
-			WRITEUINT8(demobuf.p,ghostext[playernum].skinid);
+			WRITEUINT16(demobuf.p,ghostext[playernum].skinid);
 			WRITEUINT8(demobuf.p,ghostext[playernum].kartspeed);
 			WRITEUINT8(demobuf.p,ghostext[playernum].kartweight);
 			WRITEUINT32(demobuf.p, ghostext[playernum].charflags);
@@ -1013,7 +1027,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 			if (ghost->player->followmobj->colorized)
 				followtic |= FZT_COLORIZED;
 			if (followtic & FZT_SKIN)
-				WRITEUINT8(demobuf.p,(UINT8)(((skin_t *)(ghost->player->followmobj->skin))->skinnum));
+				WRITEUINT16(demobuf.p,(UINT16)(((skin_t *)(ghost->player->followmobj->skin))->skinnum));
 			oldghost[playernum].flags2 |= MF2_AMBUSH;
 		}
 
@@ -1160,9 +1174,18 @@ void G_ConsGhostTic(INT32 playernum)
 		}
 		if (xziptic & EZT_STATDATA)
 		{
-			ghostext[playernum].skinid = READUINT8(demobuf.p);
-			if (ghostext[playernum].skinid >= demo.numskins)
-				ghostext[playernum].skinid = 0;
+			UINT16 skinid;
+
+			// Skin
+
+			if (demo.version >= 0x0010)
+				skinid = READUINT16(demobuf.p);
+			else
+				skinid = READUINT8(demobuf.p);
+			if (skinid >= demo.numskins)
+				skinid = 0;
+
+			ghostext[playernum].skinid = skinid;
 			ghostext[playernum].kartspeed = READUINT8(demobuf.p);
 			ghostext[playernum].kartweight = READUINT8(demobuf.p);
 			ghostext[playernum].charflags = READUINT32(demobuf.p);
@@ -1176,7 +1199,11 @@ void G_ConsGhostTic(INT32 playernum)
 		{
 			demobuf.p += sizeof(INT16);
 			if (followtic & FZT_SKIN)
+			{
 				demobuf.p++;
+				if (demo.version >= 0x0010)
+					demobuf.p++;
+			}
 		}
 		if (followtic & FZT_SCALE)
 			demobuf.p += sizeof(fixed_t);
@@ -1247,7 +1274,7 @@ void G_ConsGhostTic(INT32 playernum)
 		if (players[playernum].kartspeed != ghostext[playernum].kartspeed
 			|| players[playernum].kartweight != ghostext[playernum].kartweight
 			|| players[playernum].charflags != ghostext[playernum].charflags ||
-			demo.skinlist[ghostext[playernum].skinid].mapping != (UINT8)(((skin_t *)testmo->skin)->skinnum))
+			demo.skinlist[ghostext[playernum].skinid].mapping != (UINT16)(((skin_t *)testmo->skin)->skinnum))
 		{
 			if (demosynced)
 			{
@@ -1289,7 +1316,7 @@ void G_GhostTicker(void)
 			continue;
 		}
 		// Pause jhosts that cross until the timer starts.
-		if (g->attackstart != INT32_MAX && leveltime < starttime && leveltime >= g->attackstart && G_TimeAttackStart())
+		if (g->attackstart != UINT32_MAX && leveltime < starttime && leveltime >= g->attackstart && G_TimeAttackStart())
 		{
 			continue;
 		}
@@ -1333,7 +1360,7 @@ fadeghost:
 				ziptic = READUINT8(g->p);
 				if (ziptic & DXD_JOINDATA)
 				{
-					g->p += MAXAVAILABILITY;
+					g->p += g->sizes.availability;
 					if (READUINT8(g->p) != 0)
 						I_Error("Ghost is not a record attack ghost (bot JOINDATA)");
 				}
@@ -1349,7 +1376,11 @@ fadeghost:
 					}
 				}
 				if (ziptic & DXD_SKIN)
+				{
 					g->p++; // We _could_ read this info, but it shouldn't change anything in record attack...
+					if (g->version >= 0x0010)
+						g->p++;
+				}
 				if (ziptic & DXD_COLOR)
 					g->p += g->sizes.color_name; // Same tbh
 				if (ziptic & DXD_NAME)
@@ -1511,9 +1542,17 @@ fadeghost:
 				g->p += 1 + 1 + 4; // itemtype, itemamount, health
 			if (xziptic & EZT_STATDATA)
 			{
-				UINT8 skinid = READUINT8(g->p);
+				UINT16 skinid;
+
+				// Skin
+
+				if (g->version >= 0x0010)
+					skinid = READUINT16(g->p);
+				else
+					skinid = READUINT8(g->p);
 				if (skinid >= g->numskins)
 					skinid = 0;
+
 				g->mo->skin = skins[g->skinlist[skinid].mapping];
 				g->p += 6; // kartspeed, kartweight, charflags
 			}
@@ -1549,7 +1588,14 @@ fadeghost:
 					follow->colorized = true;
 
 				if (followtic & FZT_SKIN)
-					follow->skin = skins[READUINT8(g->p)];
+				{
+					UINT16 id;
+					if (g->version >= 0x0010)
+						id = READUINT16(g->p);
+					else
+						id = READUINT8(g->p);
+					follow->skin = skins[id];
+				}
 			}
 			if (follow)
 			{
@@ -1618,10 +1664,10 @@ skippedghosttic:
 			I_Error("Ghost is not a record attack ghost GHOSTEND"); //@TODO lmao don't blow up like this
 
 		// If the timer started, skip ahead until the ghost starts too.
-		if (!fastforward && attacktimingstarted && g->attackstart != INT32_MAX && leveltime < g->attackstart && G_TimeAttackStart())
+		if (!fastforward && attacktimingstarted && g->attackstart != UINT32_MAX && leveltime < g->attackstart && G_TimeAttackStart())
 		{
 			fastforward = g->attackstart - leveltime;
-			g->attackstart = INT32_MAX;
+			g->attackstart = UINT32_MAX;
 		}
 
 		if (fastforward)
@@ -1871,10 +1917,10 @@ static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, boolean quick)
 
 static void G_SaveDemoSkins(UINT8 **pp, const DemoBufferSizes &psizes)
 {
-	UINT8 i;
+	UINT16 i;
 	UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(true, -1);
 
-	WRITEUINT8((*pp), numskins);
+	WRITEUINT16((*pp), numskins);
 	for (i = 0; i < numskins; i++)
 	{
 		// Skinname, for first attempt at identification.
@@ -1892,9 +1938,10 @@ static void G_SaveDemoSkins(UINT8 **pp, const DemoBufferSizes &psizes)
 	}
 }
 
-static democharlist_t *G_LoadDemoSkins(const DemoBufferSizes &psizes, savebuffer_t *info, UINT8 *worknumskins, boolean getclosest)
+static democharlist_t *G_LoadDemoSkins(const DemoBufferSizes &psizes, savebuffer_t *info, UINT16 *worknumskins, boolean getclosest)
 {
-	UINT8 i, byte, shif;
+	UINT16 i;
+	UINT8 byte, shif;
 	democharlist_t *skinlist = NULL;
 
 	if (P_SaveBufferRemaining(info) < 1)
@@ -1902,7 +1949,11 @@ static democharlist_t *G_LoadDemoSkins(const DemoBufferSizes &psizes, savebuffer
 		return NULL;
 	}
 
-	(*worknumskins) = READUINT8(info->p);
+	if (psizes.availability == 32) // version isn't accessible here
+		(*worknumskins) = READUINT8(info->p);
+	else
+		(*worknumskins) = READUINT16(info->p);
+
 	if (!(*worknumskins))
 		return NULL;
 
@@ -1943,18 +1994,18 @@ static democharlist_t *G_LoadDemoSkins(const DemoBufferSizes &psizes, savebuffer
 
 		if (result != -1)
 		{
-			skinlist[i].mapping = (UINT8)result;
+			skinlist[i].mapping = (UINT16)result;
 		}
+	}
+
+	if (P_SaveBufferRemaining(info) < psizes.availability)
+	{
+		Z_Free(skinlist);
+		return NULL;
 	}
 
 	for (byte = 0; byte < MAXAVAILABILITY; byte++)
 	{
-		if (P_SaveBufferRemaining(info) < 1)
-		{
-			Z_Free(skinlist);
-			return NULL;
-		}
-
 		UINT8 availabilitiesbuffer = READUINT8(info->p);
 
 		for (shif = 0; shif < 8; shif++)
@@ -1971,15 +2022,22 @@ static democharlist_t *G_LoadDemoSkins(const DemoBufferSizes &psizes, savebuffer
 		}
 	}
 
+	if (psizes.availability > static_cast<size_t>(byte))
+		info->p += (psizes.availability - byte);
+
 	return skinlist;
 }
 
 static void G_SkipDemoSkins(UINT8 **pp, const DemoBufferSizes& psizes)
 {
-	UINT8 demonumskins;
-	UINT8 i;
+	UINT16 demonumskins;
+	UINT16 i;
 
-	demonumskins = READUINT8((*pp));
+	if (psizes.availability == 32) // version isn't accessible here
+		demonumskins = READUINT8((*pp));
+	else
+		demonumskins = READUINT16((*pp));
+
 	for (i = 0; i < demonumskins; ++i)
 	{
 		(*pp) += psizes.skin_name; // name
@@ -1988,7 +2046,7 @@ static void G_SkipDemoSkins(UINT8 **pp, const DemoBufferSizes& psizes)
 		(*pp) += 4; // flags
 	}
 
-	(*pp) += MAXAVAILABILITY;
+	(*pp) += psizes.availability;
 }
 
 void G_BeginRecording(void)
@@ -2086,7 +2144,7 @@ void G_BeginRecording(void)
 
 	// If special attack-start timing applies, we need to know where to skip the ghost to
 	demoattack_p = demobuf.p;
-	WRITEUINT32(demobuf.p, INT32_MAX);
+	WRITEUINT32(demobuf.p, UINT32_MAX);
 
 	demosplits_p = demobuf.p;
 	for (i = 0; i < MAXSPLITS; i++)
@@ -2164,8 +2222,8 @@ void G_BeginRecording(void)
 			}
 
 			// Skin (now index into demo.skinlist)
-			WRITEUINT8(demobuf.p, player->skin);
-			WRITEUINT8(demobuf.p, player->lastfakeskin);
+			WRITEUINT16(demobuf.p, player->skin);
+			WRITEUINT16(demobuf.p, player->lastfakeskin);
 
 			WRITEUINT8(demobuf.p, player->team);
 
@@ -2304,10 +2362,6 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 			tic_t endtime = UINT32_MAX;
 			if (points <= MAXSPLITS)
 				endtime = g->splits[points-1];
-
-			// Staff ghost oopsie. Fuckin, uh,
-			if (endtime == INT32_MAX)
-				endtime = UINT32_MAX;
 
 			if (lowestend > oldbest) // Not losing to any ghost
 			{
@@ -2488,15 +2542,10 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	} p += 12; // DEMOHEADER
 	p++; // VERSION
 	p++; // SUBVERSION
-	oldversion = READUINT16(p);
-	switch(oldversion) // demoversion
+	oldversion = READUINT16(p); // demoversion
+	if (oldversion < MINDEMOVERSION || oldversion > DEMOVERSION)
 	{
-	case 0x000E:
-		/* fallthru */
-	case DEMOVERSION: // latest always supported
-		break;
-	// too old, cannot support.
-	default:
+		// too old, cannot support.
 		CONS_Alert(CONS_NOTICE, M_GetText("File '%s' invalid format. It will be overwritten.\n"), oldname);
 		Z_Free(buffer);
 		return UINT8_MAX;
@@ -2601,7 +2650,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 {
 	savebuffer_t info = {0};
 	UINT8 *extrainfo_p;
-	UINT8 version, subversion, worknumskins;
+	UINT8 version, subversion;
+	UINT16 worknumskins;
 	UINT16 pdemoflags;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
@@ -2639,26 +2689,21 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 	subversion = READUINT8(info.p);
 	pdemoversion = READUINT16(info.p);
 
-	switch(pdemoversion)
+	if (pdemoversion < MINDEMOVERSION || pdemoversion > DEMOVERSION)
 	{
-	case 0x000E:
-		/* fallthru */
-	case DEMOVERSION: // latest always supported
-		if (P_SaveBufferRemaining(&info) < 64)
-		{
-			goto corrupt;
-		}
-
-		// demo title
-		M_Memcpy(pdemo->title, info.p, 64);
-		info.p += 64;
-
-		break;
-	// too old, cannot support.
-	default:
+		// too old, cannot support.
 		CONS_Alert(CONS_ERROR, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemo->filepath);
 		goto badreplay;
 	}
+
+	if (P_SaveBufferRemaining(&info) < 64)
+	{
+		goto corrupt;
+	}
+
+	// demo title
+	M_Memcpy(pdemo->title, info.p, 64);
+	info.p += 64;
 
 	if (version != VERSION || subversion != SUBVERSION)
 		pdemo->type = MD_OUTDATED;
@@ -2882,7 +2927,8 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	char msg[1024];
 
 	boolean spectator, bot;
-	UINT8 slots[MAXPLAYERS], lastfakeskin[MAXPLAYERS];
+	UINT8 slots[MAXPLAYERS];
+	UINT16 lastfakeskin[MAXPLAYERS];
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
 	// RR: Don't print warnings for staff ghosts, since they'll inevitably
@@ -3038,14 +3084,9 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	version = READUINT8(demobuf.p);
 	subversion = READUINT8(demobuf.p);
 	demo.version = READUINT16(demobuf.p);
-	switch(demo.version)
+	if (demo.version < MINDEMOVERSION || demo.version > DEMOVERSION)
 	{
-	case 0x000E:
-		/* fallthru */
-	case DEMOVERSION: // latest always supported
-		break;
-	// too old, cannot support.
-	default:
+		// too old, cannot support.
 		snprintf(msg, 1024, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
 		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
@@ -3363,13 +3404,24 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		{
 			availabilities[p][i] = READUINT8(demobuf.p);
 		}
+		if (g_buffer_sizes.availability > static_cast<size_t>(i))
+			demobuf.p += (g_buffer_sizes.availability - i);
 
 		// Skin
 
-		demo.currentskinid[p] = READUINT8(demobuf.p);
+		if (demo.version >= 0x0010)
+		{
+			demo.currentskinid[p] = READUINT16(demobuf.p);
+			lastfakeskin[p] = READUINT16(demobuf.p);
+		}
+		else
+		{
+			demo.currentskinid[p] = READUINT8(demobuf.p);
+			lastfakeskin[p] = READUINT8(demobuf.p);
+		}
+
 		if (demo.currentskinid[p] >= demo.numskins)
 			demo.currentskinid[p] = 0;
-		lastfakeskin[p] = READUINT8(demobuf.p);
 
 		players[p].team = READUINT8(demobuf.p);
 
@@ -3510,7 +3562,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	UINT16 initialskin = 0;
 	UINT16 initialcolor = 0;
 	skin_t *ghskin = skins[0];
-	UINT8 worknumskins;
+	UINT16 worknumskins;
 	UINT32 num_classes;
 	democharlist_t *skinlist = NULL;
 
@@ -3528,14 +3580,10 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	p++; // SUBVERSION
 
 	ghostversion = READUINT16(p);
-	switch(ghostversion)
+	
+	if (ghostversion < MINDEMOVERSION || ghostversion > DEMOVERSION)
 	{
-	case 0x000E:
-		/* fallthru */
-	case DEMOVERSION: // latest always supported
-		break;
-	// too old, cannot support.
-	default:
+		// too old, cannot support.
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo version incompatible.\n"), defdemoname);
 		P_SaveBufferFree(buffer);
 		return;
@@ -3618,6 +3666,21 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 		splits[i] = READUINT32(p);
 	}
 
+	if (ghostversion < 0x0010)
+	{
+		// Staff ghost oopsie. Fuckin, uh,
+
+		if (attackstart == INT32_MAX)
+			attackstart = UINT32_MAX;
+
+		for (i = 0; i < MAXSPLITS; i++)
+		{
+			if (splits[i] != INT32_MAX)
+				continue;
+			splits[i] = UINT32_MAX;
+		}
+	}
+
 	// net var data
 	count = READUINT16(p);
 	while (count--)
@@ -3655,17 +3718,25 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	// Player name (TODO: Display this somehow if it doesn't match cv_playername!)
 	p += copy_fixed_buf(name, p, ghostsizes.player_name);
 
-	p += MAXAVAILABILITY;
+	p += ghostsizes.availability;
 
 	// Skin
-	i = READUINT8(p);
+	if (ghostversion >= 0x0010)
+	{
+		i = READUINT16(p);
+		p += 2; // lastfakeskin
+	}
+	else
+	{
+		i = READUINT8(p);
+		p++; // lastfakeskin
+	}
+
 	if (i < worknumskins)
 	{
 		ghskin = skins[skinlist[i].mapping];
 		initialskin = skinlist[i].mapping;
 	}
-
-	p++; // lastfakeskin
 
 	p++; // team
 
@@ -3794,7 +3865,7 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 {
 	UINT8 *p = buffer;
 	UINT16 ghostversion;
-	UINT16 flags;
+	UINT16 flags, count;
 	UINT32 num_classes;
 	INT32 i;
 	staffbrief_t temp = {0};
@@ -3814,16 +3885,10 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	p++; // SUBVERSION
 
 	ghostversion = READUINT16(p);
-	switch(ghostversion)
+	if (ghostversion < MINDEMOVERSION || ghostversion > DEMOVERSION)
 	{
-		case 0x000E:
-			/* fallthru */
-		case DEMOVERSION: // latest always supported
-			break;
-
 		// too old, cannot support.
-		default:
-			goto fail;
+		goto fail;
 	}
 
 	p += 64; // full demo title
@@ -3867,9 +3932,8 @@ staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 	for (i = 0; i < MAXSPLITS; i++)
 		p += 4; // splits
 
-	// Ehhhh don't need ghostversion here (?) so I'll reuse the var here
-	ghostversion = READUINT16(p);
-	while (ghostversion--)
+	count = READUINT16(p);
+	while (count--)
 	{
 		SKIPSTRING(p);
 		SKIPSTRING(p);

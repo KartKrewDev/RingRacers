@@ -215,7 +215,7 @@ void K_AssignFoes(void)
 --------------------------------------------------*/
 void K_InitGrandPrixBots(void)
 {
-	const UINT8 defaultbotskin = R_BotDefaultSkin();
+	const UINT16 defaultbotskin = R_BotDefaultSkin();
 
 	const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
 	UINT8 difficultylevels[MAXPLAYERS];
@@ -226,14 +226,14 @@ void K_InitGrandPrixBots(void)
 	UINT8 numplayers = 0;
 	UINT8 competitors[MAXSPLITSCREENPLAYERS];
 
-	UINT8 usableskins, skincount = (demo.playback ? demo.numskins : numskins);;
-	UINT8 grabskins[MAXSKINS+1];
+	UINT16 usableskins, skincount = (demo.playback ? demo.numskins : numskins);;
+	UINT16 grabskins[MAXSKINS+1];
 
-	UINT8 botskinlist[MAXPLAYERS];
+	UINT16 botskinlist[MAXPLAYERS];
 	UINT8 botskinlistpos = 0;
 
 	UINT8 newplayernum = 0;
-	UINT8 i, j;
+	UINT16 i, j;
 
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
 	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
@@ -314,10 +314,10 @@ void K_InitGrandPrixBots(void)
 				INT32 rivalnum = R_SkinAvailable(rivalname);
 
 				// Intentionally referenced before (currently dummied out) unlock check. Such a tease!
-				if (rivalnum != -1 && grabskins[(UINT8)rivalnum] != MAXSKINS)
+				if (rivalnum != -1 && grabskins[(UINT16)rivalnum] != MAXSKINS)
 				{
 					botskinlist[botskinlistpos++] = (UINT8)rivalnum;
-					grabskins[(UINT8)rivalnum] = MAXSKINS;
+					grabskins[(UINT16)rivalnum] = MAXSKINS;
 				}
 			}
 		}
@@ -345,11 +345,11 @@ void K_InitGrandPrixBots(void)
 	{
 		while (botskinlistpos < wantedbots)
 		{
-			UINT8 skinnum = defaultbotskin;
+			UINT16 skinnum = defaultbotskin;
 
 			if (usableskins > 0)
 			{
-				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
+				UINT16 index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}
@@ -781,7 +781,7 @@ static boolean CompareReplacements(player_t *a, player_t *b)
 --------------------------------------------------*/
 void K_RetireBots(void)
 {
-	UINT8 i;
+	UINT16 i;
 
 	if (grandprixinfo.gp == true
 		&& grandprixinfo.eventmode != GPEVENT_NONE)
@@ -931,11 +931,11 @@ void K_RetireBots(void)
 
 	// Okay, now this is essentially the original contents of K_RetireBots with cpp swag
 
-	const UINT8 defaultbotskin = R_BotDefaultSkin();
+	const UINT16 defaultbotskin = R_BotDefaultSkin();
 	SINT8 newDifficulty;
 
-	UINT8 usableskins, skincount = (demo.playback ? demo.numskins : numskins);
-	UINT8 grabskins[MAXSKINS+1];
+	UINT16 usableskins, skincount = (demo.playback ? demo.numskins : numskins);
+	UINT16 grabskins[MAXSKINS+1];
 
 	// Handle adjusting difficulty for new bots
 	{
@@ -1009,11 +1009,11 @@ void K_RetireBots(void)
 	// Replace nocontested bots.
 	for (player_t *bot : bots)
 	{
-		UINT8 skinnum = defaultbotskin;
+		UINT16 skinnum = defaultbotskin;
 
 		if (usableskins > 0)
 		{
-			UINT8 index = P_RandomKey(PR_BOTS, usableskins);
+			UINT16 index = P_RandomKey(PR_BOTS, usableskins);
 			skinnum = grabskins[index];
 			grabskins[index] = grabskins[--usableskins];
 		}

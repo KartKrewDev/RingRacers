@@ -39,7 +39,7 @@ extern "C" {
 struct skin_t
 {
 	char name[SKINNAMESIZE+1]; // name of skin
-	UINT8 skinnum;
+	UINT16 skinnum;
 	UINT32 namehash; // quickncasehash(->name, SKINNAMESIZE)
 	UINT16 wadnum;
 	skinflags_t flags;
@@ -125,7 +125,7 @@ void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
 
 // Set backup
 INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock);
-UINT8 R_BotDefaultSkin(void);
+UINT16 R_BotDefaultSkin(void);
 
 // Heavy Magician
 void SetFakePlayerSkin(player_t* player, INT32 skinnum);
