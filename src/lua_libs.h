@@ -103,6 +103,7 @@ extern lua_State *gL;
 #define META_ACTIVATOR "ACTIVATOR_T*"
 
 #define META_FOLLOWER "FOLLOWER_T*"
+#define META_WAYPOINT "WAYPOINT_T*"
 
 #define META_SONICLOOPVARS "SONICLOOPVARS_T*"
 #define META_SONICLOOPCAMVARS "SONICLOOPCAMVARS_T*"
@@ -136,6 +137,8 @@ int LUA_HudLib(lua_State *L);
 int LUA_FollowerLib(lua_State *L);
 int LUA_BotVarsLib(lua_State *L);
 int LUA_TerrainLib(lua_State *L);
+int LUA_RespawnVarsLib(lua_State *L);
+int LUA_WaypointLib(lua_State *L);
 
 #ifdef __cplusplus
 } // extern "C"
