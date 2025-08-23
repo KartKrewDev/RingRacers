@@ -2231,13 +2231,10 @@ void G_BeginRecording(void)
 			demobuf.p += copy_fixed_buf(demobuf.p, skincolors[player->skincolor].name, g_buffer_sizes.color_name);
 
 			// Save follower's skin name
-			// PS: We must check for 'follower' to determine if the followerskin is valid. It's going to be 0 if we don't have a follower, but 0 is also absolutely a valid follower!
-			// Doesn't really matter if the follower mobj is valid so long as it exists in a way or another.
-
-			if (player->follower)
-				demobuf.p += copy_fixed_buf(demobuf.p, followers[player->followerskin].name, g_buffer_sizes.skin_name);
+			if (player->followerskin == -1)
+				demobuf.p += copy_fixed_buf(demobuf.p, "None", g_buffer_sizes.skin_name);
 			else
-				demobuf.p += copy_fixed_buf(demobuf.p, "None", g_buffer_sizes.skin_name);	// Say we don't have one, then.
+				demobuf.p += copy_fixed_buf(demobuf.p, followers[player->followerskin].name, g_buffer_sizes.skin_name);
 
 			// Save follower's colour
 			for (j = (numskincolors+2)-1; j > 0; j--)
