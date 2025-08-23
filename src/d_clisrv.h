@@ -165,6 +165,7 @@ struct clientcmd_pak
 	UINT8 client_tic;
 	UINT8 resendfrom;
 	INT16 consistancy;
+	UINT8 wantdelay;
 	ticcmd_t cmd;
 } ATTRPACK;
 
@@ -175,6 +176,7 @@ struct client2cmd_pak
 	UINT8 client_tic;
 	UINT8 resendfrom;
 	INT16 consistancy;
+	UINT8 wantdelay;
 	ticcmd_t cmd, cmd2;
 } ATTRPACK;
 
@@ -185,6 +187,7 @@ struct client3cmd_pak
 	UINT8 client_tic;
 	UINT8 resendfrom;
 	INT16 consistancy;
+	UINT8 wantdelay;
 	ticcmd_t cmd, cmd2, cmd3;
 } ATTRPACK;
 
@@ -195,6 +198,7 @@ struct client4cmd_pak
 	UINT8 client_tic;
 	UINT8 resendfrom;
 	INT16 consistancy;
+	UINT8 wantdelay;
 	ticcmd_t cmd, cmd2, cmd3, cmd4;
 } ATTRPACK;
 
