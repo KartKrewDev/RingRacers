@@ -5542,8 +5542,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 			if (timegap < netbuffer->u.clientpak.wantdelay)
 			{
 				faketic += (netbuffer->u.clientpak.wantdelay - timegap);
+				/*
 				if (node != servernode || !netgame)
 					CONS_Printf("wanted %d with gap %d, +%d\n", netbuffer->u.clientpak.wantdelay, timegap, faketic - maketic);
+				*/
 			}
 
 			// And if we already have a ticcmd submitted for that time, it's weird packet pacing
