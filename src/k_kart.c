@@ -4435,6 +4435,45 @@ void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
 	}
 }
 
+// WARNING: Can return NULL if players are tied for the checkpoint lead
+static player_t* K_CheckpointLeader(void)
+{
+	player_t *leader = NULL;
+
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+
+		player_t *check = &players[i];
+
+		if (check->spectator)
+			continue;
+
+		if (leader == NULL || leader->gradingpointnum < check->gradingpointnum)
+			leader = check;
+	}
+
+	// No unambiguous leader? Return NULL.
+	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+
+		player_t *check = &players[i];
+
+		if (check->spectator)
+			continue;
+		if (check == leader)
+			continue;
+
+		if (leader->gradingpointnum == check->gradingpointnum)
+			return NULL;
+	}
+
+	return leader;
+}
+
 static void K_SetupSplitForPlayer(player_t *us, player_t *them, tic_t ourtime, tic_t theirtime)
 {
 	us->karthud[khud_splittimer] = 3*TICRATE;
@@ -4541,7 +4580,8 @@ void K_CheckpointCrossAward(player_t *player)
 	K_AwardPlayerRings(player, (player->bot ? 20 : 10), true);
 
 	// Update Duel scoring.
-	if (K_InRaceDuel() && player->position == 1)
+	player_t *leader = K_CheckpointLeader();
+	if (K_InRaceDuel() && player == leader)
 	{
 		player->duelscore += 1;
 
