@@ -2122,6 +2122,9 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	if (p->showextra == true)
 	{
 		INT32 randomskin = 0;
+		char variadicInfoBuffer[(MAXCOLORNAME*2) + 1 + 2 + 1];//+1 for spacing, +2 for brackets, +1 for null terminator
+		UINT16 folcol;
+
 		switch (p->mdepth)
 		{
 			case CSSTEP_ALTS: // Select clone
@@ -2150,7 +2153,12 @@ static void M_DrawCharSelectPreview(UINT8 num)
 			case CSSTEP_COLORS: // Select color
 				if (p->color < numskincolors)
 				{
-					V_DrawThinString(x-3, y+2, 0, skincolors[p->color].name);
+					if(p->color == SKINCOLOR_NONE) //'default' handling
+						sprintf(variadicInfoBuffer, "%s (%s)", skincolors[p->color].name, skincolors[skins[p->skin]->prefcolor].name);
+					else
+						sprintf(variadicInfoBuffer, "%s", skincolors[p->color].name);
+
+					V_DrawThinString(x-3, y+2, 0, variadicInfoBuffer);
 				}
 				else
 				{
@@ -2180,17 +2188,26 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				}
 				break;
 			case CSSTEP_FOLLOWERCOLORS:
+				folcol = K_GetEffectiveFollowerColor(p->followercolor, &followers[p->followern], p->color, skins[p->skin]);
+
 				if (p->followercolor == FOLLOWERCOLOR_MATCH)
 				{
-					V_DrawThinString(x-3, y+2, 0, "Match");
+					sprintf(variadicInfoBuffer, "Match (%s)", skincolors[folcol].name);
+					V_DrawThinString(x-3, y+2, 0, variadicInfoBuffer);
 				}
 				else if (p->followercolor == FOLLOWERCOLOR_OPPOSITE)
 				{
-					V_DrawThinString(x-3, y+2, 0, "Opposite");
+					sprintf(variadicInfoBuffer, "Opposite (%s)", skincolors[folcol].name);
+					V_DrawThinString(x-3, y+2, 0, variadicInfoBuffer);
 				}
 				else if (p->followercolor < numskincolors)
 				{
-					V_DrawThinString(x-3, y+2, 0, skincolors[p->followercolor].name);
+					if(p->followercolor == SKINCOLOR_NONE) //'default' handling
+						sprintf(variadicInfoBuffer, "%s (%s)", skincolors[p->followercolor].name, skincolors[folcol].name);
+					else
+						sprintf(variadicInfoBuffer, "%s", skincolors[p->followercolor].name);
+
+					V_DrawThinString(x-3, y+2, 0, variadicInfoBuffer);
 				}
 				else
 				{
