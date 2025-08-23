@@ -1405,7 +1405,10 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
 		{
-			fixed_t mul = spr->mobj->hitlag * HITLAGJITTERS;
+			fixed_t jitters = HITLAGJITTERS;
+			if (R_UsingFrameInterpolation() && !paused)
+				jitters += (rendertimefrac / HITLAGDIV);
+			fixed_t mul = spr->mobj->hitlag * jitters;
 
 			if (leveltime & 1)
 			{
