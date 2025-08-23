@@ -3538,10 +3538,6 @@ boolean M_GameAboutToStart(void)
 	if (gamestartchallenge >= MAXUNLOCKABLES)
 		return true;
 
-	// An unfortunate sidestep, but sync is important.
-	if (netgame)
-		return true;
-
 	// Pending unlocked, but not unlocked
 	return (
 		gamedata->unlockpending[gamestartchallenge]
