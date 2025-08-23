@@ -510,6 +510,7 @@ static int mobj_get(lua_State *L)
 		break;
 	case mobj_bakezpiv:
 		lua_pushfixed(L, mo->bakezpiv);
+		break;
 	case mobj_terrain:
 		LUA_PushUserdata(L, mo->terrain, META_TERRAIN);
 		break;
@@ -945,6 +946,7 @@ static int mobj_set(lua_State *L)
 		break;
 	case mobj_bakezpiv:
 		mo->bakezpiv = luaL_checkfixed(L, 3);
+		break;
 	case mobj_terrain:
 		mo->terrain = *((terrain_t **)luaL_checkudata(L, 3, META_TERRAIN));
 		break;
