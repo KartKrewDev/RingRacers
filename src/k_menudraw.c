@@ -2154,7 +2154,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				if (p->color < numskincolors)
 				{
 					if(p->color == SKINCOLOR_NONE) //'default' handling
-						sprintf(variadicInfoBuffer, "%s (%s)", skincolors[p->color].name, skincolors[skins[p->skin].prefcolor].name);
+						sprintf(variadicInfoBuffer, "%s (%s)", skincolors[p->color].name, skincolors[skins[p->skin]->prefcolor].name);
 					else
 						sprintf(variadicInfoBuffer, "%s", skincolors[p->color].name);
 
@@ -2188,7 +2188,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				}
 				break;
 			case CSSTEP_FOLLOWERCOLORS:
-				folcol = K_GetEffectiveFollowerColor(p->followercolor, &followers[p->followern], p->color, &skins[p->skin]);
+				folcol = K_GetEffectiveFollowerColor(p->followercolor, &followers[p->followern], p->color, skins[p->skin]);
 
 				if (p->followercolor == FOLLOWERCOLOR_MATCH)
 				{
