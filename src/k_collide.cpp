@@ -75,7 +75,8 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_BALLHOGBOOM)
 		return true; // Ballhogs don't collide with eachother
 
-	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_PLAYER && t1->target == t2 )
+	extern consvar_t cv_debugpickmeup;
+	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_PLAYER && t1->target == t2 && !cv_debugpickmeup.value)
 		return true; // Allied hog explosion, not snatchable but shouldn't damage
 
 	if (K_TryPickMeUp(t1, t2, false))

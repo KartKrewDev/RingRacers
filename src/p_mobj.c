@@ -7557,6 +7557,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_MobjCheckWater(mobj);
 		}
 		break;
+	case MT_BALLHOGBOOM:
+		{
+			if ((mobj->frame & FF_FRAMEMASK) >= 15)
+			{
+				mobj->flags |= MF_NOCLIPTHING;
+			}
+			break;
+		}
 	case MT_SINK:
 		if (mobj->momx || mobj->momy)
 		{
