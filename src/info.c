@@ -506,6 +506,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ITEM",
 	"ITMO",
 	"ITMI",
+	"IBON",
 	"ITMN",
 	"PWRB",
 	"RBOW", // power-up aura

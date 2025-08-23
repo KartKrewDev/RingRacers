@@ -225,6 +225,7 @@ typedef enum
 	NUMKARTRESULTS,
 
 	KDROP_STONESHOETRAP,
+	KCAPSULE_RING,
 
 	// Power-ups exist in the same enum as items so it's easy
 	// for paper items to be reused for them.

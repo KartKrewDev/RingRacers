@@ -1047,6 +1047,7 @@ typedef enum sprite
 	SPR_ITEM,
 	SPR_ITMO,
 	SPR_ITMI,
+	SPR_IBON,
 	SPR_ITMN,
 	SPR_PWRB,
 	SPR_RBOW, // power-up aura
