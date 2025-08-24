@@ -749,7 +749,14 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // overhead
 		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
-		K_InstaWhipCollide(g_tm.thing, thing);
+
+		boolean hit = K_InstaWhipCollide(g_tm.thing, thing);
+		if (hit && g_tm.thing->target && !P_MobjWasRemoved(g_tm.thing->target) && g_tm.thing->target->player)
+		{
+			player_t *attacker = g_tm.thing->target->player;
+			if (attacker->defenseLockout > PUNISHWINDOW)
+				attacker->defenseLockout -= PUNISHWINDOW;
+		}
 		return BMIT_CONTINUE;
 	}
 
@@ -4197,7 +4204,7 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 		if (mo->eflags & MFE_VERTICALFLIP)
 			mo->momz -= 40*mo->scale;
 		else
-			mo->momz += 40*mo->scale; 
+			mo->momz += 40*mo->scale;
 	}
 
 	mo->momx = tmxmove;
