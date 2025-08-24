@@ -2150,7 +2150,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		case CL_WAITJOINRESPONSE:
 			if (I_GetTime() >= *asksent)
 			{
-				cl_mode = CL_ASKJOIN;
+				cl_mode = CL_SENDKEY;
 			}
 			break;
 		case CL_SENDKEY:
