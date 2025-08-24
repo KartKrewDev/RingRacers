@@ -3953,9 +3953,13 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 // Speed Assist pt.2: If we need assistance, how much?
 static fixed_t K_GetKartSpeedAssist(const player_t *player)
 {
+	if (!M_NotFreePlay())
+		return 0;
 	if (modeattacking)
 		return 0;
-	if (gametype && GTR_BUMPERS)
+	if (gametyperules & GTR_BUMPERS)
+		return 0;
+	if (gametype == GT_TUTORIAL)
 		return 0;
 	if (specialstageinfo.valid)
 		return 0;
