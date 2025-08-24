@@ -1054,6 +1054,10 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->roundconditions.checkthisframe = true;
 			}
 
+			// Remove extended whip recovery from the attacker
+			if (attackerPlayer->defenseLockout > PUNISHWINDOW)
+				attackerPlayer->defenseLockout -= PUNISHWINDOW;
+
 			return true;
 		}
 		return false;

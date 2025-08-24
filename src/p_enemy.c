@@ -3503,7 +3503,8 @@ void A_AttractChase(mobj_t *actor)
 
 	if (actor->extravalue1 && actor->type != MT_EMERALD) // SRB2Kart
 	{
-		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player || actor->target->player->baildrop || actor->target->player->bailcharge)
+		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player
+		|| actor->target->player->baildrop || actor->target->player->bailcharge || actor->target->player->defenseLockout > PUNISHWINDOW)
 		{
 			P_RemoveMobj(actor);
 			return;
@@ -3526,7 +3527,7 @@ void A_AttractChase(mobj_t *actor)
 
 				if (actor->target->player->rings <= 10 && P_IsDisplayPlayer(actor->target->player))
 				{
-					S_ReducedVFXSoundAtVolume(actor->target, sfx_gshab, 
+					S_ReducedVFXSoundAtVolume(actor->target, sfx_gshab,
 						210 - 10*actor->target->player->rings
 					, NULL);
 
@@ -12212,7 +12213,7 @@ void A_BallhogExplode(mobj_t *actor)
 		mo2->color = actor->target->color;
 		mo2->colorized = true;
 	}
-	
+
 	P_StartQuakeFromMobj(7, 50 * actor->scale, 1024 * actor->scale, actor);
 
 	actor->fuse = 1;
