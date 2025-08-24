@@ -9694,6 +9694,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_UpdateEngineSounds(player); // Thanks, VAda!
 
 	Obj_DashRingPlayerThink(player);
+	Obj_MushroomHillPolePlayerThink(player);
 
 	// update boost angle if not spun out
 	if (!player->spinouttimer && !player->wipeoutslow)

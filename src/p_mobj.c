@@ -10635,6 +10635,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 		Obj_SneakerPanelSpawnerFuse(mobj);
 		break;
 	}
+	case MT_MHPOLE:
+	{
+		Obj_MushroomHillPoleFuse(mobj);
+		break;
+	}
 	case MT_PLAYER:
 		break; // don't remove
 	default:

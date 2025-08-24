@@ -501,6 +501,10 @@ void Obj_AncientGearLevelInit(void);
 player_t *Obj_GetAncientGearCollectingPlayer(void);
 boolean Obj_AllAncientGearsCollected(void);
 
+void Obj_MushroomHillPolePlayerThink(player_t *player);
+void Obj_MushroomHillPoleTouch(mobj_t *pole, mobj_t *toucher);
+void Obj_MushroomHillPoleFuse(mobj_t *pole);
+
 
 #ifdef __cplusplus
 } // extern "C"

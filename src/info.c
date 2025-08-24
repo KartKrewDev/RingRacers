@@ -815,6 +815,8 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"GEAR",
 
+	"MHPL",
+
 	// Pulley
 	"HCCH",
 	"HCHK",
@@ -3719,6 +3721,8 @@ state_t states[NUMSTATES] =
 
 	{SPR_GEAR,                0, -1, {NULL}, 0, 0, S_NULL}, // S_ANCIENTGEAR
 	{SPR_GEAR, FF_PAPERSPRITE|1, -1, {NULL}, 0, 0, S_NULL}, // S_ANCIENTGEAR_PART
+
+	{SPR_MHPL, 0, -1, {NULL}, 0, 0, S_NULL}, // S_MHPOLE
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -22936,6 +22940,32 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SCENERY|MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP|MF_NOSQUISH|MF_DRAWFROMFARAWAY, // flags
+		S_NULL          // raisestate
+	},
+	{           // MT_MHPOLE
+		3850,           // doomednum
+		S_MHPOLE,       // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_s3k4a,      // seesound
+		15,             // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8*FRACUNIT,     // speed
+		20*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_s3kb6,      // activesound
+		MF_SPECIAL,     // flags
 		S_NULL          // raisestate
 	},
 };

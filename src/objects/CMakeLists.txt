@@ -69,6 +69,7 @@ target_sources(SRB2SDL2 PRIVATE
 	bail.c
 	toxomister.cpp
 	ancient-gear.c
+	mushroom-hill-pole.c
 )
 
 add_subdirectory(versus)
