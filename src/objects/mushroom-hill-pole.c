@@ -84,18 +84,16 @@ void Obj_MushroomHillPolePlayerThink(player_t *player)
 void Obj_MushroomHillPoleTouch(mobj_t *pole, mobj_t *toucher)
 {
 	player_t *player = toucher->player;
-	fixed_t playerSpeed = FixedHypot(toucher->momx, toucher->momy);
 	angle_t momentumAngle;
 
 	if (
-		playerSpeed < FixedMul(pole->info->speed, pole->scale) // player is moving too slowly
-		|| player->carry != CR_NONE // player is already being carried by something else
+		player->carry != CR_NONE // player is already being carried by something else
+		|| pole->tracer == toucher // pole just launched this player
 		|| (
 			!P_MobjWasRemoved(pole->target)
 			&& pole->target->player
 			&& pole->target->player->carry == CR_MUSHROOMHILLPOLE
 		) // pole is already occupied by a player
-		|| pole->tracer == toucher // pole just launched this player
 	)
 	{
 		return;
@@ -104,7 +102,7 @@ void Obj_MushroomHillPoleTouch(mobj_t *pole, mobj_t *toucher)
 	momentumAngle = K_MomentumAngle(toucher);
 
 	P_SetTarget(&pole->target, toucher);
-	pole->movefactor = playerSpeed; // speed at which to spin around the pole
+	pole->movefactor = max(FixedHypot(toucher->momx, toucher->momy), FixedMul(pole->info->speed, pole->scale)); // speed at which to spin around the pole
 	pole->movedir = R_PointToAngle2(pole->x, pole->y, toucher->x, toucher->y); // angle at which to project the player from the pole
 	pole->angle = toucher->angle + Easing_Linear(MOMENTUM_ANGLE_PROPORTION, 0, (INT32)(momentumAngle - toucher->angle)); // final launch angle
 	pole->extravalue1 = (pole->movedir - momentumAngle < ANGLE_180) ? -1 : 1; // direction to spin around the pole

@@ -11196,6 +11196,8 @@ fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
 			return 2*FRACUNIT;
 		case MT_ANCIENTGEAR:
 			return 3*FRACUNIT/2;
+		case MT_MHPOLE:
+			return 4*FRACUNIT;
 		default:
 			break;
 	}
