@@ -4730,6 +4730,11 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 	V_DrawScaledPatch(LAPS_X+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
 	V_DrawScaledPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
 
+	/*
+	// debug for Speed Assist
+	V_DrawThinString(LAPS_X+7, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d\%", stplyr->loneliness*100/FRACUNIT));
+	*/
+
 	K_drawKartAccessibilityIcons(gametypeinfoshown, 56);
 }
 

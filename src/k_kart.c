@@ -3950,6 +3950,29 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 	return finalspeed;
 }
 
+// Speed Assist pt.2: If we need assistance, how much?
+static fixed_t K_GetKartSpeedAssist(const player_t *player)
+{
+	if (!M_NotFreePlay())
+		return 0;
+	if (modeattacking)
+		return 0;
+	if (gametyperules & GTR_BUMPERS)
+		return 0;
+	if (gametype == GT_TUTORIAL)
+		return 0;
+	if (specialstageinfo.valid)
+		return 0;
+	if (K_PlayerUsesBotMovement(player))
+		return 0;
+	if (player->loneliness < 0)
+		return 0;
+
+	fixed_t MAX_SPEED_ASSIST = FRACUNIT/4;
+
+	return FixedMul(player->loneliness, MAX_SPEED_ASSIST);
+}
+
 fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dorubberband)
 {
 	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
@@ -4014,6 +4037,40 @@ fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dor
 	{
 		// Milky Way's roads
 		finalspeed += FixedMul(player->outrun, physicsScale);
+	}
+
+	// Speed Assist pt.3: How much of our potential assist do we apply?
+	if (doboostpower && K_GetKartSpeedAssist(player))
+	{
+		fixed_t assist = K_GetKartSpeedAssist(player);
+
+		// Don't use all of our speed assist if we're already under boost effect.
+		fixed_t START_ASSIST_ROLLOFF = 3*FRACUNIT/2; // Don't roll off at below this speed
+		fixed_t END_ASSIST_ROLLOFF = 5*FRACUNIT/2; // Use minimum assist power at above this speed
+		fixed_t MIN_ASSIST_POWER = 0; // % assist to apply while going fast (FRACUNIT=full, 0=none)
+
+		fixed_t speedgap = END_ASSIST_ROLLOFF - START_ASSIST_ROLLOFF;
+
+		fixed_t bonusspeed = FixedDiv(player->speed, K_GetKartSpeed(player, false, false));
+
+		if (doboostpower)
+		{
+			if (bonusspeed < START_ASSIST_ROLLOFF)
+			{
+				// :)
+			}
+			else if (bonusspeed > END_ASSIST_ROLLOFF)
+			{
+				assist = FixedMul(assist, MIN_ASSIST_POWER);
+			}
+			else
+			{
+				fixed_t normalizer = FixedDiv((bonusspeed - START_ASSIST_ROLLOFF), speedgap);
+				assist = Easing_Linear(normalizer, assist, FixedMul(assist, MIN_ASSIST_POWER));
+			}
+		}
+
+		finalspeed = FixedMul(finalspeed, FRACUNIT + assist);
 	}
 
 	return finalspeed;
@@ -9962,6 +10019,96 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->itemRoulette.active = false;
 		}
 	}
+
+	// Speed Assist pt.1
+	if (!K_PlayerUsesBotMovement(player))
+	{
+		UINT32 toDefender = 0;
+		UINT32 toFirst = 0;
+
+		for (UINT8 i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
+				continue;
+
+			if (players[i].position == player->position - 1)
+				toDefender = K_UndoMapScaling(player->distancetofinish - players[i].distancetofinish);
+
+			if (players[i].position == 1)
+				toFirst = K_UndoMapScaling(player->distancetofinish - players[i].distancetofinish);
+		}
+
+		UINT32 average = 0;
+		UINT8 counted = 0;
+		UINT32 firstRaw = 0;
+
+		for (UINT8 i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
+				continue;
+
+			if (players[i].position != 1 && players[i].position >= ((D_NumPlayersInRace()*3)/4) - 1) // Not in 1st, but also back quarter of the average (-1 guy, for leeway)
+			{
+				counted++;
+				average += K_UndoMapScaling(players[i].distancetofinish);
+			}
+			else
+			{
+				firstRaw = K_UndoMapScaling(players[i].distancetofinish);
+			}
+		}
+
+		average /= max(counted, 1);
+
+		if (D_NumPlayersInRace() == 2)
+		{
+			average = firstRaw;
+		}
+
+		UINT32 REALLY_FAR = average + 10000; // This far back, get max gain
+		UINT32 TOO_CLOSE = average + 7000; // Start gaining here, lose if closer
+		UINT32 WAY_TOO_CLOSE = average + 6000; // Lose at max rate here
+
+		fixed_t MAX_GAIN_PER_SEC = FRACUNIT/20; // % assist to gain per sec when REALLY_FAR
+		fixed_t MAX_LOSS_PER_SEC = FRACUNIT/5; // % assist to lose per sec when WAY_TOO_CLOSE
+
+		UINT32 gaingap = REALLY_FAR - TOO_CLOSE;
+		UINT32 lossgap = TOO_CLOSE - WAY_TOO_CLOSE;
+
+		UINT32 mydist = K_UndoMapScaling(player->distancetofinish);
+
+		if (mydist >= TOO_CLOSE)
+		{
+			fixed_t gain = MAX_GAIN_PER_SEC / TICRATE;
+			fixed_t gainrate = FRACUNIT * (mydist - TOO_CLOSE) / gaingap;
+			gainrate = clamp(gainrate, 0, FRACUNIT);
+			gainrate = Easing_InCubic(gainrate, 0, FRACUNIT);
+
+			gain = FixedMul(gain, gainrate);
+
+			player->loneliness += gain;
+		}
+		else
+		{
+			fixed_t loss = MAX_LOSS_PER_SEC / TICRATE;
+			if (mydist < WAY_TOO_CLOSE)
+				mydist = WAY_TOO_CLOSE;
+			fixed_t lossrate = FRACUNIT * (mydist - WAY_TOO_CLOSE) / lossgap;
+			lossrate = FRACUNIT - clamp(lossrate, 0, FRACUNIT);
+			lossrate = Easing_InCubic(lossrate, 0, FRACUNIT);
+
+			loss = FixedMul(loss, lossrate);
+
+			player->loneliness -= loss;
+		}
+
+		player->loneliness = clamp(player->loneliness, 0, FRACUNIT);
+	}
+	else
+	{
+		player->loneliness = 0;
+	}
+
 
 	if (player->spheres > 40)
 		player->spheres = 40;
