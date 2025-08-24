@@ -10063,21 +10063,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// Speed Assist pt.1
 	if (!K_PlayerUsesBotMovement(player))
 	{
-		UINT32 toDefender = 0;
-		UINT32 toFirst = 0;
-
-		for (UINT8 i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
-				continue;
-
-			if (players[i].position == player->position - 1)
-				toDefender = K_UndoMapScaling(player->distancetofinish - players[i].distancetofinish);
-
-			if (players[i].position == 1)
-				toFirst = K_UndoMapScaling(player->distancetofinish - players[i].distancetofinish);
-		}
-
 		UINT32 average = 0;
 		UINT8 counted = 0;
 		UINT32 firstRaw = 0;
