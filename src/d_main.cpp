@@ -1205,6 +1205,7 @@ void D_ClearState(void)
 
 	// okay, stop now
 	// (otherwise the game still thinks we're playing!)
+	CURLAbortFile();
 	SV_StopServer();
 	SV_ResetServer();
 	serverlistultimatecount = 0;

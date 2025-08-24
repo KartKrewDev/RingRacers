@@ -101,6 +101,9 @@ static filetran_t transfer[MAXNETNODES];
 INT32 fileneedednum; // Number of files needed to join the server
 fileneeded_t fileneeded[MAX_WADFILES]; // List of needed files
 static tic_t lasttimeackpacketsent = 0;
+#ifdef HAVE_THREADS
+static I_mutex downloadmutex;
+#endif
 
 // For resuming failed downloads
 typedef struct
@@ -1829,10 +1832,13 @@ void CURLPrepareFile(const char* url, int dfilenum)
 		I_Error("Attempted to download files in -nodownload mode");
 #endif
 
-	curl_global_init(CURL_GLOBAL_ALL);
+	if (!multi_handle)
+	{
+		curl_global_init(CURL_GLOBAL_ALL);
+		multi_handle = curl_multi_init();
+	}
 
 	http_handle = curl_easy_init();
-	multi_handle = curl_multi_init();
 
 	if (http_handle && multi_handle)
 	{
@@ -1883,99 +1889,134 @@ void CURLPrepareFile(const char* url, int dfilenum)
 		curl_multi_add_handle(multi_handle, http_handle);
 
 		curl_multi_perform(multi_handle, &curl_runninghandles);
+
 		curl_starttime = time(NULL);
 		curl_running = true;
+
+#ifdef HAVE_THREADS
+		I_spawn_thread("http-download", (I_thread_fn)CURLGetFile, NULL);
+#endif
 	}
+}
+
+void CURLAbortFile(void)
+{
+	curl_running = false;
+
+#ifdef HAVE_THREADS
+	// lock and unlock to wait for the download thread to exit
+	I_lock_mutex(&downloadmutex);
+	I_unlock_mutex(downloadmutex);
+#endif
 }
 
 void CURLGetFile(void)
 {
 	CURLMcode mc; /* return code used by curl_multi_wait() */
 	CURLcode easyres; /* Return from easy interface */
-	int numfds;
 	CURLMsg *m; /* for picking up messages with the transfer status */
 	CURL *e;
 	int msgs_left; /* how many messages are left */
 	const char *easy_handle_error;
-	long response_code = 0;
-	static char *filename;
 
-    if (curl_runninghandles)
-    {
-    	curl_multi_perform(multi_handle, &curl_runninghandles);
+#ifdef HAVE_THREADS
+	boolean running = true;
 
-		/* wait for activity, timeout or "nothing" */
-		mc = curl_multi_wait(multi_handle, NULL, 0, 1000, &numfds);
-
-		if (mc != CURLM_OK)
-		{
-			CONS_Alert(CONS_WARNING, "curl_multi_wait() failed, code %d.\n", mc);
-			return;
-		}
-		curl_curfile->currentsize = curl_dlnow;
-		curl_curfile->totalsize = curl_dltotal;
-    }
-
-    /* See how the transfers went */
-	while ((m = curl_multi_info_read(multi_handle, &msgs_left)))
+	I_lock_mutex(&downloadmutex);
+	while (running && curl_running)
+#endif
 	{
-		if (m && (m->msg == CURLMSG_DONE))
+		if (curl_runninghandles)
 		{
-			e = m->easy_handle;
-			easyres = m->data.result;
-			filename = Z_StrDup(curl_realname);
-			nameonly(filename);
-			if (easyres != CURLE_OK)
-			{
-				if (easyres == CURLE_HTTP_RETURNED_ERROR)
-					curl_easy_getinfo(e, CURLINFO_RESPONSE_CODE, &response_code);
+			curl_multi_perform(multi_handle, &curl_runninghandles);
 
-				easy_handle_error = (response_code) ? va("HTTP reponse code %ld", response_code) : curl_easy_strerror(easyres);
-				curl_curfile->status = FS_FALLBACK;
-				curl_curfile->currentsize = curl_origfilesize;
-				curl_curfile->totalsize = curl_origtotalfilesize;
-				curl_failedwebdownload = true;
-				fclose(curl_curfile->file);
-				remove(curl_curfile->filename);
-				CONS_Printf(M_GetText("Failed to download %s (%s)\n"), filename, easy_handle_error);
+			/* wait for activity, timeout or "nothing" */
+			mc = curl_multi_wait(multi_handle, NULL, 0, 1000, NULL);
+
+			if (mc != CURLM_OK)
+			{
+				CONS_Alert(CONS_WARNING, "curl_multi_wait() failed, code %d.\n", mc);
+				continue;
 			}
-			else
-			{
-				fclose(curl_curfile->file);
+			curl_curfile->currentsize = curl_dlnow;
+			curl_curfile->totalsize = curl_dltotal;
+		}
 
-				if (checkfilemd5(curl_curfile->filename, curl_curfile->md5sum) == FS_MD5SUMBAD)
+		/* See how the transfers went */
+		while ((m = curl_multi_info_read(multi_handle, &msgs_left)))
+		{
+			if (m && (m->msg == CURLMSG_DONE))
+			{
+#ifdef HAVE_THREADS
+				running = false;
+#endif
+				e = m->easy_handle;
+				easyres = m->data.result;
+
+				char *filename = Z_StrDup(curl_realname);
+				nameonly(filename);
+
+				if (easyres != CURLE_OK)
 				{
-					CONS_Alert(CONS_ERROR, M_GetText("HTTP Download of %s finished but is corrupt or has been modified\n"), filename);
+					long response_code = 0;
+
+					if (easyres == CURLE_HTTP_RETURNED_ERROR)
+						curl_easy_getinfo(e, CURLINFO_RESPONSE_CODE, &response_code);
+
+					easy_handle_error = (response_code) ? va("HTTP response code %ld", response_code) : curl_easy_strerror(easyres);
 					curl_curfile->status = FS_FALLBACK;
+					curl_curfile->currentsize = curl_origfilesize;
+					curl_curfile->totalsize = curl_origtotalfilesize;
 					curl_failedwebdownload = true;
+					fclose(curl_curfile->file);
+					remove(curl_curfile->filename);
+					CONS_Printf(M_GetText("Failed to download %s (%s)\n"), filename, easy_handle_error);
 				}
 				else
 				{
-					CONS_Printf(M_GetText("Finished HTTP download of %s\n"), filename);
-					downloadcompletednum++;
-					downloadcompletedsize += curl_curfile->totalsize;
-					curl_curfile->status = FS_FOUND;
+					fclose(curl_curfile->file);
+
+					if (checkfilemd5(curl_curfile->filename, curl_curfile->md5sum) == FS_MD5SUMBAD)
+					{
+						CONS_Alert(CONS_ERROR, M_GetText("HTTP Download of %s finished but is corrupt or has been modified\n"), filename);
+						curl_curfile->status = FS_FALLBACK;
+						curl_failedwebdownload = true;
+					}
+					else
+					{
+						CONS_Printf(M_GetText("Finished HTTP download of %s\n"), filename);
+						downloadcompletednum++;
+						downloadcompletedsize += curl_curfile->totalsize;
+						curl_curfile->status = FS_FOUND;
+					}
 				}
+
+				Z_Free(filename);
+				curl_curfile->file = NULL;
+#ifndef HAVE_THREADS
+				curl_running = false;
+#endif
+				curl_transfers--;
+				curl_multi_remove_handle(multi_handle, e);
+				curl_easy_cleanup(e);
+
+				if (!curl_transfers)
+					break;
 			}
-
-
-			Z_Free(filename);
-			curl_curfile->file = NULL;
-			curl_running = false;
-			curl_transfers--;
-			curl_multi_remove_handle(multi_handle, e);
-			curl_easy_cleanup(e);
-
-			if (!curl_transfers)
-				break;
 		}
 	}
 
-    if (!curl_transfers)
+    if (!curl_transfers || !curl_running)
     {
 		curl_multi_cleanup(multi_handle);
 		curl_global_cleanup();
+		multi_handle = NULL;
     }
+
+#ifdef HAVE_THREADS
+	curl_running = false;
+	I_unlock_mutex(downloadmutex);
+#endif
 }
 
 HTTP_login *
