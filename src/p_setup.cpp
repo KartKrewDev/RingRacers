@@ -9558,7 +9558,50 @@ void Command_Platinums(void)
 
     for (const auto& pair : frequency)
 	{
-		CONS_Printf("%s: %d\n", pair.first.c_str(), pair.second);
+		CONS_Printf("%s: %d - ", pair.first.c_str(), pair.second);
+
+		for (INT32 j = 0; j < nummapheaders; j++)
+		{
+			mapheader_t *map = mapheaderinfo[j];
+
+			if (map == NULL || map->ghostCount < 1)
+				continue;
+
+			// Gather staff ghost times
+			srb2::Vector<tic_t> stafftimes;
+			for (int i = 0; i < map->ghostCount; i++)
+			{
+				tic_t time = map->ghostBrief[i]->time;
+				if (time <= 0)
+				{
+					continue;
+				}
+
+				stafftimes.push_back(map->ghostBrief[i]->time);
+			}
+
+			if (stafftimes.empty())
+			{
+				continue;
+			}
+
+			std::sort(stafftimes.begin(), stafftimes.end());
+
+			for (int i = 0; i < map->ghostCount; i++)
+			{
+				if (strcmp(pair.first.c_str(), map->ghostBrief[i]->name))
+					break;
+
+				tic_t time = map->ghostBrief[i]->time;
+				if (time == stafftimes.at(0))
+				{
+					CONS_Printf("%s, ", map->lumpname);
+					break;
+				}
+			}
+		}
+
+		CONS_Printf("\n");
     }
 }
 
