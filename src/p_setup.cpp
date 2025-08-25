@@ -7816,6 +7816,7 @@ static void P_ResetSpawnpoints(void)
 
 static void P_TryAddExternalGhost(const char *defdemoname)
 {
+	CONS_Printf("trying %s\n", defdemoname);
 	if (FIL_FileExists(defdemoname))
 	{
 		savebuffer_t buf = {0};
@@ -7839,10 +7840,22 @@ static void P_LoadRecordGhosts(void)
 	const char *modeprefix = "";
 	INT32 i;
 
+	CONS_Printf("trying load ghosts\n");
+
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
 	if (encoremode)
-		modeprefix = "spb-";
+	{
+		modeprefix = "-spb";
+	}
+	else
+	{
+		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
+		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
+		{
+			modeprefix = "-hivolt";
+		}
+	}
 
 	enum
 	{

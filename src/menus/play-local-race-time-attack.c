@@ -461,7 +461,17 @@ void M_ReplayTimeAttack(INT32 choice)
 	const char *modeprefix = "";
 
 	if (cv_dummyspbattack.value)
+	{
 		modeprefix = "spb-";
+	}
+	else
+	{
+		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
+		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
+		{
+			modeprefix = "hivolt-";
+		}
+	}
 
 	switch (choice)
 	{
@@ -521,7 +531,17 @@ static void M_WriteGuestReplay(INT32 ch)
 	const char *modeprefix = "";
 
 	if (cv_dummyspbattack.value)
+	{
 		modeprefix = "spb-";
+	}
+	else
+	{
+		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
+		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
+		{
+			modeprefix = "hivolt-";
+		}
+	}
 
 	if (TA_GuestReplay_Str != NULL)
 	{
@@ -580,7 +600,17 @@ void M_SetGuestReplay(INT32 choice)
 	const char *modeprefix = "";
 
 	if (cv_dummyspbattack.value)
+	{
 		modeprefix = "spb-";
+	}
+	else
+	{
+		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
+		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
+		{
+			modeprefix = "hivolt-";
+		}
+	}
 
 	if (FIL_FileExists(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%sguest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), modeprefix)))
 	{
@@ -621,6 +651,14 @@ void M_StartTimeAttack(INT32 choice)
 		}
 
 		modeprefix = "spb-";
+	}
+	else
+	{
+		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
+		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
+		{
+			modeprefix = "hivolt-";
+		}
 	}
 
 	// DON'T SOFTLOCK

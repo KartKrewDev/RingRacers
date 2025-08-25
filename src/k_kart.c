@@ -9490,7 +9490,7 @@ boolean K_LegacyRingboost(player_t *player)
 		return false;
 	if (modeattacking == ATTACKING_SPB)
 		return false;
-	if (!modeattacking)
+	if (!modeattacking || (modeattacking & ATTACKING_SPB))
 		return false;
 	if (!(skins[player->skin]->flags & SF_HIVOLT))
 		return false;
