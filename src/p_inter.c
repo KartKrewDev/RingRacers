@@ -3280,9 +3280,13 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (source && source != player->mo && source->player)
 				{
-					// Stone Shoe handles amps on its own
-					if (inflictor->type != MT_STONESHOE && inflictor->type != MT_STONESHOE_CHAIN)
+					// Stone Shoe handles amps on its own, but this is also a good place to set soften tumble for it
+					if (inflictor->type == MT_STONESHOE || inflictor->type == MT_STONESHOE_CHAIN)
+						softenTumble = true;
+					else
 						K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
+
+
 					K_BotHitPenalty(player);
 
 					if (G_SameTeam(source->player, player))
@@ -3480,9 +3484,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = 0;
 					break;
 				case DMG_TUMBLE:
-					if (inflictor->type == MT_STONESHOE || inflictor->type == MT_STONESHOE_CHAIN)
-						softenTumble = true;
-
 					K_TumblePlayer(player, inflictor, source, softenTumble);
 					ringburst = 10;
 					break;
