@@ -1433,21 +1433,29 @@ static void IdentifyVersion(void)
 #endif
 
 #define MUSICTEST(str) \
-	{\
-		const char *musicpath = va(spandf,srb2waddir,"data",str);\
-		int ms = W_VerifyNMUSlumps(musicpath, false); \
-		if (ms == 1) \
+		musicpath = va(spandf,srb2waddir,"data",str);\
+		handle = W_OpenWadFile(&musicpath, false); \
+		if (handle) \
 		{ \
-			D_AddFile(startupiwads, num_startupiwads++, musicpath, NULL); \
-			musicwads++; \
-		} \
-		else if (ms == 0) \
-			I_Error("File " str " has been modified with non-music/sound lumps"); \
-	}
+			int ms = W_VerifyNMUSlumps(musicpath, handle, false); \
+			fclose(handle); \
+			if (ms == 0) \
+				I_Error("File " str " has been modified with non-music/sound lumps"); \
+			if (ms == 1) \
+			{ \
+				D_AddFile(startupiwads, num_startupiwads++, musicpath, NULL); \
+				musicwads++; \
+			} \
+		}
 
-	MUSICTEST("sounds.pk3")
-	MUSICTEST("music.pk3")
-	MUSICTEST("altmusic.pk3")
+	{
+		const char *musicpath;
+		FILE *handle;
+
+		MUSICTEST("sounds.pk3")
+		MUSICTEST("music.pk3")
+		MUSICTEST("altmusic.pk3")
+	}
 
 #undef MUSICTEST
 }

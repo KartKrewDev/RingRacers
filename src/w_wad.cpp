@@ -848,7 +848,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup, const
 	if ((handle = W_OpenWadFile(&filename, true)) == NULL)
 		return W_InitFileError(filename, startup);
 
-	important = W_VerifyNMUSlumps(filename, startup);
+	important = W_VerifyNMUSlumps(filename, handle, startup);
 
 	if (important == -1)
 	{
@@ -1071,8 +1071,8 @@ INT32 W_InitMultipleFiles(const initmultiplefilesentry_t *entries, INT32 count, 
 	{
 		const initmultiplefilesentry_t *entry = &entries[i];
 
-		if (addons && !W_VerifyNMUSlumps(entry->filename, !addons))
-			G_SetGameModified(true, false);
+		// Previously, W_VerifyNMUSlumps was called to mark game modified
+		// for addons... but W_InitFile already does exactly that!
 
 		//CONS_Debug(DBG_SETUP, "Loading %s\n", *filenames);
 		rc = W_InitFile(entry->filename, !addons, true, entry->md5sum);
@@ -2368,35 +2368,6 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, boolean status)
 	}
 }
 
-// Note: This never opens lumps themselves and therefore doesn't have to
-// deal with compressed lumps.
-static int W_VerifyFile(const char *filename, lumpchecklist_t *checklist,
-	boolean status)
-{
-	FILE *handle;
-	int goodfile = false;
-
-	if (!checklist)
-		I_Error("No checklist for %s\n", filename);
-	// open wad file
-	if ((handle = W_OpenWadFile(&filename, false)) == NULL)
-		return -1;
-
-	if (stricmp(&filename[strlen(filename) - 4], ".pk3") == 0)
-		goodfile = W_VerifyPK3(handle, checklist, status);
-	else
-	{
-		// detect wad file by the absence of the other supported extensions
-		if (stricmp(&filename[strlen(filename) - 4], ".soc")
-		&& stricmp(&filename[strlen(filename) - 4], ".lua"))
-		{
-			goodfile = W_VerifyWAD(handle, checklist, status);
-		}
-	}
-	fclose(handle);
-	return goodfile;
-}
-
 
 /** Checks a wad for lumps other than music and sound.
   * Used during game load to verify music.dta is a good file and during a
@@ -2410,7 +2381,7 @@ static int W_VerifyFile(const char *filename, lumpchecklist_t *checklist,
   *         file exists with that filename
   * \author Alam Arias
   */
-int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
+int W_VerifyNMUSlumps(const char *filename, FILE *handle, boolean exit_on_error)
 {
 	lumpchecklist_t NMUSlist[] =
 	{
@@ -2463,7 +2434,19 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{NULL, 0},
 	};
 
-	int status = W_VerifyFile(filename, NMUSlist, false);
+	int status = 0;
+
+	if (stricmp(&filename[strlen(filename) - 4], ".pk3") == 0)
+		status = W_VerifyPK3(handle, NMUSlist, false);
+	else
+	{
+		// detect wad file by the absence of the other supported extensions
+		if (stricmp(&filename[strlen(filename) - 4], ".soc")
+		&& stricmp(&filename[strlen(filename) - 4], ".lua"))
+		{
+			status = W_VerifyWAD(handle, NMUSlist, false);
+		}
+	}
 
 	if (status == -1)
 		W_InitFileError(filename, exit_on_error);
