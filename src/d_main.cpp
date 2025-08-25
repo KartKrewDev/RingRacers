@@ -1395,17 +1395,23 @@ static void IdentifyVersion(void)
 	srb2waddir = I_LocateWad();
 #endif
 
+	char tempsrb2path[256] = ".";
+	getcwd(tempsrb2path, 256);
+
 	// get the current directory (possible problem on NT with "." as current dir)
-	if (srb2waddir)
+	if (!srb2waddir)
 	{
-		strlcpy(srb2path,srb2waddir,sizeof (srb2path));
-	}
-	else
-	{
-		if (getcwd(srb2path, 256) != NULL)
-			srb2waddir = srb2path;
+		if (tempsrb2path[0])
+			srb2waddir = tempsrb2path;
 		else
 			srb2waddir = ".";
+	}
+
+#if (1) // reduce the amount of findfile by only using full cwd in this func
+	if (strcmp(tempsrb2path, srb2waddir))
+#endif
+	{
+		strlcpy(srb2path, srb2waddir, sizeof (srb2path));
 	}
 
 	// Load the IWAD
