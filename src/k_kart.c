@@ -14454,7 +14454,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	// which is allowed during painstate as a last-ditch defensive option.
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > introtime)
 	{
-		boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout) && (!player->itemRoulette.active);
+		boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout) && (player->defenseLockout <= PUNISHWINDOW) && (!player->itemRoulette.active);
 		boolean releasedwhip = (!(cmd->buttons & BT_ATTACK)) && (player->rings <= 0 && player->instaWhipCharge) && !(P_PlayerInPain(player));
 
 		if (K_PowerUpRemaining(player, POWERUP_BADGE))
@@ -14530,7 +14530,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->instaWhipCharge = 0;
 				if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
 				{
-					player->defenseLockout = PUNISHWINDOW;
+					player->defenseLockout = 2*PUNISHWINDOW;
 				}
 
 				S_StartSound(player->mo, sfx_iwhp);

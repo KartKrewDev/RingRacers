@@ -1101,12 +1101,14 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			if (K_TryPickMeUp(attacker, victim, true))
 			{
 				shield->hitlag = attacker->hitlag; // players hitlag is handled in K_TryPickMeUp, and we need to set for the shield too
+				return true;
 			}
 			else
 			{
 				P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
 				K_AddHitLag(attacker, attackerHitlag, false);
 				shield->hitlag = attacker->hitlag;
+				return true;
 			}
 		}
 		return false;
