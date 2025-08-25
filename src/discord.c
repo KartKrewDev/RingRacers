@@ -950,6 +950,22 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 
+		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CEREMONY) && !demo.attract)
+		{
+			// Try a map image, if it exists!
+			if (gamemap-1 < basenummapheaders)
+			{
+				snprintf(largeimg, 128, "%smap_%s%s", IMAGE_REPO, G_BuildMapName(gamemap), IMAGE_EXT);
+				discordPresence.largeImageKey = largeimg; // Map image
+			}
+
+			// Map name on tool tip
+			char *title = G_BuildMapTitle(gamemap);
+			snprintf(largename, 128, "Map: %s", title);
+			discordPresence.largeImageText = largename;
+			Z_Free(title);
+		}
+
 		// Character info
 		if (Playing() && playeringame[consoleplayer] && !players[consoleplayer].spectator)
 		{
