@@ -157,7 +157,7 @@ void Command_Downloads_f(void);
 boolean fileexist(char *filename, time_t ptime);
 
 // Search a file in the wadpath, return FS_FOUND when found
-filestatus_t findfile(char *filename, const UINT8 *wantedmd5sum,
+filestatus_t findfile(char *filename, const char *suggestedfolder, const UINT8 *wantedmd5sum,
 	boolean completepath);
 filestatus_t checkfilemd5(char *filename, const UINT8 *wantedmd5sum);
 

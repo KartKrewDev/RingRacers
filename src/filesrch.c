@@ -333,7 +333,8 @@ char *refreshdirname = NULL;
 
 
 #if defined (_XBOX) && defined (_MSC_VER)
-filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *wantedmd5sum,
+filestatus_t filesearch(char *filename, const char *startpath,
+	const char *priorityfolder, const UINT8 *wantedmd5sum,
 	boolean completepath, int maxsearchdepth)
 {
 //NONE?
@@ -364,7 +365,8 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 }
 
 #elif defined (_WIN32_WCE)
-filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *wantedmd5sum,
+filestatus_t filesearch(char *filename, const char *startpath,
+	const char *priorityfolder, const UINT8 *wantedmd5sum,
 	boolean completepath, int maxsearchdepth)
 {
 #ifdef __GNUC__
@@ -377,6 +379,8 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 	WIN32_FIND_DATA dta;
 	HANDLE searchhandle = INVALID_HANDLE_VALUE;
 	const wchar_t wm[4] = L"*.*";
+
+	(void)priorityfolder;
 
 	//if (startpath) SetCurrentDirectory(startpath);
 	if (FIL_ReadFileOK(filename))
@@ -396,7 +400,7 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 				//if (SetCurrentDirectory(dta.cFileName))
 				{ // can fail if we haven't the right
 					filestatus_t found;
-					found = filesearch(filename,NULL,wantedmd5sum,completepath,maxsearchdepth-1);
+					found = filesearch(filename,NULL,NULL,wantedmd5sum,completepath,maxsearchdepth-1);
 					//SetCurrentDirectory("..");
 					if (found == FS_FOUND || found == FS_MD5SUMBAD)
 					{
@@ -442,7 +446,9 @@ static const char *filesearch_exclude[] = {
 	NULL
 };
 
-filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *wantedmd5sum, boolean completepath, int maxsearchdepth)
+filestatus_t filesearch(char *filename, const char *startpath,
+	const char *priorityfolder, const UINT8 *wantedmd5sum,
+	boolean completepath, int maxsearchdepth)
 {
 	filestatus_t retval = FS_NOTFOUND;
 	DIR **dirhandle;
@@ -478,6 +484,27 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 	}
 	else
 		searchpathindex[depthleft]--;
+
+	if (priorityfolder != NULL)
+	{
+		// Start the search at [startpath]/priorityfolder
+
+		strcpy(&searchpath[searchpathindex[depthleft]], priorityfolder);
+
+		if (stat(searchpath,&fsstat) < 0) // do we want to follow symlinks? if not: change it to lstat
+			; // was the file (re)moved? can't stat it
+		else if (S_ISDIR(fsstat.st_mode) && depthleft)
+		{
+			if ((dirhandle[depthleft-1] = opendir(searchpath)) != NULL)
+			{
+				// Got read permissions!
+				searchpathindex[--depthleft] = strlen(searchpath) + 1;
+
+				searchpath[searchpathindex[depthleft]-1] = PATHSEP[0];
+				searchpath[searchpathindex[depthleft]] = 0;
+			}
+		}
+	}
 
 	while ((!found) && (depthleft < maxsearchdepth))
 	{
@@ -517,7 +544,14 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 			if (depthleft == maxsearchdepth-1)
 			{
 				// When we're at the root of the search, we exclude certain folders.
-				for (; *path; path++)
+
+				if (priorityfolder != NULL
+					&& strcasecmp(priorityfolder, dent->d_name))
+				{
+					// We skip revisiting the priority by pretending
+					// it matched the first exclude directory instead
+				}
+				else for (; *path; path++)
 				{
 					if (strcasecmp(*path, dent->d_name))
 						continue;

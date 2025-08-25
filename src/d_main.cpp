@@ -1434,7 +1434,7 @@ static void IdentifyVersion(void)
 
 #define MUSICTEST(str) \
 		musicpath = va(spandf,srb2waddir,"data",str);\
-		handle = W_OpenWadFile(&musicpath, false); \
+		handle = W_OpenWadFile(&musicpath, NULL, false); \
 		if (handle) \
 		{ \
 			int ms = W_VerifyNMUSlumps(musicpath, handle, false); \

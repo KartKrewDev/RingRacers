@@ -853,7 +853,7 @@ static void COM_Exec_f(void)
 		// Now try by searching the file path
 		// filename is modified with the full found path
 		strcpy(filename, COM_Argv(1));
-		if (findfile(filename, NULL, true) != FS_NOTFOUND)
+		if (findfile(filename, NULL, NULL, true) != FS_NOTFOUND)
 			FIL_ReadFile(filename, &buf);
 
 		if (!buf)

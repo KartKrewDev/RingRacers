@@ -3432,7 +3432,7 @@ static const char *searchWad(const char *searchDir)
 	filestatus_t fstemp;
 
 	strcpy(tempsw, WADKEYWORD);
-	fstemp = filesearch(tempsw,searchDir,NULL,true,20);
+	fstemp = filesearch(tempsw, searchDir, NULL, NULL, true, 20);
 	if (fstemp == FS_FOUND)
 	{
 		pathonly(tempsw);

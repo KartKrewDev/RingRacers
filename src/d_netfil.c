@@ -636,7 +636,7 @@ INT32 CL_CheckFiles(void)
 
 		packetsize += nameonlylength(fileneeded[i].filename) + 22;
 
-		fileneeded[i].status = findfile(fileneeded[i].filename, fileneeded[i].md5sum, true);
+		fileneeded[i].status = findfile(fileneeded[i].filename, "addons", fileneeded[i].md5sum, true);
 		CONS_Debug(DBG_NETPLAY, "found %d\n", fileneeded[i].status);
 		return 4;
 	}
@@ -1759,13 +1759,13 @@ filestatus_t checkfilemd5(char *filename, const UINT8 *wantedmd5sum)
 // Rewritten by Monster Iestyn to be less stupid
 // Note: if completepath is true, "filename" is modified, but only if FS_FOUND is going to be returned
 // (Don't worry about WinCE's version of filesearch, nobody cares about that OS anymore)
-filestatus_t findfile(char *filename, const UINT8 *wantedmd5sum, boolean completepath)
+filestatus_t findfile(char *filename, const char *priorityfolder, const UINT8 *wantedmd5sum, boolean completepath)
 {
 	filestatus_t homecheck; // store result of last file search
 	boolean badmd5 = false; // store whether md5 was bad from either of the first two searches (if nothing was found in the third)
 
 	// first, check SRB2's "home" directory
-	homecheck = filesearch(filename, srb2home, wantedmd5sum, completepath, 10);
+	homecheck = filesearch(filename, srb2home, priorityfolder, wantedmd5sum, completepath, 10);
 
 	if (homecheck == FS_FOUND) // we found the file, so return that we have :)
 		return FS_FOUND;
@@ -1774,7 +1774,7 @@ filestatus_t findfile(char *filename, const UINT8 *wantedmd5sum, boolean complet
 	// if not found at all, just move on without doing anything
 
 	// next, check SRB2's "path" directory
-	homecheck = filesearch(filename, srb2path, wantedmd5sum, completepath, 10);
+	homecheck = filesearch(filename, srb2path, priorityfolder, wantedmd5sum, completepath, 10);
 
 	if (homecheck == FS_FOUND) // we found the file, so return that we have :)
 		return FS_FOUND;
@@ -1783,7 +1783,7 @@ filestatus_t findfile(char *filename, const UINT8 *wantedmd5sum, boolean complet
 	// if not found at all, just move on without doing anything
 
 	// finally check "." directory
-	homecheck = filesearch(filename, ".", wantedmd5sum, completepath, 10);
+	homecheck = filesearch(filename, ".", priorityfolder, wantedmd5sum, completepath, 10);
 
 	if (homecheck != FS_NOTFOUND) // if not found this time, fall back on the below return statement
 		return homecheck; // otherwise return the result we got

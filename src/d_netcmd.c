@@ -4311,7 +4311,7 @@ static void Got_RunSOCcmd(const UINT8 **cp, INT32 playernum)
 	// Maybe add md5 support?
 	if (strstr(filename, ".soc") != NULL)
 	{
-		ncs = findfile(filename,NULL,true);
+		ncs = findfile(filename, "addons", NULL, true);
 
 		if (ncs != FS_FOUND)
 		{
@@ -4397,7 +4397,7 @@ static void Command_Addfile(void)
 			fhandle = NULL;
 		}
 
-		if ((fhandle = W_OpenWadFile(&fn, true)) != NULL)
+		if ((fhandle = W_OpenWadFile(&fn, "addons", true)) != NULL)
 		{
 			musiconly = W_VerifyNMUSlumps(fn, fhandle, false);
 		}
@@ -4523,7 +4523,7 @@ static void Got_RequestAddfilecmd(const UINT8 **cp, INT32 playernum)
 	if (numwadfiles >= MAX_WADFILES)
 		toomany = true;
 	else
-		ncs = findfile(filename,md5sum,true);
+		ncs = findfile(filename, "addons", md5sum, true);
 
 	if (ncs != FS_FOUND || toomany)
 	{
@@ -4567,7 +4567,7 @@ static void Got_Addfilecmd(const UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	ncs = findfile(filename,md5sum,true);
+	ncs = findfile(filename, "addons", md5sum, true);
 
 	if (ncs != FS_FOUND || !P_AddWadFile(filename))
 	{

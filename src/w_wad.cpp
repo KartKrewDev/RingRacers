@@ -186,7 +186,7 @@ static char filenamebuf[MAX_WADPATH];
 // Returns the FILE * handle for the file, or NULL if not found or could not be opened
 // If "useerrors" is true then print errors in the console, else just don't bother
 // "filename" may be modified to have the correct path the actual file is located in, if necessary
-FILE *W_OpenWadFile(const char **filename, boolean useerrors)
+FILE *W_OpenWadFile(const char **filename, const char *priorityfolder, boolean useerrors)
 {
 	FILE *handle;
 
@@ -209,7 +209,7 @@ FILE *W_OpenWadFile(const char **filename, boolean useerrors)
 
 		// If findfile finds the file, the full path will be returned
 		// in filenamebuf == *filename.
-		if (findfile(filenamebuf, NULL, true))
+		if (findfile(filenamebuf, priorityfolder, NULL, true))
 		{
 			if ((handle = fopen(*filename, "rb")) == NULL)
 			{
@@ -845,7 +845,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup, const
 	}
 
 	// open wad file
-	if ((handle = W_OpenWadFile(&filename, true)) == NULL)
+	if ((handle = W_OpenWadFile(&filename, (mainfile ? NULL : "addons"), true)) == NULL)
 		return W_InitFileError(filename, startup);
 
 	important = W_VerifyNMUSlumps(filename, handle, startup);
@@ -2472,17 +2472,11 @@ void W_InitShaderLookup(const char *filename)
 	{
 		nameonly(filename_buf);
 
-		if (findfile(filename_buf, NULL, true))
-		{
-			if ((handle = fopen(filename_buf, "rb")) == NULL)
-			{
-				return;
-			}
-		}
-		else
-		{
+		if (!findfile(filename_buf, "data", NULL, true))
 			return;
-		}
+
+		if ((handle = fopen(filename_buf, "rb")) == NULL)
+			return;
 	}
 
 	// It is acceptable to fail opening the pk3 lookup.
