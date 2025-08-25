@@ -2129,8 +2129,6 @@ static void K_HandleLapIncrement(player_t *player)
 
 					UINT16 oldexp = player->exp;
 					K_CheckpointCrossAward(player);
-
-					// Update power levels for this lap.
 					K_UpdatePowerLevels(player, player->gradingpointnum, false);
 
 					if (player->exp > oldexp)

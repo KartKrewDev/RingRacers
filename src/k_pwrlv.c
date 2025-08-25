@@ -210,6 +210,13 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 		return;
 	}
 
+	// Probably being called from some stray codepath or a double exit.
+	// We have already finished calculating PWR, don't touch anything!
+	if (player->finalized)
+	{
+		return;
+	}
+
 	CONS_Debug(DBG_PWRLV, "\n========\n");
 	CONS_Debug(DBG_PWRLV, "* Power Level change for player %s (CHECKPOINT %d) *\n", player_names[playerNum], gradingpoint);
 	CONS_Debug(DBG_PWRLV, "========\n");
@@ -383,6 +390,9 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 
 void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit)
 {
+	if (player->finalized)
+		return;
+
 	// Finalize power level increments for any checkpoints not yet calculated.
 	// For spectate / quit / NO CONTEST
 	INT16 checksleft = 0;
@@ -405,9 +415,7 @@ void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit)
 		K_UpdatePowerLevels(player, player->gradingpointnum + i, onForfeit);
 	}
 
-	// Dubious, but if this is called multiple times better to not touch PWR?
-	// Only direct side effets should be on checkpoint cross...
-	player->gradingpointnum = K_GetNumGradingPoints();
+	player->finalized = true;
 }
 
 INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)

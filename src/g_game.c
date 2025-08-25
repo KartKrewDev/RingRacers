@@ -2290,6 +2290,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	boolean cangrabitems;
 
+	boolean finalized;
+
 	SINT8 xtralife;
 
 	uint8_t public_key[PUBKEYLENGTH];
@@ -2482,6 +2484,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		bigwaypointgap = 0;
 		duelscore = 0;
 
+		finalized = false;
+
 		tallyactive = false;
 
 		cangrabitems = 0;
@@ -2517,6 +2521,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		exp = players[player].exp;
 		gradingfactor = players[player].gradingfactor;
 		gradingpointnum = players[player].gradingpointnum;
+
+		finalized = players[player].finalized;
 
 		roundscore = players[player].roundscore;
 
@@ -2667,6 +2673,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->botvars.rival = botrival;
 	p->botvars.foe = botfoe;
 	p->xtralife = xtralife;
+
+	p->finalized = finalized;
 
 	// SRB2kart
 	p->itemtype = itemtype;
