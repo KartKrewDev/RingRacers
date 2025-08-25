@@ -2437,7 +2437,9 @@ int W_VerifyNMUSlumps(const char *filename, FILE *handle, boolean exit_on_error)
 	int status = 0;
 
 	if (stricmp(&filename[strlen(filename) - 4], ".pk3") == 0)
+	{
 		status = W_VerifyPK3(handle, NMUSlist, false);
+	}
 	else
 	{
 		// detect wad file by the absence of the other supported extensions
@@ -2445,6 +2447,9 @@ int W_VerifyNMUSlumps(const char *filename, FILE *handle, boolean exit_on_error)
 		&& stricmp(&filename[strlen(filename) - 4], ".lua"))
 		{
 			status = W_VerifyWAD(handle, NMUSlist, false);
+
+			// repair file handle in this specific case
+			fseek(handle, 0, SEEK_SET);
 		}
 	}
 
