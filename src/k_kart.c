@@ -13814,14 +13814,14 @@ static void K_KartSpindash(player_t *player)
 		{
 			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
 			boolean spawnOldEffect = true;
-			boolean normalsound = true;
+			UINT8 soundvol = 255;
 
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
 
 			if (player->rings <= 0 && chargetime >= 0) // Desperation spindash
 			{
 				player->spindash++;
-				normalsound = false;
+				soundvol = 170;
 				if (!S_SoundPlaying(player->mo, sfx_kc38))
 					S_StartSound(player->mo, sfx_kc38);
 			}
@@ -13834,7 +13834,7 @@ static void K_KartSpindash(player_t *player)
 					S_ReducedVFXSound(player->mo, sfx_s3k9c, player);
 				}
 
-				normalsound = false;
+				soundvol = 0;
 				player->spindash += 4;
 			}
 
@@ -13870,11 +13870,11 @@ static void K_KartSpindash(player_t *player)
 
 				while ((soundcharge += ++add) < chargetime);
 
-				if (soundcharge == chargetime && normalsound)
+				if (soundcharge == chargetime && soundvol)
 				{
 					if (spawnOldEffect == true)
 						K_SpawnDashDustRelease(player);
-					S_ReducedVFXSound(player->mo, sfx_s3kab, player);
+					S_ReducedVFXSoundAtVolume(player->mo, sfx_s3kab, soundvol, player);
 				}
 			}
 			else if (chargetime < -TICRATE)
