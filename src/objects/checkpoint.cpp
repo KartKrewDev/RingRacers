@@ -584,7 +584,7 @@ void Obj_CheckpointThink(mobj_t* end)
 
 void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 {
-	if (player->exiting) // can't cross checkpoints when exiting
+	if (player->exiting || player->laps == 0) // can't cross checkpoints when exiting, or before the first lap starts
 	{
 		return;
 	}
