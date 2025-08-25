@@ -7816,7 +7816,6 @@ static void P_ResetSpawnpoints(void)
 
 static void P_TryAddExternalGhost(const char *defdemoname)
 {
-	CONS_Printf("trying %s\n", defdemoname);
 	if (FIL_FileExists(defdemoname))
 	{
 		savebuffer_t buf = {0};
@@ -7839,8 +7838,6 @@ static void P_LoadRecordGhosts(void)
 	char *gpath;
 	const char *modeprefix = "";
 	INT32 i;
-
-	CONS_Printf("trying load ghosts\n");
 
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
