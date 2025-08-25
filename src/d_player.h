@@ -169,6 +169,7 @@ typedef enum
 	CR_ZOOMTUBE,
 	CR_DASHRING,
 	CR_TRAPBUBBLE,
+	CR_MUSHROOMHILLPOLE,
 } carrytype_t; // carry
 
 /*

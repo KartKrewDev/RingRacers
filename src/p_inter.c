@@ -1141,6 +1141,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_AncientGearTouch(special, toucher);
 			return;
 
+		case MT_MHPOLE:
+			Obj_MushroomHillPoleTouch(special, toucher);
+			return;
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;

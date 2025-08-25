@@ -3417,7 +3417,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	lookback = K_GetKartButtons(player) & BT_LOOKBACK;
 
 	camspeed = cv_cam_speed[num].value;
-	camstill = cv_cam_still[num].value || player->seasaw;	// RR: seasaws lock the camera so that it isn't disorienting.
+	camstill = cv_cam_still[num].value
+		|| player->seasaw	// RR: seasaws lock the camera so that it isn't disorienting.
+		|| player->carry == CR_MUSHROOMHILLPOLE
+	;
 	camrotate = cv_cam_rotate[num].value;
 	camdist = FixedMul(cv_cam_dist[num].value, cameraScale);
 	camheight = FixedMul(cv_cam_height[num].value, cameraScale);
