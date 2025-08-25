@@ -398,7 +398,7 @@ consvar_t cv_menuframeskip = Player("menuframeskip", "Off").values({
 });
 consvar_t cv_movebob = Player("movebob", "1.0").floating_point().min_max(0, 4*FRACUNIT);
 consvar_t cv_netstat = Player("netstat", "Off").on_off().dont_save(); // show bandwidth statistics
-consvar_t cv_netticbuffer = Player("netticbuffer", "1").min_max(0, 3);
+consvar_t cv_netticbuffer = Player("netticbuffer", "1").min_max(1, 3);
 
 // number of channels available
 void SetChannelsNum(void);
