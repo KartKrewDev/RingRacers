@@ -588,10 +588,9 @@ static void G_UpdateRecordReplays(void)
 	{
 		modeprefix = "spb-";
 	}
-
-	if (K_LegacyRingboost(&players[consoleplayer]))
+	else if (K_LegacyRingboost(&players[consoleplayer]))
 	{
-		modeprefix = "classr-";
+		modeprefix = "hivolt-";
 	}
 
 	if (players[consoleplayer].pflags & PF_NOCONTEST)
