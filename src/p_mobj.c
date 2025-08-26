@@ -4106,6 +4106,7 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		Obj_CrossCheckpoints(mobj->player, oldx, oldy); // I would put this inside P_HitSpecialLines, but its wants a player reference with post-move coords instead of and old and new
 		mobj->floorz = g_tm.floorz;
 		mobj->ceilingz = g_tm.ceilingz;
+		mobj->standingslope = NULL;
 		mobj->terrain = NULL;
 		goto animonly;
 	}
