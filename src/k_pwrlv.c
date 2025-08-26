@@ -89,11 +89,16 @@ static fixed_t K_CalculatePowerLevelInc(UINT16 you, UINT16 them, boolean won)
 	INT16 STABLE_RATE = 3000; // The fulcrum point between positive-sum and negative-sum rankings.
 	// A player with 50% winrate in a perfectly stable room will land somewhere around STABLE_RATE PWR.
 
-	fixed_t STRONG_GAIN_PER_K = -(FRACUNIT/10); // How much to modify gains per 1000 points above stable.
-	fixed_t STRONG_LOSS_PER_K = FRACUNIT/5; // How much to modify losses per 1000 points above stable.
-	fixed_t WEAK_GAIN_PER_K = FRACUNIT/10; // How much to modify gains per 1000 points below stable.
-	fixed_t WEAK_LOSS_PER_K = -(FRACUNIT/5); // How much to modify losses per 1000 points below stable.
-	fixed_t GAP_INFLUENCE_PER_K = FRACUNIT/5; // How much to modify losses per 1000 point rating gap between participants.
+	// % modifiers to gains and losses. Positive numbers mean you gain more when gaining and drain more when draining.
+	// Negative numbers mean changes are less volatile; this makes gains less powerful and drains less punishing.
+	// "Strong" players are above STABLE_RATE. "Weak" players are below STABLE_RATE.
+	fixed_t STRONG_GAIN_PER_K = 	-10*FRACUNIT/100; // How much to modify gains per 1000 points above stable.
+	fixed_t STRONG_DRAIN_PER_K = 	20*FRACUNIT/100; // How much to modify losses per 1000 points above stable.
+	fixed_t WEAK_GAIN_PER_K = 		10*FRACUNIT/100; // How much to modify gains per 1000 points BELOW stable.
+	fixed_t WEAK_DRAIN_PER_K = 		-20*FRACUNIT/100; // How much to modify losses per 1000 points BELOW stable.
+
+	fixed_t GAP_INFLUENCE_PER_K = 	20*FRACUNIT/100; // How much to modify changes per 1000 point rating gap between participants.
+	// This affects gains for the weaker player and drains for the stronger player, to reward upsets / reassert the order.
 
 	// == Derived helper vars ==
 
@@ -119,13 +124,13 @@ static fixed_t K_CalculatePowerLevelInc(UINT16 you, UINT16 them, boolean won)
 	{
 		// Use strong-player modifiers.
 		gainPerK = STRONG_GAIN_PER_K;
-		lossPerK = STRONG_LOSS_PER_K;
+		lossPerK = STRONG_DRAIN_PER_K;
 	}
 	else if (STABLE_DELTA < 0)
 	{
 		// Use weak-player modifiers.
 		gainPerK = WEAK_GAIN_PER_K;
-		lossPerK = WEAK_LOSS_PER_K;
+		lossPerK = WEAK_DRAIN_PER_K;
 	}
 
 	// Apply rating-based modifiers: divide by 1000 so we're in the "right units"
