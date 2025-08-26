@@ -2344,6 +2344,10 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 
 	boolean polite = (cv_attacksplits.value == 1);
 
+	// Class R doesn't have coherent times, just watch the leader.
+	if (K_LegacyRingboost(player))
+		polite = false;
+
 	// "Next" Mode: Find the weakest ghost who beats our best time.
 	// Don't set a ghost if we have no set time (oldbest == UINT32_MAX)
 	if (polite)
@@ -3577,7 +3581,7 @@ void G_AddGhost(savebuffer_t *buffer, const char *defdemoname)
 	p++; // SUBVERSION
 
 	ghostversion = READUINT16(p);
-	
+
 	if (ghostversion < MINDEMOVERSION || ghostversion > DEMOVERSION)
 	{
 		// too old, cannot support.

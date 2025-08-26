@@ -3108,6 +3108,9 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 {
 	fixed_t required_speed = 2 * K_GetKartSpeed(player, false, false); // 200%
 
+	if (K_LegacyRingboost(player))
+		return required_speed;
+
 	if (specialstageinfo.valid)
 		required_speed = 3 * K_GetKartSpeed(player, false, false) / 2; // 150%
 
@@ -9484,7 +9487,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 	return BMIT_CONTINUE; // find other rings
 }
 
-boolean K_LegacyRingboost(player_t *player)
+boolean K_LegacyRingboost(const player_t *player)
 {
 	if (netgame)
 		return false;
