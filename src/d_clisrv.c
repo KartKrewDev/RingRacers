@@ -2067,8 +2067,10 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 					break;
 				}
 
+#ifndef HAVE_THREADS
 			if (curl_running)
 				CURLGetFile();
+#endif
 
 			if (waitmore)
 				break; // exit the case
