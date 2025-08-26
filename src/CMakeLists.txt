@@ -689,7 +689,7 @@ if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
 endif()
 
 # copy DLLs to bin/ directory if building internal shared on windows
-if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}")
+if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}" AND NOT MSVC)
 	# also copy implicitly linked system libraries
 	set(ADDITIONAL_DLLS "")
 	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL GNU)
