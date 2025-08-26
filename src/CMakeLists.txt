@@ -445,8 +445,12 @@ if (NOT SRB2_CONFIG_FORCE_NO_MS_BITFIELDS)
 endif()
 
 # Yes we know we use insecure CRT functions...
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	target_compile_definitions(SRB2SDL2 PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+if(WIN32 OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	target_compile_definitions(SRB2SDL2 PRIVATE
+		-D_CRT_SECURE_NO_WARNINGS
+		-D_CRT_NONSTDC_NO_WARNINGS
+		-D_WINSOCK_DEPRECATED_NO_WARNINGS
+	)
 endif()
 
 # Compiler warnings configuration
