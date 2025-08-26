@@ -166,7 +166,7 @@ private:
 
 		pmo->flags |= MF_NOGRAVITY;
 		pmo->move_origin(hook());
-		pmo->angle = angle;
+		// pmo->angle = angle;
 		return true;
 	};
 
