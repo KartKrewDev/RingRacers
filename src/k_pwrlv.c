@@ -78,46 +78,90 @@ void K_ClearClientPowerLevels(void)
 	memset(clientPowerAdd, 0, sizeof clientPowerAdd);
 }
 
-// Adapted from this: http://wiki.tockdom.com/wiki/Player_Rating
-INT16 K_CalculatePowerLevelInc(INT16 diff)
+// "Tyron sneaks mahjong ratings into Ring Racers"
+// A system that allows player ratings to inflate over time, then settle based on their winrate.
+static fixed_t K_CalculatePowerLevelInc(UINT16 you, UINT16 them, boolean won)
 {
-	INT16 control[10] = {0,0,0,1,8,50,125,125,125,125};
-	fixed_t increment = 0;
-	fixed_t x;
-	UINT8 j;
+	// == ★ TUNING ZONE ★ ==
 
-#define MAXDIFF (PWRLVRECORD_MAX - 1)
-	if (diff > MAXDIFF)
-		diff = MAXDIFF;
-	if (diff < -MAXDIFF)
-		diff = -MAXDIFF;
-#undef MAXDIFF
+	fixed_t BASE_CHANGE = 20*FRACUNIT; // The base amount that ratings should change per comparison. Higher = more volatile
 
-	x = ((diff-2)<<FRACBITS) / PWRLVRECORD_MEDIAN;
+	INT16 STABLE_RATE = 3000; // The fulcrum point between positive-sum and negative-sum rankings.
+	// A player with 50% winrate in a perfectly stable room will land somewhere around STABLE_RATE PWR.
 
-	for (j = 3; j < 10; j++) // Just skipping to 3 since 0 thru 2 will always just add 0...
+	fixed_t STRONG_GAIN_PER_K = -(FRACUNIT/10); // How much to modify gains per 1000 points above stable.
+	fixed_t STRONG_LOSS_PER_K = FRACUNIT/5; // How much to modify losses per 1000 points above stable.
+	fixed_t WEAK_GAIN_PER_K = FRACUNIT/10; // How much to modify gains per 1000 points below stable.
+	fixed_t WEAK_LOSS_PER_K = -(FRACUNIT/5); // How much to modify losses per 1000 points below stable.
+	fixed_t GAP_INFLUENCE_PER_K = FRACUNIT/5; // How much to modify losses per 1000 point rating gap between participants.
+
+	// == Derived helper vars ==
+
+	INT16 STABLE_DELTA = you - STABLE_RATE;
+	INT16 ABS_STABLE_DELTA = abs(STABLE_DELTA);
+
+	INT16 RATING_GAP = you - them;
+	INT16 ABS_RATING_GAP = abs(RATING_GAP);
+
+	fixed_t GAP_INFLUENCE = GAP_INFLUENCE_PER_K / 1000 * ABS_RATING_GAP;
+
+	// == Working vars ==
+
+	fixed_t change = won ? BASE_CHANGE : -1 * BASE_CHANGE; // The rating change to eventually apply.
+	fixed_t gainMod = FRACUNIT; // Multiplier to winnings (change > 0).
+	fixed_t drainMod = FRACUNIT; // Multiplier to lost rating (change < 0).
+	fixed_t gainPerK = 0;
+	fixed_t lossPerK = 0;
+
+	// == ★ FIXED POINT MATH ZONE ★ ==
+
+	if (STABLE_DELTA > 0)
 	{
-		fixed_t f = abs(x - ((j-4)<<FRACBITS));
-		fixed_t add;
-
-		if (f >= (2<<FRACBITS))
-		{
-			continue; //add = 0;
-		}
-		else if (f >= (1<<FRACBITS))
-		{
-			fixed_t f2 = (2<<FRACBITS) - f;
-			add = FixedMul(FixedMul(f2, f2), f2) / 6;
-		}
-		else
-		{
-			add = ((3*FixedMul(FixedMul(f, f), f)) - (6*FixedMul(f, f)) + (4<<FRACBITS)) / 6;
-		}
-
-		increment += (add * control[j]);
+		// Use strong-player modifiers.
+		gainPerK = STRONG_GAIN_PER_K;
+		lossPerK = STRONG_LOSS_PER_K;
+	}
+	else if (STABLE_DELTA < 0)
+	{
+		// Use weak-player modifiers.
+		gainPerK = WEAK_GAIN_PER_K;
+		lossPerK = WEAK_LOSS_PER_K;
 	}
 
-	return (INT16)(increment >> FRACBITS);
+	// Apply rating-based modifiers: divide by 1000 so we're in the "right units"
+	// to tune with "per 1000" numbers up top.
+	gainMod += gainPerK / 1000 * ABS_STABLE_DELTA;
+	drainMod += lossPerK / 1000 * ABS_STABLE_DELTA;
+
+	// EXTRA: Weak players gain more versus strong players and vice versa.
+	if (RATING_GAP > 0)
+	{
+		// You're strong. You lose more when losing.
+		drainMod += GAP_INFLUENCE;
+	}
+	else if (RATING_GAP < 0)
+	{
+		// You're the underdog. You win more when winning.
+		gainMod += GAP_INFLUENCE;
+	}
+
+	// Keep negative values etc from causing havoc.
+	gainMod = clamp(gainMod, FRACUNIT/10, FRACUNIT*10);
+	drainMod = clamp(drainMod, FRACUNIT/10, FRACUNIT*10);
+
+	// Winning? Apply gain mod. Losing? Apply drain mod.
+	if (change > 0)
+	{
+		change = FixedMul(change, gainMod);
+	}
+	else if (change < 0)
+	{
+		change = FixedMul(change, drainMod);
+	}
+
+	CONS_Debug(DBG_PWRLV, "R1=%d R2=%d W=%d - G=%d D=%d - C=%d\n", you, them, won, gainMod, drainMod, change/FRACUNIT);
+
+	return change;
 }
 
 INT16 K_PowerLevelPlacementScore(player_t *player)
@@ -245,8 +289,8 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 		UINT16 theirScore = 0;
 		INT16 theirPower = 0;
 
-		INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
-		INT16 inc = 0; // Total pt increment
+		fixed_t ourinc = 0; // Total pt increment
+		fixed_t theirinc = 0;
 
 		boolean won = false;
 
@@ -282,9 +326,9 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 
 		if (forfeit == true)
 		{
-			diff = yourPower - theirPower;
-			inc -= K_CalculatePowerLevelInc(diff);
-			CONS_Debug(DBG_PWRLV, "FORFEIT! Diff is %d, increment is %d\n", diff, inc);
+			ourinc = K_CalculatePowerLevelInc(yourPower, theirPower, false);
+			theirinc = K_CalculatePowerLevelInc(theirPower, yourPower, true);
+			CONS_Debug(DBG_PWRLV, "FORFEIT! increment is %d\n", ourinc);
 		}
 		else
 		{
@@ -301,87 +345,57 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 
 			if (won == true && forfeit == false) // This player won!
 			{
-				diff = theirPower - yourPower;
-				inc += K_CalculatePowerLevelInc(diff);
-				CONS_Debug(DBG_PWRLV, "WON! Diff is %d, increment is %d\n", diff, inc);
+				ourinc = K_CalculatePowerLevelInc(yourPower, theirPower, true);
+				theirinc = K_CalculatePowerLevelInc(theirPower, yourPower, false);
+				CONS_Debug(DBG_PWRLV, "WON! increment is %d\n", ourinc);
 			}
 			else // This player lost...
 			{
-				diff = yourPower - theirPower;
-				inc -= K_CalculatePowerLevelInc(diff);
-				CONS_Debug(DBG_PWRLV, "LOST... Diff is %d, increment is %d\n", diff, inc);
+				ourinc = K_CalculatePowerLevelInc(yourPower, theirPower, false);
+				theirinc = K_CalculatePowerLevelInc(theirPower, yourPower, true);
+				CONS_Debug(DBG_PWRLV, "LOST... increment is %d\n", ourinc);
 			}
 		}
 
 		if (dueling)
 		{
-			INT16 prevInc = inc;
+			fixed_t prevInc = ourinc;
 
 			// INT32 winnerscore = (yourScore > theirScore) ? player->duelscore : players[i].duelscore;
 			INT16 multiplier = 2;
-			inc *= multiplier;
-
-			if (inc == 0)
-			{
-				if (prevInc > 0)
-				{
-					inc = 1;
-				}
-				else if (prevInc < 0)
-				{
-					inc = -1;
-				}
-			}
+			ourinc *= multiplier;
+			theirinc *= multiplier;
 
 			// CONS_Printf("%s PWR UPDATE: %d\n", player_names[player - players], inc);
 
-			CONS_Debug(DBG_PWRLV, "DUELING: Boosted (%d * %d = %d)\n", prevInc, multiplier, inc);
+			CONS_Debug(DBG_PWRLV, "DUELING: Boosted (%d * %d = %d)\n", prevInc/FRACUNIT, multiplier, ourinc/FRACUNIT);
 		}
 		else
 		{
 			if (exitBonus == false)
 			{
-				INT16 prevInc = inc;
+				fixed_t prevInc = ourinc;
 
-				// WARNING, BULLSHIT TYPING REASONS MAKE DOING THIS
-				// INLINE POSTFIX COMPLETE NONSENSE
-				// LIKE, -9 / 12 = 27000 NONSENSE
 				INT16 dvs = max(K_GetNumGradingPoints(), 1);
-				inc = inc / dvs;
+				ourinc = FixedDiv(ourinc, dvs*FRACUNIT);
+				theirinc = FixedDiv(theirinc, dvs*FRACUNIT);
 
-				if (inc == 0)
-				{
-					if (prevInc > 0)
-					{
-						inc = 1;
-					}
-					else if (prevInc < 0)
-					{
-						inc = -1;
-					}
-				}
-
-				CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, dvs, inc);
+				CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc/FRACUNIT, dvs, ourinc/FRACUNIT);
 			}
 		}
 
 		CONS_Debug(DBG_PWRLV, "========\n");
 
-		if (inc == 0)
-		{
-			CONS_Debug(DBG_PWRLV, "Total Result: No increment, no change.\n");
-			continue;
-		}
-
 		CONS_Debug(DBG_PWRLV, "Total Result:\n");
-		CONS_Debug(DBG_PWRLV, "Increment: %d\n", inc);
+		CONS_Debug(DBG_PWRLV, "Our increment: %d\n", ourinc / FRACUNIT);
+		CONS_Debug(DBG_PWRLV, "Their increment: %d\n", theirinc / FRACUNIT);
 
 		CONS_Debug(DBG_PWRLV, "%s current: %d\n", player_names[playerNum], clientPowerAdd[playerNum]);
-		clientPowerAdd[playerNum] += inc;
+		clientPowerAdd[playerNum] += ourinc/FRACUNIT;
 		CONS_Debug(DBG_PWRLV, "%s final: %d\n", player_names[playerNum], clientPowerAdd[playerNum]);
 
 		CONS_Debug(DBG_PWRLV, "%s current: %d\n", player_names[i], clientPowerAdd[i]);
-		clientPowerAdd[i] -= inc;
+		clientPowerAdd[i] += theirinc/FRACUNIT;
 		CONS_Debug(DBG_PWRLV, "%s final: %d\n", player_names[i], clientPowerAdd[i]);
 
 		CONS_Debug(DBG_PWRLV, "========\n");
