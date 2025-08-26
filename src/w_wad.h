@@ -147,7 +147,7 @@ extern wadfile_t *wadfiles[MAX_WADFILES];
 void W_Shutdown(void);
 
 // Opens a WAD file. Returns the FILE * handle for the file, or NULL if not found or could not be opened
-FILE *W_OpenWadFile(const char **filename, boolean useerrors);
+FILE *W_OpenWadFile(const char **filename, const char *priorityfolder, boolean useerrors);
 // Load and add a wadfile to the active wad files, returns numbers of lumps, INT16_MAX on error
 UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup, const char *md5expected);
 
@@ -226,7 +226,7 @@ void *W_CacheSoftwarePatchNum(lumpnum_t lumpnum, INT32 tag);
 
 void W_UnlockCachedPatch(void *patch);
 
-int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error);
+int W_VerifyNMUSlumps(const char *filename, FILE *handle, boolean exit_on_error);
 
 /// Initialize non-legacy GL shader lookup, which lives outside the lump management system.
 void W_InitShaderLookup(const char *filename);

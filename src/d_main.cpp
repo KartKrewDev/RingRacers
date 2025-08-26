@@ -1395,17 +1395,23 @@ static void IdentifyVersion(void)
 	srb2waddir = I_LocateWad();
 #endif
 
+	char tempsrb2path[256] = ".";
+	getcwd(tempsrb2path, 256);
+
 	// get the current directory (possible problem on NT with "." as current dir)
-	if (srb2waddir)
+	if (!srb2waddir)
 	{
-		strlcpy(srb2path,srb2waddir,sizeof (srb2path));
-	}
-	else
-	{
-		if (getcwd(srb2path, 256) != NULL)
-			srb2waddir = srb2path;
+		if (tempsrb2path[0])
+			srb2waddir = tempsrb2path;
 		else
 			srb2waddir = ".";
+	}
+
+#if (1) // reduce the amount of findfile by only using full cwd in this func
+	if (strcmp(tempsrb2path, srb2waddir))
+#endif
+	{
+		strlcpy(srb2path, srb2waddir, sizeof (srb2path));
 	}
 
 	// Load the IWAD
@@ -1433,21 +1439,29 @@ static void IdentifyVersion(void)
 #endif
 
 #define MUSICTEST(str) \
-	{\
-		const char *musicpath = va(spandf,srb2waddir,"data",str);\
-		int ms = W_VerifyNMUSlumps(musicpath, false); \
-		if (ms == 1) \
+		musicpath = va(spandf,srb2waddir,"data",str);\
+		handle = W_OpenWadFile(&musicpath, NULL, false); \
+		if (handle) \
 		{ \
-			D_AddFile(startupiwads, num_startupiwads++, musicpath, NULL); \
-			musicwads++; \
-		} \
-		else if (ms == 0) \
-			I_Error("File " str " has been modified with non-music/sound lumps"); \
-	}
+			int ms = W_VerifyNMUSlumps(musicpath, handle, false); \
+			fclose(handle); \
+			if (ms == 0) \
+				I_Error("File " str " has been modified with non-music/sound lumps"); \
+			if (ms == 1) \
+			{ \
+				D_AddFile(startupiwads, num_startupiwads++, musicpath, NULL); \
+				musicwads++; \
+			} \
+		}
 
-	MUSICTEST("sounds.pk3")
-	MUSICTEST("music.pk3")
-	MUSICTEST("altmusic.pk3")
+	{
+		const char *musicpath;
+		FILE *handle;
+
+		MUSICTEST("sounds.pk3")
+		MUSICTEST("music.pk3")
+		MUSICTEST("altmusic.pk3")
+	}
 
 #undef MUSICTEST
 }

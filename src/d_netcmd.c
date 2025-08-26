@@ -4311,7 +4311,7 @@ static void Got_RunSOCcmd(const UINT8 **cp, INT32 playernum)
 	// Maybe add md5 support?
 	if (strstr(filename, ".soc") != NULL)
 	{
-		ncs = findfile(filename,NULL,true);
+		ncs = findfile(filename, "addons", NULL, true);
 
 		if (ncs != FS_FOUND)
 		{
@@ -4352,6 +4352,8 @@ static void Command_Addfile(void)
 	const char **addedfiles = Z_Calloc(sizeof(const char*) * argc, PU_STATIC, NULL);
 	size_t numfilesadded = 0; // the amount of filenames processed
 
+	FILE *fhandle = NULL;
+
 	// start at one to skip command name
 	for (curarg = 1; curarg < argc; curarg++)
 	{
@@ -4360,24 +4362,22 @@ static void Command_Addfile(void)
 		char *buf_p = buf;
 		INT32 i;
 		size_t ii;
-		int musiconly; // W_VerifyNMUSlumps isn't boolean
-		boolean fileadded = false;
+		int musiconly = -1; // W_VerifyNMUSlumps isn't boolean
 
 		fn = COM_Argv(curarg);
 
 		// For the amount of filenames previously processed...
 		for (ii = 0; ii < numfilesadded; ii++)
 		{
+			if (strcmp(fn, addedfiles[ii]))
+				continue;
+
 			// If this is one of them, don't try to add it.
-			if (!strcmp(fn, addedfiles[ii]))
-			{
-				fileadded = true;
-				break;
-			}
+			break;
 		}
 
 		// If we've added this one, skip to the next one.
-		if (fileadded)
+		if (ii < numfilesadded)
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Already processed %s, skipping\n"), fn);
 			continue;
@@ -4385,13 +4385,22 @@ static void Command_Addfile(void)
 
 		// Disallow non-printing characters and semicolons.
 		for (i = 0; fn[i] != '\0'; i++)
-			if (!isprint(fn[i]) || fn[i] == ';')
-			{
-				Z_Free(addedfiles);
-				return;
-			}
+		{
+			if (isprint(fn[i]) && fn[i] != ';')
+				continue;
+			goto addfile_finally;
+		}
 
-		musiconly = W_VerifyNMUSlumps(fn, false);
+		if (fhandle)
+		{
+			fclose(fhandle);
+			fhandle = NULL;
+		}
+
+		if ((fhandle = W_OpenWadFile(&fn, "addons", true)) != NULL)
+		{
+			musiconly = W_VerifyNMUSlumps(fn, fhandle, false);
+		}
 
 		if (musiconly == -1)
 		{
@@ -4429,11 +4438,8 @@ static void Command_Addfile(void)
 		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
-			Z_Free(addedfiles);
-			return;
+			goto addfile_finally;
 		}
-
-		WRITESTRINGN(buf_p,p,240);
 
 		// calculate and check md5
 		{
@@ -4441,35 +4447,31 @@ static void Command_Addfile(void)
 #ifdef NOMD5
 			memset(md5sum,0,16);
 #else
-			FILE *fhandle;
-			boolean valid = true;
-
-			if ((fhandle = W_OpenWadFile(&fn, true)) != NULL)
 			{
 				tic_t t = I_GetTime();
 				CONS_Debug(DBG_SETUP, "Making MD5 for %s\n",fn);
 				md5_stream(fhandle, md5sum);
 				CONS_Debug(DBG_SETUP, "MD5 calc for %s took %f second\n", fn, (float)(I_GetTime() - t)/TICRATE);
-				fclose(fhandle);
 			}
-			else // file not found
-				continue;
 
 			for (i = 0; i < numwadfiles; i++)
 			{
-				if (!memcmp(wadfiles[i]->md5sum, md5sum, 16))
-				{
-					CONS_Alert(CONS_ERROR, M_GetText("%s is already loaded\n"), fn);
-					valid = false;
-					break;
-				}
+				if (memcmp(wadfiles[i]->md5sum, md5sum, 16))
+					continue;
+
+				CONS_Alert(CONS_ERROR, M_GetText("%s is already loaded\n"), fn);
+				break;
 			}
 
-			if (valid == false)
+			if (i < numwadfiles)
 			{
+				// Already loaded, try next
 				continue;
 			}
 #endif
+
+			// Finally okay to write this important data
+			WRITESTRINGN(buf_p,p,240);
 			WRITEMEM(buf_p, md5sum, 16);
 		}
 
@@ -4481,6 +4483,10 @@ static void Command_Addfile(void)
 			SendNetXCmd(XD_ADDFILE, buf, buf_p - buf);
 	}
 
+addfile_finally:
+
+	if (fhandle)
+		fclose(fhandle);
 	Z_Free(addedfiles);
 #endif/*TESTERS*/
 }
@@ -4517,7 +4523,7 @@ static void Got_RequestAddfilecmd(const UINT8 **cp, INT32 playernum)
 	if (numwadfiles >= MAX_WADFILES)
 		toomany = true;
 	else
-		ncs = findfile(filename,md5sum,true);
+		ncs = findfile(filename, "addons", md5sum, true);
 
 	if (ncs != FS_FOUND || toomany)
 	{
@@ -4561,7 +4567,7 @@ static void Got_Addfilecmd(const UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	ncs = findfile(filename,md5sum,true);
+	ncs = findfile(filename, "addons", md5sum, true);
 
 	if (ncs != FS_FOUND || !P_AddWadFile(filename))
 	{

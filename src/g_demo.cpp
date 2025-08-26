@@ -1785,7 +1785,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 			if (numwadfiles >= MAX_WADFILES)
 				toomany = true;
 			else
-				ncs = findfile(filename, md5sum, false);
+				ncs = findfile(filename, "addons", md5sum, false);
 
 			if (toomany)
 			{
@@ -1894,7 +1894,7 @@ static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, boolean quick)
 
 			if (numwadfiles >= MAX_WADFILES)
 				error = DFILE_ERROR_CANNOTLOAD;
-			else if (!quick && findfile(filename, md5sum, false) != FS_FOUND)
+			else if (!quick && findfile(filename, "addons", md5sum, false) != FS_FOUND)
 				error = DFILE_ERROR_CANNOTLOAD;
 			else if (error < DFILE_ERROR_INCOMPLETEOUTOFORDER)
 				error |= DFILE_ERROR_NOTLOADED;

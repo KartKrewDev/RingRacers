@@ -6739,7 +6739,7 @@ void M_DrawAddons(void)
 	if (modifiedgame)
 		V_DrawSmallScaledPatch(x, y, 0, addonsp[NUM_EXT+2]);
 
-	m = numwadfiles-(mainwads+musicwads+1);
+	m = numwadfiles-(mainwads+musicwads);
 
 	V_DrawCenteredMenuString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%ld ADD-ON%s LOADED", (long)m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for bios.pk3
 }
