@@ -900,6 +900,8 @@ struct player_t
 
 	boolean pullup; // True if the player is attached to a pullup hook
 
+	boolean finalized; // Did PWR finalize already, don't repeat it even if exit conditions are weird.
+
 	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
 	UINT16 faultflash; // Used for misc FAULT visuals

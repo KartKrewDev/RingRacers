@@ -2127,11 +2127,9 @@ static void K_HandleLapIncrement(player_t *player)
 					player->laptime[LAP_LAST] = player->laptime[LAP_CUR];
 					player->laptime[LAP_CUR] = 0;
 
-					// Update power levels for this lap.
-					K_UpdatePowerLevels(player, player->laps, false);
-
 					UINT16 oldexp = player->exp;
 					K_CheckpointCrossAward(player);
+					K_UpdatePowerLevels(player, player->gradingpointnum, false);
 
 					if (player->exp > oldexp)
 					{
@@ -9638,7 +9636,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 	{
 		if (r_splitscreen != 1)
 			maxShake = FixedMul(mapheaderinfo[gamemap-1]->cameraHeight, mapobjectscale) * 3 / 4;
-		
+
 		// For 2p SPLITSCREEN SPECIFICALLY:
 		// The view is pretty narrow, so move it back 3/20 of the way towards default camera height.
 		else

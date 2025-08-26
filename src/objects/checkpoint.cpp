@@ -520,8 +520,8 @@ struct CheckpointManager
 		chk->gingerbread();
 	}
 
-	void clear() 
-	{ 
+	void clear()
+	{
 		lines_.clear();
 		list_.clear();
 		count_ = 0;
@@ -588,7 +588,7 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 	{
 		return;
 	}
-	
+
 	LineOnDemand ray(old_x, old_y, player->mo->x, player->mo->y, player->mo->radius);
 
 	auto it = std::find_if(
@@ -699,7 +699,7 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 		K_SpawnEXP(player, expdiff, chk->other());
 	}
 
-	K_UpdatePowerLevels(player, player->laps, false);
+	K_UpdatePowerLevels(player, player->gradingpointnum, false);
 }
 
 mobj_t* Obj_FindCheckpoint(INT32 id)

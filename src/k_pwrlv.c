@@ -182,10 +182,10 @@ INT16 K_CalculatePowerLevelAvg(void)
 	return (INT16)avg;
 }
 
-void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
+void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 {
 	const UINT8 playerNum = player - players;
-	const boolean exitBonus = ((lap > numlaps) || (player->pflags & PF_NOCONTEST));
+	const boolean exitBonus = ((gradingpoint >= K_GetNumGradingPoints()) || (player->pflags & PF_NOCONTEST));
 
 	SINT8 powerType = K_UsingPowerLevels();
 
@@ -204,13 +204,21 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 		return;
 	}
 
-	if (!playeringame[playerNum] || player->spectator)
+	// Spectators don't have immunity if they're forfeiting: we're TRYING to punish them!
+	if (!playeringame[playerNum] || (player->spectator && !forfeit))
+	{
+		return;
+	}
+
+	// Probably being called from some stray codepath or a double exit.
+	// We have already finished calculating PWR, don't touch anything!
+	if (player->finalized)
 	{
 		return;
 	}
 
 	CONS_Debug(DBG_PWRLV, "\n========\n");
-	CONS_Debug(DBG_PWRLV, "* Power Level change for player %s (LAP %d) *\n", player_names[playerNum], lap);
+	CONS_Debug(DBG_PWRLV, "* Power Level change for player %s (CHECKPOINT %d) *\n", player_names[playerNum], gradingpoint);
 	CONS_Debug(DBG_PWRLV, "========\n");
 
 	yourPower = clientpowerlevels[playerNum][powerType];
@@ -310,7 +318,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			INT16 prevInc = inc;
 
 			// INT32 winnerscore = (yourScore > theirScore) ? player->duelscore : players[i].duelscore;
-			INT32 multiplier = 2;
+			INT16 multiplier = 2;
 			inc *= multiplier;
 
 			if (inc == 0)
@@ -335,7 +343,11 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			{
 				INT16 prevInc = inc;
 
-				inc /= max(numlaps-1, 1);
+				// WARNING, BULLSHIT TYPING REASONS MAKE DOING THIS
+				// INLINE POSTFIX COMPLETE NONSENSE
+				// LIKE, -9 / 12 = 27000 NONSENSE
+				INT16 dvs = max(K_GetNumGradingPoints(), 1);
+				inc = inc / dvs;
 
 				if (inc == 0)
 				{
@@ -349,7 +361,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 					}
 				}
 
-				CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, numlaps, inc);
+				CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, dvs, inc);
 			}
 		}
 
@@ -378,29 +390,32 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 
 void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit)
 {
-	// Finalize power level increments for any laps not yet calculated.
+	if (player->finalized)
+		return;
+
+	// Finalize power level increments for any checkpoints not yet calculated.
 	// For spectate / quit / NO CONTEST
-	INT16 lapsLeft = 0;
+	INT16 checksleft = 0;
 	UINT8 i;
 
 	// No remaining laps in Duel.
 	if (K_InRaceDuel())
 		return;
 
-	lapsLeft = (numlaps - player->latestlap) + 1;
+	checksleft = K_GetNumGradingPoints() - player->gradingpointnum;
 
-	if (lapsLeft <= 0)
+	if (checksleft <= 0)
 	{
-		// We've done every lap already.
+		// We've done every checkpoint already.
 		return;
 	}
 
-	for (i = 0; i < lapsLeft; i++)
+	for (i = 1; i <= checksleft; i++)
 	{
-		K_UpdatePowerLevels(player, player->latestlap + (i + 1), onForfeit);
+		K_UpdatePowerLevels(player, player->gradingpointnum + i, onForfeit);
 	}
 
-	player->latestlap = numlaps+1;
+	player->finalized = true;
 }
 
 INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
@@ -705,7 +720,7 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 
 	if (pointLoss)
 	{
-		clientpowerlevels[playerNum][powerType] += clientPowerAdd[playerNum];
+		clientpowerlevels[playerNum][powerType] += inc;
 		clientPowerAdd[playerNum] = 0;
 		SV_UpdateStats();
 	}
