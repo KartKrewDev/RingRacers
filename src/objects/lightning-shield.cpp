@@ -23,6 +23,8 @@ struct Shield : Mobj
 	Mobj* follow() const { return Mobj::target(); }
 	void follow(Mobj* n) { Mobj::target(n); }
 
+	player_t* player() const { return follow()->player; }
+
 	bool valid() const { return Mobj::valid(follow()); }
 };
 
@@ -57,6 +59,11 @@ struct Visual : Mobj
 		move_origin(shield()->pos());
 		scale(5 * shield()->follow()->scale() / 4);
 		dispoffset = state()->num() == S_THNB1 ? -1 : 1;
+
+		if (shield()->player()->lightningcharge)
+			renderflags |= RF_DONTDRAW;
+		else
+			renderflags &= ~RF_DONTDRAW;
 
 		return true;
 	}
