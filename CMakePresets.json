@@ -83,7 +83,8 @@
 			"name": "__vcpkg-toolchain",
 			"hidden": true,
 			"cacheVariables": {
-				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+				"VCPKG_OVERLAY_PORTS": "${sourceDir}/thirdparty/overlay-ports"
 			}
 		},
 		{
