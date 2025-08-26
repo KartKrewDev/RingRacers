@@ -45,7 +45,6 @@ extern UINT8 spectateGriefed;
 
 SINT8 K_UsingPowerLevels(void);
 void K_ClearClientPowerLevels(void);
-INT16 K_CalculatePowerLevelInc(INT16 diff);
 INT16 K_PowerLevelPlacementScore(player_t *player);
 INT16 K_CalculatePowerLevelAvg(void);
 void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit);
