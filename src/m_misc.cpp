@@ -21,12 +21,12 @@
 #pragma GCC diagnostic ignored "-Wclobbered"
 #endif
 
-#include <filesystem>
-
 #include <unistd.h>
 #endif
 
+
 #include <algorithm>
+#include <filesystem>
 #include <errno.h>
 
 // Extended map support.
@@ -115,14 +115,17 @@ typedef off_t off64_t;
  #endif
 #endif
 
+extern "C" CV_PossibleValue_t lossless_recorder_cons_t[];
 CV_PossibleValue_t lossless_recorder_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
 
+extern "C" CV_PossibleValue_t zlib_mem_level_t[];
 CV_PossibleValue_t zlib_mem_level_t[] = {
 	{1, "(Min Memory) 1"},
 	{2, "2"}, {3, "3"}, {4, "4"}, {5, "5"}, {6, "6"}, {7, "7"},
 	{8, "(Optimal) 8"}, //libpng Default
 	{9, "(Max Memory) 9"}, {0, NULL}};
 
+extern "C" CV_PossibleValue_t zlib_level_t[];
 CV_PossibleValue_t zlib_level_t[] = {
 	{0, "No Compression"},  //Z_NO_COMPRESSION
 	{1, "(Fastest) 1"}, //Z_BEST_SPEED
@@ -132,6 +135,7 @@ CV_PossibleValue_t zlib_level_t[] = {
 	{9, "(Maximum) 9"}, //Z_BEST_COMPRESSION
 	{0, NULL}};
 
+extern "C" CV_PossibleValue_t zlib_strategy_t[];
 CV_PossibleValue_t zlib_strategy_t[] = {
 	{0, "Normal"}, //Z_DEFAULT_STRATEGY
 	{1, "Filtered"}, //Z_FILTERED
@@ -140,6 +144,7 @@ CV_PossibleValue_t zlib_strategy_t[] = {
 	{4, "Fixed"}, //Z_FIXED
 	{0, NULL}};
 
+extern "C" CV_PossibleValue_t zlib_window_bits_t[];
 CV_PossibleValue_t zlib_window_bits_t[] = {
 #ifdef WBITS_8_OK
 	{8, "256"},
@@ -618,6 +623,8 @@ void Command_ChangeConfig_f(void)
 	COM_BufAddText(va("loadconfig \"%s\"\n", COM_Argv(1)));
 }
 
+extern "C" struct CVarList* cvlist_execversion;
+
 /** Loads the default config file.
   *
   * \sa Command_LoadConfig_f
@@ -645,7 +652,6 @@ void M_FirstLoadConfig(void)
 
 	// register execversion here before we load any configs
 	{
-		extern struct CVarList *cvlist_execversion;
 		CV_RegisterList(cvlist_execversion);
 	}
 

@@ -6712,7 +6712,7 @@ static void M_CacheAddonPatches(void)
 void M_DrawAddons(void)
 {
 	INT32 x, y;
-	ssize_t i, m;
+	ptrdiff_t i, m;
 	const UINT8 *flashcol = NULL;
 	UINT8 hilicol;
 
@@ -6763,7 +6763,7 @@ void M_DrawAddons(void)
 		i = 0;
 	else
 	{
-		ssize_t q = m;
+		ptrdiff_t q = m;
 		m = ((2*numaddonsshown + 1) * m)/sizedirmenu;
 		if (dir_on[menudepthleft] <= numaddonsshown) // all the way up
 			i = 0;
@@ -6777,7 +6777,7 @@ void M_DrawAddons(void)
 
 	// get bottom...
 	m = dir_on[menudepthleft] + numaddonsshown + 1;
-	if (m > (ssize_t)sizedirmenu)
+	if (m > (ptrdiff_t) sizedirmenu)
 		m = sizedirmenu;
 
 	// then compute top and adjust bottom if needed!
@@ -6830,7 +6830,7 @@ void M_DrawAddons(void)
 		y += addonsseperation;
 	}
 
-	if (m != (ssize_t)sizedirmenu)
+	if (m != (ptrdiff_t) sizedirmenu)
 		V_DrawMenuString(19, y-12 + (skullAnimCounter/5), highlightflags, "\x1B");
 
 	if (m < (2*numaddonsshown + 1))

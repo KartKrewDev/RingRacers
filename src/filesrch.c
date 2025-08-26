@@ -28,7 +28,7 @@
 #include <dirent.h>
 #endif
 #if defined (_WIN32) && !defined (_XBOX)
-//#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #define RPC_NO_WINDOWS_H
 #include <windows.h>
 #endif
@@ -147,7 +147,7 @@ opendir (const CHAR *szPath)
 
   /* Allocate enough space to store DIR structure and the complete
    * directory path given. */
-  nd = (DIR *) malloc (sizeof (DIR) + (strlen(szFullPath) + strlen (SLASH) +
+  nd = (DIR *) malloc (sizeof (DIR) + (strlen(szFullPath) +
 			 strlen(PATHSEP) + 1) * sizeof (CHAR));
 
   if (!nd)

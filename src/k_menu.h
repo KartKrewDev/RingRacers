@@ -1631,4 +1631,28 @@ const char *M_GetDiscordName(discordRequest_t *r);
 } // extern "C"
 #endif
 
+#ifdef __cplusplus
+namespace srb2
+{
+constexpr inline itemaction_t itemaction(menu_t* menu)
+{
+	itemaction_t ret {};
+	ret.submenu = menu;
+	return ret;
+}
+constexpr inline itemaction_t itemaction(consvar_t* consvar)
+{
+	itemaction_t ret {};
+	ret.cvar = consvar;
+	return ret;
+}
+constexpr inline itemaction_t itemaction(void (*routine)(INT32 choice))
+{
+	itemaction_t ret {};
+	ret.routine = routine;
+	return ret;
+}
+}
+#endif
+
 #endif //__K_MENU__

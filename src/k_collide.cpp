@@ -55,6 +55,8 @@ angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 	return R_PointToAngle2(0, 0, momux, momuy);
 }
 
+extern "C" consvar_t cv_debugpickmeup;
+
 boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 {
 	boolean damageitem = false;
@@ -75,7 +77,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_BALLHOGBOOM)
 		return true; // Ballhogs don't collide with eachother
 
-	extern consvar_t cv_debugpickmeup;
 	if (t1->type == MT_BALLHOGBOOM && t2->type == MT_PLAYER && t1->target == t2 && !cv_debugpickmeup.value)
 		return true; // Allied hog explosion, not snatchable but shouldn't damage
 
@@ -258,6 +259,8 @@ static inline boolean PIT_SSMineChecks(mobj_t *thing)
 	return false;
 }
 
+extern "C" consvar_t cv_debugpickmeup;
+
 static inline BlockItReturn_t PIT_SSMineSearch(mobj_t *thing)
 {
 	if (grenade == NULL || P_MobjWasRemoved(grenade))
@@ -275,8 +278,6 @@ static inline BlockItReturn_t PIT_SSMineSearch(mobj_t *thing)
 	default:
 		return BMIT_CONTINUE;
 	}
-
-	extern consvar_t cv_debugpickmeup;
 
 	if (!cv_debugpickmeup.value)
 	{

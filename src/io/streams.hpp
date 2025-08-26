@@ -11,6 +11,7 @@
 #ifndef __SRB2_IO_STREAMS_HPP__
 #define __SRB2_IO_STREAMS_HPP__
 
+#include <algorithm>
 #include <cstddef>
 #include <stdexcept>
 #include <type_traits>
@@ -408,9 +409,9 @@ public:
 		if (head_ >= span_.size())
 			return 0;
 
-		const auto begin = buffer.begin();
-		const auto end = std::copy(
-			span_.begin() + head_, span_.begin() + head_ + std::min(buffer.size(), span_.size() - head_), begin);
+		auto begin = buffer.begin();
+		auto end = std::copy(
+			span_.begin() + head_, span_.begin() + head_ + std::min<size_t>(buffer.size(), span_.size() - head_), begin);
 		head_ += std::distance(begin, end);
 		return std::distance(begin, end);
 	}
@@ -419,9 +420,9 @@ public:
 		if (head_ >= span_.size())
 			return 0;
 
-		const auto begin = span_.begin() + head_;
-		const auto end =
-			std::copy(buffer.begin(), buffer.begin() + std::min(span_.size() - head_, buffer.size()), begin);
+		auto begin = span_.begin() + head_;
+		auto end =
+			std::copy(buffer.begin(), buffer.begin() + std::min<size_t>(span_.size() - head_, buffer.size()), begin);
 		head_ += std::distance(begin, end);
 		return std::distance(begin, end);
 	}
@@ -501,9 +502,9 @@ public:
 		if (head_ >= vec_.size())
 			return 0;
 
-		const auto begin = buffer.begin();
-		const auto end =
-			std::copy(vec_.begin() + head_, vec_.begin() + head_ + std::min(buffer.size(), vec_.size() - head_), begin);
+		auto begin = buffer.begin();
+		auto end =
+			std::copy(vec_.begin() + head_, vec_.begin() + head_ + std::min<size_t>(buffer.size(), vec_.size() - head_), begin);
 		head_ += std::distance(begin, end);
 		return std::distance(begin, end);
 	}
@@ -514,9 +515,9 @@ public:
 			vec_.resize(head_ + buffer_size);
 		}
 
-		const auto begin = vec_.begin() + head_;
-		const auto end =
-			std::copy(buffer.begin(), buffer.begin() + std::min(vec_.size() - head_, buffer.size()), begin);
+		auto begin = vec_.begin() + head_;
+		auto end =
+			std::copy(buffer.begin(), buffer.begin() + std::min<size_t>(vec_.size() - head_, buffer.size()), begin);
 		head_ += std::distance(begin, end);
 		return std::distance(begin, end);
 	}
@@ -901,7 +902,7 @@ public:
 			StreamSize bytesread = inner_.read(readspan);
 			buf_.resize(prereadsize + bytesread);
 
-			StreamSize tocopyfrombuf = std::min(buffer.size(), buf_.size());
+			StreamSize tocopyfrombuf = std::min<StreamSize>(buffer.size(), buf_.size());
 			std::copy(buf_.begin(), std::next(buf_.begin(), tocopyfrombuf), buffer.begin());
 			buffer = buffer.subspan(tocopyfrombuf);
 			totalread += tocopyfrombuf;

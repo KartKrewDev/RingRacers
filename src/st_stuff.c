@@ -1380,11 +1380,11 @@ static INT32 ST_ServerSplash_OpacityFlag(INT32 opacity)
 	return (NUMTRANSMAPS - opacity) << V_ALPHASHIFT;
 }
 
+#define SPLASH_LEN ((FRACUNIT * TICRATE) * 3)
+#define SPLASH_WAIT ((FRACUNIT * TICRATE) / 2)
+
 void ST_DrawServerSplash(boolean timelimited)
 {
-	static const fixed_t SPLASH_LEN = (FRACUNIT * TICRATE) * 3;
-	static const fixed_t SPLASH_WAIT = (FRACUNIT * TICRATE) / 2;
-
 	static fixed_t splashTime = -SPLASH_WAIT;
 	static char prevContext[8] = {0};
 

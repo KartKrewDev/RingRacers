@@ -129,31 +129,31 @@ static menuitem_t MAIN_Goner[] =
 {
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "PASSWORD",
 		"ATTEMPT ADMINISTRATOR ACCESS.", NULL,
-		{.cvar = &cv_dummyextraspassword}, 0, 0},
+		srb2::itemaction(& cv_dummyextraspassword), 0, 0},
 
 	{IT_STRING | IT_CALL, "EXIT PROGRAM",
 		"CONCLUDE OBSERVATIONS NOW.", NULL,
-		{.routine = M_QuitSRB2}, 0, 0},
+		srb2::itemaction(M_QuitSRB2), 0, 0},
 
 	{IT_STRING | IT_CALL, "VIDEO OPTIONS",
 		"CONFIGURE OCULAR PATHWAYS.", NULL,
-		{.routine = M_VideoOptions}, 0, 0},
+		srb2::itemaction(M_VideoOptions), 0, 0},
 
 	{IT_STRING | IT_CALL, "SOUND OPTIONS",
 		"CALIBRATE AURAL DATASTREAM.", NULL,
-		{.routine = M_SoundOptions}, 0, 0},
+		srb2::itemaction(M_SoundOptions), 0, 0},
 
 	{IT_STRING | IT_CALL, "PROFILE SETUP",
 		"ASSIGN VEHICLE INPUTS.", NULL,
-		{.routine = M_GonerProfile}, 0, 0},
+		srb2::itemaction(M_GonerProfile), 0, 0},
 
 	{IT_STRING | IT_CALL, "MAKE CHOICE",
 		"PREPARE FOR INTEGRATION?", NULL,
-		{.routine = M_GonerChoice}, 0, 0},
+		srb2::itemaction(M_GonerChoice), 0, 0},
 
 	{IT_STRING | IT_CALL, "START GAME",
 		"I WILL SUCCEED.", NULL,
-		{.routine = M_GonerConclude}, 0, 0},
+		srb2::itemaction(M_GonerConclude), 0, 0},
 };
 
 menu_t MAIN_GonerDef = {
@@ -183,7 +183,7 @@ static menuitem_t MAIN_GonerChoice[] =
 		"\n"
 		"This is a structured, back-to-basics tutorial\n"
 		"that will likely take ""\x88""10-20 minutes""\x80"" of your time.",
-		NULL, {.routine = M_GonerTutorial}, 0, 0},
+		NULL, srb2::itemaction(M_GonerTutorial), 0, 0},
 
 	//{IT_STRING, NULL, NULL, NULL, {.routine = M_QuitSRB2}, 0, 0}, // will be replaced
 
@@ -194,7 +194,7 @@ static menuitem_t MAIN_GonerChoice[] =
 		"\n"
 		"You can ""\x88""exit immediately""\x80"" and get to racing...\n"
 		"or spend ""\x88""as long as you want""\x80"" in the playground!",
-		NULL, {.routine = M_GonerPlayground}, 0, 0},
+		NULL, srb2::itemaction(M_GonerPlayground), 0, 0},
 };
 
 static menu_t MAIN_GonerChoiceDef = {

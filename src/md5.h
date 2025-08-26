@@ -68,7 +68,7 @@ typedef u_int32_t md5_uint32;
 #endif
 
 #undef __P
-#if defined (__STDC__) && __STDC__
+#if (defined (__STDC__) && __STDC__) || _MSC_VER
 #define	__P(x) x
 #else
 #define	__P(x) ()

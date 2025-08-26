@@ -5834,7 +5834,7 @@ position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy)
 	if (encoremode)
 		amnumxpos = -amnumxpos;
 
-	return (position_t){amnumxpos, amnumypos};
+	return position_t{amnumxpos, amnumypos};
 }
 
 static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags, patch_t *icon, UINT8 *colormap)

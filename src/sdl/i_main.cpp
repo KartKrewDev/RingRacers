@@ -195,7 +195,7 @@ static void InitLogging(void)
 }
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_MSC_VER)
 static void init_exchndl()
 {
 	HMODULE exchndl_module = LoadLibraryA("exchndl.dll");
@@ -211,6 +211,10 @@ static void init_exchndl()
 		GetProcAddress(exchndl_module, "ExcHndlInit"));
 	if (pfnExcHndlInit != NULL)
 		(pfnExcHndlInit)();
+}
+#else
+static void init_exchndl()
+{
 }
 #endif
 
@@ -349,6 +353,13 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+#endif
+
+#ifdef _MSC_VER
+int WINAPI WinMain(HINSTANCE pInstance, HINSTANCE pPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+	return main(__argc, __argv);
+}
 #endif
 
 void* operator new(size_t count)

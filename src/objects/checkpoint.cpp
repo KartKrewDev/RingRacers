@@ -59,18 +59,24 @@ namespace
 
 struct LineOnDemand : line_t
 {
+private:
+	vertex_t v1_data_;
+
+public:
 	LineOnDemand(const line_t* line) {}
 
 	LineOnDemand(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2) :
-		line_t {
-			.v1 = &v1_data_,
-			.dx = x2 - x1,
-			.dy = y2 - y1,
-			.bbox = {max(y1, y2), min(y1, y2), min(x1, x2), max(x1, x2)},
-		},
-		v1_data_ {.x = x1, .y = y1}
+		line_t {},
+		v1_data_{ x1, y1 }
 	{
-	}
+		v1 = &v1_data_;
+		dx = x2 - x1;
+		dy = y2 - y1;
+		bbox[0] = max(y1, y2);
+		bbox[1] = min(y1, y2);
+		bbox[2] = min(x1, x2);
+		bbox[3] = max(x1, x2);
+	};
 
 	LineOnDemand(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, fixed_t r) : LineOnDemand(x1, y1, x2, y2)
 	{
@@ -91,9 +97,6 @@ struct LineOnDemand : line_t
 		return bbox[BOXTOP] >= other.bbox[BOXBOTTOM] && bbox[BOXBOTTOM] <= other.bbox[BOXTOP] &&
 			bbox[BOXLEFT] <= other.bbox[BOXRIGHT] && bbox[BOXRIGHT] >= other.bbox[BOXLEFT];
 	}
-
-private:
-	vertex_t v1_data_;
 };
 
 struct Checkpoint : mobj_t

@@ -31,7 +31,7 @@ using srb2::math::Fixed;
 using srb2::Mobj;
 using srb2::MobjList;
 
-extern consvar_t cv_battleufotest;
+extern "C" consvar_t cv_battleufotest;
 
 extern mobj_t* svg_battleUfoSpawners;
 
@@ -132,7 +132,7 @@ public:
 
 		Spawner* spawner = next(g_battleufo.previousId);
 		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 250*FRACUNIT - ofs, MT_BATTLEUFO));
-		
+
 		K_AddMessage("Crack the Combat UFO!", true, false);
 		S_StartSound(NULL, sfx_mbs54);
 

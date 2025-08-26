@@ -292,7 +292,8 @@ const auto GraphicsDriver = consvar_t::Builder(cvlist_graphics_driver).save();
 // Player local, not available on dedicated servers.
 // These usually save...
 //
-
+extern "C"
+{
 consvar_t cv_addons_md5 = Player("addons_md5", "Name").values({{0, "Name"}, {1, "Contents"}});
 consvar_t cv_addons_search_case = Player("addons_search_case", "No").yes_no();
 consvar_t cv_addons_search_type = Player("addons_search_type", "Anywhere").values({{0, "Start"}, {1, "Anywhere"}});
@@ -1543,7 +1544,7 @@ consvar_t cv_globalsaturation;
 consvar_t cv_rgamma, cv_ygamma, cv_ggamma, cv_cgamma, cv_bgamma, cv_mgamma;
 consvar_t cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue;
 consvar_t cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, cv_msaturation;
-
+}
 // clang-format on
 
 // This function can be used for more advanced cvar

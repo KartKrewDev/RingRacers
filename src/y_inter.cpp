@@ -2516,6 +2516,8 @@ void Y_PlayIntermissionMusic(void)
 		Music_Play("intermission");
 }
 
+extern "C" boolean blockreset;
+
 //
 // Y_StartIntermission
 //
@@ -2538,7 +2540,6 @@ void Y_StartIntermission(void)
 		I_Error("endtic is dirty");
 #endif
 
-	extern boolean blockreset;
 	blockreset = false;
 
 	// set player Power Level type

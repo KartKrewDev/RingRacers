@@ -16,7 +16,6 @@
 
 #include "acsvm.hpp"
 
-extern "C" {
 #include "../doomtype.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
@@ -24,7 +23,6 @@ extern "C" {
 #include "../r_defs.h"
 #include "../r_state.h"
 #include "../p_spec.h"
-}
 
 namespace srb2::acs {
 

@@ -17,25 +17,25 @@
 menuitem_t OPTIONS_Voice[] =
 {
 	{IT_STRING | IT_CVAR, "Mute Self", "Whether your voice is transmitted or not.",
-		NULL, {.cvar = &cv_voice_selfmute}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_selfmute), 0, 0 },
 
 	{IT_STRING | IT_CVAR, "Deafen Self", "Choose to opt-in to voice chat at all, for yourself.",
-		NULL, {.cvar = &cv_voice_selfdeafen}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_selfdeafen), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Mode", "When to transmit your own voice.",
-		NULL, {.cvar = &cv_voice_mode}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_mode), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Amplifier", "Amplify your voice, in decibels. Negative values are quieter.",
-		NULL, {.cvar = &cv_voice_inputamp}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_inputamp), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Noise Suppression", "Suppress background noise from your voice.",
 		NULL, {.cvar = &cv_voice_denoise}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Sensitivity", "Voice higher than this threshold will transmit, in decibels.",
-		NULL, {.cvar = &cv_voice_activationthreshold}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_activationthreshold), 0, 0 },
 
 	{IT_STRING | IT_CVAR, "Voice Loopback", "Play your own voice back simultaneously.",
-		NULL, {.cvar = &cv_voice_loopback}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_loopback), 0, 0 },
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -44,10 +44,10 @@ menuitem_t OPTIONS_Voice[] =
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Server Voice Chat", "All voice chat will be enabled on your server.",
-		NULL, {.cvar = &cv_voice_allowservervoice}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_allowservervoice), 0, 0 },
 
 	{IT_STRING | IT_CVAR, "Proximity Effects", "Player voices will be adjusted relative to you.",
-		NULL, {.cvar = &cv_voice_proximity}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_proximity), 0, 0 },
 };
 
 static void draw_routine()

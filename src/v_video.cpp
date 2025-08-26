@@ -61,8 +61,10 @@ UINT8 *screens[5];
 
 #define huecoloursteps 4
 
+extern "C" CV_PossibleValue_t hue_cons_t[];
 CV_PossibleValue_t hue_cons_t[] = {{0, "MIN"}, {(huecoloursteps*6)-1, "MAX"}, {0, NULL}};
 
+extern "C" CV_PossibleValue_t constextsize_cons_t[];
 CV_PossibleValue_t constextsize_cons_t[] = {
 	{V_NOSCALEPATCH, "Small"}, {V_SMALLSCALEPATCH, "Medium"}, {V_MEDSCALEPATCH, "Large"}, {0, "Huge"},
 	{0, NULL}};

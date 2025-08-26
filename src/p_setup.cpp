@@ -7606,6 +7606,8 @@ void P_SetupLevelSky(const char *skytexname, boolean global)
 static const char *maplumpname;
 lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 
+extern "C" boolean blockreset;
+
 //
 // P_LevelInitStuff
 //
@@ -7618,7 +7620,6 @@ static void P_InitLevelSettings(void)
 
 	leveltime = 0;
 	modulothing = 0;
-	extern boolean blockreset;
 	blockreset = 0;
 
 	P_SetFreezeLevel(false);

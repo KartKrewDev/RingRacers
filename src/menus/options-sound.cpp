@@ -285,16 +285,16 @@ menuitem_t OPTIONS_Sound[] =
 {
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Volume", "Loudness of all game audio.",
-		NULL, {.routine = slider_routine}, 0, Slider::kMasterVolume},
+		NULL, srb2::itemaction(slider_routine), 0, Slider::kMasterVolume},
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "SFX Volume", "Loudness of sound effects.",
-		NULL, {.routine = slider_routine}, 0, Slider::kSfxVolume},
+		NULL, srb2::itemaction(slider_routine), 0, Slider::kSfxVolume},
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Music Volume", "Loudness of music.",
-		NULL, {.routine = slider_routine}, 0, Slider::kMusicVolume},
+		NULL, srb2::itemaction(slider_routine), 0, Slider::kMusicVolume},
 
 	{IT_STRING | IT_ARROWS | IT_CV_SLIDER, "Voice Volume", "Loudness of voice chat.",
-		NULL, {.routine = slider_routine}, 0, Slider::kVoiceVolume},
+		NULL, srb2::itemaction(slider_routine), 0, Slider::kVoiceVolume},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -303,19 +303,19 @@ menuitem_t OPTIONS_Sound[] =
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Chat Notifications", "Play a sound effect when chat messages appear.",
-		NULL, {.cvar = &cv_chatnotifications}, 0, 0},
+		NULL, srb2::itemaction(&cv_chatnotifications), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Character Voices", "Characters speak when interacting on the course.",
-		NULL, {.cvar = &cv_kartvoices}, 0, 0},
+		NULL, srb2::itemaction(&cv_kartvoices), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Follower Horns", NULL, // set in init_routine
-		NULL, {.cvar = &cv_karthorns}, 0, 0},
+		NULL, srb2::itemaction(&cv_karthorns), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Continuous Attack Music", "Keep music playing seamlessly when retrying in Attack modes.",
-		NULL, {.cvar = &cv_continuousmusic}, 0, 0},
+		NULL, srb2::itemaction(&cv_continuousmusic), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Streamer-Safe Music", "Only play music safe for video platforms.",
-		NULL, {.cvar = &cv_streamersafemusic}, 0, 0},
+		NULL, srb2::itemaction(&cv_streamersafemusic), 0, 0},
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -324,16 +324,16 @@ menuitem_t OPTIONS_Sound[] =
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Hear Tabbed-out", "Keep playing game audio when the window is out of focus (FOCUS LOST).",
-		NULL, {.cvar = &cv_bgaudio}, 0, 0},
+		NULL, srb2::itemaction(&cv_bgaudio), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Mixing Buffer Size", "Audio buffer size. Higher is faster but more delay.",
-		NULL, {.cvar = &cv_soundmixingbuffersize}, 0, 0},
+		NULL, srb2::itemaction(&cv_soundmixingbuffersize), 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CALL, "\x85" "Restart Audio", "Reboot the game's audio system.",
-		NULL, {.routine = restartaudio_routine}, 0, 0},
+		NULL, srb2::itemaction(restartaudio_routine), 0, 0},
 };
 
 menu_t OPTIONS_SoundDef = {

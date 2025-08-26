@@ -123,6 +123,7 @@ static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf = {0};
 static UINT8 *demotime_p, *demoinfo_p, *demoattack_p, *demosplits_p;
 static UINT16 demoflags;
+extern "C" boolean demosynced;
 boolean demosynced = true; // console warning message
 
 struct demovars_s demo;
@@ -1683,6 +1684,11 @@ skippedghosttic:
 	}
 }
 
+extern "C"
+{
+extern consvar_t cv_netdemosize;
+}
+
 //
 // G_RecordDemo
 //
@@ -1690,8 +1696,6 @@ void G_RecordDemo(const char *name)
 {
 	if (demo.recording)
 		G_CheckDemoStatus();
-
-	extern consvar_t cv_netdemosize;
 
 	INT32 maxsize;
 
