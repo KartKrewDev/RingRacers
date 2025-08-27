@@ -5553,8 +5553,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 			// or interp messing with ticcmd send/receive timing. Instead of dropping, submit this
 			// ticcmd for the next tic, giving us 1 tic of "buffer".
 			// Remember, if we submitted 2 ticcmds too fast, the next one will probably be too slow!
-			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].flags & TICCMD_RECEIVED))
-				&& (maketic - firstticstosend < BACKUPTICS))
+			if ((!!(netcmds[faketic % BACKUPTICS][netconsole].flags & TICCMD_RECEIVED))
+				&& (faketic - firstticstosend < BACKUPTICS))
 				faketic++;
 
 			FuzzTiccmd(&netbuffer->u.clientpak.cmd);
