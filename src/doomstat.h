@@ -449,10 +449,12 @@ struct cupheader_t
 	UINT8 numbonus;							///< Number of bonus stages defined
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
 
+	// Modifiable in mainwads only
 	boolean playcredits;					///< Play the credits?
+	UINT16 hintcondition;					///< Hint condition for 2.4 Super Cup
 
+	// Truly internal data
 	UINT16 cache_cuplock;					///< Cached Unlockable ID
-
 	cupwindata_t windata[4];				///< Data for cup visitation
 	cupheader_t *next;						///< Next cup in linked list
 };

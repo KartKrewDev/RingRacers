@@ -3217,111 +3217,108 @@ void M_DrawCupSelect(void)
 	INT16 cy = M_EaseWithTransition(Easing_Linear, 5 * 30);
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
+	boolean isLocked;
+	const boolean isGP = (templevelsearch.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
+	const UINT8 numrows = (cupgrid.cache_secondrowlocked ? 1 : CUPMENU_ROWS);
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
 		x = 14 + (i*42);
+		y = 20 - cy;
+		if (cupgrid.cache_secondrowlocked == true)
+			y += 28;
 
-		for (j = 0; j < (cupgrid.cache_secondrowlocked ? 1 : CUPMENU_ROWS); j++)
+		for (j = 0; j < numrows; j++)
 		{
-			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
+			const size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
 
 			if (!cupgrid.builtgrid[id])
 				break;
 
 			templevelsearch.cup = cupgrid.builtgrid[id];
 
-			y = 20 + (j*44) - cy;
-			if (cupgrid.cache_secondrowlocked == true)
-				y += 28;
-
-			const boolean isGP = (templevelsearch.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
 			if (isGP)
-			{
 				windata = &templevelsearch.cup->windata[cv_dummygpdifficulty.value];
-			}
+
+			isLocked = (M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID);
 
 			M_DrawCup(
 				templevelsearch.cup,
 				x * FRACUNIT, y * FRACUNIT,
-				(M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID) ? ((cupgrid.previewanim % 4) + 1) : 0,
+				isLocked ? ((cupgrid.previewanim % 4) + 1) : 0,
 				isGP,
 				windata ? windata->best_placement : 0
 			);
 
-			if (templevelsearch.grandprix == true
-				&& templevelsearch.cup == cupsavedata.cup
+			if (!isGP || id == CUPMENU_CURSORID)
+				;
+			else if (isLocked)
+			{
+				if (templevelsearch.cup->hintcondition != MAXCONDITIONSETS
+				&& M_Achieved(templevelsearch.cup->hintcondition))
+				{
+					// Super Cup tutorial hint.
+					V_DrawScaledPatch(x + (32-10), y + (32-9), 0, W_CachePatchName("UN_HNT2A", PU_CACHE));
+				}
+			}
+			else if (templevelsearch.cup == cupsavedata.cup
 				&& id != CUPMENU_CURSORID)
 			{
+				// GP backup notif.
 				V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
 			}
 
 			// used to be 8 + (j*100) - (30*menutransition.tics)
 			// but one-row mode means y has to be changed
 			// this is the difference between y and that
-			if (j == 0)
-			{
-				y -= 12; // (8) - (20)
-			}
-			else
-			{
-				y += 44; //(8 + 100) - (20 + 44)
-			}
 
 			if (windata)
 			{
-				if (cv_reducevfx.value)
-				{
-					M_DrawCupWinData(
-						x,
-						y,
-						templevelsearch.cup,
-						cv_dummygpdifficulty.value,
-						false,
-						false
-					);
-				}
-				else
-				{
-					M_DrawCupWinData(
-						x,
-						y,
-						templevelsearch.cup,
-						cv_dummygpdifficulty.value,
-						(cupgrid.previewanim & 1),
-						false
-					);
-				}
+				M_DrawCupWinData(
+					x,
+					y + (j ? 44 : -12),
+					templevelsearch.cup,
+					cv_dummygpdifficulty.value,
+					(!cv_reducevfx.value && (cupgrid.previewanim & 1)),
+					false
+				);
 			}
+
+			y += 44;
 		}
 	}
 
-	{
-		fixed_t tx = Easing_Linear(M_DueFrac(cupgrid.xslide.start, CUPMENU_SLIDETIME), cupgrid.xslide.dist * FRACUNIT, 0);
-		fixed_t ty = Easing_Linear(M_DueFrac(cupgrid.yslide.start, CUPMENU_SLIDETIME), cupgrid.yslide.dist * FRACUNIT, 0);
-
-		x = 14 + (cupgrid.x*42*FRACUNIT - tx) / FRACUNIT;
-		y = 20 + (cupgrid.y*44*FRACUNIT - ty) / FRACUNIT - cy;
-	}
-
+	x = 14 + (cupgrid.x*42);
+	y = 20 + (cupgrid.y*44) - cy;
 	if (cupgrid.cache_secondrowlocked == true)
 		y += 28;
 
-	V_DrawScaledPatch(x - 4, y - 1, 0, W_CachePatchName("CUPCURS", PU_CACHE));
+	// Interpolated cursor
+	{
+		fixed_t tx = Easing_Linear(M_DueFrac(cupgrid.xslide.start, CUPMENU_SLIDETIME), cupgrid.xslide.dist * FRACUNIT, 0)/FRACUNIT;
+		fixed_t ty = Easing_Linear(M_DueFrac(cupgrid.yslide.start, CUPMENU_SLIDETIME), cupgrid.yslide.dist * FRACUNIT, 0)/FRACUNIT;
+
+		V_DrawScaledPatch((x - 4) - tx, (y - 1) - ty, 0, W_CachePatchName("CUPCURS", PU_CACHE));
+	}
 
 	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
 
-	if (templevelsearch.grandprix == true
-	&& templevelsearch.cup != NULL
+	if (!isGP)
+		;
+	else if (M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID)
+	{
+		if (templevelsearch.cup->hintcondition != MAXCONDITIONSETS
+		&& M_Achieved(templevelsearch.cup->hintcondition))
+		{
+			// Super Cup tutorial hint.
+			V_DrawScaledPatch(x + (32-10), y + (32-9), 0, W_CachePatchName("UN_HNT1A", PU_CACHE));
+		}
+	}
+	else if (templevelsearch.cup != NULL
 	&& templevelsearch.cup == cupsavedata.cup)
 	{
-		V_DrawScaledPatch(
-			14 + (cupgrid.x*42) + 32,
-			20 + (cupgrid.y*44) + 32
-				+ ((cupgrid.cache_secondrowlocked == true) ? 28 : 0),
-			0,
-			W_CachePatchName("CUPBKUP2", PU_CACHE)
-		);
+		// GP backup hint.
+		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
 	}
 
 	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);

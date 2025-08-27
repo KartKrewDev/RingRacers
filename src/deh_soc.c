@@ -4114,6 +4114,18 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					deh_warning("You must define a custom gamedata to use \"%s\"", word);
 				}
 			}
+			else if (fastcmp(word, "HINTCONDITION"))
+			{
+				if (!mainwads || (refreshdirmenu & REFRESHDIR_GAMEDATA))
+				{
+					if (i > 0)
+						cup->hintcondition = i-1;
+				}
+				else
+				{
+					deh_warning("You must define a custom gamedata to use \"%s\"", word);
+				}
+			}
 			else
 				deh_warning("%s Cup: unknown word '%s'", cup->name, word);
 		}
