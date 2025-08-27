@@ -961,7 +961,7 @@ void M_Drawer(void)
 			{
 				M_DrawGonerBack();
 			}
-			else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
+			else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef && currentMenu != &OPTIONS_VideoColorProfileDef)
 			{
 				V_DrawFadeScreen(122, 3);
 			}
@@ -4618,6 +4618,62 @@ void M_DrawOptionsCogs(void)
 		if (!solidbg)
 		{
 			V_DrawFixedPatch(0, 0, FRACUNIT, (V_ADD|V_70TRANS), back_pause, NULL);
+		}
+	}
+}
+
+// Hacking up M_DrawOptionsCogs to try and make something better suited for changing the color profile. - Freaky Mutant Man
+void M_DrawOptionsColorProfile(void)
+{
+	boolean eggahack = (
+		currentMenu->prevMenu == &PLAY_MP_HostDef
+		|| (
+			currentMenu->prevMenu
+			&& currentMenu->prevMenu->prevMenu == &PLAY_MP_HostDef
+			)
+		);
+	boolean solidbg = M_GameTrulyStarted() && !eggahack;
+	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
+
+	// the background isn't drawn outside of being in the main menu state.
+	if (gamestate == GS_MENU && solidbg)
+	{
+		patch_t *back = W_CachePatchName(va("OPT_BG%u", tick), PU_CACHE);
+		patch_t *colorp_photo = W_CachePatchName("COL_PHO", PU_CACHE);
+		patch_t *colorp_bar = W_CachePatchName("COL_BAR", PU_CACHE);
+		INT32 tflag = 0;
+		UINT8 *c;
+		UINT8 *c2;	// colormap for the one we're changing
+
+		if (optionsmenu.fade)
+		{
+			c2 = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.lastcolour, GTC_CACHE);
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, back, c2);
+
+			// prepare fade flag:
+			tflag = min(V_90TRANS, (optionsmenu.fade)<<V_ALPHASHIFT);
+
+		}
+		c = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.currcolour, GTC_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, tflag, back, c);
+		V_DrawFixedPatch(243<<FRACBITS, 67<<FRACBITS, FRACUNIT, 0, colorp_bar, NULL);
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, colorp_photo, NULL);
+		//M_DrawCharSelectSprite( //figure this out later
+	}
+	// Given the need for accessibility, I don't want the background to be drawn transparent here - a clear color reference is needed for proper utilization. - Freaky Mutant Man
+	else
+	{
+		if (eggahack)
+		{
+			M_DrawEggaChannelAlignable(true);
+		}
+
+		patch_t *colorp_bar = W_CachePatchName("COL_BAR", PU_CACHE);
+		V_DrawFixedPatch(243<<FRACBITS, 67<<FRACBITS, FRACUNIT, 0, colorp_bar, NULL);
+
+		if (!solidbg)
+		{
+			V_DrawFixedPatch(243<<FRACBITS, 67<<FRACBITS, FRACUNIT, 0, colorp_bar, NULL);
 		}
 	}
 }

@@ -467,6 +467,9 @@ extern menu_t OPTIONS_VideoDef;
 extern menuitem_t OPTIONS_VideoModes[];
 extern menu_t OPTIONS_VideoModesDef;
 
+extern menuitem_t OPTIONS_VideoColorProfile[];
+extern menu_t OPTIONS_VideoColorProfileDef;
+
 extern menuitem_t OPTIONS_VideoAdvanced[];
 extern menu_t OPTIONS_VideoAdvancedDef;
 
@@ -1162,6 +1165,7 @@ void M_RefreshAdvancedVideoOptions(void);
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
 void M_CheckProfileData(INT32 choice);	// check if we have profiles.
+void M_ColorProfileDefault(INT32 choice); // For the reset button in the color profile menu.
 
 // profile selection menu
 void M_ProfileSelectInit(INT32 choice);
@@ -1373,6 +1377,7 @@ void M_DrawPlaybackMenu(void);
 
 // Options menus:
 void M_DrawOptionsCogs(void);
+void M_DrawOptionsColorProfile(void);
 void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
