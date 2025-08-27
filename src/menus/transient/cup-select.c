@@ -21,6 +21,7 @@
 #include "../../k_podium.h" // K_StartCeremony
 #include "../../m_misc.h" // FIL_FileExists
 #include "../../d_main.h" // D_ClearState
+#include "../../m_cond.h" // Condition Sets
 
 menuitem_t PLAY_CupSelect[] =
 {
@@ -161,6 +162,114 @@ static void M_StartCup(UINT8 entry)
 	}
 }
 
+static UINT16 cupselecttutorial_hack = NEXTMAP_INVALID;
+
+static void M_GPTutorialResponse(INT32 choice)
+{
+	if (choice != MA_YES)
+		return;
+
+	multiplayer = true;
+
+	restoreMenu = &PLAY_CupSelectDef;
+	restorelevellist = levellist;
+
+	// mild hack
+	levellist.newgametype = GT_TUTORIAL;
+	levellist.netgame = false;
+	M_MenuToLevelPreamble(0, false);
+
+	D_MapChange(
+		cupselecttutorial_hack+1,
+		levellist.newgametype,
+		false,
+		true,
+		1,
+		false,
+		false
+	);
+
+	M_ClearMenus(true);
+}
+
+static boolean M_GPTutorialRecommendation(cupheader_t *cup)
+{
+	// Only applies to GP.
+	if (levellist.levelsearch.grandprix == false)
+		return false;
+
+	// Does this not have a Tutorial Recommendation?
+	if (cup->cache_cuplock >= MAXUNLOCKABLES
+	|| cup->hintcondition == MAXCONDITIONSETS
+	|| !M_Achieved(cup->hintcondition))
+		return false;
+
+	// Does the thing have no condition?
+	const UINT16 condition = unlockables[cup->cache_cuplock].conditionset;
+	if (condition == 0)
+		return false;
+
+	const conditionset_t *c = &conditionSets[condition-1];
+	UINT32 i;
+	INT32 mapnum = NEXTMAP_INVALID;
+
+	// Identify the map to visit/beat.
+	for (i = 0; i < c->numconditions; ++i)
+	{
+		if (c->condition[i].type < UC_MAPVISITED || c->condition[i].type > UC_MAPBEATEN)
+			continue;
+		mapnum = c->condition[i].requirement;
+		if (mapnum < 0 || mapnum >= nummapheaders)
+			continue;
+		if (!mapheaderinfo[mapnum])
+			continue;
+		if (G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel) != GT_TUTORIAL)
+			continue;
+		break;
+	}
+
+	// Didn't find one?
+	if (i == c->numconditions)
+		return false;
+
+	// Not unlocked?
+	if (M_MapLocked(mapnum+1))
+	{
+		M_StartMessage(
+			"Recommended Learning",
+			"This Cup will test skills that\n"
+			"a ""\x86""currently locked ""\x87""Tutorial\x80 teaches.\n"
+			"\n"
+			"Come back when you've made progress elsewhere.",
+			NULL, MM_NOTHING, NULL, NULL
+		);
+		return true;
+	}
+
+	// This is kind of a hack.
+	cupselecttutorial_hack = mapnum;
+
+	M_StartMessage(
+		"Recommended Learning",
+		va(
+		"This Cup will test skills that\n"
+		"the ""\x87""%s Tutorial\x80 teaches.\n"
+		"\n"
+		"%s\n",
+		mapheaderinfo[mapnum]->menuttl,
+		(setup_numplayers > 1
+			? "You're encouraged to play it later."
+			: "Would you like to play it now?"
+		)),
+		setup_numplayers > 1 ? NULL : M_GPTutorialResponse,
+		setup_numplayers > 1 ? MM_NOTHING : MM_YESNO,
+		setup_numplayers > 1 ? NULL : "Yes, let's go",
+		setup_numplayers > 1 ? "Got it!" : "Not right now"
+	);
+
+	return true;
+}
+
 static void M_GPBackup(INT32 choice)
 {
 	if (choice == MA_YES)
@@ -271,7 +380,8 @@ void M_CupSelectHandler(INT32 choice)
 			)
 		)
 		{
-			S_StartSound(NULL, sfx_s3kb2);
+			if (!M_GPTutorialRecommendation(newcup))
+				S_StartSound(NULL, sfx_s3kb2);
 			return;
 		}
 

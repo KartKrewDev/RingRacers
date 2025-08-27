@@ -495,6 +495,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 							cup->monitor = 1;
 							cup->id = numkartcupheaders;
 							cup->cache_cuplock = MAXUNLOCKABLES;
+							cup->hintcondition = MAXCONDITIONSETS;
 							for (i = 0; i < CUPCACHE_MAX; i++)
 								cup->cachedlevels[i] = NEXTMAP_INVALID;
 
