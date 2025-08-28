@@ -1118,7 +1118,7 @@ boolean F_IntroResponder(event_t *event)
 	}
 
 	// Quick skips for development/testing. See F_IntroTicker.
-	if (!demo.playback)
+	if (!demo.playback && skippableallowed)
 	{
 		switch(key)
 		{
