@@ -3938,7 +3938,7 @@ static void Got_ServerTempMutePlayer(const UINT8 **p, INT32 playernum)
 		players[forplayer].pflags2 |= PF2_SERVERTEMPMUTE;
 		if (P_IsMachineLocalPlayer(&players[forplayer]))
 		{
-			if (IsPlayerGuest(playernum))
+			if (IsPlayerGuest(forplayer))
 				HU_AddChatText(va("\x82* GUESTs cannot use chat on this server. Create a profile to join in!"), false);
 			else
 				HU_AddChatText(va("\x82* You are temporarily muted until you finish more rounds."), false);

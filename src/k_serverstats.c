@@ -342,8 +342,6 @@ void SV_UpdateTempMutes(void)
 			continue;
 		}
 
-
-
 		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
 
 		if (i == serverplayer || IsPlayerAdmin(i))
