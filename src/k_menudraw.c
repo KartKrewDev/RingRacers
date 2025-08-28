@@ -2383,7 +2383,9 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (p != NULL)
 	{
 		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
-		V_DrawCenteredTimerString(x+30, y+87, 0, va("%d", p->wins));
+		K_DrawGameControl(x+30, y+87, 0, va("%d", p->wins), 1,
+				(p->wins >= 1000 ? TINYTIMER_FONT : TIMER_FONT),
+			0);
 	}
 
 
