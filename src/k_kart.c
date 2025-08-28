@@ -10578,7 +10578,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->follower && fls >= 0 && fls < numfollowers)
 		{
 			const follower_t *fl = &followers[fls];
-			S_StartSound(NULL, fl->hornsound);
+			S_StartSound(player->follower, fl->hornsound);
 		}
 
 		S_StartSound(player->mo, sfx_kc33);
