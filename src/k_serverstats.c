@@ -332,12 +332,17 @@ void SV_UpdateTempMutes(void)
 	{
 		if (!playeringame[i])
 			continue;
-		if (players[i].spectator)
-			continue;
-		if (PR_IsKeyGuest(players[i].public_key))
-			continue;
 
 		player_t *player = &players[i];
+
+		if (PR_IsKeyGuest(player->public_key))
+		{
+			if (cv_gamestochat.value && !(player->pflags2 & PF2_SERVERTEMPMUTE))
+				SV_UpdateTempMute(player, false);
+			continue;
+		}
+
+
 
 		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
 

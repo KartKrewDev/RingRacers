@@ -63,8 +63,11 @@ struct Slider
 			arrows.x(-10 - ofs).text("\x1C");
 			arrows.x(kWidth + 2 + ofs).text("\x1D");
 
-			Draw::TextElement tx = Draw::TextElement().parse("<z_animated>");
-			h.xy(kWidth + 9, -2).text(tx.string());
+			if (&volume_ != &cv_voicevolume)
+			{
+				Draw::TextElement tx = Draw::TextElement().parse("<z_animated>");
+				h.xy(kWidth + 9, -2).text(tx.string());
+			}
 		}
 
 		h = h.y(1);
@@ -85,7 +88,7 @@ struct Slider
 		n = std::atoi(volume_.defaultvalue);
 		h.x(1 + shake_ + n + (n / 10)).size(1, 7).fill(35);
 
-		if (!toggle_(false))
+		if (!toggle_(false) && &volume_ != &cv_voicevolume)
 		{
 			h
 				.x(kWidth / 2)
@@ -93,6 +96,16 @@ struct Slider
 				.align(Draw::Align::kCenter)
 				.flags(V_40TRANS)
 				.text("S I L E N T");
+		}
+		else if (!toggle_(false))
+		{
+			h
+				.x(kWidth / 2)
+				.y(-1)
+				.font(Draw::Font::kThin)
+				.align(Draw::Align::kCenter)
+				.flags(V_20TRANS)
+				.text("DEAFENED (Voice Options)");
 		}
 	}
 

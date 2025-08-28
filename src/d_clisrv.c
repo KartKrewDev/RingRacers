@@ -234,6 +234,8 @@ static textcmdtic_t *textcmds[TEXTCMD_HASH_SIZE] = {NULL};
 
 static tic_t stop_spamming[MAXPLAYERS];
 
+static boolean IsPlayerGuest(UINT8 player);
+
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
 {
@@ -3825,6 +3827,7 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 		}
 
 		HU_AddChatText(joinmsg, false);
+
 		SV_UpdateTempMutes();
 	}
 
@@ -3934,7 +3937,13 @@ static void Got_ServerTempMutePlayer(const UINT8 **p, INT32 playernum)
 	{
 		players[forplayer].pflags2 |= PF2_SERVERTEMPMUTE;
 		if (P_IsMachineLocalPlayer(&players[forplayer]))
-			HU_AddChatText(va("\x82* You are temporarily muted until you finish more rounds."), false);
+		{
+			if (IsPlayerGuest(playernum))
+				HU_AddChatText(va("\x82* GUESTs cannot use chat on this server. Create a profile to join in!"), false);
+			else
+				HU_AddChatText(va("\x82* You are temporarily muted until you finish more rounds."), false);
+		}
+
 	}
 	else if (!muted && players[forplayer].pflags2 & PF2_SERVERTEMPMUTE)
 	{
@@ -4343,7 +4352,7 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 	}
 #endif
 
-static boolean IsPlayerGuest(int player)
+static boolean IsPlayerGuest(UINT8 player)
 {
  	return PR_IsKeyGuest(players[player].public_key);
 }
