@@ -49,6 +49,7 @@
 #include "md5.h" // demo checksums
 #include "p_saveg.h" // savebuffer_t
 #include "g_party.h"
+#include "k_director.h" // K_DirectorIsEnabled
 #include "core/json.hpp"
 
 // SRB2Kart
@@ -4315,8 +4316,22 @@ boolean G_CheckDemoTitleEntry(void)
 	if (menuactive || chat_on)
 		return false;
 
-	if (!G_PlayerInputDown(0, gc_b, 0) && !G_PlayerInputDown(0, gc_x, 0))
+	// Input conflict for both <b> and <x>
+	if (gamestate == GS_LEVEL && camera[0].freecam)
 		return false;
+
+	if (!G_PlayerInputDown(0, gc_b, 0))
+	{
+		// Input conflict for <x>
+		if (gamestate == GS_LEVEL
+		&& playeringame[consoleplayer]
+		&& players[consoleplayer].spectator
+		&& K_DirectorIsEnabled(0))
+			return false;
+
+		if (!G_PlayerInputDown(0, gc_x, 0))
+			return false;
+	}
 
 	demo.willsave = true;
 	M_OpenVirtualKeyboard(
