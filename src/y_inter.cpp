@@ -814,7 +814,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					voxxoffs = 1;
 					voxyoffs = -5;
 				}
-				else if (players[pnum].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE))
+				else if (players[pnum].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE | PF2_SERVERTEMPMUTE))
 				{
 					voxpat = (patch_t*) W_CachePatchName("VOXCRM", PU_HUDGFX);
 					voxxoffs = 1;

@@ -3003,7 +3003,7 @@ void PositionFacesInfo::draw_1p()
 			{
 				voxmic = kp_voice_remotedeafened;
 			}
-			else if (players[rankplayer[i]].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE))
+			else if (players[rankplayer[i]].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE | PF2_SERVERTEMPMUTE))
 			{
 				voxmic = kp_voice_remotemuted;
 			}
@@ -8283,7 +8283,7 @@ void K_drawKartHUD(void)
 
 	if (netgame && cv_voice_allowservervoice.value == 1)
 	{
-		if (players[consoleplayer].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE | PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
+		if (players[consoleplayer].pflags2 & (PF2_SELFMUTE | PF2_SERVERMUTE | PF2_SERVERTEMPMUTE | PF2_SELFDEAFEN | PF2_SERVERDEAFEN))
 		{
 			patch_t* micmuted = kp_voice_localmuted;
 			V_DrawFixedPatch(-1 * FRACUNIT, (BASEVIDHEIGHT - 21) << FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, micmuted, NULL);

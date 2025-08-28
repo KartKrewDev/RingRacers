@@ -73,6 +73,7 @@
 #include "r_fps.h"
 #include "filesrch.h" // refreshdirmenu
 #include "k_objects.h"
+#include "k_serverstats.h" // updatemutes
 
 // cl loading screen
 #include "v_video.h"
@@ -3435,6 +3436,7 @@ static void Got_RemovePlayer(const UINT8 **p, INT32 playernum);
 static void Got_AddBot(const UINT8 **p, INT32 playernum);
 static void Got_ServerMutePlayer(const UINT8 **p, INT32 playernum);
 static void Got_ServerDeafenPlayer(const UINT8 **p, INT32 playernum);
+static void Got_ServerTempMutePlayer(const UINT8 **p, INT32 playernum);
 
 void Joinable_OnChange(void);
 void Joinable_OnChange(void)
@@ -3490,6 +3492,7 @@ void D_ClientServerInit(void)
 	COM_AddCommand("serverdeafen", Command_ServerDeafen);
 	COM_AddCommand("serverundeafen", Command_ServerUndeafen);
 	RegisterNetXCmd(XD_SERVERMUTEPLAYER, Got_ServerMutePlayer);
+	RegisterNetXCmd(XD_SERVERTEMPMUTEPLAYER, Got_ServerTempMutePlayer);
 	RegisterNetXCmd(XD_SERVERDEAFENPLAYER, Got_ServerDeafenPlayer);
 
 	gametic = 0;
@@ -3822,6 +3825,7 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 		}
 
 		HU_AddChatText(joinmsg, false);
+		SV_UpdateTempMutes();
 	}
 
 	if (server && multiplayer && motd[0] != '\0')
@@ -3912,6 +3916,34 @@ static void Got_ServerMutePlayer(const UINT8 **p, INT32 playernum)
 		HU_AddChatText(va("\x82* %s was server unmuted.", player_names[forplayer]), false);
 	}
 }
+
+// Xcmd XD_SERVERTEMPMUTEPLAYER
+static void Got_ServerTempMutePlayer(const UINT8 **p, INT32 playernum)
+{
+	UINT8 forplayer = READUINT8(*p);
+	UINT8 muted = READUINT8(*p);
+	if (playernum != serverplayer)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal server mute player cmd from %s\n"), player_names[playernum]);
+		if (server)
+		{
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		}
+	}
+	if (muted && !(players[forplayer].pflags2 & PF2_SERVERTEMPMUTE))
+	{
+		players[forplayer].pflags2 |= PF2_SERVERTEMPMUTE;
+		if (P_IsMachineLocalPlayer(&players[forplayer]))
+			HU_AddChatText(va("\x82* You are temporarily muted until you finish more rounds."), false);
+	}
+	else if (!muted && players[forplayer].pflags2 & PF2_SERVERTEMPMUTE)
+	{
+		players[forplayer].pflags2 &= ~PF2_SERVERTEMPMUTE;
+		if (P_IsMachineLocalPlayer(&players[forplayer]))
+			HU_AddChatText(va("\x82* You've now finished enough rounds to use chat."), false);
+	}
+}
+
 
 // Xcmd XD_SERVERDEAFENPLAYER
 static void Got_ServerDeafenPlayer(const UINT8 **p, INT32 playernum)
@@ -5327,7 +5359,7 @@ static void PT_HandleVoiceServer(SINT8 node)
 	}
 	player = &players[playernum];
 
-	if (player->pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN))
+	if (player->pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERMUTE | PF2_SERVERDEAFEN | PF2_SERVERTEMPMUTE))
 	{
 		// ignore, they should not be able to broadcast voice
 		return;
@@ -7543,7 +7575,7 @@ void NetVoiceUpdate(void)
 		// 1. In a netgame,
 		// 2. Not self-muted by cvar
 		// 3. The consoleplayer is not server or self muted or deafened
-		if (netgame && !cv_voice_selfmute.value && !(players[consoleplayer].pflags2 & (PF2_SERVERMUTE | PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERDEAFEN)))
+		if (netgame && !cv_voice_selfmute.value && !(players[consoleplayer].pflags2 & (PF2_SERVERMUTE | PF2_SELFMUTE | PF2_SERVERTEMPMUTE | PF2_SELFDEAFEN | PF2_SERVERDEAFEN)))
 		{
 			DoVoicePacket(servernode, g_local_opus_frame, encoded, result);
 			S_SetPlayerVoiceActive(consoleplayer);
