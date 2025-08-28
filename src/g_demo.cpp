@@ -4316,22 +4316,12 @@ boolean G_CheckDemoTitleEntry(void)
 	if (menuactive || chat_on)
 		return false;
 
-	// Input conflict for both <b> and <x>
+	// Input conflict
 	if (gamestate == GS_LEVEL && camera[0].freecam)
 		return false;
 
 	if (!G_PlayerInputDown(0, gc_b, 0))
-	{
-		// Input conflict for <x>
-		if (gamestate == GS_LEVEL
-		&& playeringame[consoleplayer]
-		&& players[consoleplayer].spectator
-		&& K_DirectorIsEnabled(0))
-			return false;
-
-		if (!G_PlayerInputDown(0, gc_x, 0))
-			return false;
-	}
+		return false;
 
 	demo.willsave = true;
 	M_OpenVirtualKeyboard(

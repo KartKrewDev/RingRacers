@@ -1510,13 +1510,8 @@ void ST_DrawSaveReplayHint(INT32 flags)
 	}
 	else if (demo.willsave && demo.titlename[0])
 		text = "Replay will be saved.  <b> Change title";
-	else if (gamestate == GS_LEVEL
-	&& playeringame[consoleplayer]
-	&& players[consoleplayer].spectator
-	&& K_DirectorIsEnabled(0))
-		text = "<b> Save replay";
 	else
-		text = "<b> or <x> Save replay";
+		text = "<b> Save replay";
 
 	K_DrawGameControl(BASEVIDWIDTH - 2, 2, 0, text, 2, TINY_FONT, flags|V_YELLOWMAP);
 }
