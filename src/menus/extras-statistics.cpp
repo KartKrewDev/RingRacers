@@ -26,7 +26,20 @@ static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headere
 	if (!mapheaderinfo[map])
 		return false;
 
-	if (mapheaderinfo[map]->cup != cup)
+	if (mapheaderinfo[map]->typeoflevel & TOL_SPECIAL)
+	{
+		if (gamedata->sealedswaps[GDMAX_SEALEDSWAPS-1] != NULL // all found
+		|| (mapheaderinfo[map]->cup
+			&& mapheaderinfo[map]->cup->id >= basenumkartcupheaders) // custom content
+		|| M_SecretUnlocked(SECRET_SPECIALATTACK, true)) // true order
+		{
+			if (mapheaderinfo[map]->cup != cup)
+				return false;
+		}
+		else if (cup) // Appear under Lost & Found until you've ordered them.
+			return false;
+	}
+	else if (mapheaderinfo[map]->cup != cup)
 		return false;
 
 	if (((mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) == TOL_TUTORIAL) != tutorial)
