@@ -8765,6 +8765,7 @@ static void M_DrawStatsMaps(void)
 
 	i = -1;
 
+	const boolean allowsealed = M_SecretUnlocked(SECRET_SPECIALATTACK, true);
 	const boolean allowencore = M_SecretUnlocked(SECRET_ENCORE, true);
 	const boolean allowspb = M_SecretUnlocked(SECRET_SPBATTACK, true);
 	boolean allowtime = false;
@@ -8792,7 +8793,11 @@ static void M_DrawStatsMaps(void)
 
 				if (mapheaderinfo[mnum]->typeoflevel & TOL_TUTORIAL)
 					str = "TUTORIAL MODE";
-				else if (mapheaderinfo[mnum]->cup)
+				else if (mapheaderinfo[mnum]->cup
+				&& (!(mapheaderinfo[mnum]->typeoflevel & TOL_SPECIAL) // not special
+				|| gamedata->sealedswaps[GDMAX_SEALEDSWAPS-1] != NULL // all found
+				|| mapheaderinfo[mnum]->cup->id >= basenumkartcupheaders // custom content
+				|| allowsealed)) // true order
 					str = va("%s CUP", mapheaderinfo[mnum]->cup->realname);
 				else
 					str = "LOST & FOUND";
