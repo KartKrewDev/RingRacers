@@ -316,6 +316,9 @@ static void SV_UpdateTempMute(player_t *player, boolean mute)
 {
 	UINT8 buf[2];
 
+	if (mute == !!(player->pflags2 & PF2_SERVERTEMPMUTE))
+		return;
+
 	buf[0] = player - players;
 	buf[1] = (UINT8)(mute);
 	SendNetXCmd(XD_SERVERTEMPMUTEPLAYER, &buf, 2);
@@ -337,18 +340,18 @@ void SV_UpdateTempMutes(void)
 
 		if (PR_IsKeyGuest(player->public_key))
 		{
-			if (cv_gamestochat.value && !(player->pflags2 & PF2_SERVERTEMPMUTE))
+			if (cv_gamestochat.value)
 				SV_UpdateTempMute(player, false);
 			continue;
 		}
 
 		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
 
-		if (i == serverplayer || IsPlayerAdmin(i) && player->pflags2 & PF2_SERVERTEMPMUTE)
+		if (i == serverplayer || IsPlayerAdmin(i))
 			SV_UpdateTempMute(player, false);
-		else if (stat->finishedrounds >= (UINT32)cv_gamestochat.value && player->pflags2 & PF2_SERVERTEMPMUTE)
+		else if (stat->finishedrounds >= (UINT32)cv_gamestochat.value)
 			SV_UpdateTempMute(player, false);
-		else if (stat->finishedrounds < (UINT32)cv_gamestochat.value && !(player->pflags2 & PF2_SERVERTEMPMUTE))
+		else if (stat->finishedrounds < (UINT32)cv_gamestochat.value)
 			SV_UpdateTempMute(player, true);
 	}
 }
