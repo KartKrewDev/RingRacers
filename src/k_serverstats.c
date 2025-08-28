@@ -344,7 +344,7 @@ void SV_UpdateTempMutes(void)
 
 		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
 
-		if (i == serverplayer || IsPlayerAdmin(i))
+		if (i == serverplayer || IsPlayerAdmin(i) && player->pflags2 & PF2_SERVERTEMPMUTE)
 			SV_UpdateTempMute(player, false);
 		else if (stat->finishedrounds >= (UINT32)cv_gamestochat.value && player->pflags2 & PF2_SERVERTEMPMUTE)
 			SV_UpdateTempMute(player, false);
