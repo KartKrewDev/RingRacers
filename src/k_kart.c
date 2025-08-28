@@ -3119,7 +3119,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 
 	UINT32 distance = K_GetItemRouletteDistance(player, 8);
 
-	if (gametype == GT_RACE && M_NotFreePlay() && !modeattacking)
+	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
 		if (distance < SCAMDIST) // Players near 1st need more speed!
 		{
@@ -4618,7 +4618,7 @@ static void K_HandleRaceSplits(player_t *player, tic_t time, UINT8 checkpoint)
 
 void K_CheckpointCrossAward(player_t *player)
 {
-	if (gametype != GT_RACE)
+	if (!(gametyperules & GTR_CIRCUIT) || K_Cooperative())
 		return;
 
 	if (!demo.playback && G_TimeAttackStart())
