@@ -60,6 +60,10 @@ static void draw_routine()
 
 	V_DrawFill(x, y, range + 2, 10, 31);
 	V_DrawFill(x + 1, y + 1, (int) last_peak, 8, color);
+	if (!detected)
+		V_DrawThinString(x+1, y+1, V_20TRANS, "Not transmitting...");
+	else
+		V_DrawThinString(x+1, y+1, V_20TRANS|V_GREENMAP, "Transmitting");
 }
 
 static void tick_routine()

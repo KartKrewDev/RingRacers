@@ -48,6 +48,8 @@ void SV_UpdateStats(void);
 
 void SV_BumpMatchStats(void);
 
+void SV_UpdateTempMutes(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

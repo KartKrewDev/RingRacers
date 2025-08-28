@@ -148,6 +148,8 @@ typedef enum
 	PF2_BUBBLECONTACT		= 1<<7, // ACHTUNG VERY BAD HACK - Don't allow Bubble Shield to contact certain objects unless this is a fresh blowup.
 	PF2_SUPERTRANSFERVFX	= 1<<8, // Don't respawn the "super transfer available" VFX.
 	PF2_FASTTUMBLEBOUNCE	= 1<<9, // Don't lose speed when tumblebouncing.
+
+	PF2_SERVERTEMPMUTE		= 1<<10, // Haven't met gamestochat requirement
 } pflags2_t;
 
 typedef enum

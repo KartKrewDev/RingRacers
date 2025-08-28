@@ -20,6 +20,7 @@
 #include "k_serverstats.h"
 #include "z_zone.h"
 #include "time.h"
+#include "d_netcmd.h" // isplayeradmin
 
 static serverplayer_t *trackedList;
 static size_t numtracked = 0;
@@ -231,7 +232,7 @@ serverplayer_t *SV_GetStats(player_t *player)
 // Write clientpowerlevels and timestamps back to matching trackedList entries, then save trackedList to disk
 // (NB: Stats changes can be made directly to trackedList through other paths, but will only write to disk here)
 void SV_UpdateStats(void)
-{	
+{
 	UINT32 i, j, hash;
 
 	if (!server)
@@ -250,7 +251,7 @@ void SV_UpdateStats(void)
 		hash = quickncasehash((char*)players[i].public_key, PUBKEYLENGTH);
 
 		for(j = 0; j < numtracked; j++)
-		{	
+		{
 			if (hash != trackedList[j].hash) // Not crypto magic, just an early out with a faster comparison
 				continue;
 			if (memcmp(&trackedList[j].public_key, players[i].public_key, PUBKEYLENGTH) == 0)
@@ -265,12 +266,16 @@ void SV_UpdateStats(void)
 		// so this shouldn't be reachable.
 	}
 
+	SV_UpdateTempMutes();
 	SV_SaveStats();
 }
 
 void SV_BumpMatchStats(void)
 {
 	int i;
+
+	if (!server)
+		return;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -284,7 +289,7 @@ void SV_BumpMatchStats(void)
 		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
 
 		// It should never be advantageous to idle, only count rounds where the player accomplishes something.
-		// If you NO CONTESTed, assume no participation... 
+		// If you NO CONTESTed, assume no participation...
 		boolean participated = !(players[i].pflags & PF_NOCONTEST);
 
 		if (gametyperules & GTR_CIRCUIT)
@@ -302,5 +307,51 @@ void SV_BumpMatchStats(void)
 
 		if (participated)
 			stat->finishedrounds++;
+	}
+
+	SV_UpdateTempMutes();
+}
+
+static void SV_UpdateTempMute(player_t *player, boolean mute)
+{
+	UINT8 buf[2];
+
+	if (mute == !!(player->pflags2 & PF2_SERVERTEMPMUTE))
+		return;
+
+	buf[0] = player - players;
+	buf[1] = (UINT8)(mute);
+	SendNetXCmd(XD_SERVERTEMPMUTEPLAYER, &buf, 2);
+}
+
+void SV_UpdateTempMutes(void)
+{
+	int i;
+
+	if (!server)
+		return;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+
+		player_t *player = &players[i];
+
+		if (PR_IsKeyGuest(player->public_key))
+		{
+			if (cv_gamestochat.value)
+				SV_UpdateTempMute(player, false);
+			continue;
+		}
+
+		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
+
+		if (i == serverplayer || IsPlayerAdmin(i))
+			SV_UpdateTempMute(player, false);
+		else if (stat->finishedrounds >= (UINT32)cv_gamestochat.value)
+			SV_UpdateTempMute(player, false);
+		else if (stat->finishedrounds < (UINT32)cv_gamestochat.value)
+			SV_UpdateTempMute(player, true);
 	}
 }
