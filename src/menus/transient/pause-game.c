@@ -162,7 +162,7 @@ void M_OpenPauseMenu(void)
 		if (M_SecretUnlocked(SECRET_ADDONS, true))
 		{
 			PAUSE_Main[mpause_addons].status = IT_STRING | IT_ARROWS;
-			if (client)
+			if (client && !IsPlayerAdmin(consoleplayer))
 				menuaddonoptions = 0;
 		}
 
@@ -336,7 +336,7 @@ void M_HandlePauseMenuAddons(INT32 choice)
 
 	menuaddonoptions = menuaddonoptions ? 0 : 1;
 
-	if (client)
+	if (client && !IsPlayerAdmin(consoleplayer))
 		menuaddonoptions = 0;
 
 	S_StartSound(NULL, sfx_s3k5b);
