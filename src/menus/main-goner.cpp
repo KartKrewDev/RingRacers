@@ -1603,6 +1603,8 @@ void M_GonerPlayground(INT32 choice)
 
 	multiplayer = true;
 
+	levellist.newgametype = GT_TUTORIAL;
+	levellist.netgame = false;
 	M_MenuToLevelPreamble(0, false);
 
 	D_MapChange(

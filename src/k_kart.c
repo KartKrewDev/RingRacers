@@ -3119,7 +3119,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 
 	UINT32 distance = K_GetItemRouletteDistance(player, 8);
 
-	if (gametype == GT_RACE && M_NotFreePlay() && !modeattacking)
+	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
 		if (distance < SCAMDIST) // Players near 1st need more speed!
 		{
@@ -3401,58 +3401,64 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			y2 = y2 + P_ReturnThrustY(mobj, forwardangle, playerVisualRadius);
 
 			// Left
-			// underlay
-			water = P_SpawnMobj(x1, y1,
-				((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, mobj->scale) : mobj->watertop), MT_WATERTRAILUNDERLAY);
-			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
-			water->destscale = trailScale;
-			water->momx = mobj->momx;
-			water->momy = mobj->momy;
-			water->momz = mobj->momz;
-			P_SetScale(water, trailScale);
-			P_SetMobjState(water, curUnderlayFrame);
-			P_SetTarget(&water->owner, mobj);
-			water->renderflags |= RF_REDUCEVFX;
+			if (!mobj->player || mobj->player->aizdriftstrat <= 0)
+			{
+				// underlay
+				water = P_SpawnMobj(x1, y1,
+					((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, mobj->scale) : mobj->watertop), MT_WATERTRAILUNDERLAY);
+				water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
+				water->destscale = trailScale;
+				water->momx = mobj->momx;
+				water->momy = mobj->momy;
+				water->momz = mobj->momz;
+				P_SetScale(water, trailScale);
+				P_SetMobjState(water, curUnderlayFrame);
+				P_SetTarget(&water->owner, mobj);
+				water->renderflags |= RF_REDUCEVFX;
 
-			// overlay
-			water = P_SpawnMobj(x1, y1,
-				((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, mobj->scale) : mobj->watertop), MT_WATERTRAIL);
-			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
-			water->destscale = trailScale;
-			water->momx = mobj->momx;
-			water->momy = mobj->momy;
-			water->momz = mobj->momz;
-			P_SetScale(water, trailScale);
-			P_SetMobjState(water, curOverlayFrame);
-			P_SetTarget(&water->owner, mobj);
-			water->renderflags |= RF_REDUCEVFX;
+				// overlay
+				water = P_SpawnMobj(x1, y1,
+					((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, mobj->scale) : mobj->watertop), MT_WATERTRAIL);
+				water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
+				water->destscale = trailScale;
+				water->momx = mobj->momx;
+				water->momy = mobj->momy;
+				water->momz = mobj->momz;
+				P_SetScale(water, trailScale);
+				P_SetMobjState(water, curOverlayFrame);
+				P_SetTarget(&water->owner, mobj);
+				water->renderflags |= RF_REDUCEVFX;
+			}
 
 			// Right
-			// Underlay
-			water = P_SpawnMobj(x2, y2,
-				((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, mobj->scale) : mobj->watertop), MT_WATERTRAILUNDERLAY);
-			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
-			water->destscale = trailScale;
-			water->momx = mobj->momx;
-			water->momy = mobj->momy;
-			water->momz = mobj->momz;
-			P_SetScale(water, trailScale);
-			P_SetMobjState(water, curUnderlayFrame);
-			P_SetTarget(&water->owner, mobj);
-			water->renderflags |= RF_REDUCEVFX;
+			if (!mobj->player || mobj->player->aizdriftstrat >= 0)
+			{
+				// Underlay
+				water = P_SpawnMobj(x2, y2,
+					((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, mobj->scale) : mobj->watertop), MT_WATERTRAILUNDERLAY);
+				water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
+				water->destscale = trailScale;
+				water->momx = mobj->momx;
+				water->momy = mobj->momy;
+				water->momz = mobj->momz;
+				P_SetScale(water, trailScale);
+				P_SetMobjState(water, curUnderlayFrame);
+				P_SetTarget(&water->owner, mobj);
+				water->renderflags |= RF_REDUCEVFX;
 
-			// Overlay
-			water = P_SpawnMobj(x2, y2,
-				((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, mobj->scale) : mobj->watertop), MT_WATERTRAIL);
-			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
-			water->destscale = trailScale;
-			water->momx = mobj->momx;
-			water->momy = mobj->momy;
-			water->momz = mobj->momz;
-			P_SetScale(water, trailScale);
-			P_SetMobjState(water, curOverlayFrame);
-			P_SetTarget(&water->owner, mobj);
-			water->renderflags |= RF_REDUCEVFX;
+				// Overlay
+				water = P_SpawnMobj(x2, y2,
+					((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, mobj->scale) : mobj->watertop), MT_WATERTRAIL);
+				water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
+				water->destscale = trailScale;
+				water->momx = mobj->momx;
+				water->momy = mobj->momy;
+				water->momz = mobj->momz;
+				P_SetScale(water, trailScale);
+				P_SetMobjState(water, curOverlayFrame);
+				P_SetTarget(&water->owner, mobj);
+				water->renderflags |= RF_REDUCEVFX;
+			}
 
 			if (!S_SoundPlaying(mobj, sfx_s3kdbs))
 			{
@@ -4618,7 +4624,7 @@ static void K_HandleRaceSplits(player_t *player, tic_t time, UINT8 checkpoint)
 
 void K_CheckpointCrossAward(player_t *player)
 {
-	if (gametype != GT_RACE)
+	if (!(gametyperules & GTR_CIRCUIT) || K_Cooperative())
 		return;
 
 	if (!demo.playback && G_TimeAttackStart())
@@ -10578,7 +10584,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->follower && fls >= 0 && fls < numfollowers)
 		{
 			const follower_t *fl = &followers[fls];
-			S_StartSound(NULL, fl->hornsound);
+			S_StartSound(player->follower, fl->hornsound);
 		}
 
 		S_StartSound(player->mo, sfx_kc33);

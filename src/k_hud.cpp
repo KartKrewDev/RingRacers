@@ -6448,7 +6448,7 @@ static void K_drawKartMinimap(void)
 		}
 	}
 
-	if (gametype == GT_BATTLE && Obj_GetNextUFOSpawner() != NULL)
+	if ((gametyperules & GTR_PAPERITEMS) && Obj_GetNextUFOSpawner() != NULL)
 	{
 		const INT32 prevsplitflags = splitflags;
 		mobj_t *spawner = Obj_GetNextUFOSpawner();

@@ -2383,7 +2383,9 @@ void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (p != NULL)
 	{
 		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
-		V_DrawCenteredTimerString(x+30, y+87, 0, va("%d", p->wins));
+		K_DrawGameControl(x+30, y+87, 0, va("%d", p->wins), 1,
+				(p->wins >= 1000 ? TINYTIMER_FONT : TIMER_FONT),
+			0);
 	}
 
 
@@ -6424,11 +6426,11 @@ void M_DrawPause(void)
 		K_DrawGameControl(4, 184 - 60 + offset/2, 0, "<left> <right> <up> <down> Steering", 0, TINY_FONT, 0);
 		K_DrawGameControl(4, 184 - 45 + offset/2, 0, "<a> Accelerate", 0, TINY_FONT, 0);
 		K_DrawGameControl(4, 184 - 30 + offset/2, 0, "<b> Look Back", 0, TINY_FONT, 0);
-		K_DrawGameControl(4, 184 - 15 + offset/2, 0, "<c> Spindash", 0, TINY_FONT, 0);
-		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item/Rings", 0, TINY_FONT, 0);
+		K_DrawGameControl(4, 184 - 15 + offset/2, 0, "<c> Spin Dash", 0, TINY_FONT, 0);
+		K_DrawGameControl(4, 184 - 0 + offset/2, 0, "<l> Item / Rings", 0, TINY_FONT, 0);
 
 		K_DrawGameControl(90, 184 - 45 + offset/2, 0, "<x> Brake", 0, TINY_FONT, 0);
-		K_DrawGameControl(90, 184 - 30 + offset/2, 0, "<y> Respawn", 0, TINY_FONT, 0);
+		K_DrawGameControl(90, 184 - 30 + offset/2, 0, "<y> Bail / Burst", 0, TINY_FONT, 0);
 		K_DrawGameControl(90, 184 - 15 + offset/2, 0, "<z> Dialogue / Action", 0, TINY_FONT, 0);
 		K_DrawGameControl(90, 184 - 0 + offset/2, 0, "<r> Drift", 0, TINY_FONT, 0);
 	}
@@ -8763,6 +8765,7 @@ static void M_DrawStatsMaps(void)
 
 	i = -1;
 
+	const boolean allowsealed = M_SecretUnlocked(SECRET_SPECIALATTACK, true);
 	const boolean allowencore = M_SecretUnlocked(SECRET_ENCORE, true);
 	const boolean allowspb = M_SecretUnlocked(SECRET_SPBATTACK, true);
 	boolean allowtime = false;
@@ -8790,7 +8793,11 @@ static void M_DrawStatsMaps(void)
 
 				if (mapheaderinfo[mnum]->typeoflevel & TOL_TUTORIAL)
 					str = "TUTORIAL MODE";
-				else if (mapheaderinfo[mnum]->cup)
+				else if (mapheaderinfo[mnum]->cup
+				&& (!(mapheaderinfo[mnum]->typeoflevel & TOL_SPECIAL) // not special
+				|| gamedata->sealedswaps[GDMAX_SEALEDSWAPS-1] != NULL // all found
+				|| mapheaderinfo[mnum]->cup->id >= basenumkartcupheaders // custom content
+				|| allowsealed)) // true order
 					str = va("%s CUP", mapheaderinfo[mnum]->cup->realname);
 				else
 					str = "LOST & FOUND";

@@ -910,7 +910,7 @@ void F_IntroTicker(void)
 		ResetSkipSequences();
 		CV_StealthSetValue(&cv_kartbot, 9);
 		CV_StealthSetValue(&cv_maxplayers, 8);
-		D_MapChange(G_RandMap(TOL_RACE, UINT16_MAX-1, true, false, NULL), GT_RACE, (cv_kartencore.value == 1), true, 0, false, false);
+		D_MapChange(G_RandMap(TOL_RACE, UINT16_MAX-1, true, false, NULL)+1, GT_RACE, (cv_kartencore.value == 1), true, 0, false, false);
 		return;
 	}
 
@@ -1118,7 +1118,7 @@ boolean F_IntroResponder(event_t *event)
 	}
 
 	// Quick skips for development/testing. See F_IntroTicker.
-	if (!demo.playback)
+	if (!demo.playback && skippableallowed)
 	{
 		switch(key)
 		{

@@ -3932,7 +3932,11 @@ tryAgain:
 			continue;
 		}
 
-		if (numPlayers == 2 && gametype == GT_RACE && ((mapheaderinfo[i]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
+		// TODO - We don't have guaranteed access to gametype/rules of TOL.
+		// If revising in future and willing to break this function open,
+		// this should be checking for GTR_CIRCUIT and not cooperative
+		// (but K_Cooperative also won't be correct inside this func).
+		if (numPlayers == 2 && gametype != GT_SPECIAL && ((mapheaderinfo[i]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
 		{
 			// Duel doesn't support sprints.
 			continue;

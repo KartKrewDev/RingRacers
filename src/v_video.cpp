@@ -1070,7 +1070,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	c &= 255;
 
-	RGBA_t color = pMasterPalette[c];
+	RGBA_t color = pLocalPalette[c];
 	UINT8 r = (color.rgba & 0xFF);
 	UINT8 g = (color.rgba & 0xFF00) >> 8;
 	UINT8 b = (color.rgba & 0xFF0000) >> 16;
@@ -1262,7 +1262,7 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c)
 	{
 		auto builder = g_2d.begin_verts();
 
-		const RGBA_t color = pMasterPalette[c];
+		const RGBA_t color = pLocalPalette[c];
 		const float r = ((color.rgba & 0xFF000000) >> 24) / 255.f;
 		const float g = ((color.rgba & 0xFF0000) >> 16) / 255.f;
 		const float b = ((color.rgba & 0xFF00) >> 8) / 255.f;

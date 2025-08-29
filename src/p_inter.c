@@ -1922,6 +1922,44 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			}
 		}
 
+		if (target->player->spectator == false)
+		{
+			UINT32 skinflags = (demo.playback)
+				? demo.skinlist[demo.currentskinid[(target->player-players)]].flags
+				: skins[target->player->skin]->flags;
+
+			if (skinflags & SF_IRONMAN)
+			{
+				target->skin = skins[target->player->skin];
+				target->player->charflags = skinflags;
+				K_SpawnMagicianParticles(target, 5);
+				S_StartSound(target, sfx_slip);
+			}
+
+			target->renderflags &= ~RF_DONTDRAW;
+		}
+
+		K_DropEmeraldsFromPlayer(target->player, target->player->emeralds);
+
+		target->player->carry = CR_NONE;
+
+		K_KartResetPlayerColor(target->player);
+
+		P_ResetPlayer(target->player);
+
+#define PlayerPointerRemove(field) \
+		if (P_MobjWasRemoved(field) == false) \
+		{ \
+			P_RemoveMobj(field); \
+			P_SetTarget(&field, NULL); \
+		}
+
+		PlayerPointerRemove(target->player->stumbleIndicator);
+		PlayerPointerRemove(target->player->wavedashIndicator);
+		PlayerPointerRemove(target->player->trickIndicator);
+
+#undef PlayerPointerRemove
+
 		if (gametyperules & GTR_BUMPERS)
 		{
 			if (battleovertime.enabled >= 10*TICRATE) // Overtime Barrier is armed
@@ -2684,7 +2722,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 			if (modeattacking & ATTACKING_SPB)
 			{
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 				return true;
 			}
 
@@ -2700,6 +2737,9 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			// disappearifies, but still gotta put items back in play
 			break;
 
+		case DMG_TIMEOVER:
+			player->pflags |= PF_ELIMINATED;
+			//FALLTHRU
 		default:
 			// Everything else REALLY kills
 			if (leveltime < starttime)
@@ -2707,52 +2747,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 				K_DoFault(player);
 			}
 			break;
-	}
-
-	if (player->spectator == false)
-	{
-		UINT32 skinflags = (demo.playback)
-			? demo.skinlist[demo.currentskinid[(player-players)]].flags
-			: skins[player->skin]->flags;
-
-		if (skinflags & SF_IRONMAN)
-		{
-			player->mo->skin = skins[player->skin];
-			player->charflags = skinflags;
-			K_SpawnMagicianParticles(player->mo, 5);
-			S_StartSound(player->mo, sfx_slip);
-		}
-
-		player->mo->renderflags &= ~RF_DONTDRAW;
-	}
-
-	K_DropEmeraldsFromPlayer(player, player->emeralds);
-	//K_SetHitLagForObjects(player->mo, inflictor, source, MAXHITLAGTICS, true);
-
-	player->carry = CR_NONE;
-
-	K_KartResetPlayerColor(player);
-
-	P_ResetPlayer(player);
-
-	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
-
-#define PlayerPointerRemove(field) \
-	if (P_MobjWasRemoved(field) == false) \
-	{ \
-		P_RemoveMobj(field); \
-		P_SetTarget(&field, NULL); \
-	}
-
-	PlayerPointerRemove(player->stumbleIndicator);
-	PlayerPointerRemove(player->wavedashIndicator);
-	PlayerPointerRemove(player->trickIndicator);
-
-#undef PlayerPointerRemove
-
-	if (type == DMG_TIMEOVER)
-	{
-		player->pflags |= PF_ELIMINATED;
 	}
 
 	return true;

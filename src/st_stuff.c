@@ -34,7 +34,7 @@
 #include "p_setup.h" // NiGHTS grading
 #include "r_fps.h"
 #include "m_random.h" // random index
-#include "m_cond.h" // item finder
+#include "k_director.h" // K_DirectorIsEnabled
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -1498,11 +1498,22 @@ void ST_DrawServerSplash(boolean timelimited)
 
 void ST_DrawSaveReplayHint(INT32 flags)
 {
-	K_DrawGameControl(
-		BASEVIDWIDTH - 2, 2, 0,
-		(demo.willsave && demo.titlename[0]) ? "Replay will be saved.  <b> Change title" : "<b> or <x> Save replay",
-		2, TINY_FONT, flags|V_YELLOWMAP
-	);
+	const char *text;
+	if (gamestate == GS_LEVEL && camera[0].freecam)
+	{
+		text = va(
+			"<c> Disable Freecam to <b_pressed> %s replay",
+			(demo.willsave && demo.titlename[0])
+				? "rename"
+				: "save"
+		);
+	}
+	else if (demo.willsave && demo.titlename[0])
+		text = "Replay will be saved.  <b> Change title";
+	else
+		text = "<b> Save replay";
+
+	K_DrawGameControl(BASEVIDWIDTH - 2, 2, 0, text, 2, TINY_FONT, flags|V_YELLOWMAP);
 }
 
 static fixed_t ST_CalculateFadeIn(player_t *player)
