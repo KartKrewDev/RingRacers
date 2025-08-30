@@ -294,6 +294,12 @@ struct Cloud : Mobj
 			return false;
 		}
 
+		if (follow()->player->tripwireLeniency)
+		{
+			remove();
+			return false;
+		}
+
 		move_origin(follow()->pos());
 		momx = 0;
 		momy = 0;
@@ -356,6 +362,9 @@ struct Cloud : Mobj
 			return false;
 
 		if (K_PuntCollide(this, toucher))
+			return true;
+
+		if (toucher->player && toucher->player->tripwireLeniency)
 			return true;
 
 		if (toucher->player && target() && !P_MobjWasRemoved(target()) && target()->player && G_SameTeam(toucher->player, target()->player))
