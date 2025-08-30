@@ -482,18 +482,32 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 			.offset3d(0, 0, 32 * mobj->scale * P_MobjFlip(mobj));
 		}
 
-		if (mobj->player == stplyr && K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash && stplyr->curshield != KSHIELD_TOP
-			&& stplyr->boostpower < FRACUNIT && stplyr->speed < 2*K_GetKartSpeed(stplyr, false, false)/3)
+		boolean offroadwarning = K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash && stplyr->curshield != KSHIELD_TOP
+			&& stplyr->boostpower < FRACUNIT && stplyr->speed < 2*K_GetKartSpeed(stplyr, false, false)/3;
+
+		boolean hitwarning = stplyr->flashing && stplyr->rings <= 0 && stplyr->speed < K_GetKartSpeed(stplyr, false, false)/2
+			&& P_IsObjectOnGround(mobj) && !P_PlayerInPain(stplyr);
+
+		boolean hasboost = (stplyr->itemamount &&
+			(
+				stplyr->itemtype == KITEM_SNEAKER || stplyr->itemtype == KITEM_INVINCIBILITY || stplyr->itemtype == KITEM_ROCKETSNEAKER
+				|| stplyr->itemtype == KITEM_FLAMESHIELD || stplyr->itemtype == KITEM_GROW
+			)
+		) || stplyr->rocketsneakertimer;
+
+		if (mobj->player == stplyr && (offroadwarning || hitwarning))
 		{
-			if ((stplyr->itemamount &&
-				(stplyr->itemtype == KITEM_SNEAKER || stplyr->itemtype == KITEM_INVINCIBILITY || stplyr->itemtype == KITEM_ROCKETSNEAKER
-					|| stplyr->itemtype == KITEM_FLAMESHIELD || stplyr->itemtype == KITEM_GROW)
-			) || stplyr->rocketsneakertimer)
-				return Tooltip(
-					TextElement(
-						TextElement().parse("BOOST <l_animated>").font(splitfont))
-					)
-				.offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj));
+			if (offroadwarning)
+			{
+				if (hasboost)
+				{
+					return Tooltip(
+						TextElement(
+							TextElement().parse("BOOST <l_animated>").font(splitfont))
+						)
+					.offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj));
+				}
+			}
 
 			return Tooltip(
 				TextElement(
