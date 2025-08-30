@@ -983,6 +983,16 @@ void M_Drawer(void)
 		if (currentMenu->drawroutine)
 			currentMenu->drawroutine(); // call current menu Draw routine
 
+		if (
+			(
+				currentMenu == &PLAY_LevelSelectDef
+				|| currentMenu == &PLAY_CupSelectDef
+			) && levellist.canqueue
+		)
+		{
+			M_DrawPauseRoundQueue(0, true);
+		}
+
 		M_DrawMenuForeground();
 
 		// Draw version down in corner
@@ -998,16 +1008,6 @@ void M_Drawer(void)
 
 		// Draw message overlay when needed
 		M_DrawMenuMessage();
-
-		if (
-			(
-				currentMenu == &PLAY_LevelSelectDef
-				|| currentMenu == &PLAY_CupSelectDef
-			) && levellist.canqueue
-		)
-		{
-			M_DrawPauseRoundQueue(0, true);
-		}
 	}
 
 	if (menuwipe)
