@@ -485,10 +485,10 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 		if (mobj->player == stplyr && K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash && stplyr->curshield != KSHIELD_TOP
 			&& stplyr->boostpower < FRACUNIT && stplyr->speed < 2*K_GetKartSpeed(stplyr, false, false)/3)
 		{
-			if (stplyr->itemamount &&
+			if ((stplyr->itemamount &&
 				(stplyr->itemtype == KITEM_SNEAKER || stplyr->itemtype == KITEM_INVINCIBILITY || stplyr->itemtype == KITEM_ROCKETSNEAKER
 					|| stplyr->itemtype == KITEM_FLAMESHIELD || stplyr->itemtype == KITEM_GROW)
-			)
+			) || stplyr->rocketsneakertimer)
 				return Tooltip(
 					TextElement(
 						TextElement().parse("BOOST <l_animated>").font(splitfont))
