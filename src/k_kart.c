@@ -8680,6 +8680,50 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 				debtflag->color = player->skincolor;
 				debtflag->fuse = 2;
+				
+				// Do the ring debt shake, come on now - outta the sprite frames and into the codebase
+				if (cv_reducevfx.value == 0)
+				{
+					switch(debtflag->frame)
+					{
+						case (FF_FULLBRIGHT):
+							debtflag->spritexoffset = 0;
+							debtflag->spriteyoffset = 0;
+							break;
+						case (1|FF_FULLBRIGHT):
+							debtflag->spritexoffset = -6*FRACUNIT;
+							debtflag->spriteyoffset = 5*FRACUNIT;
+							break;
+						case (2|FF_FULLBRIGHT):
+							debtflag->spritexoffset = 0;
+							debtflag->spriteyoffset = 10*FRACUNIT;
+							break;
+						case (3|FF_FULLBRIGHT):
+							debtflag->spritexoffset = 6*FRACUNIT;
+							debtflag->spriteyoffset = 5*FRACUNIT;
+							break;
+						case (4|FF_FULLBRIGHT):
+							debtflag->spritexoffset = 0;
+							debtflag->spriteyoffset = 0;
+							break;
+						case (5|FF_FULLBRIGHT):
+							debtflag->spritexoffset = -6*FRACUNIT;
+							debtflag->spriteyoffset = 5;
+							break;
+						case (6|FF_FULLBRIGHT):
+							debtflag->spritexoffset = 0;
+							debtflag->spriteyoffset = 10*FRACUNIT;
+							break;
+						case (7|FF_FULLBRIGHT):
+							debtflag->spritexoffset = 6*FRACUNIT;
+							debtflag->spriteyoffset = 5*FRACUNIT;
+							break;
+						default:
+							debtflag->spritexoffset = 0;
+							debtflag->spriteyoffset = 0;
+							break;
+					}
+				}
 
 				if (doubler == 0) // Real copy. Draw for everyone but us.
 				{
