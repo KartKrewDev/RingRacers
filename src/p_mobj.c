@@ -13329,6 +13329,10 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 	mobjeflag_t meflagsapply;
 	const size_t mthingi = (size_t)(mthing - mapthings);
 
+	mflagsapply = 0;
+	mflags2apply = 0;
+	meflagsapply = 0;
+
 	mlength = abs(mthing->thing_args[0]);
 	mnumspokes = mthing->thing_args[1] + 1;
 	mspokeangle = FixedAngle((360*FRACUNIT)/mnumspokes) >> ANGLETOFINESHIFT;
@@ -13378,6 +13382,10 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 	case MT_CUSTOMMACEPOINT:
 		macetype = mthing->thing_stringargs[0] ? get_number(mthing->thing_stringargs[0]) : MT_NULL;
 		chainlink = mthing->thing_stringargs[1] ? get_number(mthing->thing_stringargs[1]) : MT_NULL;
+		if (mthing->thing_args[8] & TMM_DOUBLESIZE)
+		{
+			mflags2apply |= MF2_BOSSDEAD; // Basically nothing except Item Boxes use this
+		}
 		break;
 	case MT_CHAINPOINT:
 		if (mthing->thing_args[8] & TMM_DOUBLESIZE)
@@ -13460,9 +13468,9 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 		mchainlike = (firsttype == chainlink);
 	widthfactor = (mchainlike ? 1 : 2);
 
-	mflagsapply = (mthing->thing_args[8] & TMM_CLIP) ? 0 : (MF_NOCLIP|MF_NOCLIPHEIGHT);
-	mflags2apply = ((mthing->options & MTF_OBJECTFLIP) ? MF2_OBJECTFLIP : 0);
-	meflagsapply = ((mthing->options & MTF_OBJECTFLIP) ? MFE_VERTICALFLIP : 0);
+	mflagsapply |= (mthing->thing_args[8] & TMM_CLIP) ? 0 : (MF_NOCLIP|MF_NOCLIPHEIGHT);
+	mflags2apply |= ((mthing->options & MTF_OBJECTFLIP) ? MF2_OBJECTFLIP : 0);
+	meflagsapply |= ((mthing->options & MTF_OBJECTFLIP) ? MFE_VERTICALFLIP : 0);
 
 	msound = (mchainlike ? 0 : (mwidth & 1));
 
