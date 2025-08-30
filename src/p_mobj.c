@@ -13406,6 +13406,17 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 		break;
 	}
 
+	if (modeattacking & ATTACKING_SPB)
+	{
+		// SPB Attack item filter
+
+		if (macetype == MT_RING || macetype == MT_RANDOMITEM)
+			macetype = MT_NULL;
+
+		if (chainlink == MT_RING || chainlink == MT_RANDOMITEM)
+			chainlink = MT_NULL;
+	}
+
 	if (!macetype && !chainlink)
 		return true;
 
