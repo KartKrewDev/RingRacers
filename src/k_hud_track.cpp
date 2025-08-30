@@ -482,7 +482,7 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 			.offset3d(0, 0, 32 * mobj->scale * P_MobjFlip(mobj));
 		}
 
-		if (mobj->player == stplyr && K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash
+		if (mobj->player == stplyr && K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash && stplyr->curshield != KSHIELD_TOP
 			&& stplyr->boostpower < FRACUNIT && stplyr->speed < 2*K_GetKartSpeed(stplyr, false, false)/3)
 		{
 			if (stplyr->itemamount &&
