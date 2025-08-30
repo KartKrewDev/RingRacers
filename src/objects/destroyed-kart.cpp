@@ -215,9 +215,12 @@ struct Particle : Mobj
 
 		if (!is_shrapnel() && fuse > 7 && (bounces() & 1)) // 7 = 0.2/(1/35)
 		{
+			// note: determinate random argument eval order
+			int32_t rand_volume = P_RandomRange(PR_ITEM_DEBRIS, 20, 40);
+			int32_t rand_sound = P_RandomRange(PR_ITEM_DEBRIS, sfx_die01, sfx_die03);
 			voice(
-				static_cast<sfxenum_t>(P_RandomRange(PR_ITEM_DEBRIS, sfx_die01, sfx_die03)),
-				P_RandomRange(PR_ITEM_DEBRIS, 20, 40) * 255 / 100
+				static_cast<sfxenum_t>(rand_sound),
+				rand_volume * 255 / 100
 			);
 		}
 
@@ -480,11 +483,19 @@ private:
 		fixed_t spd = 8 * mapobjectscale;
 		for (UINT8 i = 0; i < count; ++i)
 		{
+			fixed_t rand_x;
+			fixed_t rand_y;
+			fixed_t rand_z;
+
+			// note: determinate random argument eval order
+			rand_z = P_RandomRange(PR_EXPLOSION, -48, 48);
+			rand_y = P_RandomRange(PR_EXPLOSION, -48, 48);
+			rand_x = P_RandomRange(PR_EXPLOSION, -48, 48);
 			mobj_t *x = P_SpawnMobjFromMobjUnscaled(
 				target,
-				P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
-				P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
-				P_RandomRange(PR_EXPLOSION, -48, 48) * target->scale,
+				rand_x * target->scale,
+				rand_y * target->scale,
+				rand_z * target->scale,
 				MT_THOK
 			);
 			x->hitlag = 0;

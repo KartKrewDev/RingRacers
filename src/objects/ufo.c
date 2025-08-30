@@ -82,10 +82,14 @@ static int maxhum = sizeof(hums) / sizeof(hums[0]) - 1;
 
 static void SpawnUFOSpeedLines(mobj_t *ufo)
 {
+	// note: determinate random argument eval order
+	fixed_t rand_z = P_RandomRange(PR_DECORATION, -24, 24);
+	fixed_t rand_y = P_RandomRange(PR_DECORATION, -120, 120);
+	fixed_t rand_x = P_RandomRange(PR_DECORATION, -120, 120);
 	mobj_t *fast = P_SpawnMobjFromMobj(ufo,
-		P_RandomRange(PR_DECORATION, -120, 120) * FRACUNIT,
-		P_RandomRange(PR_DECORATION, -120, 120) * FRACUNIT,
-		(ufo->info->height / 2) + (P_RandomRange(PR_DECORATION, -24, 24) * FRACUNIT),
+		rand_x * FRACUNIT,
+		rand_y * FRACUNIT,
+		(ufo->info->height / 2) + (rand_z * FRACUNIT),
 		MT_FASTLINE
 	);
 
@@ -102,10 +106,14 @@ static void SpawnUFOSpeedLines(mobj_t *ufo)
 
 static void SpawnEmeraldSpeedLines(mobj_t *mo)
 {
+	// note: determinate random argument eval order
+	fixed_t rand_z = P_RandomRange(PR_DECORATION, 0, 64);
+	fixed_t rand_y = P_RandomRange(PR_DECORATION, -48, 48);
+	fixed_t rand_x = P_RandomRange(PR_DECORATION, -48, 48);
 	mobj_t *fast = P_SpawnMobjFromMobj(mo,
-		P_RandomRange(PR_DECORATION, -48, 48) * FRACUNIT,
-		P_RandomRange(PR_DECORATION, -48, 48) * FRACUNIT,
-		P_RandomRange(PR_DECORATION, 0, 64) * FRACUNIT,
+		rand_x * FRACUNIT,
+		rand_y * FRACUNIT,
+		rand_z * FRACUNIT,
 		MT_FASTLINE);
 	P_SetMobjState(fast, S_KARTINVLINES1);
 
@@ -648,10 +656,14 @@ spawn_shard
 	const UINT16 rad = (ufo->radius / ufo->scale) / 4;
 	const UINT16 tall = (h / FRACUNIT);
 
+	// note: determinate random argument eval order
+	fixed_t rand_z = P_RandomKey(PR_ITEM_DEBRIS, tall + 1);
+	fixed_t rand_y = P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad);
+	fixed_t rand_x = P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad);
 	mobj_t *p = P_SpawnMobjFromMobj(ufo,
-			P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad) * 8 * FRACUNIT,
-			P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad) * 8 * FRACUNIT,
-			P_RandomKey(PR_ITEM_DEBRIS, tall + 1) * 4 * FRACUNIT,
+			rand_x * 8 * FRACUNIT,
+			rand_y * 8 * FRACUNIT,
+			rand_z * 4 * FRACUNIT,
 			MT_MONITOR_SHARD);
 
 	P_SetScale(p, (p->destscale = p->destscale * 3));
@@ -771,7 +783,7 @@ static void UFOKillPiece(mobj_t *piece)
 			set_flickerframe(NULL, piece);
 			piece->tics = 1;
 			return;
-		}		
+		}
 		case UFO_PIECE_TYPE_GLASS_UNDER:
 		case UFO_PIECE_TYPE_STEM:
 		{

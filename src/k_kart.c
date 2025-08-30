@@ -1449,10 +1449,16 @@ static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdi
 	{
 		if (offset == 0)
 		{
-			mobj_t *band = P_SpawnMobj(curx + (P_RandomRange(PR_DECORATION, -12, 12)*mapobjectscale),
-				cury + (P_RandomRange(PR_DECORATION, -12, 12)*mapobjectscale),
-				curz + (P_RandomRange(PR_DECORATION, 24, 48)*mapobjectscale),
-				MT_SIGNSPARKLE);
+			mobj_t *band;
+			fixed_t rand_x;
+			fixed_t rand_y;
+			fixed_t rand_z;
+
+			// note: determinate random argument eval order
+			rand_z = P_RandomRange(PR_DECORATION, 24, 48)*mapobjectscale;
+			rand_y = P_RandomRange(PR_DECORATION, -12, 12)*mapobjectscale;
+			rand_x = P_RandomRange(PR_DECORATION, -12, 12)*mapobjectscale;
+			band = P_SpawnMobj(curx + rand_x, cury + rand_y, curz + rand_z, MT_SIGNSPARKLE);
 
 			if (maxdist == 0)
 			{
@@ -2067,9 +2073,17 @@ void K_SpawnDriftBoostClipSpark(mobj_t *clip)
 
 static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 {
-	mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(PR_DECORATION,-36,36) * player->mo->scale),
-		player->mo->y + (P_RandomRange(PR_DECORATION,-36,36) * player->mo->scale),
-		player->mo->z + (player->mo->height/2) + (P_RandomRange(PR_DECORATION,-20,20) * player->mo->scale),
+	fixed_t rand_x;
+	fixed_t rand_y;
+	fixed_t rand_z;
+
+	// note: determinate random argument eval order
+	rand_z = P_RandomRange(PR_DECORATION,-20,20);
+	rand_y = P_RandomRange(PR_DECORATION,-36,36);
+	rand_x = P_RandomRange(PR_DECORATION,-36,36);
+	mobj_t *fast = P_SpawnMobj(player->mo->x + (rand_x * player->mo->scale),
+		player->mo->y + (rand_y * player->mo->scale),
+		player->mo->z + (player->mo->height/2) + (rand_z * player->mo->scale),
 		MT_FASTLINE);
 
 	P_SetTarget(&fast->target, player->mo);
@@ -2170,10 +2184,18 @@ void K_SpawnGardenTopSpeedLines(player_t *player)
 
 void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 {
+	fixed_t rand_x;
+	fixed_t rand_y;
+	fixed_t rand_z;
+
+	// note: determinate random argument eval order
+	rand_z = P_RandomRange(PR_DECORATION, 0, 64);
+	rand_y = P_RandomRange(PR_DECORATION, -48, 48);
+	rand_x = P_RandomRange(PR_DECORATION, -48, 48);
 	mobj_t *fast = P_SpawnMobjFromMobj(mo,
-		P_RandomRange(PR_DECORATION, -48, 48) * FRACUNIT,
-		P_RandomRange(PR_DECORATION, -48, 48) * FRACUNIT,
-		P_RandomRange(PR_DECORATION, 0, 64) * FRACUNIT,
+		rand_x * FRACUNIT,
+		rand_y * FRACUNIT,
+		rand_z * FRACUNIT,
 		MT_FASTLINE);
 	P_SetMobjState(fast, S_KARTINVLINES1);
 
@@ -2205,6 +2227,9 @@ static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 	mobj_t *particle = NULL;
 	fixed_t particleScale = FRACUNIT;
 	fixed_t particleSpeed = 0;
+	fixed_t rand_x;
+	fixed_t rand_y;
+	fixed_t rand_z;
 
 	spawnFreq = abs(timer);
 
@@ -2231,11 +2256,15 @@ static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 		return;
 	}
 
+	// note: determinate random argument eval order
+	rand_z = P_RandomRange(PR_DECORATION, 0, 24);
+	rand_y = P_RandomRange(PR_DECORATION, -32, 32);
+	rand_x = P_RandomRange(PR_DECORATION, -32, 32);
 	particle = P_SpawnMobjFromMobj(
 		mo,
-		P_RandomRange(PR_DECORATION, -32, 32) * FRACUNIT,
-		P_RandomRange(PR_DECORATION, -32, 32) * FRACUNIT,
-		(P_RandomRange(PR_DECORATION, 0, 24) + (shrink ? 48 : 0)) * FRACUNIT,
+		rand_x * FRACUNIT,
+		rand_y * FRACUNIT,
+		(rand_z + (shrink ? 48 : 0)) * FRACUNIT,
 		MT_GROW_PARTICLE
 	);
 
@@ -5989,6 +6018,10 @@ void K_SpawnMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
 
 	for (i = 0; i < 32; i++)
 	{
+		fixed_t rand_x;
+		fixed_t rand_y;
+		fixed_t rand_z;
+
 		dust = P_SpawnMobj(source->x, source->y, source->z, MT_SMOKE);
 		P_SetMobjState(dust, S_OPAQUESMOKE1);
 		dust->angle = (ANGLE_180/16) * i;
@@ -5999,9 +6032,13 @@ void K_SpawnMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
 		dust->hitlag += delay;
 		dust->renderflags |= RF_DONTDRAW;
 
-		truc = P_SpawnMobj(source->x + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
-			source->y + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
-			source->z + P_RandomRange(PR_EXPLOSION, 0, height)*FRACUNIT, MT_BOOMEXPLODE);
+		// note: determinate random argument eval order
+		rand_z = P_RandomRange(PR_EXPLOSION, 0, height);
+		rand_y = P_RandomRange(PR_EXPLOSION, -radius, radius);
+		rand_x = P_RandomRange(PR_EXPLOSION, -radius, radius);
+		truc = P_SpawnMobj(source->x + rand_x*FRACUNIT,
+			source->y + rand_y*FRACUNIT,
+			source->z + rand_z*FRACUNIT, MT_BOOMEXPLODE);
 		K_MatchGenericExtraFlags(truc, source);
 		P_SetScale(truc, source->scale);
 		truc->destscale = source->scale*6;
@@ -6020,9 +6057,17 @@ void K_SpawnMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
 
 	for (i = 0; i < 16; i++)
 	{
-		dust = P_SpawnMobj(source->x + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
-			source->y + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
-			source->z + P_RandomRange(PR_EXPLOSION, 0, height)*FRACUNIT, MT_SMOKE);
+		fixed_t rand_x;
+		fixed_t rand_y;
+		fixed_t rand_z;
+
+		// note: determinate random argument eval order
+		rand_z = P_RandomRange(PR_EXPLOSION, 0, height);
+		rand_y = P_RandomRange(PR_EXPLOSION, -radius, radius);
+		rand_x = P_RandomRange(PR_EXPLOSION, -radius, radius);
+		dust = P_SpawnMobj(source->x + rand_x*FRACUNIT,
+			source->y + rand_y*FRACUNIT,
+			source->z + rand_z*FRACUNIT, MT_SMOKE);
 		P_SetMobjState(dust, S_OPAQUESMOKE1);
 		P_SetScale(dust, source->scale);
 		dust->destscale = source->scale*10;
@@ -6032,9 +6077,13 @@ void K_SpawnMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
 		dust->hitlag += delay;
 		dust->renderflags |= RF_DONTDRAW;
 
-		truc = P_SpawnMobj(source->x + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
-			source->y + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
-			source->z + P_RandomRange(PR_EXPLOSION, 0, height)*FRACUNIT, MT_BOOMPARTICLE);
+		// note: determinate random argument eval order
+		rand_z = P_RandomRange(PR_EXPLOSION, 0, height);
+		rand_y = P_RandomRange(PR_EXPLOSION, -radius, radius);
+		rand_x = P_RandomRange(PR_EXPLOSION, -radius, radius);
+		truc = P_SpawnMobj(source->x + rand_x*FRACUNIT,
+			source->y + rand_y*FRACUNIT,
+			source->z + rand_z*FRACUNIT, MT_BOOMPARTICLE);
 		K_MatchGenericExtraFlags(truc, source);
 		P_SetScale(truc, source->scale);
 		truc->destscale = source->scale*5;
@@ -6854,6 +6903,8 @@ void K_SpawnWipeoutTrail(mobj_t *mo)
 {
 	mobj_t *dust;
 	angle_t aoff;
+	fixed_t rand_x;
+	fixed_t rand_y;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
@@ -6868,8 +6919,11 @@ void K_SpawnWipeoutTrail(mobj_t *mo)
 	else
 		aoff += ANGLE_45;
 
-	dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)) + (P_RandomRange(PR_DECORATION,-8,8) << FRACBITS),
-		mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)) + (P_RandomRange(PR_DECORATION,-8,8) << FRACBITS),
+	// note: determinate random argument eval order
+	rand_y = P_RandomRange(PR_DECORATION,-8,8);
+	rand_x = P_RandomRange(PR_DECORATION,-8,8);
+	dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)) + (rand_x << FRACBITS),
+		mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)) + (rand_y << FRACBITS),
 		mo->z, MT_WIPEOUTTRAIL);
 
 	P_SetTarget(&dust->target, mo);
@@ -7589,6 +7643,8 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 
 	for (i = 0; i < 2; i++)
 	{
+		angle_t rand_angle;
+		fixed_t rand_move;
 		mobj_t *smoke = P_SpawnMobj(src->x, src->y, src->z+(8<<FRACBITS), MT_BOOSTSMOKE);
 
 		P_SetScale(smoke, src->scale);
@@ -7599,7 +7655,10 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 		smoke->momy = 3*src->momy/4;
 		smoke->momz = 3*P_GetMobjZMovement(src)/4;
 
-		P_Thrust(smoke, src->angle + FixedAngle(P_RandomRange(PR_DECORATION, 135, 225)<<FRACBITS), P_RandomRange(PR_DECORATION, 0, 8) * src->scale);
+		// note: determinate random argument eval order
+		rand_move = P_RandomRange(PR_DECORATION, 0, 8);
+		rand_angle = P_RandomRange(PR_DECORATION, 135, 225);
+		P_Thrust(smoke, src->angle + FixedAngle(rand_angle<<FRACBITS), rand_move * src->scale);
 		smoke->momz += P_RandomRange(PR_DECORATION, 0, 4) * src->scale;
 	}
 }
@@ -9810,7 +9869,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 				debtflag->color = player->skincolor;
 				debtflag->fuse = 2;
-				
+
 				// Do the ring debt shake, come on now - outta the sprite frames and into the codebase
 				if (cv_reducevfx.value == 0)
 				{
@@ -10521,9 +10580,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT32 baildropmodulo = baildropinversefreq *5/3 /10;
 		if ((leveltime % (1+baildropmodulo)) == 0)
 		{
-			mobj_t *sparkle = P_SpawnMobj(pmo->x + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
-				pmo->y + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
-				pmo->z + (pmo->height/2) + (P_RandomRange(PR_DECORATION, -40,40) * pmo->scale),
+			fixed_t rand_x;
+			fixed_t rand_y;
+			fixed_t rand_z;
+
+			// note: determinate random argument eval order
+			rand_z = P_RandomRange(PR_DECORATION, -40,40);
+			rand_y = P_RandomRange(PR_DECORATION, -40,40);
+			rand_x = P_RandomRange(PR_DECORATION, -40,40);
+			mobj_t *sparkle = P_SpawnMobj(pmo->x + (rand_x * pmo->scale),
+				pmo->y + (rand_y * pmo->scale),
+				pmo->z + (pmo->height/2) + (rand_z * pmo->scale),
 				MT_BAILSPARKLE);
 
 			sparkle->scale = pmo->scale;
@@ -13677,10 +13744,18 @@ static void K_KartSpindashDust(mobj_t *parent)
 
 static void K_KartSpindashWind(mobj_t *parent)
 {
+	fixed_t rand_x;
+	fixed_t rand_y;
+	fixed_t rand_z;
+
+	// note: determinate random argument eval order
+	rand_z = P_RandomRange(PR_DECORATION,-20,20);
+	rand_y = P_RandomRange(PR_DECORATION,-36,36);
+	rand_x = P_RandomRange(PR_DECORATION,-36,36);
 	mobj_t *wind = P_SpawnMobjFromMobj(parent,
-		P_RandomRange(PR_DECORATION,-36,36) * FRACUNIT,
-		P_RandomRange(PR_DECORATION,-36,36) * FRACUNIT,
-		FixedDiv(parent->height / 2, parent->scale) + (P_RandomRange(PR_DECORATION,-20,20) * FRACUNIT),
+		rand_x * FRACUNIT,
+		rand_y * FRACUNIT,
+		FixedDiv(parent->height / 2, parent->scale) + (rand_z * FRACUNIT),
 		MT_SPINDASHWIND
 	);
 

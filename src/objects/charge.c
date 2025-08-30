@@ -78,10 +78,18 @@ void Obj_ChargeAuraThink (mobj_t *aura)
         {
             if (player->driftcharge)
             {
-                mobj_t *spark = P_SpawnMobjFromMobj(aura, 
-                    FRACUNIT*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
-                    FRACUNIT*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
-                    FRACUNIT*P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS),
+				fixed_t rand_x;
+				fixed_t rand_y;
+				fixed_t rand_z;
+
+				// note: determinate random argument eval order
+				rand_z = P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS);
+				rand_y = P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS);
+				rand_x = P_RandomRange(PR_DECORATION, -1*CHARGEAURA_SPARKRADIUS, CHARGEAURA_SPARKRADIUS);
+                mobj_t *spark = P_SpawnMobjFromMobj(aura,
+                    FRACUNIT*rand_x,
+                    FRACUNIT*rand_y,
+                    FRACUNIT*rand_z,
                     MT_CHARGESPARK);
                 spark->frame = P_RandomRange(PR_DECORATION, 1, 5);
                 spark->renderflags |= RF_FULLBRIGHT|RF_ADD;

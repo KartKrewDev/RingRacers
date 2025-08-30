@@ -2111,11 +2111,19 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			// dust effects
 			for (i = 0; i < 10; i++)
 			{
+				fixed_t rand_x;
+				fixed_t rand_y;
+				fixed_t rand_z;
+
+				// note: determinate random argument eval order
+				rand_z = P_RandomRange(PR_ITEM_DEBRIS, 0, 4*spacing);
+				rand_y = P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing);
+				rand_x = P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing);
 				mobj_t *puff = P_SpawnMobjFromMobj(
 					target,
-					P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
-					P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
-					P_RandomRange(PR_ITEM_DEBRIS, 0, 4*spacing) * FRACUNIT,
+					rand_x * FRACUNIT,
+					rand_y * FRACUNIT,
+					rand_z * FRACUNIT,
 					MT_SPINDASHDUST
 				);
 
