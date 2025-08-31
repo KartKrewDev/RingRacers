@@ -571,53 +571,36 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 					return;
 				}
 
-				if (min >= 7800)
-				{
-					if (avg >= 8200)
+					if (avg >= 9500) // 3am 1v1-ers
+						t = 6;
+
+					else if (avg >= 9000) // The best server regulars
 						t = 5;
-					else
+
+					else if (avg >= 7000) // Sweaty strangers
 						t = 4;
-				}
-				else if (min >= 6800)
-				{
-					if (avg >= 7200)
-						t = 4;
-					else
+
+					else if (avg >= 5000) // Experienced, lets see something interesting
 						t = 3;
-				}
-				else if (min >= 5800)
-				{
-					if (avg >= 6200)
-						t = 3;
-					else
+
+					else if (avg >= 3000) // Getting into it, likely experienced but just building power
 						t = 2;
-				}
-				else if (min >= 3800)
-				{
-					if (avg >= 4200)
-						t = 2;
-					else
+
+					else if (avg >= 1500) // Transition point
 						t = 1;
-				}
-#if 1
-				else
-					t = 1;
-#else
-				else if (min >= 1800)
-				{
-					if (avg >= 2200)
-						t = 1;
-					else
+						
+					else if (avg < 1500 || (avg >= 2000 && min < 400)) // Baby Room, mandatory first impressions; or if mostly new & 1 guy is really coping
 						t = 0;
-				}
-				else
-					t = 0;
-#endif
+
 
 				CONS_Debug(DBG_GAMELOGIC, "Table position: %d\n", t);
 
 				switch (t)
 				{
+					case 6:
+						speed = KARTSPEED_HARD;
+						encore = true;
+						break;
 					case 5:
 						speed = KARTSPEED_HARD;
 						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
@@ -639,7 +622,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 						encore = false;
 						break;
 					case 0:
-						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_EASY : KARTSPEED_NORMAL;
+						speed = KARTSPEED_EASY;
 						encore = false;
 						break;
 				}
