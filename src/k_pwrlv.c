@@ -580,16 +580,16 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 					else if (avg >= 7000) // Sweaty strangers
 						t = 4;
 
-					else if (avg >= 5000) // Experienced, lets see something interesting
+					else if (avg >= 6500) // Experienced, lets see something interesting
 						t = 3;
 
-					else if (avg >= 3000) // Getting into it, likely experienced but just building power
+					else if (avg >= 4000) // Getting into it, likely experienced but just building power
 						t = 2;
 
-					else if (avg < 1500 || (avg <= 2000 && min < 400)) // Baby Room, mandatory first impressions; or if mostly new & 1 guy is really coping
+					else if (avg < 2000 || (avg <= 2500 && min < 600)) // Baby Room, mandatory first impressions; or if mostly new & 1 guy is really coping
 						t = 0;
 
-					else if (avg >= 1500) // Transition point
+					else if (avg >= 2000) // Transition point
 						t = 1;
 						
 
