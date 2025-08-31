@@ -159,6 +159,13 @@ void M_OpenPauseMenu(void)
 	{
 		PAUSE_Main[mpause_psetup].status = IT_STRING | IT_CALL;
 
+		if (M_SecretUnlocked(SECRET_ADDONS, true))
+		{
+			PAUSE_Main[mpause_addons].status = IT_STRING | IT_ARROWS;
+			if (client && !IsPlayerAdmin(consoleplayer))
+				menuaddonoptions = 0;
+		}
+
 		if (server || IsPlayerAdmin(consoleplayer))
 		{
 			PAUSE_Main[mpause_changegametype].status = IT_STRING | IT_ARROWS;
@@ -166,11 +173,6 @@ void M_OpenPauseMenu(void)
 
 			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_restartmap].status = IT_STRING | IT_CALL;
-
-			if (M_SecretUnlocked(SECRET_ADDONS, true))
-			{
-				PAUSE_Main[mpause_addons].status = IT_STRING | IT_ARROWS;
-			}
 
 			if (netgame)
 			{
@@ -333,6 +335,10 @@ void M_HandlePauseMenuAddons(INT32 choice)
 	}
 
 	menuaddonoptions = menuaddonoptions ? 0 : 1;
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+		menuaddonoptions = 0;
+
 	S_StartSound(NULL, sfx_s3k5b);
 }
 
@@ -470,7 +476,7 @@ void M_GiveUp(INT32 choice)
 
 // Pause spectate / join functions
 void M_HandleSpectateToggle(INT32 choice)
-{	
+{
 	if (choice == 2)
 	{
 		if (!(G_GametypeHasSpectators() && pausemenu.splitscreenfocusid <= splitscreen))
