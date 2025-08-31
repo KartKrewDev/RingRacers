@@ -86,15 +86,15 @@ static fixed_t K_CalculatePowerLevelInc(UINT16 you, UINT16 them, boolean won)
 
 	fixed_t BASE_CHANGE = 20*FRACUNIT; // The base amount that ratings should change per comparison. Higher = more volatile
 
-	INT16 STABLE_RATE = 3000; // The fulcrum point between positive-sum and negative-sum rankings.
-	// A player with 50% winrate in a perfectly stable room will land somewhere around STABLE_RATE PWR.
+	INT16 STABLE_RATE = 3000; // The fulcrum point between positive-sum and even rankings.
+	INT16 CEILING_RATE = 7000; // The fulcrum point between even and negative-sum rankings.
 
 	// % modifiers to gains and losses. Positive numbers mean you gain more when gaining and drain more when draining.
 	// Negative numbers mean changes are less volatile; this makes gains less powerful and drains less punishing.
 	// "Strong" players are above STABLE_RATE. "Weak" players are below STABLE_RATE.
-	fixed_t STRONG_GAIN_PER_K = 	-10*FRACUNIT/100; // How much to modify gains per 1000 points above stable.
+	fixed_t STRONG_GAIN_PER_K = 	-20*FRACUNIT/100; // How much to modify gains per 1000 points above stable.
 	fixed_t STRONG_DRAIN_PER_K = 	20*FRACUNIT/100; // How much to modify losses per 1000 points above stable.
-	fixed_t WEAK_GAIN_PER_K = 		10*FRACUNIT/100; // How much to modify gains per 1000 points BELOW stable.
+	fixed_t WEAK_GAIN_PER_K = 		20*FRACUNIT/100; // How much to modify gains per 1000 points BELOW stable.
 	fixed_t WEAK_DRAIN_PER_K = 		-20*FRACUNIT/100; // How much to modify losses per 1000 points BELOW stable.
 
 	fixed_t GAP_INFLUENCE_PER_K = 	20*FRACUNIT/100; // How much to modify changes per 1000 point rating gap between participants.
@@ -102,7 +102,14 @@ static fixed_t K_CalculatePowerLevelInc(UINT16 you, UINT16 them, boolean won)
 
 	// == Derived helper vars ==
 
-	INT16 STABLE_DELTA = you - STABLE_RATE;
+	INT16 STABLE_DELTA = 0;
+
+	// Positive deltas if your rating is deflationary, negative if you're inflationary.
+	if (you < STABLE_RATE)
+		STABLE_DELTA = you - STABLE_RATE;
+	else if (you > CEILING_RATE)
+		STABLE_DELTA = you - CEILING_RATE;
+
 	INT16 ABS_STABLE_DELTA = abs(STABLE_DELTA);
 
 	INT16 RATING_GAP = you - them;
@@ -591,7 +598,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 
 					else if (avg >= 2000) // Transition point
 						t = 1;
-						
+
 
 				CONS_Debug(DBG_GAMELOGIC, "Table position: %d\n", t);
 
