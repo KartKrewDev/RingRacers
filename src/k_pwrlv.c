@@ -86,7 +86,7 @@ static fixed_t K_CalculatePowerLevelInc(UINT16 you, UINT16 them, boolean won)
 
 	fixed_t BASE_CHANGE = 20*FRACUNIT; // The base amount that ratings should change per comparison. Higher = more volatile
 
-	INT16 STABLE_RATE = 3000; // The fulcrum point between positive-sum and even rankings.
+	INT16 STABLE_RATE = 4000; // The fulcrum point between positive-sum and even rankings.
 	INT16 CEILING_RATE = 7000; // The fulcrum point between even and negative-sum rankings.
 
 	// % modifiers to gains and losses. Positive numbers mean you gain more when gaining and drain more when draining.
