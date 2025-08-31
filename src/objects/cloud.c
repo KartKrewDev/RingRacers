@@ -242,7 +242,6 @@ void Obj_CloudTouched(mobj_t *special, mobj_t *toucher)
 	{
 		fixed_t rand_x;
 		fixed_t rand_y;
-		fixed_t rand_z;
 
 		// note: determinate argument eval order
 		rand_y = P_RandomRange(PR_DECORATION, -32, 32);
