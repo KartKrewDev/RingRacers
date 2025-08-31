@@ -415,7 +415,7 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 
 	auto conditional = [](bool val, auto&& f) { return val ? std::optional<Tooltip> {f()} : std::nullopt; };
 
-	Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMenu;
+	Draw::Font splitfont = (r_splitscreen > 1) ? Draw::Font::kThin : Draw::Font::kMedium;
 
 	switch (mobj->type)
 	{
@@ -457,7 +457,7 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 	case MT_GARDENTOP:
 		return conditional(
 			mobj->tracer == stplyr->mo && Obj_GardenTopPlayerNeedsHelp(mobj),
-			[&] { return TextElement().parse("Try <r>!").font(splitfont); }
+			[&] { return TextElement().parse("TRY <r_animated>").font(splitfont); }
 		);
 
 	case MT_PLAYER:
@@ -482,11 +482,45 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 			.offset3d(0, 0, 32 * mobj->scale * P_MobjFlip(mobj));
 		}
 
+		boolean offroadwarning = K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash && stplyr->curshield != KSHIELD_TOP
+			&& stplyr->boostpower < FRACUNIT && stplyr->speed < 2*K_GetKartSpeed(stplyr, false, false)/3;
+
+		boolean hitwarning = stplyr->flashing && stplyr->rings <= 0 && stplyr->speed < K_GetKartSpeed(stplyr, false, false)/2
+			&& P_IsObjectOnGround(mobj) && !P_PlayerInPain(stplyr);
+
+		boolean hasboost = (stplyr->itemamount &&
+			(
+				stplyr->itemtype == KITEM_SNEAKER || stplyr->itemtype == KITEM_INVINCIBILITY || stplyr->itemtype == KITEM_ROCKETSNEAKER
+				|| stplyr->itemtype == KITEM_FLAMESHIELD || stplyr->itemtype == KITEM_GROW
+			)
+		) || stplyr->rocketsneakertimer;
+
+		if (mobj->player == stplyr && (offroadwarning || hitwarning))
+		{
+			if (offroadwarning)
+			{
+				if (hasboost)
+				{
+					return Tooltip(
+						TextElement(
+							TextElement().parse("BOOST <l_animated>").font(splitfont))
+						)
+					.offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj));
+				}
+			}
+
+			return Tooltip(
+				TextElement(
+					TextElement().parse("HOLD <c_animated>").font(splitfont))
+				)
+			.offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj));
+		}
+
 		return conditional(
 			mobj->player == stplyr && stplyr->icecube.frozen,
 			[&] { return Tooltip(TextElement(
-				(leveltime/(TICRATE/2)%2) ? 
-					TextElement().parse("<r_animated>").font(splitfont) : 
+				(leveltime/(TICRATE/2)%2) ?
+					TextElement().parse("<r_animated>").font(splitfont) :
 					TextElement().parse("<a_animated>").font(splitfont)
 				)).offset3d(0, 0, 64 * mobj->scale * P_MobjFlip(mobj)); }
 			// I will be trying to figure out why the return value didn't accept a straightforward call to parse() for the rest of my life (apprx. 15 seconds)
@@ -924,7 +958,7 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 				else
 				{
 					pos.z += itemOffset;
-				}		
+				}
 			}
 
 			K_ObjectTracking(&tr.result, &pos, false);
