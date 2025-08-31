@@ -40,11 +40,20 @@ void Obj_SpawnEmeraldSparks(mobj_t *mobj)
 		return;
 	}
 
+	fixed_t rand_x;
+	fixed_t rand_y;
+	fixed_t rand_z;
+
+	// note: determinate random argument eval order
+	rand_z = P_RandomRange(PR_SPARKLE, 0, 64);
+	rand_y = P_RandomRange(PR_SPARKLE, -48, 48);
+	rand_x = P_RandomRange(PR_SPARKLE, -48, 48);
+
 	mobj_t *sparkle = P_SpawnMobjFromMobj(
 		mobj,
-		P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-		P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-		P_RandomRange(PR_SPARKLE, 0, 64) * FRACUNIT,
+		rand_x * FRACUNIT,
+		rand_y * FRACUNIT,
+		rand_z * FRACUNIT,
 		MT_EMERALDSPARK
 	);
 

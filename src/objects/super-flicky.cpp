@@ -94,7 +94,7 @@ sine_bob
 	// slightly modified from objects/hyudoro.c
 	hyu->sprzoff = FixedMul(kBobHeight,
 			sineofs + FINESINE(a >> ANGLETOFINESHIFT)) * P_MobjFlip(hyu);
-			
+
 	if (P_IsObjectFlipped(hyu))
 		hyu->sprzoff -= hyu->height;
 }
@@ -383,11 +383,14 @@ struct Flicky : mobj_t
 			return;
 		}
 
+		fixed_t rand_z = P_RandomRange(PR_DECORATION, -24, 24);
+		fixed_t rand_y = P_RandomRange(PR_DECORATION, -24, 24);
+		fixed_t rand_x = P_RandomRange(PR_DECORATION, -24, 24);
 		mobj_t *fast = P_SpawnMobjFromMobjUnscaled(
 			this,
-			P_RandomRange(PR_DECORATION, -24, 24) * mapobjectscale,
-			P_RandomRange(PR_DECORATION, -24, 24) * mapobjectscale,
-			(height / 2) + (P_RandomRange(PR_DECORATION, -24, 24) * mapobjectscale),
+			rand_x * mapobjectscale,
+			rand_y * mapobjectscale,
+			(height / 2) + (rand_z * mapobjectscale),
 			MT_FASTLINE
 		);
 

@@ -216,10 +216,15 @@ spawn_shard
 	const UINT16 rad = (monitor->radius / monitor->scale) / 4;
 	const UINT16 tall = (half / FRACUNIT) / 4;
 
+
+	// note: determinate random argument eval order
+	fixed_t rand_z = P_RandomKey(PR_ITEM_DEBRIS, tall + 1);
+	fixed_t rand_y = P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad);
+	fixed_t rand_x = P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad);
 	mobj_t *p = P_SpawnMobjFromMobj(monitor,
-			P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad) * 8 * FRACUNIT,
-			P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad) * 8 * FRACUNIT,
-			(half / 4) + P_RandomKey(PR_ITEM_DEBRIS, tall + 1) * 4 * FRACUNIT,
+			rand_x * 8 * FRACUNIT,
+			rand_y * 8 * FRACUNIT,
+			(half / 4) + rand_z * 4 * FRACUNIT,
 			MT_MONITOR_SHARD);
 
 	angle_t th = (part->angle + ANGLE_90);
@@ -283,9 +288,9 @@ spawn_monitor_explosion (mobj_t *monitor)
 		mobj_t *x = P_SpawnMobjFromMobj(monitor, 0, 0, 0, MT_BOOMEXPLODE);
 		x->hitlag = 0;
 		x->color = SKINCOLOR_WHITE;
-		x->momx = P_RandomRange(PR_EXPLOSION, -5, 5) * monitor->scale,
-			x->momy = P_RandomRange(PR_EXPLOSION, -5, 5) * monitor->scale,
-			x->momz = P_RandomRange(PR_EXPLOSION, 0, 6) * monitor->scale * P_MobjFlip(monitor);
+		x->momx = P_RandomRange(PR_EXPLOSION, -5, 5) * monitor->scale;
+		x->momy = P_RandomRange(PR_EXPLOSION, -5, 5) * monitor->scale;
+		x->momz = P_RandomRange(PR_EXPLOSION, 0, 6) * monitor->scale * P_MobjFlip(monitor);
 		P_SetScale(x, (x->destscale *= 3));
 	}
 }

@@ -250,7 +250,14 @@ private:
 		}
 
 		auto rng = [&](int x, int y) { return P_RandomRange(PR_DECORATION, x, y) * scale(); };
-		auto rng_xyz = [&](int x) { return std::tuple(rng(-x, x), rng(-x, x), rng(0, x)); };
+		auto rng_xyz = [&](int x)
+		{
+			// note: determinate random argument eval order
+			auto rand_z = rng(0, x);
+			auto rand_y = rng(-x, x);
+			auto rand_x = rng(-x, x);
+			return std::tuple(rand_x, rand_y, rand_z);
+		};
 
 		auto spawn = [&](bool playsound)
 		{

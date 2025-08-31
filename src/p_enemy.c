@@ -2148,6 +2148,9 @@ void A_VultureFly(mobj_t *actor)
 	fixed_t dx, dy, dz, dxy, dm;
 	mobj_t *dust;
 	fixed_t momm;
+	fixed_t rand_x;
+	fixed_t rand_y;
+	fixed_t rand_z;
 
 	if (LUA_CallAction(A_VULTUREFLY, actor))
 		return;
@@ -2191,7 +2194,11 @@ void A_VultureFly(mobj_t *actor)
 
 	P_VultureHoverParticle(actor);
 
-	dust = P_SpawnMobj(actor->x + P_RandomFixed(PR_UNDEFINED) - FRACUNIT/2, actor->y + P_RandomFixed(PR_UNDEFINED) - FRACUNIT/2, actor->z + actor->height/2 + P_RandomFixed(PR_UNDEFINED) - FRACUNIT/2, MT_PARTICLE);
+	// note: determinate random argument eval order
+	rand_z = P_RandomFixed(PR_UNDEFINED);
+	rand_y = P_RandomFixed(PR_UNDEFINED);
+	rand_x = P_RandomFixed(PR_UNDEFINED);
+	dust = P_SpawnMobj(actor->x + rand_x - FRACUNIT/2, actor->y + rand_y - FRACUNIT/2, actor->z + actor->height/2 + rand_z - FRACUNIT/2, MT_PARTICLE);
 	P_SetScale(dust, 2*FRACUNIT);
 	dust->destscale = FRACUNIT/3;
 	dust->scalespeed = FRACUNIT/40;
@@ -3793,7 +3800,13 @@ void A_FishJump(mobj_t *actor)
 		if (i < MAXPLAYERS)
 		{
 			fixed_t rad = actor->radius>>FRACBITS;
-			P_SpawnMobjFromMobj(actor, P_RandomRange(PR_UNDEFINED, rad, -rad)<<FRACBITS, P_RandomRange(PR_UNDEFINED, rad, -rad)<<FRACBITS, 0, (mobjtype_t)locvar2);
+			fixed_t rand_x;
+			fixed_t rand_y;
+
+			// note: determinate random argument eval order
+			rand_y = P_RandomRange(PR_UNDEFINED, rad, -rad);
+			rand_x = P_RandomRange(PR_UNDEFINED, rad, -rad);
+			P_SpawnMobjFromMobj(actor, rand_x<<FRACBITS, rand_y<<FRACBITS, 0, (mobjtype_t)locvar2);
 		}
 	}
 
@@ -10339,6 +10352,9 @@ void A_FlameParticle(mobj_t *actor)
 	mobjtype_t type = (mobjtype_t)(mobjinfo[actor->type].painchance);
 	fixed_t rad, hei;
 	mobj_t *particle;
+	fixed_t rand_x;
+	fixed_t rand_y;
+	fixed_t rand_z;
 
 	if (LUA_CallAction(A_FLAMEPARTICLE, actor))
 		return;
@@ -10348,10 +10364,14 @@ void A_FlameParticle(mobj_t *actor)
 
 	rad = actor->radius>>FRACBITS;
 	hei = actor->height>>FRACBITS;
+	// note: determinate random argument eval order
+	rand_z = P_RandomRange(PR_DECORATION, hei/2, hei);
+	rand_y = P_RandomRange(PR_DECORATION, rad, -rad);
+	rand_x = P_RandomRange(PR_DECORATION, rad, -rad);
 	particle = P_SpawnMobjFromMobj(actor,
-		P_RandomRange(PR_DECORATION, rad, -rad)<<FRACBITS,
-		P_RandomRange(PR_DECORATION, rad, -rad)<<FRACBITS,
-		P_RandomRange(PR_DECORATION, hei/2, hei)<<FRACBITS,
+		rand_x<<FRACBITS,
+		rand_y<<FRACBITS,
+		rand_z<<FRACBITS,
 		type);
 	P_SetObjectMomZ(particle, 2<<FRACBITS, false);
 }
@@ -10535,9 +10555,17 @@ void A_MineExplode(mobj_t *actor)
 		P_SpawnMobj(actor->x, actor->y, actor->z, type);
 		for (i = 0; i < 16; i++)
 		{
-			mobj_t *b = P_SpawnMobj(actor->x+P_RandomRange(PR_EXPLOSION, -dist, dist)*FRACUNIT,
-				actor->y+P_RandomRange(PR_EXPLOSION, -dist, dist)*FRACUNIT,
-				actor->z+P_RandomRange(PR_EXPLOSION, ((actor->eflags & MFE_UNDERWATER) ? -dist : 0), dist)*FRACUNIT,
+			fixed_t rand_x;
+			fixed_t rand_y;
+			fixed_t rand_z;
+
+			// note: determinate random argument eval order
+			rand_z = P_RandomRange(PR_EXPLOSION, ((actor->eflags & MFE_UNDERWATER) ? -dist : 0), dist);
+			rand_y = P_RandomRange(PR_EXPLOSION, -dist, dist);
+			rand_x = P_RandomRange(PR_EXPLOSION, -dist, dist);
+			mobj_t *b = P_SpawnMobj(actor->x+rand_x*FRACUNIT,
+				actor->y+rand_y*FRACUNIT,
+				actor->z+rand_z*FRACUNIT,
 				type);
 			fixed_t dx = b->x - actor->x, dy = b->y - actor->y, dz = b->z - actor->z;
 			fixed_t dm = P_AproxDistance(dz, P_AproxDistance(dy, dx));
@@ -12102,9 +12130,16 @@ void A_JawzExplode(mobj_t *actor)
 	while (shrapnel)
 	{
 		INT32 speed, speed2;
+		fixed_t rand_x;
+		fixed_t rand_y;
+		fixed_t rand_z;
 
-		truc = P_SpawnMobj(actor->x + P_RandomRange(PR_EXPLOSION, -8, 8)*FRACUNIT, actor->y + P_RandomRange(PR_EXPLOSION, -8, 8)*FRACUNIT,
-			actor->z + P_RandomRange(PR_EXPLOSION, 0, 8)*FRACUNIT, MT_BOOMPARTICLE);
+		// note: determinate random argument eval order
+		rand_z = P_RandomRange(PR_EXPLOSION, 0, 8);
+		rand_y = P_RandomRange(PR_EXPLOSION, -8, 8);
+		rand_x = P_RandomRange(PR_EXPLOSION, -8, 8);
+		truc = P_SpawnMobj(actor->x + rand_x*FRACUNIT, actor->y + rand_y*FRACUNIT,
+			actor->z + rand_z*FRACUNIT, MT_BOOMPARTICLE);
 		truc->scale = actor->scale*2;
 
 		speed = FixedMul(7*FRACUNIT, actor->scale)>>FRACBITS;
@@ -12292,8 +12327,16 @@ void A_FZBoomSmoke(mobj_t *actor)
 
 	for (i = 0; i < 8+(4*var1); i++)
 	{
-		mobj_t *smoke = P_SpawnMobj(actor->x + (P_RandomRange(PR_SMOLDERING, -rad, rad)*actor->scale), actor->y + (P_RandomRange(PR_SMOLDERING, -rad, rad)*actor->scale),
-			actor->z + (P_RandomRange(PR_SMOLDERING, 0, 72)*actor->scale), MT_THOK);
+		fixed_t rand_x;
+		fixed_t rand_y;
+		fixed_t rand_z;
+
+		// note: determinate random argument eval order
+		rand_z = P_RandomRange(PR_SMOLDERING, 0, 72);
+		rand_y = P_RandomRange(PR_SMOLDERING, -rad, rad);
+		rand_x = P_RandomRange(PR_SMOLDERING, -rad, rad);
+		mobj_t *smoke = P_SpawnMobj(actor->x + (rand_x*actor->scale), actor->y + (rand_y*actor->scale),
+			actor->z + (rand_z*actor->scale), MT_THOK);
 
 		P_SetMobjState(smoke, S_FZEROSMOKE1);
 		smoke->tics += P_RandomRange(PR_SMOLDERING, -3, 4);
@@ -12516,12 +12559,19 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 	{
 		const INT16 spacing =
 			(target->radius / 2) / target->scale;
+		fixed_t rand_x;
+		fixed_t rand_y;
+		fixed_t rand_z;
 
+		// note: determinate random argument evaluation order
+		rand_z = P_RandomRange(PR_ITEM_DEBRIS, 0, 4 * spacing);
+		rand_y = P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing);
+		rand_x = P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing);
 		mobj_t *puff = P_SpawnMobjFromMobj(
 				target,
-				P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
-				P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
-				P_RandomRange(PR_ITEM_DEBRIS, 0, 4 * spacing) * FRACUNIT,
+				rand_x * FRACUNIT,
+				rand_y * FRACUNIT,
+				rand_z * FRACUNIT,
 				MT_SPINDASHDUST
 		);
 

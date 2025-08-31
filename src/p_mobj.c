@@ -6257,11 +6257,19 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 					for (i = 0; i < 10; i++)
 					{
+						fixed_t rand_x;
+						fixed_t rand_y;
+						fixed_t rand_z;
+
+						// note: determinate random argument eval order
+						rand_z = P_RandomRange(PR_ITEM_RINGS, -spacing, spacing);
+						rand_y = P_RandomRange(PR_ITEM_RINGS, -spacing, spacing);
+						rand_x = P_RandomRange(PR_ITEM_RINGS, -spacing, spacing);
 						mobj_t *debris = P_SpawnMobjFromMobj(
 							mobj,
-							P_RandomRange(PR_ITEM_RINGS, -spacing, spacing) * FRACUNIT,
-							P_RandomRange(PR_ITEM_RINGS, -spacing, spacing) * FRACUNIT,
-							P_RandomRange(PR_ITEM_RINGS, -spacing, spacing) * FRACUNIT,
+							rand_x * FRACUNIT,
+							rand_y * FRACUNIT,
+							rand_z * FRACUNIT,
 							MT_BATTLEBUMPER_DEBRIS
 						);
 
@@ -6288,11 +6296,19 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 					for (i = 0; i < 10; i++)
 					{
+						fixed_t rand_x;
+						fixed_t rand_y;
+						fixed_t rand_z;
+
+						// note: determinate random argument eval order
+						rand_z = P_RandomRange(PR_ITEM_RINGS, -spacing, spacing);
+						rand_y = P_RandomRange(PR_ITEM_RINGS, -spacing, spacing);
+						rand_x = P_RandomRange(PR_ITEM_RINGS, -spacing, spacing);
 						mobj_t *puff = P_SpawnMobjFromMobj(
 							mobj,
-							P_RandomRange(PR_ITEM_RINGS, -spacing, spacing) * FRACUNIT,
-							P_RandomRange(PR_ITEM_RINGS, -spacing, spacing) * FRACUNIT,
-							P_RandomRange(PR_ITEM_RINGS, -spacing, spacing) * FRACUNIT,
+							rand_x * FRACUNIT,
+							rand_y * FRACUNIT,
+							rand_z * FRACUNIT,
 							MT_SPINDASHDUST
 						);
 
@@ -8196,6 +8212,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->state == &states[S_BOOSTSMOKESPAWNER])
 		{
+			fixed_t rand_angle;
+			fixed_t rand_move;
 			mobj_t *smoke = P_SpawnMobj(mobj->x, mobj->y, mobj->z+(8<<FRACBITS), MT_BOOSTSMOKE);
 
 			P_SetScale(smoke, mobj->target->scale/2);
@@ -8206,7 +8224,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			smoke->momy = mobj->target->momy/2;
 			smoke->momz = mobj->target->momz/2;
 
-			P_Thrust(smoke, mobj->angle+FixedAngle(P_RandomRange(PR_ITEM_BOOST, 135, 225)<<FRACBITS), P_RandomRange(PR_ITEM_BOOST, 0, 8) * mobj->target->scale);
+			// note: determinate random argument eval order
+			rand_move = P_RandomRange(PR_ITEM_BOOST, 0, 8);
+			rand_angle = P_RandomRange(PR_ITEM_BOOST, 135, 225);
+			P_Thrust(smoke, mobj->angle+FixedAngle(rand_angle<<FRACBITS), rand_move * mobj->target->scale);
 		}
 		break;
 	case MT_INVULNFLASH:
@@ -8989,9 +9010,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 				for (i = 0; i < nl; i++)
 				{
-					mobj_t *fast = P_SpawnMobj(mobj->x + (P_RandomRange(PR_ITEM_BOOST, -36,36) * mobj->scale),
-						mobj->y + (P_RandomRange(PR_ITEM_BOOST, -36,36) * mobj->scale),
-						mobj->z + (mobj->height/2) + (P_RandomRange(PR_ITEM_BOOST, -20,20) * mobj->scale),
+					fixed_t rand_x;
+					fixed_t rand_y;
+					fixed_t rand_z;
+
+					// note: determinate random argument eval order
+					rand_z = P_RandomRange(PR_ITEM_BOOST, -20,20);
+					rand_y = P_RandomRange(PR_ITEM_BOOST, -36,36);
+					rand_x = P_RandomRange(PR_ITEM_BOOST, -36,36);
+					mobj_t *fast = P_SpawnMobj(mobj->x + (rand_x * mobj->scale),
+						mobj->y + (rand_y * mobj->scale),
+						mobj->z + (mobj->height/2) + (rand_z * mobj->scale),
 						MT_FASTLINE);
 
 					fast->angle = mobj->angle;
@@ -9527,7 +9556,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else // fire + smoke pillar
 		{
 			UINT8 i;
-			mobj_t *fire = P_SpawnMobj(mobj->x + (P_RandomRange(PR_SMOLDERING, -32, 32)*mobj->scale), mobj->y + (P_RandomRange(PR_SMOLDERING, -32, 32)*mobj->scale), mobj->z, MT_THOK);
+			fixed_t rand_x;
+			fixed_t rand_y;
+
+			// note: determinate random argument eval order
+			rand_y = P_RandomRange(PR_SMOLDERING, -32, 32);
+			rand_x = P_RandomRange(PR_SMOLDERING, -32, 32);
+			mobj_t *fire = P_SpawnMobj(mobj->x + (rand_x*mobj->scale), mobj->y + (rand_y*mobj->scale), mobj->z, MT_THOK);
 
 			fire->sprite = SPR_FPRT;
 			fire->frame = FF_FULLBRIGHT|FF_TRANS30;
@@ -9539,7 +9574,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			for (i = 0; i < 2; i++)
 			{
-				mobj_t *smoke = P_SpawnMobj(mobj->x + (P_RandomRange(PR_SMOLDERING, -16, 16)*mobj->scale), mobj->y + (P_RandomRange(PR_SMOLDERING, -16, 16)*mobj->scale), mobj->z, MT_SMOKE);
+				// note: determinate random argument eval order
+				rand_y = P_RandomRange(PR_SMOLDERING, -16, 16);
+				rand_x = P_RandomRange(PR_SMOLDERING, -16, 16);
+				mobj_t *smoke = P_SpawnMobj(mobj->x + (rand_x*mobj->scale), mobj->y + (rand_y*mobj->scale), mobj->z, MT_SMOKE);
 
 				P_SetMobjState(smoke, S_FZSLOWSMOKE1);
 				smoke->scale = mobj->scale;
@@ -9763,9 +9801,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if ((mobj->tracer && !P_MobjWasRemoved(mobj->tracer)) && !(leveltime % 10))
 			{
-				mobj_t *dust = P_SpawnMobj(mobj->x + (P_RandomRange(PR_UNDEFINED, -4, 4)<<FRACBITS),
-					mobj->y + (P_RandomRange(PR_UNDEFINED, -4, 4)<<FRACBITS),
-					mobj->z + (P_RandomRange(PR_UNDEFINED, 0, 2)<<FRACBITS), MT_BBZDUST);
+				fixed_t rand_x;
+				fixed_t rand_y;
+				fixed_t rand_z;
+
+				// note: determinate random argument eval order
+				rand_z = P_RandomRange(PR_UNDEFINED, 0, 2);
+				rand_y = P_RandomRange(PR_UNDEFINED, -4, 4);
+				rand_x = P_RandomRange(PR_UNDEFINED, -4, 4);
+				mobj_t *dust = P_SpawnMobj(mobj->x + (rand_x<<FRACBITS),
+					mobj->y + (rand_y<<FRACBITS),
+					mobj->z + (rand_z<<FRACBITS), MT_BBZDUST);
 				P_SetScale(dust, mobj->scale/2);
 				P_InstaThrust(dust, FixedAngle(P_RandomRange(PR_UNDEFINED, 0,359)<<FRACBITS), abs(mobj->tracer->momz)/2);
 

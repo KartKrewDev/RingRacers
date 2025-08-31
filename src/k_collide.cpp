@@ -1424,11 +1424,19 @@ boolean K_PuntCollide(mobj_t *t1, mobj_t *t2)
 		// dust effects
 		for (i = 0; i < 10; i++)
 		{
+			fixed_t rand_x;
+			fixed_t rand_y;
+			fixed_t rand_z;
+
+			// note: determinate random argument eval order
+			rand_z = P_RandomRange(PR_ITEM_DEBRIS, 0, 4*spacing) * FRACUNIT;
+			rand_y = P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT;
+			rand_x = P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT;
 			mobj_t *puff = P_SpawnMobjFromMobj(
 				t1,
-				P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
-				P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
-				P_RandomRange(PR_ITEM_DEBRIS, 0, 4*spacing) * FRACUNIT,
+				rand_x,
+				rand_y,
+				rand_z,
 				MT_SPINDASHDUST
 			);
 

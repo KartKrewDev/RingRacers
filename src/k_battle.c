@@ -318,11 +318,14 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 amount)
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_SPHEREBOX);
+	fixed_t rand_move;
+	angle_t rand_angle;
 
 	drop->angle = angle;
-	P_Thrust(drop,
-		FixedAngle(P_RandomFixed(PR_ITEM_SPAWNER) * 180) + angle,
-		P_RandomRange(PR_ITEM_SPAWNER, 4, 12) * mapobjectscale);
+	// note: determinate random argument eval order
+	rand_move = P_RandomRange(PR_ITEM_SPAWNER, 4, 12) * mapobjectscale;
+	rand_angle = FixedAngle(P_RandomFixed(PR_ITEM_SPAWNER) * 180) + angle;
+	P_Thrust(drop, rand_angle, rand_move);
 
 	drop->momz = flip * 12 * mapobjectscale;
 	if (drop->eflags & MFE_UNDERWATER)

@@ -349,12 +349,16 @@ private:
 	{
 		auto rng = [=](int units) { return P_RandomRange(PR_DECORATION, -(units) * scale, +(units) * scale); };
 
+		// note: determinate random argument eval order
+		fixed_t rand_z = rng(24);
+		fixed_t rand_y = rng(12);
+		fixed_t rand_x = rng(12);
 		// From K_DrawDraftCombiring
 		mobj_t* p = P_SpawnMobjFromMobjUnscaled(
 			this,
-			(pos.x - x) + rng(12),
-			(pos.y - y) + rng(12),
-			(pos.z - z) + rng(24),
+			(pos.x - x) + rand_x,
+			(pos.y - y) + rand_y,
+			(pos.z - z) + rand_z,
 			MT_SIGNSPARKLE
 		);
 

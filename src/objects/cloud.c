@@ -138,7 +138,15 @@ void Obj_PlayerCloudThink(player_t *player)
 		player->cloudlaunch--;
 
 		if (leveltime % 6 == 0)
-			P_SpawnMobj(mo->x + P_RandomRange(PR_DECORATION, -8, 8)*mapobjectscale, mo->y + P_RandomRange(PR_DECORATION, -8, 8)*mapobjectscale, mo->z, MT_DRIFTDUST);
+		{
+			fixed_t rand_x;
+			fixed_t rand_y;
+
+			// note: determinate random argument eval order
+			rand_y = P_RandomRange(PR_DECORATION, -8, 8);
+			rand_x = P_RandomRange(PR_DECORATION, -8, 8);
+			P_SpawnMobj(mo->x + rand_x*mapobjectscale, mo->y + rand_y*mapobjectscale, mo->z, MT_DRIFTDUST);
+		}
 	}
 
 	if (player->cloud)
@@ -171,7 +179,15 @@ void Obj_PlayerBulbThink(player_t *player)
 		player->tuliplaunch--;
 
 		if (leveltime % 2 == 0)
-			P_SpawnMobj(mo->x + P_RandomRange(PR_DECORATION, -8, 8)*mapobjectscale, mo->y + P_RandomRange(PR_DECORATION, -8, 8)*mapobjectscale, mo->z, MT_DRIFTDUST);
+		{
+			fixed_t rand_x;
+			fixed_t rand_y;
+
+			// note: determinate random argument eval order
+			rand_y = P_RandomRange(PR_DECORATION, -8, 8);
+			rand_x = P_RandomRange(PR_DECORATION, -8, 8);
+			P_SpawnMobj(mo->x + rand_x*mapobjectscale, mo->y + rand_y*mapobjectscale, mo->z, MT_DRIFTDUST);
+		}
 	}
 
 	if (player->tulipbuf)
@@ -202,7 +218,7 @@ void Obj_PlayerBulbThink(player_t *player)
 		mo->player->nocontrol = 0;
 		P_InstaThrust(mo, mo->tracer->extravalue2, mo->tracer->extravalue1);
 		mo->momz = FixedMul(mapobjectscale, BULB_ZTHRUST)*P_MobjFlip(mo->tracer);
-		
+
 		mo->flags |= MF_SHOOTABLE;
 		player->tuliplaunch = TICRATE;
 		player->tulipbuf = 8;
@@ -224,7 +240,14 @@ void Obj_CloudTouched(mobj_t *special, mobj_t *toucher)
 
 	for (UINT8 i = 1; i < 6; i++)
 	{
-		mobj_t *spawn = P_SpawnMobj(toucher->x + P_RandomRange(PR_DECORATION, -32, 32)*mapobjectscale, toucher->y + P_RandomRange(PR_DECORATION, -32, 32)*mapobjectscale, toucher->z, MT_DRIFTDUST);
+		fixed_t rand_x;
+		fixed_t rand_y;
+		fixed_t rand_z;
+
+		// note: determinate argument eval order
+		rand_y = P_RandomRange(PR_DECORATION, -32, 32);
+		rand_x = P_RandomRange(PR_DECORATION, -32, 32);
+		mobj_t *spawn = P_SpawnMobj(toucher->x + rand_x*mapobjectscale, toucher->y + rand_y*mapobjectscale, toucher->z, MT_DRIFTDUST);
 		spawn->angle = R_PointToAngle2(toucher->x, toucher->y, spawn->x, spawn->y);
 		P_InstaThrust(spawn, spawn->angle, P_RandomRange(PR_DECORATION, 1, 8)*mapobjectscale);
 		P_SetObjectMomZ(spawn, P_RandomRange(PR_DECORATION, 4, 10)<<FRACBITS, false);
@@ -249,7 +272,7 @@ void Obj_BulbTouched(mobj_t *special, mobj_t *toucher)
 	if (toucher->player->tulip || toucher->player->tulipbuf)
 		return;
 
-	if (special && special->target) 
+	if (special && special->target)
 		return; // player already using it
 
 	if (toucher->player->respawn.timer)

@@ -236,10 +236,14 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 // Used for seeking and when SPB is trailing its target from way too close!
 static void SpawnSPBSpeedLines(mobj_t *spb)
 {
+	// note: determinate random argument eval order
+	fixed_t rand_z = P_RandomRange(PR_DECORATION, -24, 24);
+	fixed_t rand_y = P_RandomRange(PR_DECORATION, -24, 24);
+	fixed_t rand_x = P_RandomRange(PR_DECORATION, -24, 24);
 	mobj_t *fast = P_SpawnMobjFromMobj(spb,
-		P_RandomRange(PR_DECORATION, -24, 24) * FRACUNIT,
-		P_RandomRange(PR_DECORATION, -24, 24) * FRACUNIT,
-		(spb->info->height / 2) + (P_RandomRange(PR_DECORATION, -24, 24) * FRACUNIT),
+		rand_x * FRACUNIT,
+		rand_y * FRACUNIT,
+		(spb->info->height / 2) + (rand_z * FRACUNIT),
 		MT_FASTLINE
 	);
 
@@ -596,7 +600,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 			if (playeringame[i] == false || players[i].spectator == true)
 			{
 				// Not in-game
-				continue; 
+				continue;
 			}
 
 			if (players[i].mo == NULL || P_MobjWasRemoved(players[i].mo) == true)
@@ -629,11 +633,11 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 
 	//CONS_Printf("%d: leveltime %d: SPB intangibility %d: SPBModeTimer\n", leveltime, spb_intangible(spb), spb_modetimer(spb));
 
-	// Tired of this thing whacking people when switching targets. 
+	// Tired of this thing whacking people when switching targets.
 	// I'm pretty sure checking mode timer doesn't work but, idk insurance!!
 
-	if (spb_intangible(spb) <= 0 || (spb_modetimer(spb) > 0)) 
-	 { 
+	if (spb_intangible(spb) <= 0 || (spb_modetimer(spb) > 0))
+	 {
 		if (sliptide != 0)
 		{
 			// 1 if turning left, -1 if turning right.
