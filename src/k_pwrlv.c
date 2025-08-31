@@ -603,7 +603,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 						break;
 					case 5:
 						speed = KARTSPEED_HARD;
-						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
 						break;
 					case 4:
 						speed = P_RandomChance(PR_RULESCRAMBLE, (7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
