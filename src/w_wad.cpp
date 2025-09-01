@@ -2405,6 +2405,7 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"MKFNT", 5}, // Kart font changes
 		{"K_", 2}, // Kart graphic changes
 		{"MUSICDEF", 8}, // Kart song definitions
+		{"RVFXANIM", 8}, // Photosensitivity texture animation changes
 
 #ifdef HWRENDER
 		{"SHADERS", 7},

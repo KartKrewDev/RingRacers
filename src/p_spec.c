@@ -149,8 +149,8 @@ static void GrowAnimDefs(void)
 }
 
 // A prototype; here instead of p_spec.h, so they're "private"
-void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum);
-void P_ParseAnimationDefintion(void);
+void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum, boolean photosens);
+void P_ParseAnimationDefintion(boolean photosens);
 
 /** Sets up texture and flat animations.
   *
@@ -176,14 +176,27 @@ void P_InitPicAnims(void)
 	for (w = numwadfiles-1; w >= 0; w--)
 	{
 		UINT16 animdefsLumpNum;
+		UINT16 photosensLumpNum;
 
 		// Find ANIMDEFS lump in the WAD
 		animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", w, 0);
 
 		while (animdefsLumpNum != INT16_MAX)
 		{
-			P_ParseANIMDEFSLump(w, animdefsLumpNum);
+			P_ParseANIMDEFSLump(w, animdefsLumpNum, false);
 			animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", (UINT16)w, animdefsLumpNum + 1);
+		}
+		
+		if (cv_reducevfx.value)
+		{
+			// Find RVFXANIM lump in the WAD
+			photosensLumpNum = W_CheckNumForNamePwad("RVFXANIM", w, 0);
+
+			while (photosensLumpNum != INT16_MAX)
+			{
+				P_ParseANIMDEFSLump(w, photosensLumpNum, true);
+				photosensLumpNum = W_CheckNumForNamePwad("RVFXANIM", (UINT16)w, photosensLumpNum + 1);
+			}
 		}
 	}
 
@@ -234,7 +247,7 @@ void P_InitPicAnims(void)
 	animdefs = NULL;
 }
 
-void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum)
+void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum, boolean photosens)
 {
 	char *animdefsLump;
 	size_t animdefsLumpLength;
@@ -267,7 +280,7 @@ void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum)
 		if (stricmp(animdefsToken, "TEXTURE") == 0)
 		{
 			Z_Free(animdefsToken);
-			P_ParseAnimationDefintion();
+			P_ParseAnimationDefintion(photosens);
 		}
 		else if (stricmp(animdefsToken, "FLAT") == 0)
 		{
@@ -291,7 +304,7 @@ void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum)
 	Z_Free((void *)animdefsText);
 }
 
-void P_ParseAnimationDefintion(void)
+void P_ParseAnimationDefintion(boolean photosens)
 {
 	char *animdefsToken;
 	size_t animdefsTokenLength;
@@ -431,6 +444,12 @@ void P_ParseAnimationDefintion(void)
 		|| animSpeed < 0) // Number is not positive
 	{
 		I_Error("Error parsing ANIMDEFS lump: Expected a positive integer for \"%s\"'s animation speed, got \"%s\"", animdefs[i].startname, animdefsToken);
+	}
+	// Not letting anyone mess up a photosensitivity feature like this.
+	if ((photosens) && animSpeed < 8)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("RVFXANIM: Animation speed of \"%s\" is less than 8 - automatically set to 8\n"), animdefs[i].startname);
+		animSpeed = 8;
 	}
 	animdefs[i].speed = animSpeed;
 	Z_Free(animdefsToken);
