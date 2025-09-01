@@ -3126,7 +3126,7 @@ boolean K_ApplyOffroad(const player_t *player)
 
 boolean K_SlopeResistance(const player_t *player)
 {
-	if (player->invincibilitytimer || player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->tiregrease || player->flamedash)
+	if (player->invincibilitytimer || player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->tiregrease || player->flamedash || player->baildrop)
 		return true;
 	if (player->curshield == KSHIELD_TOP)
 		return true;
@@ -10696,6 +10696,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			const follower_t *fl = &followers[fls];
 			S_StartSound(player->follower, fl->hornsound);
+		}
+
+		if (!P_IsObjectOnGround(player->mo)) // If you're bailing off the ground, shoot down. Mostly for Burst
+		{
+			player->mo->momz -= 100 * player->mo->scale;
+			P_StartQuakeFromMobj(7, 100 * player->mo->scale, 2048 * player->mo->scale, player->mo); // quake even harder
+			S_StartSound(player->mo, sfx_gshc6);
 		}
 
 		S_StartSound(player->mo, sfx_kc33);
