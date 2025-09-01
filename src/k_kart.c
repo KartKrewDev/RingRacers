@@ -10653,7 +10653,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->bailhitlag = false;
 	}
 
-	if (!modeattacking && ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE))
+	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
 	{
 		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
 		P_SetTarget(&bail->target, player->mo);
@@ -14693,7 +14693,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	if (player->cmd.buttons & BT_BAIL && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK)
 	{
-		if (leveltime < introtime || (gametyperules & GTR_SPHERES))
+		if (leveltime < introtime || (gametyperules & GTR_SPHERES) || modeattacking)
 		{
 			// No bailing in GTR_SPHERES because I cannot be fucked to do manual Last Chance right now.
 			// Maybe someday!
