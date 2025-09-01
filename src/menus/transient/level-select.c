@@ -675,6 +675,11 @@ void M_LevelSelectInit(INT32 choice)
 			levellist.levelsearch.timeattack = false;
 			levellist.canqueue = false;
 			break;
+		case 3:
+			levellist.levelsearch.grandprix = false;
+			levellist.levelsearch.timeattack = false;
+			levellist.canqueue = false;
+			break;
 		default:
 			CONS_Alert(CONS_WARNING, "Bad level select init\n");
 			return;

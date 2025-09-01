@@ -958,9 +958,13 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 	if (standings->rankingsmode)
 	{
-		if (standings->isduel)
+		if (standings->numplayers < 2)
+			;
+		else if (standings->isduel)
 		{
-			Y_DrawRankMode(BASEVIDWIDTH / 2 + xoffset, BASEVIDHEIGHT - 19, true);
+			x = BASEVIDWIDTH / 2 + xoffset;
+			y = roundqueue.size ? (BASEVIDHEIGHT/2) : (BASEVIDHEIGHT - 19);
+			Y_DrawRankMode(x, y, true);
 		}
 		else
 		{

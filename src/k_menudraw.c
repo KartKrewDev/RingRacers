@@ -983,6 +983,16 @@ void M_Drawer(void)
 		if (currentMenu->drawroutine)
 			currentMenu->drawroutine(); // call current menu Draw routine
 
+		if (
+			(
+				currentMenu == &PLAY_LevelSelectDef
+				|| currentMenu == &PLAY_CupSelectDef
+			) && levellist.canqueue
+		)
+		{
+			M_DrawPauseRoundQueue(0, true);
+		}
+
 		M_DrawMenuForeground();
 
 		// Draw version down in corner
@@ -998,16 +1008,6 @@ void M_Drawer(void)
 
 		// Draw message overlay when needed
 		M_DrawMenuMessage();
-
-		if (
-			(
-				currentMenu == &PLAY_LevelSelectDef
-				|| currentMenu == &PLAY_CupSelectDef
-			) && levellist.canqueue
-		)
-		{
-			M_DrawPauseRoundQueue(0, true);
-		}
 	}
 
 	if (menuwipe)
@@ -3738,6 +3738,43 @@ void M_DrawLevelSelect(void)
 	}
 
 	M_DrawCupTitle(tay, &levellist.levelsearch);
+
+	t = (abs(t)/2) + BASEVIDWIDTH - 4;
+	tay += 30;
+
+	const boolean queuewithinsize = (menuqueue.size + roundqueue.size < ROUNDQUEUE_MAX);
+
+	const char *worktext = "Go to Course";
+	if (levellist.levelsearch.timeattack)
+		worktext = "Select Course";
+	else if (levellist.canqueue && menuqueue.size && queuewithinsize)
+		worktext = roundqueue.size ? "Add to Queue" : "Start Queue";
+
+	if (worktext)
+	{
+		K_DrawGameControl(t, tay, 0, va("<a_animated> %s", worktext), 2, TINY_FONT, 0);
+		tay += 13;
+	}
+
+	if (levellist.canqueue)
+	{
+		worktext = queuewithinsize
+			? "<z_animated>" : "<z_pressed><gray>";
+		K_DrawGameControl(t, tay, 0, va("%s Queue Course", worktext), 2, TINY_FONT, 0);
+		tay += 13;
+
+		worktext = NULL;
+		if (menuqueue.size)
+			worktext = "Undo";
+		else if (roundqueue.size)
+			worktext = "Clear Queue";
+
+		if (worktext)
+		{
+			K_DrawGameControl(t, tay, 0, va("<c_animated> %s", worktext), 2, TINY_FONT, 0);
+			tay += 13;
+		}
+	}
 }
 
 static boolean M_LevelSelectHasBG(menu_t *check)
