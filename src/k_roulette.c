@@ -1426,7 +1426,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	// 5: Skim any items that are much weaker than the reel's average out of the roulette
 	// 6: Cram it all in
 
-	fixed_t largegamescaler = roulette->playing * 6 + 100; // Spread out item odds in large games for a less insane experience.
+	fixed_t largegamescaler = roulette->playing * 10 + 100; // Spread out item odds in large games for a less insane experience.
 	UINT32 targetpower = 100 * roulette->dist / largegamescaler; // fill roulette with items around this value!
 
 	UINT32 powers[NUMKARTRESULTS]; // how strong is each item? think of this as a "target distance" for this item to spawn at
@@ -1642,7 +1642,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		// Conversely, if we're lonely, try not to reselect an item that wouldn't be useful to us
 		// without any players to use it on.
 		if (K_IsItemUselessAlone(bestitem))
-			deltapenalty = Easing_InCubic(loneliness, deltapenalty, 3*deltapenalty);
+			deltapenalty = Easing_Linear(loneliness, deltapenalty, 5*deltapenalty);
 
 		// Draw complex odds debugger. This one breaks down all the calcs in order.
 		if (cv_kartdebugdistribution.value > 1)

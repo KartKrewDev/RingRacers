@@ -4090,6 +4090,13 @@ static boolean K_drawKartLaps(void)
 
 	UINT16 displayEXP = stplyr->karthud[khud_exp];
 
+	// Odds debugger
+	if (cv_vorpal.value)
+	{
+		displayEXP = 100 * K_EffectiveGradingFactor(stplyr) / FRACUNIT;
+	}
+
+
 	// Jesus Christ.
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
