@@ -141,6 +141,7 @@ boolean P_MultiSetupWadFiles(boolean fullsetup);
 SINT8 P_PartialAddGetStage(void);
 extern UINT16 partadd_earliestfile;
 
+void P_ReduceVFXTextureReload(void);
 
 boolean P_RunSOC(const char *socfilename);
 void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);

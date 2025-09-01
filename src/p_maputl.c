@@ -430,7 +430,11 @@ P_GetMidtextureTopBottom
 {
 	side_t *side = &sides[linedef->sidenum[0]];
 	fixed_t textop, texbottom, texheight;
-	INT32 texnum = R_GetTextureNum(side->midtexture); // make sure the texture is actually valid
+	//Attempt to decouple collision from animation
+	INT32 texnum = side->midtexture; // make sure the texture is actually valid
+	//Sanity check on toaster's suggestion
+	if (texnum < 0 || texnum >= numtextures)
+		texnum = 0;
 
 	sector_t *front = linedef->frontsector;
 	sector_t *back = linedef->backsector;

@@ -559,7 +559,9 @@ static constexpr const char* kNetDemoRecordDefault =
 
 consvar_t cv_recordmultiplayerdemos = Server("netdemo_record", kNetDemoRecordDefault).values({{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}});
 
-consvar_t cv_reducevfx = Server("reducevfx", "No").yes_no();
+void ReduceVFX_OnChange(void);
+consvar_t cv_reducevfx = Server("reducevfx", "No").yes_no().onchange(ReduceVFX_OnChange);
+
 consvar_t cv_screenshake = Server("screenshake", "Full").values({{0, "Off"}, {1, "Half"}, {2, "Full"}});
 
 consvar_t cv_rendezvousserver = Server("holepunchserver", "relay.kartkrew.org");
