@@ -11549,14 +11549,21 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	if (player->overdrive && (leveltime & 1))
+	boolean allowflashing = true;
+	if (demo.playback && cv_reducevfx.value && !R_CanShowSkinInDemo(player->skin))
+	{
+		// messy condition stack for, specifically, disabling flashing effects when viewing a staff ghost replay of a currently hidden character
+		allowflashing = false;
+	}
+
+	if (player->overdrive && (leveltime & 1) && allowflashing)
 	{
 		player->mo->colorized = true;
 		fullbright = true;
 		player->mo->color = player->skincolor;
 		goto finalise;
 	}
-	else if (player->overdrive)
+	else if (player->overdrive && allowflashing)
 	{
 		player->mo->colorized = true;
 		fullbright = true;
@@ -11564,7 +11571,7 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	if (player->ringboost && (leveltime & 1) && (((R_CanShowSkinInDemo(player->skin))) || ((!R_CanShowSkinInDemo(player->skin)) && !cv_reducevfx.value && demo.playback))) // ring boosting + messy condition stack for, specifically, disabling this when viewing a staff ghost replay of a currently hidden character
+	if (player->ringboost && (leveltime & 1) && allowflashing) // ring boosting
 	{
 		player->mo->colorized = true;
 		fullbright = true;
