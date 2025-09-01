@@ -745,7 +745,7 @@ void podiumData_s::Draw(void)
 									factor = FRACUNIT - FixedDiv(factor, bluemaxoffset);
 								}
 
-								auto transflag = K_GetTransFlagFromFixed(factor);
+								auto transflag = K_GetTransFlagFromFixed(factor, false);
 								drawer_gametype
 									.xy(0, 1)
 									.colorize(static_cast<skincolornum_t>(overlaycolor))
@@ -915,7 +915,7 @@ void podiumData_s::Draw(void)
 			factor = FRACUNIT - FixedDiv(factor, bluemaxoffset);
 		}
 
-		auto transflag = K_GetTransFlagFromFixed(factor);
+		auto transflag = K_GetTransFlagFromFixed(factor, false);
 		drawer_totals_right
 			.colorize(static_cast<skincolornum_t>(overlaycolor))
 			.flags(transflag)
