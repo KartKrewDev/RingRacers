@@ -9772,3 +9772,19 @@ boolean P_MultiSetupWadFiles(boolean fullsetup)
 	partadd_stage++;
 	return false;
 }
+
+//
+// Let's see if this works
+//
+void P_ReduceVFXTextureReload(void)
+{
+	P_InitPicAnims();
+}
+
+// Let's see if *this* works
+extern "C" void ReduceVFX_OnChange(void);
+void ReduceVFX_OnChange(void)
+{
+	P_ReduceVFXTextureReload();
+}
+
