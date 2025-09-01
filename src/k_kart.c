@@ -153,11 +153,9 @@ fixed_t K_EffectiveGradingFactor(const player_t *player)
 		return min;
 
 	fixed_t gf = player->gradingfactor;
-	fixed_t SOFT_CAP = FRACUNIT;
-	fixed_t SOFT_CAP_FACTOR = 3*FRACUNIT;
 
-	if (gf > SOFT_CAP)
-		gf = SOFT_CAP + FixedDiv(gf - SOFT_CAP, SOFT_CAP_FACTOR);
+	if (gf > GRADINGFACTORSOFTCAP)
+		gf = GRADINGFACTORSOFTCAP + FixedDiv(gf - GRADINGFACTORSOFTCAP, GRADINGFACTORCAPSTRENGTH);
 
 	return max(min, gf);
 }
