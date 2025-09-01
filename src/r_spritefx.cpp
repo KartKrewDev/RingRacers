@@ -46,8 +46,7 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 		}
 
 		if (!R_CanShowSkinInDemo(((skin_t*)thing->skin)->skinnum)
-		&& !thing->colorized
-		&& !thing->hitlag)
+		&& ((cv_reducevfx.value) || (!thing->colorized && !thing->hitlag)))
 		{
 			lightlevel -= 128;
 		}

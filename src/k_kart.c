@@ -9758,7 +9758,7 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	if (player->ringboost && (leveltime & 1)) // ring boosting
+	if (player->ringboost && (leveltime & 1) && (((R_CanShowSkinInDemo(player->skin))) || ((!R_CanShowSkinInDemo(player->skin)) && !cv_reducevfx.value && demo.playback))) // ring boosting + messy condition stack for, specifically, disabling this when viewing a staff ghost replay of a currently hidden character
 	{
 		player->mo->colorized = true;
 		fullbright = true;
