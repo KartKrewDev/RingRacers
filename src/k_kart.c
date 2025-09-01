@@ -10653,7 +10653,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->bailhitlag = false;
 	}
 
-	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
+	if (!modeattacking && ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE))
 	{
 		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
 		P_SetTarget(&bail->target, player->mo);
@@ -10700,7 +10700,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (!P_IsObjectOnGround(player->mo)) // If you're bailing off the ground, shoot down. Mostly for Burst
 		{
-			player->mo->momz -= 100 * player->mo->scale;
+			P_SetObjectMomZ(player->mo, -100*FRACUNIT, true); // (Reverse gravity friendly...)
 			P_StartQuakeFromMobj(7, 100 * player->mo->scale, 2048 * player->mo->scale, player->mo); // quake even harder
 			S_StartSound(player->mo, sfx_gshc6);
 		}
