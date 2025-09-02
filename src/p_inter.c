@@ -3462,6 +3462,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					case DMG_EXPLODE:
 						type = DMG_TUMBLE;
 						downgraded = true;
+						softenTumble = true;
 						break;
 					case DMG_TUMBLE:
 						softenTumble = true;
