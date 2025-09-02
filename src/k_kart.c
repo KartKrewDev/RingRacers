@@ -4692,6 +4692,8 @@ void K_CheckpointCrossAward(player_t *player)
 			else
 			{
 				K_AddMessage("Margin Boost!", true, false);
+
+				// epic lighting
 				g_darkness.start = leveltime;
 				g_darkness.end = INT32_MAX;
 				for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
@@ -4700,7 +4702,19 @@ void K_CheckpointCrossAward(player_t *player)
 				}
 			}
 
-			S_StartSound(NULL, sfx_gsha6);
+			player_t *foeplayer = K_DuelOpponent(player);
+
+			if (!(player->duelscore - foeplayer->duelscore == DUELWINNINGSCORE)) // Avoid playing any margin boost sfx when someone wins
+			{
+				S_StartSound(NULL, sfx_gsha6); // Gunstar chk-ching noise
+				S_StartSound(NULL, sfx_duelmb); // Duel announcer call
+
+				// fade out the song for a bit
+				g_musicfade.start = leveltime;
+				g_musicfade.end = g_musicfade.start + 53;
+				g_musicfade.fade = 6;
+				g_musicfade.ticked = false;
+			}
 		}
 
 		player_t *opp = K_DuelOpponent(player);
