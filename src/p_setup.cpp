@@ -9512,8 +9512,7 @@ void Command_Platinums(void)
 		if (map == NULL || map->ghostCount < 1)
 			continue;
 
-		// Gather staff ghost times
-		srb2::Vector<tic_t> stafftimes;
+		srb2::Vector<std::pair<tic_t, std::string>> stafftimes;
 		for (int i = 0; i < map->ghostCount; i++)
 		{
 			tic_t time = map->ghostBrief[i]->time;
@@ -9522,7 +9521,7 @@ void Command_Platinums(void)
 				continue;
 			}
 
-			stafftimes.push_back(map->ghostBrief[i]->time);
+			stafftimes.push_back(std::make_pair(map->ghostBrief[i]->time, map->ghostBrief[i]->name));
 		}
 
 		if (stafftimes.empty())
@@ -9530,23 +9529,32 @@ void Command_Platinums(void)
 			continue;
 		}
 
-		std::sort(stafftimes.begin(), stafftimes.end());
+		std::sort(stafftimes.begin(), stafftimes.end(), [](auto &left, auto &right) {
+			return left.first < right.first;
+		});
 
-		for (int i = 0; i < map->ghostCount; i++)
+		CONS_Printf("%s: ", map->lumpname);
+
+		tic_t platinumtime = UINT32_MAX;
+
+		for (auto &stafftime : stafftimes)
 		{
-			tic_t time = map->ghostBrief[i]->time;
-			if (time == stafftimes.at(0))
+			if (stafftime == stafftimes[0])
 			{
-				tic_t delta = map->automedaltime[1] - map->automedaltime[0];
-
-				CONS_Printf("%s: %s (-%s)\n", map->lumpname, map->ghostBrief[i]->name, va("%d\"%02d",
-					G_TicsToSeconds(delta),
-					G_TicsToCentiseconds(delta))
-				);
-				platinums.push_back(map->ghostBrief[i]->name);
-				break;
+				CONS_Printf("%s (%02d:%02d:%02d)", stafftime.second.c_str(),
+					G_TicsToMinutes(stafftime.first, true), G_TicsToSeconds(stafftime.first), G_TicsToCentiseconds(stafftime.first));
+				platinumtime = stafftime.first;
+			}
+			else
+			{
+				CONS_Printf(", %s (+%d:%02d)", stafftime.second.c_str(),
+					G_TicsToSeconds(stafftime.first - platinumtime), G_TicsToCentiseconds(stafftime.first - platinumtime));
 			}
 		}
+
+		CONS_Printf("\n");
+
+		platinums.push_back(stafftimes[0].second);
 	}
 
 	std::unordered_map<std::string, int> frequency;
