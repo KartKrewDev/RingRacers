@@ -9785,6 +9785,8 @@ void P_ReduceVFXTextureReload(void)
 extern "C" void ReduceVFX_OnChange(void);
 void ReduceVFX_OnChange(void)
 {
+	if (con_startup_loadprogress < LOADED_CONFIG)
+		return;
 	P_ReduceVFXTextureReload();
 }
 

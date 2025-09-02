@@ -180,7 +180,18 @@ void P_InitPicAnims(void)
 	for (w = numwadfiles-1; w >= 0; w--)
 	{
 		UINT16 animdefsLumpNum;
-		UINT16 photosensLumpNum;
+
+		if (cv_reducevfx.value)
+		{
+			// Find RVFXANIM lump in the WAD *first*
+			animdefsLumpNum = W_CheckNumForNamePwad("RVFXANIM", w, 0);
+
+			while (animdefsLumpNum != INT16_MAX)
+			{
+				P_ParseANIMDEFSLump(w, animdefsLumpNum, true);
+				animdefsLumpNum = W_CheckNumForNamePwad("RVFXANIM", (UINT16)w, animdefsLumpNum + 1);
+			}
+		}
 
 		// Find ANIMDEFS lump in the WAD
 		animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", w, 0);
@@ -189,18 +200,6 @@ void P_InitPicAnims(void)
 		{
 			P_ParseANIMDEFSLump(w, animdefsLumpNum, false);
 			animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", (UINT16)w, animdefsLumpNum + 1);
-		}
-		
-		if (cv_reducevfx.value)
-		{
-			// Find RVFXANIM lump in the WAD
-			photosensLumpNum = W_CheckNumForNamePwad("RVFXANIM", w, 0);
-
-			while (photosensLumpNum != INT16_MAX)
-			{
-				P_ParseANIMDEFSLump(w, photosensLumpNum, true);
-				photosensLumpNum = W_CheckNumForNamePwad("RVFXANIM", (UINT16)w, photosensLumpNum + 1);
-			}
 		}
 	}
 
@@ -299,9 +298,13 @@ void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum, boolean photosens)
 		{
 			I_Error("Error parsing ANIMDEFS lump: Expected \"TEXTURE\", got \"%s\"",animdefsToken);
 		}
-		// parse next line
-		while (*p != '\0' && *p != '\n') ++p;
-		if (*p == '\n') ++p;
+
+		do // get next content line to parse
+		{
+			while (*p != '\0' && *p != '\n') ++p; // skips content of evaluated line
+			while (*p == '\n') ++p; // skips extra blank lines
+		} while (*p == '/' && *(p+1) == '/'); // skips comments
+
 		animdefsToken = M_GetToken(p);
 	}
 	Z_Free(animdefsToken);
