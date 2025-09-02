@@ -697,7 +697,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (K_TryPickMeUp(special, toucher, false))
 				return;
 
-			if (special->target && !P_MobjWasRemoved(special->target) && toucher->player)
+			if (special->target && !P_MobjWasRemoved(special->target) && toucher->player && (toucher->player != (special->target->player))) // Last condition here is so you can't get your own amps
 			{
 				K_SpawnAmps(special->target->player, K_PvPAmpReward(20, special->target->player, toucher->player), toucher);
 			}
