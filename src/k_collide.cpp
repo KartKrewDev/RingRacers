@@ -1180,7 +1180,6 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		return false;
 	}
 
-
 	boolean guard1 = K_PlayerGuard(t1->player);
 	boolean guard2 = K_PlayerGuard(t2->player);
 
@@ -1310,11 +1309,30 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			return false;
 		}
 
+		boolean damagedpresting = (t2->player->flashing || P_PlayerInPain(t2->player));
+
+		// CONS_Printf("T1=%s T2=%s\n", player_names[t1->player - players], player_names[t2->player - players]);
+		// CONS_Printf("DPS=%d\n", damagedpresting);
+
+		if (P_PlayerInPain(t1->player) || t1->player->flashing)
+		{
+			// CONS_Printf("T1 pain\n");
+			if (!(t1->player->pflags2 & PF2_SAMEFRAMESTUNG))
+				return false;
+			// CONS_Printf("...but ignored\n");
+		}
+
 		bool stung = false;
 
-		if (t2->player->rings <= 0 && t2->health == 1) // no bumpers
+		if (RINGTOTAL(t2->player) <= 0 && t2->health == 1 && t2->player->spindash == 0)
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
+			// CONS_Printf("T2 stung\n");
+			if (!damagedpresting)
+			{
+				t2->player->pflags2 |= PF2_SAMEFRAMESTUNG;
+				// CONS_Printf("T2 SFS\n");
+			}
 			stung = true;
 		}
 
@@ -1331,6 +1349,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (forEither(doSting, removeDamageHitlag))
 	{
+		t1->player->pflags2 &= ~PF2_SAMEFRAMESTUNG;
+		t2->player->pflags2 &= ~PF2_SAMEFRAMESTUNG;
 		return true;
 	}
 

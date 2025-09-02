@@ -3152,13 +3152,10 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	if (modeattacking && !(gametyperules & GTR_CATCHER))
 		required_speed = 4 * K_GetKartSpeed(player, false, false);
 
-	UINT32 distance = K_GetItemRouletteDistance(player, 8);
-
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
-			required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 2)); // Proration: Players near 1st need more speed!
+		required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 2)); // Proration: Players near 1st need more speed!
 	}
-
 
 	if (player->offroad && K_ApplyOffroad(player))
 	{
@@ -9838,7 +9835,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		// Race: spawn ring debt indicator
 		// Battle: spawn zero-bumpers indicator
-		if ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : player->rings <= 0)
+		if ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : RINGTOTAL(player) <= 0)
 		{
 			UINT8 doubler;
 
