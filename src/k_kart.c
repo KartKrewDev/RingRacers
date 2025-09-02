@@ -3152,8 +3152,6 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	if (modeattacking && !(gametyperules & GTR_CATCHER))
 		required_speed = 4 * K_GetKartSpeed(player, false, false);
 
-	UINT32 distance = K_GetItemRouletteDistance(player, 8);
-
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
 			required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 2)); // Proration: Players near 1st need more speed!
