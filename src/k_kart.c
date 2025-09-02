@@ -503,7 +503,7 @@ boolean K_IsPlayerLosing(player_t *player)
 }
 
 // Some behavior should change if the player approaches the frontrunner unusually fast.
-fixed_t K_PlayerScamPercentage(player_t *player, UINT8 mult)
+fixed_t K_PlayerScamPercentage(const player_t *player, UINT8 mult)
 {
 	if (!M_NotFreePlay())
 		return 0;
@@ -3156,11 +3156,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
-		if (distance < SCAMDIST) // Players near 1st need more speed!
-		{
-			fixed_t percentscam = FixedDiv(FRACUNIT*(SCAMDIST - distance), FRACUNIT*SCAMDIST);
-			required_speed += FixedMul(required_speed, percentscam);
-		}
+			required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 2)); // Proration: Players near 1st need more speed!
 	}
 
 

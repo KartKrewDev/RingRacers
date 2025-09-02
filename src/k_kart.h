@@ -145,7 +145,7 @@ UINT32 K_GetPlayerDontDrawFlag(player_t *player);
 void K_ReduceVFXForEveryone(mobj_t *mo);
 
 boolean K_IsPlayerLosing(player_t *player);
-fixed_t K_PlayerScamPercentage(player_t *player, UINT8 mult);
+fixed_t K_PlayerScamPercentage(const player_t *player, UINT8 mult);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
 INT32 K_GetShieldFromItem(INT32 item);
