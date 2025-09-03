@@ -1347,12 +1347,18 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		t1->eflags &= ~MFE_DAMAGEHITLAG;
 	};
 
+	// Looks bad, but "forEither" actually runs if t1 XOR t2 were damaged.
+	// I don't even think we use the touchdamage return value but I'm too
+	// afraid to change it now. Fix this if you're the next guy and annoyed
 	if (forEither(doSting, removeDamageHitlag))
 	{
 		t1->player->pflags2 &= ~PF2_SAMEFRAMESTUNG;
 		t2->player->pflags2 &= ~PF2_SAMEFRAMESTUNG;
 		return true;
 	}
+
+	t1->player->pflags2 &= ~PF2_SAMEFRAMESTUNG;
+	t2->player->pflags2 &= ~PF2_SAMEFRAMESTUNG;
 
 	return false;
 }
