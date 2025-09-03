@@ -46,7 +46,7 @@ Make sure this matches the actual number of states
 
 #define BAIL_MAXCHARGE (84) // tics to bail when in painstate nad in air, on ground is half, if you touch this, also update Obj_BailChargeThink synced animation logic
 #define BAIL_DROP (3*FRACUNIT/2) // How many rings it has to drop before stun starts
-#define BAIL_BOOST (19*FRACUNIT/10) // How fast bail itself is
+#define BAIL_BOOST (8*FRACUNIT/5) // How fast bail itself is
 #define BAIL_CREDIT_DEBTRINGS (true) 
 #define BAIL_DROPFREQUENCY (1) // How quickly the rings spill out
 #define BAILSTUN (TICRATE*6) // The fixed length of stun after baildrop is over
