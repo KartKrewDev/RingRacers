@@ -488,6 +488,8 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 		boolean hitwarning = stplyr->flashing && stplyr->rings <= 0 && stplyr->speed < K_GetKartSpeed(stplyr, false, false)/2
 			&& P_IsObjectOnGround(mobj) && !P_PlayerInPain(stplyr);
 
+		boolean whipping = stplyr->whip && !P_MobjWasRemoved(stplyr->whip);
+
 		boolean hasboost = (stplyr->itemamount &&
 			(
 				stplyr->itemtype == KITEM_SNEAKER || stplyr->itemtype == KITEM_INVINCIBILITY || stplyr->itemtype == KITEM_ROCKETSNEAKER
@@ -495,7 +497,7 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 			)
 		) || stplyr->rocketsneakertimer;
 
-		if (mobj->player == stplyr && (offroadwarning || hitwarning))
+		if (mobj->player == stplyr && (offroadwarning || hitwarning) && !mobj->hitlag && !whipping)
 		{
 			if (offroadwarning)
 			{
