@@ -9537,6 +9537,8 @@ void Command_Platinums(void)
 
 		tic_t platinumtime = UINT32_MAX;
 
+		std::unordered_map<std::string, int> names;
+
 		for (auto &stafftime : stafftimes)
 		{
 			if (stafftime == stafftimes[0])
@@ -9549,6 +9551,12 @@ void Command_Platinums(void)
 			{
 				CONS_Printf(", %s (+%d:%02d)", stafftime.second.c_str(),
 					G_TicsToSeconds(stafftime.first - platinumtime), G_TicsToCentiseconds(stafftime.first - platinumtime));
+			}
+
+			names[stafftime.second]++;
+			if (names[stafftime.second] > 1)
+			{
+				CONS_Printf(" (DUPLICATE)");
 			}
 		}
 
