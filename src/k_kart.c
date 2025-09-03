@@ -967,6 +967,7 @@ void K_PlayerJustBumped(player_t *player)
 
 	player->justbumped = bumptime;
 	player->noEbrakeMagnet = ebraketime;
+
 	player->spindash = 0;
 
 	// If spinouttimer is not set yet but could be set later,
@@ -9833,9 +9834,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_SpawnGrowShrinkParticles(player->mo, player->growshrinktimer);
 		}
 
+		if (player->spindash)
+			player->pflags2 |= PF2_UNSTINGABLE;
+		else
+			player->pflags2 &= ~PF2_UNSTINGABLE;
+
 		// Race: spawn ring debt indicator
 		// Battle: spawn zero-bumpers indicator
-		if ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : RINGTOTAL(player) <= 0)
+		if (!(player->pflags2 & PF2_UNSTINGABLE) && ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : RINGTOTAL(player) <= 0))
 		{
 			UINT8 doubler;
 

@@ -151,6 +151,7 @@ typedef enum
 
 	PF2_SERVERTEMPMUTE		= 1<<10, // Haven't met gamestochat requirement
 	PF2_SAMEFRAMESTUNG		= 1<<11, // Goofy bullshit for tracking mutual ring sting
+	PF2_UNSTINGABLE			= 1<<12, // Was bumped out of spindash
 } pflags2_t;
 
 typedef enum
