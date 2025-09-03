@@ -561,7 +561,9 @@ static constexpr const char* kNetDemoRecordDefault =
 
 consvar_t cv_recordmultiplayerdemos = Server("netdemo_record", kNetDemoRecordDefault).values({{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}});
 
-consvar_t cv_reducevfx = Server("reducevfx", "No").yes_no();
+void ReduceVFX_OnChange(void);
+consvar_t cv_reducevfx = Server("reducevfx", "No").yes_no().onchange(ReduceVFX_OnChange);
+
 consvar_t cv_screenshake = Server("screenshake", "Full").values({{0, "Off"}, {1, "Half"}, {2, "Full"}});
 
 consvar_t cv_rendezvousserver = Server("holepunchserver", "relay.kartkrew.org");
@@ -919,6 +921,7 @@ consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).d
 consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
 consvar_t cv_drawtimer = PlayerCheat("drawtimer", "No").yes_no().description("Always draw the timer (race checkpoint timing, etc)");
 consvar_t cv_debugfonts = PlayerCheat("debugfonts", "No").yes_no().description("Draw font bounding boxes (integer precision, beware centered text!)");
+consvar_t cv_vorpal = ServerCheat("vorpal", "No").yes_no().description("Show real EXP odds modification");
 
 void lua_profile_OnChange(void);
 consvar_t cv_lua_profile = PlayerCheat("lua_profile", "0").values(CV_Unsigned).onchange(lua_profile_OnChange).description("Show hook timings over an average of N tics");

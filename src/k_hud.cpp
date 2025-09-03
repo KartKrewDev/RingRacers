@@ -3315,12 +3315,22 @@ static void K_drawKartEmeralds(void)
 	}
 }
 
-INT32 K_GetTransFlagFromFixed(fixed_t value)
+INT32 K_GetTransFlagFromFixed(fixed_t value, boolean midrace)
 {
-    value = std::clamp(value, FRACUNIT/2, FRACUNIT*3/2);
+	fixed_t base = midrace ? GRADINGFACTORSOFTCAP : FRACUNIT;
 
-    // Calculate distance from 1.0
-    fixed_t distance = abs(FRACUNIT - value);
+    value = std::clamp(value, base - FRACUNIT/2, base + FRACUNIT/2);
+
+    // Calculate distance from "base""
+    fixed_t distance = abs(base - value);
+
+	if (midrace)
+	{
+		if (value > base)
+			distance = FixedMul(distance, GRADINGFACTORCAPSTRENGTH);
+	}
+
+	distance = std::clamp(distance, 0, FRACUNIT/2);
 
     // Map the distance to 0-10 range (10 = closest to 1.0, 0 = farthest from 1.0)
     INT32 transLevel = 10 - ((distance * 10) / (FRACUNIT/2));
@@ -4090,6 +4100,13 @@ static boolean K_drawKartLaps(void)
 
 	UINT16 displayEXP = stplyr->karthud[khud_exp];
 
+	// Odds debugger
+	if (cv_vorpal.value)
+	{
+		displayEXP = 100 * K_EffectiveGradingFactor(stplyr) / FRACUNIT;
+	}
+
+
 	// Jesus Christ.
 	// I do not understand the way this system of offsets is laid out at all,
 	// so it's probably going to be pretty bad to maintain. Sorry.
@@ -4213,7 +4230,7 @@ static boolean K_drawKartLaps(void)
 										// WHAT IS THIS?
 										// WHAT ARE YOU FUCKING TALKING ABOUT?
 		V_DrawMappedPatch(fr, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[1], R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MUSTARD, GTC_CACHE));
-		auto transflag = K_GetTransFlagFromFixed(K_EffectiveGradingFactor(stplyr));
+		auto transflag = K_GetTransFlagFromFixed(K_EffectiveGradingFactor(stplyr), true);
 		skincolornum_t overlaycolor = K_EffectiveGradingFactor(stplyr) < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE ;
 		auto colormap = R_GetTranslationColormap(TC_RAINBOW, overlaycolor, GTC_CACHE);
 		V_DrawMappedPatch(fr, fy, transflag|V_SLIDEIN|splitflags, kp_exp[1], colormap);
@@ -4236,7 +4253,7 @@ static boolean K_drawKartLaps(void)
 
 		V_DrawMappedPatch(LAPS_X+bump, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[0], R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MUSTARD, GTC_CACHE));
 
-		auto transflag = K_GetTransFlagFromFixed(K_EffectiveGradingFactor(stplyr));
+		auto transflag = K_GetTransFlagFromFixed(K_EffectiveGradingFactor(stplyr), true);
 		skincolornum_t overlaycolor = K_EffectiveGradingFactor(stplyr) < FRACUNIT ? SKINCOLOR_RUBY : SKINCOLOR_ULTRAMARINE ;
 		auto colormap = R_GetTranslationColormap(TC_RAINBOW, overlaycolor, GTC_CACHE);
 		V_DrawMappedPatch(LAPS_X+bump, LAPS_Y, transflag|V_SLIDEIN|splitflags, kp_exp[0], colormap);

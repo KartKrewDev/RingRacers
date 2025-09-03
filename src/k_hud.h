@@ -67,7 +67,7 @@ void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
 void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall, boolean leftedge);
-INT32 K_GetTransFlagFromFixed(fixed_t value);
+INT32 K_GetTransFlagFromFixed(fixed_t value, boolean midrace);
 
 void K_DrawKartPositionNumXY(
 	UINT8 num,

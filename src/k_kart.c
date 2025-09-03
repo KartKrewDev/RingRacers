@@ -151,7 +151,13 @@ fixed_t K_EffectiveGradingFactor(const player_t *player)
 	fixed_t min = (franticitems) ? MINFRANTICFACTOR : MINGRADINGFACTOR;
 	if (grandprixinfo.gp && grandprixinfo.masterbots && !K_PlayerUsesBotMovement(player))
 		return min;
-	return max(min, player->gradingfactor);
+
+	fixed_t gf = player->gradingfactor;
+
+	if (gf > GRADINGFACTORSOFTCAP)
+		gf = GRADINGFACTORSOFTCAP + FixedDiv(gf - GRADINGFACTORSOFTCAP, GRADINGFACTORCAPSTRENGTH);
+
+	return max(min, gf);
 }
 
 player_t *K_DuelOpponent(player_t *player)
@@ -497,7 +503,7 @@ boolean K_IsPlayerLosing(player_t *player)
 }
 
 // Some behavior should change if the player approaches the frontrunner unusually fast.
-fixed_t K_PlayerScamPercentage(player_t *player, UINT8 mult)
+fixed_t K_PlayerScamPercentage(const player_t *player, UINT8 mult)
 {
 	if (!M_NotFreePlay())
 		return 0;
@@ -3146,15 +3152,9 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	if (modeattacking && !(gametyperules & GTR_CATCHER))
 		required_speed = 4 * K_GetKartSpeed(player, false, false);
 
-	UINT32 distance = K_GetItemRouletteDistance(player, 8);
-
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
-		if (distance < SCAMDIST) // Players near 1st need more speed!
-		{
-			fixed_t percentscam = FixedDiv(FRACUNIT*(SCAMDIST - distance), FRACUNIT*SCAMDIST);
-			required_speed += FixedMul(required_speed, percentscam);
-		}
+			required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 2)); // Proration: Players near 1st need more speed!
 	}
 
 
@@ -4690,6 +4690,15 @@ void K_CheckpointCrossAward(player_t *player)
 			else
 			{
 				K_AddMessage("Margin Boost!", true, false);
+				S_StartSound(NULL, sfx_duelmb); // Duel announcer call, we only do this on the first margin boost 
+
+				// fade out the song for a bit
+				g_musicfade.start = leveltime;
+				g_musicfade.end = g_musicfade.start + 70;
+				g_musicfade.fade = 6;
+				g_musicfade.ticked = false;
+				
+				// epic lighting
 				g_darkness.start = leveltime;
 				g_darkness.end = INT32_MAX;
 				for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
@@ -4698,7 +4707,12 @@ void K_CheckpointCrossAward(player_t *player)
 				}
 			}
 
-			S_StartSound(NULL, sfx_gsha6);
+			player_t *foeplayer = K_DuelOpponent(player);
+
+			if (!(player->duelscore - foeplayer->duelscore == DUELWINNINGSCORE)) // Avoid playing margin boost sfx when someone wins
+			{
+				S_StartSound(NULL, sfx_gsha6); // Gunstar chk-ching noise
+			}
 		}
 
 		player_t *opp = K_DuelOpponent(player);
@@ -11550,14 +11564,21 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	if (player->overdrive && (leveltime & 1))
+	boolean allowflashing = true;
+	if (demo.playback && cv_reducevfx.value && !R_CanShowSkinInDemo(player->skin))
+	{
+		// messy condition stack for, specifically, disabling flashing effects when viewing a staff ghost replay of a currently hidden character
+		allowflashing = false;
+	}
+
+	if (player->overdrive && (leveltime & 1) && allowflashing)
 	{
 		player->mo->colorized = true;
 		fullbright = true;
 		player->mo->color = player->skincolor;
 		goto finalise;
 	}
-	else if (player->overdrive)
+	else if (player->overdrive && allowflashing)
 	{
 		player->mo->colorized = true;
 		fullbright = true;
@@ -11565,7 +11586,7 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	if (player->ringboost && (leveltime & 1)) // ring boosting
+	if (player->ringboost && (leveltime & 1) && allowflashing) // ring boosting
 	{
 		player->mo->colorized = true;
 		fullbright = true;
