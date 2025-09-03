@@ -1284,6 +1284,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"bpwrue",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Super Flicky"},
   {"bpwruf",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Bonus"},
 
+  // Misc announcer calls
+  {"duelmb",  false, 255, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, "Margin Boost"},
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

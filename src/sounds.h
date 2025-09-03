@@ -1360,6 +1360,9 @@ typedef enum
 	sfx_bpwrue, // Super Flicky
 	sfx_bpwruf, // Bonus
 
+	// Misc announcer calls
+	sfx_duelmb, // Margin Boost
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,
