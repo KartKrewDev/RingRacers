@@ -6292,6 +6292,12 @@ static void K_drawKartMinimap(void)
 					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(owner->color), GTC_CACHE);
 				}
 				break;
+			case MT_ANCIENTGEAR:
+				if (mobj == Obj_GetAncientGearMinimapMobj())
+				{
+					workingPic = kp_unknownminimap;
+					colormap = R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(K_RainbowColor(leveltime)), GTC_CACHE);
+				}
 			default:
 				break;
 		}
