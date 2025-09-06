@@ -1189,7 +1189,9 @@ boolean M_ChallengesInputs(INT32 ch)
 								multiplayer = true;
 
 								restoreMenu = currentMenu;
-								restorelevellist = levellist;
+								//restorelevellist = levellist; -- do NOT do this!
+								// levellist is NOT valid here in the case of
+								// interrupted NEXTMAP_TITLE menu restore
 
 								// mild hack
 								levellist.newgametype = guessgt;
