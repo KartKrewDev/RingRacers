@@ -323,6 +323,11 @@ private:
 
 		arm()->angle = angle - ANGLE_90;
 		arm()->rollangle = -(ANGLE_90) + pivot();
+
+		if (arm()->eflags & MFE_VERTICALFLIP)
+		{
+			arm()->rollangle = InvAngle(arm()->rollangle);
+		}
 	}
 
 	void pull()
@@ -337,7 +342,17 @@ private:
 			P_GetMobjHead(this) + (FixedMul(r, FSIN(pivot())) * P_MobjFlip(this))
 		);
 
+		if (orb()->eflags & MFE_VERTICALFLIP)
+		{
+			orb()->z -= orb()->height;
+		}
+
 		P_MoveOrigin(arm(), orb()->x, orb()->y, orb()->z);
+
+		if (arm()->eflags & MFE_VERTICALFLIP)
+		{
+			arm()->z += orb()->height - arm()->height;
+		}
 
 		if (speed())
 		{
