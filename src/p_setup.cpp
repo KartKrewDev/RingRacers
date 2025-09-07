@@ -9779,6 +9779,11 @@ boolean P_MultiSetupWadFiles(boolean fullsetup)
 void P_ReduceVFXTextureReload(void)
 {
 	P_InitPicAnims();
+
+	if (!G_GamestateUsesLevel())
+		return;
+
+	P_SetupLevelFlatAnims();
 }
 
 // Let's see if *this* works
