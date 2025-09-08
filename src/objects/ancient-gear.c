@@ -37,6 +37,7 @@ static UINT32 gearBank = 0;
 static UINT8 gearBankIndex = 0;
 static boolean allGearsCollected = false;
 static player_t *collectingPlayer = NULL;
+static mobj_t *minimapGear = NULL;
 
 static void UpdateAncientGearPart(mobj_t *part)
 {
@@ -122,6 +123,11 @@ void Obj_AncientGearPartThink(mobj_t *part)
 
 void Obj_AncientGearRemoved(mobj_t *gear)
 {
+	if (gear == minimapGear)
+	{
+		minimapGear = NULL;
+	}
+
 	while (!P_MobjWasRemoved(gear->hnext))
 	{
 		P_RemoveMobj(gear->hnext);
@@ -281,6 +287,7 @@ void Obj_AncientGearLevelInit(void)
 	gearBankIndex = 0;
 	numGears = 0;
 	collectingPlayer = NULL;
+	minimapGear = NULL;
 }
 
 player_t *Obj_GetAncientGearCollectingPlayer(void)
@@ -291,4 +298,54 @@ player_t *Obj_GetAncientGearCollectingPlayer(void)
 boolean Obj_AllAncientGearsCollected(void)
 {
 	return allGearsCollected;
+}
+
+mobj_t *Obj_GetAncientGearMinimapMobj(void)
+{
+	UINT8 lowestTag = UINT8_MAX;
+	UINT8 tag;
+	mobj_t *mobj;
+
+	// no gears in the map? nothing to display
+	if (numGears == 0)
+	{
+		return NULL;
+	}
+
+	// if a gear is currently being tracked, display it on the minimap
+	if (!P_MobjWasRemoved(minimapGear))
+	{
+		// only display the gear while uncollected,
+		// but keep it tracked so there's some natural delay between when one gear disappears and when the next one is chosen
+		if (minimapGear->health > 0)
+		{
+			return minimapGear;
+		}
+		return NULL;
+	}
+
+	minimapGear = NULL;
+
+	// try to find a new gear to track
+	for (mobj = trackercap; mobj; mobj = mobj->itnext)
+	{
+		if (
+			mobj->type != MT_ANCIENTGEAR
+			|| !(mobj->health > 0)
+		)
+		{
+			continue;
+		}
+
+		tag = ((UINT8)(mobj->thing_args[0] - 1)) % MAX_GEARS; // 0 minus 1 wraps around to 31 so that untagged gears are chosen last
+
+		if (tag < lowestTag)
+		{
+			lowestTag = tag;
+			minimapGear = mobj;
+		}
+	}
+
+	// display the tracked gear, if found
+	return minimapGear;
 }

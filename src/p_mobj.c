@@ -5458,6 +5458,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_SPB:
 		case MT_BATTLECAPSULE:
 		case MT_CDUFO:
+		case MT_ANCIENTGEAR:
 			return true;
 
 		// Players sometimes get targeted with HUD tracking

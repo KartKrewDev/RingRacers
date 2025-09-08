@@ -500,6 +500,7 @@ void Obj_AncientGearSetup(mobj_t *gear, mapthing_t *mt);
 void Obj_AncientGearLevelInit(void);
 player_t *Obj_GetAncientGearCollectingPlayer(void);
 boolean Obj_AllAncientGearsCollected(void);
+mobj_t *Obj_GetAncientGearMinimapMobj(void);
 
 void Obj_MushroomHillPolePlayerThink(player_t *player);
 void Obj_MushroomHillPoleTouch(mobj_t *pole, mobj_t *toucher);
