@@ -9501,6 +9501,126 @@ void Command_dumprrautomedaltimes(void)
 	fclose(out);
 }
 
+void Command_Platinums(void)
+{
+	srb2::Vector<std::string> platinums;
+
+	for (INT32 j = 0; j < nummapheaders; j++)
+	{
+		mapheader_t *map = mapheaderinfo[j];
+
+		if (map == NULL || map->ghostCount < 1)
+			continue;
+
+		srb2::Vector<std::pair<tic_t, std::string>> stafftimes;
+		for (int i = 0; i < map->ghostCount; i++)
+		{
+			tic_t time = map->ghostBrief[i]->time;
+			if (time <= 0)
+			{
+				continue;
+			}
+
+			stafftimes.push_back(std::make_pair(map->ghostBrief[i]->time, map->ghostBrief[i]->name));
+		}
+
+		if (stafftimes.empty())
+		{
+			continue;
+		}
+
+		std::sort(stafftimes.begin(), stafftimes.end(), [](auto &left, auto &right) {
+			return left.first < right.first;
+		});
+
+		CONS_Printf("%s: ", map->lumpname);
+
+		tic_t platinumtime = UINT32_MAX;
+
+		std::unordered_map<std::string, int> names;
+
+		for (auto &stafftime : stafftimes)
+		{
+			if (stafftime == stafftimes[0])
+			{
+				CONS_Printf("%s (%02d:%02d:%02d)", stafftime.second.c_str(),
+					G_TicsToMinutes(stafftime.first, true), G_TicsToSeconds(stafftime.first), G_TicsToCentiseconds(stafftime.first));
+				platinumtime = stafftime.first;
+			}
+			else
+			{
+				CONS_Printf(", %s (+%d:%02d)", stafftime.second.c_str(),
+					G_TicsToSeconds(stafftime.first - platinumtime), G_TicsToCentiseconds(stafftime.first - platinumtime));
+			}
+
+			names[stafftime.second]++;
+			if (names[stafftime.second] > 1)
+			{
+				CONS_Printf(" (DUPLICATE)");
+			}
+		}
+
+		CONS_Printf("\n");
+
+		platinums.push_back(stafftimes[0].second);
+	}
+
+	std::unordered_map<std::string, int> frequency;
+
+    for (const auto& platinum : platinums)
+	{
+        frequency[platinum]++;
+    }
+
+    for (const auto& pair : frequency)
+	{
+		CONS_Printf("%s: %d - ", pair.first.c_str(), pair.second);
+
+		for (INT32 j = 0; j < nummapheaders; j++)
+		{
+			mapheader_t *map = mapheaderinfo[j];
+
+			if (map == NULL || map->ghostCount < 1)
+				continue;
+
+			// Gather staff ghost times
+			srb2::Vector<tic_t> stafftimes;
+			for (int i = 0; i < map->ghostCount; i++)
+			{
+				tic_t time = map->ghostBrief[i]->time;
+				if (time <= 0)
+				{
+					continue;
+				}
+
+				stafftimes.push_back(map->ghostBrief[i]->time);
+			}
+
+			if (stafftimes.empty())
+			{
+				continue;
+			}
+
+			std::sort(stafftimes.begin(), stafftimes.end());
+
+			for (int i = 0; i < map->ghostCount; i++)
+			{
+				if (strcmp(pair.first.c_str(), map->ghostBrief[i]->name))
+					break;
+
+				tic_t time = map->ghostBrief[i]->time;
+				if (time == stafftimes.at(0))
+				{
+					CONS_Printf("%s, ", map->lumpname);
+					break;
+				}
+			}
+		}
+
+		CONS_Printf("\n");
+    }
+}
+
 //
 // Add a wadfile to the active wad files,
 // replace sounds, musics, patches, textures, sprites and maps

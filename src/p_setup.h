@@ -162,6 +162,7 @@ void P_DeleteHeaderFollowers(UINT16 i);
 void P_ReloadRings(void);
 
 void Command_dumprrautomedaltimes(void);
+void Command_Platinums(void);
 
 #ifdef __cplusplus
 } // extern "C"
