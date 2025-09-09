@@ -462,8 +462,14 @@ UINT8 K_RaceLapCount(INT16 mapNum)
 
 	if (cv_numlaps.value == -1)
 	{
-		// Use map default
-		return mapheaderinfo[mapNum]->numlaps;
+		// Use map default, except on Relaxed
+
+		UINT8 laps = mapheaderinfo[mapNum]->numlaps;
+
+		if (gamespeed == KARTSPEED_EASY && laps > 2)
+			laps = (3*laps + 4 - 1) / 4; // 3/4th laps, rounded
+
+		return laps;
 	}
 
 	return cv_numlaps.value;
