@@ -52,12 +52,8 @@
 #include "m_easing.h"
 #include "k_hud.h" // messagetimer
 #include "k_endcam.h"
-
 #include "lua_profile.h"
-
-#ifdef PARANOIA
 #include "deh_tables.h" // MOBJTYPE_LIST
-#endif
 
 tic_t leveltime;
 boolean thinkersCompleted;
