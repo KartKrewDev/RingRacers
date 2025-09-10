@@ -126,7 +126,7 @@ extern char logfilename[1024];
 // the other options the same.
 
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
-#if !defined(BETAVERSION) && !defined(DEVELOP)
+#if !defined(DEVELOP)
 #define UPDATE_ALERT
 #endif
 
