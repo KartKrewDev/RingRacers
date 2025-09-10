@@ -1582,6 +1582,17 @@ void ST_Drawer(void)
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
 
+#ifdef BETAVERSION
+
+	char nag[256];
+	snprintf(nag, sizeof(nag), "KartKrew.org - %s %s - Pre-release testing version", SRB2VERSION, BETAVERSION);
+
+	V_DrawCenteredMenuString(BASEVIDWIDTH/2, 2, V_30TRANS|V_SNAPTOTOP, nag);
+
+	V_DrawCenteredMenuString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 10, V_30TRANS|V_SNAPTOBOTTOM, nag);
+
+#endif
+
 	fixed_t localfadein[MAXSPLITSCREENPLAYERS];
 
 	// HUD fading for anything not tied to a single player,
