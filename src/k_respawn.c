@@ -238,33 +238,46 @@ void K_DoIngameRespawn(player_t *player)
 		UINT32 bestdist = UINT32_MAX;
 		mapthing_t *beststart = NULL;
 		UINT8 numstarts = 0;
+		mapthing_t **starts;
 
 		if (gametyperules & GTR_BATTLESTARTS)
 		{
 			numstarts = numdmstarts;
+			starts = deathmatchstarts;
 		}
 		else
 		{
 			numstarts = numcoopstarts;
+			starts = playerstarts;
 		}
 
 		if (numstarts > 0)
 		{
 			UINT8 i = 0;
 
-			for (i = 0; i < numstarts; i++)
+			if (gametype == GT_TUTORIAL)
+			{
+				// In tutorial, spawnpoints are player ID locked.
+				// ...but returning from Test Track can do funny things,
+				// so we use relative ID instead of literal slot number.
+				UINT8 spos = 0;
+				for (; i < MAXPLAYERS; i++)
+				{
+					if (i == player-players)
+						break;
+					if (!playeringame[i])
+						continue;
+					spos++;
+				}
+
+				beststart = starts[spos % numstarts];
+			}
+			else for (i = 0; i < numstarts; i++)
 			{
 				UINT32 dist = UINT32_MAX;
 				mapthing_t *checkstart = NULL;
 
-				if (gametyperules & GTR_BATTLESTARTS)
-				{
-					checkstart = deathmatchstarts[i];
-				}
-				else
-				{
-					checkstart = playerstarts[i];
-				}
+				checkstart = starts[i];
 
 				dist = (UINT32)P_AproxDistance((player->mo->x >> FRACBITS) - checkstart->x,
 					(player->mo->y >> FRACBITS) - checkstart->y);
