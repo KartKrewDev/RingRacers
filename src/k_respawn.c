@@ -238,14 +238,17 @@ void K_DoIngameRespawn(player_t *player)
 		UINT32 bestdist = UINT32_MAX;
 		mapthing_t *beststart = NULL;
 		UINT8 numstarts = 0;
+		mapthing_t **starts;
 
 		if (gametyperules & GTR_BATTLESTARTS)
 		{
 			numstarts = numdmstarts;
+			starts = deathmatchstarts;
 		}
 		else
 		{
 			numstarts = numcoopstarts;
+			starts = playerstarts;
 		}
 
 		if (numstarts > 0)
@@ -257,14 +260,7 @@ void K_DoIngameRespawn(player_t *player)
 				UINT32 dist = UINT32_MAX;
 				mapthing_t *checkstart = NULL;
 
-				if (gametyperules & GTR_BATTLESTARTS)
-				{
-					checkstart = deathmatchstarts[i];
-				}
-				else
-				{
-					checkstart = playerstarts[i];
-				}
+				checkstart = starts[i];
 
 				dist = (UINT32)P_AproxDistance((player->mo->x >> FRACBITS) - checkstart->x,
 					(player->mo->y >> FRACBITS) - checkstart->y);
