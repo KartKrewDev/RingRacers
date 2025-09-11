@@ -33,6 +33,7 @@ namespace fs = std::filesystem;
 
 #define GD_MINIMUM_SPRAYCANSV2 (2)
 #define GD_MINIMUM_TIMEATTACKV2 (2)
+#define GD_MINIMUM_TUTORIALLOCK (2)
 
 void srb2::save_ng_gamedata()
 {
@@ -538,11 +539,12 @@ void srb2::load_ng_gamedata()
 		dummyrecord.wins = skinpair.second.records.wins;
 		dummyrecord.rounds = skinpair.second.records.rounds;
 
-#ifdef DEVELOP
-		// Only good for testing, not for active play... cheaters never prosper!
-		if (dummyrecord.rounds < dummyrecord.wins)
+		// Used to be only for testing, but then there was a bug in release builds! Now conversion only
+		if (minorversion < 2 && dummyrecord.rounds < dummyrecord.wins)
+		{
 			dummyrecord.rounds = dummyrecord.wins;
-#endif
+			converted = true;
+		}
 
 		dummyrecord.timeplayed = skinpair.second.records.time.total;
 		dummyrecord.modetimeplayed[GDGT_RACE] = skinpair.second.records.time.race;
@@ -914,6 +916,16 @@ void srb2::load_ng_gamedata()
 		// Give some free keys!
 		gamedata->chaokeys += GDINIT_CHAOKEYS - start_keys;
 		converted = true;
+	}
+
+	if (minorversion < GD_MINIMUM_TUTORIALLOCK && gamedata->gonerlevel >= GDGONER_DONE)
+	{
+		converted = true;
+		uint16_t checklocks[] = {751, 752, 754}; // Brakes, Drifting, Springs
+		for (uint16_t checklock : checklocks)
+		{
+			gamedata->unlocked[checklock - 1] = true;
+		}
 	}
 
 	M_FinaliseGameData();
