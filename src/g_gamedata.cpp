@@ -33,6 +33,7 @@ namespace fs = std::filesystem;
 
 #define GD_MINIMUM_SPRAYCANSV2 (2)
 #define GD_MINIMUM_TIMEATTACKV2 (2)
+#define GD_MINIMUM_TUTORIALLOCK (2)
 
 void srb2::save_ng_gamedata()
 {
@@ -915,6 +916,16 @@ void srb2::load_ng_gamedata()
 		// Give some free keys!
 		gamedata->chaokeys += GDINIT_CHAOKEYS - start_keys;
 		converted = true;
+	}
+
+	if (minorversion < GD_MINIMUM_TUTORIALLOCK && gamedata->gonerlevel >= GDGONER_DONE)
+	{
+		converted = true;
+		uint16_t checklocks[] = {751, 752, 754}; // Brakes, Drifting, Springs
+		for (uint16_t checklock : checklocks)
+		{
+			gamedata->unlocked[checklock - 1] = true;
+		}
 	}
 
 	M_FinaliseGameData();
