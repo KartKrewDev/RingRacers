@@ -1237,13 +1237,14 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 	}
 
 	// If you CAN recieve points, get them!
-	if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))
+	if ((gametyperules & GTR_POINTLIMIT)
+		&& (source && !P_MobjWasRemoved(source) && source->player))
 	{
 		K_GivePointsToPlayer(source->player, NULL, 1);
 	}
 
 	targetdamaging_t targetdamaging = UFOD_GENERIC;
-	if (P_MobjWasRemoved(inflictor) == true)
+	if (!inflictor || P_MobjWasRemoved(inflictor) == true)
 		;
 	else switch (inflictor->type)
 	{
@@ -1341,6 +1342,10 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 			extratimeintics += bonustime;
 			secretextratime = TICRATE/2;
 		}
+
+		// Everything below dependent on our coords
+		if (!target || P_MobjWasRemoved(target))
+			return;
 
 		// Prison Egg challenge drops (CDs, etc)
 #ifdef DEVELOP
