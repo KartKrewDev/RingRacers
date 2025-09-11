@@ -255,7 +255,24 @@ void K_DoIngameRespawn(player_t *player)
 		{
 			UINT8 i = 0;
 
-			for (i = 0; i < numstarts; i++)
+			if (gametype == GT_TUTORIAL)
+			{
+				// In tutorial, spawnpoints are player ID locked.
+				// ...but returning from Test Track can do funny things,
+				// so we use relative ID instead of literal slot number.
+				UINT8 spos = 0;
+				for (; i < MAXPLAYERS; i++)
+				{
+					if (i == player-players)
+						break;
+					if (!playeringame[i])
+						continue;
+					spos++;
+				}
+
+				beststart = starts[spos % numstarts];
+			}
+			else for (i = 0; i < numstarts; i++)
 			{
 				UINT32 dist = UINT32_MAX;
 				mapthing_t *checkstart = NULL;
