@@ -7950,7 +7950,7 @@ void K_drawKartHUD(void)
 				if (ta)
 				{
 					using srb2::Draw;
-					Draw::TextElement text = Draw::TextElement().parse("<z> Restart");
+					Draw::TextElement text = Draw::TextElement().parse("<y> Restart");
 					Draw(BASEVIDWIDTH - 19, 2)
 						.flags(flags | V_ORANGEMAP)
 						.align(Draw::Align::kRight)

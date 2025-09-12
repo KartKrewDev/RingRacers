@@ -8742,7 +8742,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			if (G_IsModeAttackRetrying() && !demo.playback)
 			{
 				nowtime = lastwipetic;
-				while (G_PlayerInputDown(0, gc_vote, splitscreen + 1) == true)
+				while (G_PlayerInputDown(0, gc_bail, splitscreen + 1) == true)
 				{
 					while (!((nowtime = I_GetTime()) - lastwipetic))
 					{
