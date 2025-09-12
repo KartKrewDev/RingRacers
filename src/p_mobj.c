@@ -8842,6 +8842,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_InstaScale(mobj, mobj->target->scale);
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
 		K_MatchGenericExtraFlags(mobj, mobj->target);
+		mobj->mirrored = ((mobj->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP);
 
 		break;
 	}
