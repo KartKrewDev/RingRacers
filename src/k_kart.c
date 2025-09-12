@@ -1869,7 +1869,19 @@ void K_FlipFromObject(mobj_t *mo, mobj_t *master)
 	mo->flags2 = (mo->flags2 & ~MF2_OBJECTFLIP)|(master->flags2 & MF2_OBJECTFLIP);
 
 	if (mo->eflags & MFE_VERTICALFLIP)
-		mo->z += master->height - FixedMul(master->scale, mo->height);
+	{
+		if (!G_CompatLevel(0x0010))
+		{
+			mo->z = master->z + master->height // offset based off new foot position
+				- (mo->z - master->z) // the offset between us and master
+				- mo->height; // and then move our feet
+		}
+		else
+		{
+			// GOD DAMN IT, this has been wrong for years and we only notice now
+			mo->z += master->height - FixedMul(master->scale, mo->height);
+		}
+	}
 }
 
 void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master)
