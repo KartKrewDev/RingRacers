@@ -282,10 +282,12 @@ private:
 		default:
 			if (K_IsPickMeUpItem(mobj->type))
 			{
+				const INT32 flipflag = P_IsObjectFlipped(mobj) ? V_VFLIP : 0;
+
 				return {
 					{ // Near
-						{2, TICRATE/2, {kp_pickmeup}, 0}, // 1P
-						{{2, TICRATE/2, {kp_pickmeup}, 0}}, // 4P
+						{2, TICRATE/2, {kp_pickmeup}, flipflag}, // 1P
+						{{2, TICRATE/2, {kp_pickmeup}, flipflag}}, // 4P
 					},
 				};
 			}
@@ -777,8 +779,8 @@ void K_DrawTargetTracking(const TargetTracking& target)
 			patch_t* patch = array[(leveltime / anim.tics_per_frame) % anim.frames];
 
 			V_DrawFixedPatch(
-				targetPos.x - ((patch->width << FRACBITS) >> 1),
-				targetPos.y - ((patch->height << FRACBITS) >> 1),
+				targetPos.x - (((anim.video_flags &  V_FLIP) ? -1 : 1) * (patch->width  << (FRACBITS-1))),
+				targetPos.y - (((anim.video_flags & V_VFLIP) ? -1 : 1) * (patch->height << (FRACBITS-1))),
 				FRACUNIT,
 				V_SPLITSCREEN | anim.video_flags | trans,
 				patch,
@@ -953,7 +955,7 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 			if (K_IsPickMeUpItem(mobj->type))
 			{
-				if (stplyr->mo->eflags & MFE_VERTICALFLIP)
+				if (mobj->eflags & MFE_VERTICALFLIP)
 				{
 					pos.z -= itemOffset;
 				}
