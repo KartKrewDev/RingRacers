@@ -2392,7 +2392,10 @@ boolean P_ZMovement(mobj_t *mo)
 			break;
 		case MT_BALLHOG:
 		case MT_BALLHOG_RETICULE_TEST:
-			if (mo->z <= mo->floorz)
+			if ((mo->eflags & MFE_VERTICALFLIP)
+				? (mo->z + mo->height >= mo->ceilingz)
+				: (mo->z <= mo->floorz)
+			)
 			{
 				P_ExplodeMissile(mo);
 				return false;
