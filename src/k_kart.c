@@ -7498,9 +7498,12 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 	}
 
 	// Missiles set as traps inflict a nocollide stumble
-	if (dir < 0 && (mapthing == MT_ORBINAUT || mapthing == MT_ORBINAUT_SHIELD || mapthing == MT_JAWZ || mapthing == MT_JAWZ_SHIELD || mapthing == MT_GACHABOM))
+	if (mo && !P_MobjWasRemoved(mo))
 	{
-		mo->cvmem = 1;
+		if (dir < 0 && (mapthing == MT_ORBINAUT || mapthing == MT_ORBINAUT_SHIELD || mapthing == MT_JAWZ || mapthing == MT_JAWZ_SHIELD || mapthing == MT_GACHABOM))
+		{
+			mo->cvmem = 1;
+		}
 	}
 
 	return mo;
