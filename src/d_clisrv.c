@@ -3751,6 +3751,12 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 	newplayer = &players[newplayernum];
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
+	UINT16 skin = READUINT16(*p);
+	UINT16 color = READUINT16(*p);
+	INT16 follower = READINT16(*p);
+	UINT16 followercolor = READUINT16(*p);
+	UINT8 weaponprefs = READUINT8(*p);
+	UINT8 mindelay = READUINT8(*p);
 	READMEM(*p, public_key, PUBKEYLENGTH);
 	READMEM(*p, clientpowerlevels[newplayernum], sizeof(((serverplayer_t *)0)->powerlevels));
 
@@ -3790,13 +3796,20 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 		}
 
 		P_ForceLocalAngle(newplayer, newplayer->angleturn);
-
-		D_SendPlayerConfig(splitscreenplayer);
 		addedtogame = true;
+
+		if (server)
+		{
+			for (i = 0; i < G_LocalSplitscreenPartySize(newplayernum); ++i)
+				playerdelaytable[G_LocalSplitscreenPartyMember(newplayernum, i)] = mindelay;
+		}
 	}
 
-	players[newplayernum].splitscreenindex = splitscreenplayer;
-	players[newplayernum].bot = false;
+	newplayer->splitscreenindex = splitscreenplayer;
+	newplayer->bot = false;
+
+	D_PlayerChangeSkinAndColor(newplayer, skin, color, follower, followercolor);
+	WeaponPref_Set(newplayernum, weaponprefs);
 
 	// Previously called at the top of this function, commented as
 	// "caused desyncs in this spot :(". But we can't do this in
@@ -3986,7 +3999,7 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 	const char *name4, uint8_t *key4, UINT16 *pwr4)
 {
 	INT32 n, newplayernum, i;
-	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY + sizeof(((serverplayer_t *)0)->powerlevels)];
+	UINT8 buf[4 + MAXPLAYERNAME + 10 + PUBKEYLENGTH + MAXAVAILABILITY + sizeof(((serverplayer_t *)0)->powerlevels)];
 	UINT8 *buf_p = buf;
 	boolean newplayer = false;
 
@@ -4049,6 +4062,8 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 			{
 				nodetoplayer[node] = newplayernum;
 				WRITESTRINGN(buf_p, name, MAXPLAYERNAME);
+				D_WritePlayerSkinAndColor(0, NULL, &buf_p);
+				D_WritePlayerWeaponPref(0, &buf_p);
 				WRITEMEM(buf_p, key, PUBKEYLENGTH);
 				WRITEMEM(buf_p, pwr, sizeof(((serverplayer_t *)0)->powerlevels));
 			}
@@ -4056,6 +4071,8 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 			{
 				nodetoplayer2[node] = newplayernum;
 				WRITESTRINGN(buf_p, name2, MAXPLAYERNAME);
+				D_WritePlayerSkinAndColor(1, NULL, &buf_p);
+				D_WritePlayerWeaponPref(1, &buf_p);
 				WRITEMEM(buf_p, key2, PUBKEYLENGTH);
 				WRITEMEM(buf_p, pwr2, sizeof(((serverplayer_t *)0)->powerlevels));
 			}
@@ -4063,6 +4080,8 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 			{
 				nodetoplayer3[node] = newplayernum;
 				WRITESTRINGN(buf_p, name3, MAXPLAYERNAME);
+				D_WritePlayerSkinAndColor(2, NULL, &buf_p);
+				D_WritePlayerWeaponPref(2, &buf_p);
 				WRITEMEM(buf_p, key3, PUBKEYLENGTH);
 				WRITEMEM(buf_p, pwr3, sizeof(((serverplayer_t *)0)->powerlevels));
 			}
@@ -4070,6 +4089,8 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 			{
 				nodetoplayer4[node] = newplayernum;
 				WRITESTRINGN(buf_p, name4, MAXPLAYERNAME);
+				D_WritePlayerSkinAndColor(3, NULL, &buf_p);
+				D_WritePlayerWeaponPref(3, &buf_p);
 				WRITEMEM(buf_p, key4, PUBKEYLENGTH);
 				WRITEMEM(buf_p, pwr4, sizeof(((serverplayer_t *)0)->powerlevels));
 			}
