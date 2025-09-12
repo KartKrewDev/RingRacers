@@ -1521,7 +1521,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	// reels with non-disruptive catchup (since we have a ton of offensive items
 	// and not many front/mid speed items).
 	boolean canfiltersuperring = true;
-	if ((gametyperules & GTR_CIRCUIT) && (specialstageinfo.valid == false))
+	if ((gametyperules & GTR_CIRCUIT) && (specialstageinfo.valid == false) && K_ItemEnabled(KITEM_SUPERRING))
 	{
 		if (targetpower > powers[KITEM_SUPERRING])
 		{
@@ -1587,7 +1587,8 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		&& specialstageinfo.valid == false
 		&& (spb_odds > 0) & (spbplace == -1)
 		&& (roulette->preexpdist >= powers[KITEM_SPB]) // SPECIAL CASE: Check raw distance instead of EXP-influenced target distance.
-		&& !K_GetItemCooldown(KITEM_SPB))
+		&& !K_GetItemCooldown(KITEM_SPB)
+		&& K_ItemEnabled(KITEM_SPB))
 	{
 		// When reenabling the SPB, we also adjust its delta to ensure that it has good odds of showing up.
 		// Players who are _seriously_ struggling are more likely to see Invinc or Rockets, since those items
