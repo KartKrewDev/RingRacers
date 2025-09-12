@@ -546,7 +546,7 @@ filestatus_t filesearch(char *filename, const char *startpath,
 				// When we're at the root of the search, we exclude certain folders.
 
 				if (priorityfolder != NULL
-					&& strcasecmp(priorityfolder, dent->d_name))
+					&& !strcasecmp(priorityfolder, dent->d_name))
 				{
 					// We skip revisiting the priority by pretending
 					// it matched the first exclude directory instead
