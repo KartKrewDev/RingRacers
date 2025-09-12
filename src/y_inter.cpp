@@ -293,23 +293,20 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			// Online rank is handled further below in this file.
 			if (powertype == PWRLV_DISABLED)
 			{
-				if (data.winningteam != TEAM_UNASSIGNED)
-				{
-					// TODO ASK TYRON
-					if (smallestteam != 0
-					&& players[i].team == data.winningteam)
-					{
-						data.increase[i] = 1;
-					}
-				}
-				else
-				{
-					UINT8 pointgetters = numplayersingame + spectateGriefed;
+				UINT8 pointgetters = numplayersingame + spectateGriefed;
 
-					if (data.pos[data.numplayers] < pointgetters
-					&& !(players[i].pflags & PF_NOCONTEST))
+				if (data.pos[data.numplayers] < pointgetters
+				&& !(players[i].pflags & PF_NOCONTEST))
+				{
+					data.increase[i] = K_CalculateGPRankPoints((&players[i])->exp, data.pos[data.numplayers], pointgetters);
+
+					if (data.winningteam != TEAM_UNASSIGNED)
 					{
-						data.increase[i] = K_CalculateGPRankPoints((&players[i])->exp, data.pos[data.numplayers], pointgetters);
+						if (smallestteam != 0
+						&& players[i].team != data.winningteam)
+						{
+							data.increase[i] /= 2;
+						}
 					}
 				}
 
