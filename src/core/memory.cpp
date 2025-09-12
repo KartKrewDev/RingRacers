@@ -14,6 +14,7 @@
 
 #include "../cxxutil.hpp"
 #include "../z_zone.h"
+#include "../lua_script.h"
 
 using namespace srb2;
 
@@ -117,6 +118,9 @@ void* PoolAllocator::allocate()
 
 void PoolAllocator::deallocate(void* p)
 {
+	// Required in case this block is reused
+	LUA_InvalidateUserdata(p);
+
 	FreeBlock* block = reinterpret_cast<FreeBlock*>(p);
 	block->next = head_;
 	head_ = block;
@@ -127,6 +131,12 @@ void PoolAllocator::release()
 	ChunkFooter* next = nullptr;
 	for (ChunkFooter* i = first_chunk_; i != nullptr; i = next)
 	{
+		uint8_t *chunk = (uint8_t*)i->start;
+		for (size_t j = 0; j < blocks_; j++)
+		{
+			// Invalidate all blocks that possibly weren't passed to deallocate
+			LUA_InvalidateUserdata(chunk + (j * block_size_));
+		}
 		next = i->next;
 		Z_Free(i->start);
 	}
