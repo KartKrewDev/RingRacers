@@ -4398,12 +4398,20 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			}
 		}
 
+		INT32 hr = stplyr->hudrings;
 
-		if (stplyr->hudrings < 0) // Draw the minus for ring debt
+		if (stplyr->baildrop)
+			hr += -1 * (stplyr->baildrop / BAIL_DROPFREQUENCY);
+
+		if (hr < -999)
+			hr = -999;
+
+		if (hr < 0) // Draw the minus for ring debt
 		{
 			V_DrawMappedPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminussmall, ringmap);
-			V_DrawMappedPatch(fr+15, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[0]], ringmap);
-			V_DrawMappedPatch(fr+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[1]], ringmap);
+			using srb2::Draw;
+			Draw row = Draw(fr+15, fy).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kPing).colormap(ringmap);
+			row.text("{:02}", abs(hr));
 		}
 		else
 		{
@@ -4484,14 +4492,22 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			}
 		}
 
+		INT32 hr = stplyr->hudrings;
+
+		if (stplyr->baildrop)
+			hr += -1 * (stplyr->baildrop / BAIL_DROPFREQUENCY);
+
+		if (hr < -999)
+			hr = -999;
+
 		// "Why fy-4? Why LAPS_X+29+1?"
 		// "use magic numbers" - jartha 2024-03-05
-		if (stplyr->hudrings < 0) // Draw the minus for ring debt
+		if (hr < 0) // Draw the minus for ring debt
 		{
 			V_DrawMappedPatch(LAPS_X+23-1, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminus, ringmap);
 			using srb2::Draw;
 			Draw row = Draw(LAPS_X+29+0, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer).colormap(ringmap);
-			row.text("{:02}", abs(stplyr->hudrings));
+			row.text("{:02}", abs(hr));
 			// V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[TALLNUM_FONT].font[rn[0]], ringmap);
 			// V_DrawMappedPatch(LAPS_X+35, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[TALLNUM_FONT].font[rn[1]], ringmap);
 		}
@@ -4499,7 +4515,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		{
 			using srb2::Draw;
 			Draw row = Draw(LAPS_X+23+3, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer).colormap(ringmap);
-			row.text("{:02}", abs(stplyr->hudrings));
+			row.text("{:02}", abs(hr));
 			// V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[TALLNUM_FONT].font[rn[0]], ringmap);
 			// V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[TALLNUM_FONT].font[rn[1]], ringmap);
 		}
