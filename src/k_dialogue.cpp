@@ -295,7 +295,7 @@ void Dialogue::Tick(void)
 			slide += kSlideSpeed;
 		}
 
-		if (P_LevelIsFrozen())
+		if (P_LevelIsFrozen() || (gametyperules & GTR_BOSS))
 		{
 			if (fade > 0)
 			{
