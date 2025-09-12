@@ -497,7 +497,7 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 			)
 		) || stplyr->rocketsneakertimer;
 
-		if (mobj->player == stplyr && (offroadwarning || hitwarning) && !mobj->hitlag && !whipping)
+		if (mobj->player == stplyr && (offroadwarning || hitwarning) && !mobj->hitlag && !whipping && leveltime > starttime && gametype != GT_TUTORIAL)
 		{
 			if (offroadwarning)
 			{
