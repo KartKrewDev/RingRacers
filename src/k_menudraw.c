@@ -4588,7 +4588,7 @@ void M_DrawMPServerBrowser(void)
 			// voice chat enabled
 			if (serverlist[i].info.kartvars & SV_VOICEENABLED)
 			{
-				V_DrawFixedPatch((startx - 3) * FRACUNIT, (starty + 2) * FRACUNIT, FRACUNIT, 0, voicepat, NULL);
+				V_DrawFixedPatch((startx - 3) * FRACUNIT, (starty + ypos + 2) * FRACUNIT, FRACUNIT, 0, voicepat, NULL);
 			}
 		}
 		ypos += SERVERSPACE;
