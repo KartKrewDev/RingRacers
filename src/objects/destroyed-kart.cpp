@@ -68,7 +68,7 @@ struct Particle : Mobj
 					skins[pskinn]->sprites[states[spr2state].frame].numframes > 0)
 				{		
 
-					x->skin = (void*)(&skins[pskinn]);
+					x->skin = (void*)(skins[pskinn]);
 					x->state(spr2state);
 					//frame will be set by state()
 				}
