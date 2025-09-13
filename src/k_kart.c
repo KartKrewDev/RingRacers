@@ -511,6 +511,9 @@ fixed_t K_PlayerScamPercentage(const player_t *player, UINT8 mult)
 	if (!(gametyperules & GTR_CIRCUIT))
 		return 0;
 
+	if (specialstageinfo.valid == true)
+		return 0;
+
 	// "Why 8?" Consistency
 	// "Why 2000?" Vibes
 
