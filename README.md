@@ -36,6 +36,7 @@ On Linux platforms, you will need the following libraries available on the syste
 - libvpx
 - libyuv
 - SDL2
+- libopus
 
 On Windows and macOS, you will need to install [vcpkg] instead to build these dependencies alongside the game.
 
