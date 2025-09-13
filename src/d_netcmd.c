@@ -1134,8 +1134,14 @@ static void FinalisePlaystateChange(INT32 playernum)
 
 void D_PlayerChangeSkinAndColor(player_t *p, UINT16 skin, UINT16 color, INT16 follower, UINT16 followercolor)
 {
+	const UINT16 old_color = p->prefcolor;
+	const UINT16 old_skin = p->prefskin;
+	const INT16 old_follower = p->preffollower;
+	const UINT16 old_follower_color = p->preffollowercolor;
+
 	// queue the rest for next round
 	p->prefcolor = color % numskincolors;
+
 	if (K_ColorUsable(p->prefcolor, false, false) == false)
 	{
 		p->prefcolor = SKINCOLOR_NONE;
@@ -1153,6 +1159,16 @@ void D_PlayerChangeSkinAndColor(player_t *p, UINT16 skin, UINT16 color, INT16 fo
 	{
 		// update preferences immediately
 		G_UpdatePlayerPreferences(p);
+	}
+	else if (P_IsMachineLocalPlayer(p) == true)
+	{
+		if (old_color != p->prefcolor
+			|| old_skin != p->prefskin
+			|| old_follower != p->preffollower
+			|| old_follower_color != p->preffollowercolor)
+		{
+			CONS_Alert(CONS_NOTICE, "Your changes will take effect next match.\n");
+		}
 	}
 }
 
