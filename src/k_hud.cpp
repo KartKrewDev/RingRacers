@@ -4096,6 +4096,7 @@ static boolean K_drawKartLaps(void)
 {
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
 	INT32 bump = 0;
+	INT32 basebump = 0;
 	boolean drewsticker = false;
 
 	UINT16 displayEXP = stplyr->karthud[khud_exp];
@@ -4119,6 +4120,11 @@ static boolean K_drawKartLaps(void)
 			bump = 27;
 		else
 			bump = 40;
+
+		basebump = bump;
+
+		if (numlaps > 9)
+			bump += (r_splitscreen > 1) ? 6 : 8;
 	}
 
 	if (drawinglaps)
@@ -4145,7 +4151,7 @@ static boolean K_drawKartLaps(void)
 				}
 				else // else, that means we're P2 or P4.
 				{
-					fx = LAPS2_X;
+					fx = LAPS2_X + basebump - bump; // Offset to the left to fuckin, shit, fuck, high lapcounts
 					fy = LAPS2_Y;
 					splitflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
 					flipflag = V_FLIP; // make the string right aligned and other shit
@@ -4163,9 +4169,18 @@ static boolean K_drawKartLaps(void)
 			V_DrawScaledPatch(fr, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_splitlapflag);
 			//V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
 
+			using srb2::Draw;
+			Draw row = Draw(fr+12, fy).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kPing);
+			if (numlaps < 10)
+				row.text("{:01}/{:01}", std::min(stplyr->laps, numlaps), numlaps);
+			else
+				row.text("{:02}/{:02}", std::min(stplyr->laps, numlaps), numlaps);
+
+			/*
 			V_DrawScaledPatch(fr+12, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(stplyr->laps) % 10]);
 			V_DrawScaledPatch(fr+16, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
 			V_DrawScaledPatch(fr+20, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(numlaps) % 10]);
+			*/
 		}
 		else
 		{
@@ -4177,7 +4192,11 @@ static boolean K_drawKartLaps(void)
 
 			using srb2::Draw;
 			Draw row = Draw(LAPS_X+25, LAPS_Y+3).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer);
-			row.text("{:01}/{:01}", std::min(stplyr->laps, numlaps), numlaps);
+
+			if (numlaps < 10)
+				row.text("{:01}/{:01}", std::min(stplyr->laps, numlaps), numlaps);
+			else
+				row.text("{:02}/{:02}", std::min(stplyr->laps, numlaps), numlaps);
 
 			// V_DrawTimerString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", std::min(stplyr->laps, numlaps), numlaps));
 		}
