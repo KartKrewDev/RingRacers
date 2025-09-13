@@ -10225,9 +10225,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			average = firstRaw;
 		}
 
-		UINT32 REALLY_FAR = average + 10000; // This far back, get max gain
-		UINT32 TOO_CLOSE = average + 7000; // Start gaining here, lose if closer
-		UINT32 WAY_TOO_CLOSE = average + 6000; // Lose at max rate here
+		UINT32 REALLY_FAR = average + 9000; // This far back, get max gain
+		UINT32 TOO_CLOSE = average + 6000; // Start gaining here, lose if closer
+		UINT32 WAY_TOO_CLOSE = average + 5000; // Lose at max rate here
 
 		fixed_t MAX_GAIN_PER_SEC = FRACUNIT/20; // % assist to gain per sec when REALLY_FAR
 		fixed_t MAX_LOSS_PER_SEC = FRACUNIT/5; // % assist to lose per sec when WAY_TOO_CLOSE
