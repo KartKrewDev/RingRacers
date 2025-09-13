@@ -19,3 +19,5 @@ add_subdirectory(fmt)
 add_subdirectory(vulkan-headers)
 add_subdirectory(volk)
 add_subdirectory(vma)
+
+add_subdirectory(renamenoise)

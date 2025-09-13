@@ -17,6 +17,7 @@
 #endif
 
 #include <opus.h>
+#include <renamenoise.h>
 
 #include "i_time.h"
 #include "i_net.h"
@@ -203,6 +204,7 @@ static UINT64 g_player_opus_lastframe[MAXPLAYERS];
 static UINT32 g_player_voice_frames_this_tic[MAXPLAYERS];
 #define MAX_PLAYER_VOICE_FRAMES_PER_TIC 3
 static OpusEncoder *g_local_opus_encoder;
+static ReNameNoiseDenoiseState *g_local_renamenoise_state;
 static UINT64 g_local_opus_frame = 0;
 #define SRB2_VOICE_OPUS_FRAME_SIZE 960
 static float g_local_voice_buffer[SRB2_VOICE_OPUS_FRAME_SIZE];
@@ -2573,6 +2575,25 @@ static void Command_connect(void)
 
 static void ResetNode(INT32 node);
 
+static void RecreatePlayerOpusDecoder(INT32 playernum)
+{
+	// Destroy and recreate the opus decoder for this playernum
+	OpusDecoder *opusdecoder = g_player_opus_decoders[playernum];
+	if (opusdecoder)
+	{
+		opus_decoder_destroy(opusdecoder);
+		opusdecoder = NULL;
+	}
+	int error;
+	opusdecoder = opus_decoder_create(48000, 1, &error);
+	if (error != OPUS_OK)
+	{
+		CONS_Alert(CONS_WARNING, "Failed to create Opus decoder for player %d: opus error %d\n", playernum, error);
+		opusdecoder = NULL;
+	}
+	g_player_opus_decoders[playernum] = opusdecoder;
+}
+
 //
 // CL_ClearPlayer
 //
@@ -2648,23 +2669,7 @@ void CL_ClearPlayer(INT32 playernum)
 	// Clear voice chat data
 	S_ResetVoiceQueue(playernum);
 
-	{
-		// Destroy and recreate the opus decoder for this playernum
-		OpusDecoder *opusdecoder = g_player_opus_decoders[playernum];
-		if (opusdecoder)
-		{
-			opus_decoder_destroy(opusdecoder);
-			opusdecoder = NULL;
-		}
-		int error;
-		opusdecoder = opus_decoder_create(48000, 1, &error);
-		if (error != OPUS_OK)
-		{
-			CONS_Alert(CONS_WARNING, "Failed to create Opus decoder for player %d: opus error %d\n", playernum, error);
-			opusdecoder = NULL;
-		}
-		g_player_opus_decoders[playernum] = opusdecoder;
-	}
+	RecreatePlayerOpusDecoder(playernum);
 }
 
 //
@@ -3709,6 +3714,17 @@ void D_QuitNetGame(void)
 #endif
 }
 
+static void InitializeLocalVoiceDenoiser(void)
+{
+	if (g_local_renamenoise_state != NULL)
+	{
+		renamenoise_destroy(g_local_renamenoise_state);
+		g_local_renamenoise_state = NULL;
+	}
+
+	g_local_renamenoise_state = renamenoise_create(NULL);
+}
+
 static void InitializeLocalVoiceEncoder(void)
 {
 	// Reset voice opus encoder for local "player 1"
@@ -3815,6 +3831,7 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 			}
 			DEBFILE("spawning me\n");
 
+			InitializeLocalVoiceDenoiser();
 			InitializeLocalVoiceEncoder();
 		}
 
@@ -7592,6 +7609,28 @@ void NetVoiceUpdate(void)
 			g_local_voice_buffer[i] *= ampfactor;
 		}
 
+		if (cv_voice_denoise.value)
+		{
+			if (g_local_renamenoise_state == NULL)
+			{
+				InitializeLocalVoiceDenoiser();
+			}
+			int rnnoise_size = renamenoise_get_frame_size();
+			float *subframe_buffer = (float*) Z_Malloc(rnnoise_size * sizeof(float), PU_STATIC, NULL);
+			float *denoise_buffer = (float*) Z_Malloc(rnnoise_size * sizeof(float), PU_STATIC, NULL);
+
+			// rnnoise frames are smaller than opus, but we should not expect the opus frame to be an exact multiple of rnnoise
+			for (int denoise_position = 0; denoise_position < SRB2_VOICE_OPUS_FRAME_SIZE; denoise_position += rnnoise_size)
+			{
+				memset(subframe_buffer, 0, rnnoise_size * sizeof(float));
+				memcpy(subframe_buffer, g_local_voice_buffer + denoise_position, min(rnnoise_size * sizeof(float), (SRB2_VOICE_OPUS_FRAME_SIZE - denoise_position) * sizeof(float)));
+				renamenoise_process_frame(g_local_renamenoise_state, denoise_buffer, subframe_buffer);
+				memcpy(g_local_voice_buffer + denoise_position, denoise_buffer, min(rnnoise_size * sizeof(float), (SRB2_VOICE_OPUS_FRAME_SIZE - denoise_position) * sizeof(float)));
+			}
+			Z_Free(denoise_buffer);
+			Z_Free(subframe_buffer);
+		}
+
 		float softmem = 0.f;
 		opus_pcm_soft_clip(g_local_voice_buffer, SRB2_VOICE_OPUS_FRAME_SIZE, 1, &softmem);
 
@@ -7670,6 +7709,10 @@ void NetVoiceUpdate(void)
 
 		if (cv_voice_loopback.value)
 		{
+			if (g_player_opus_decoders[consoleplayer] == NULL && !netgame)
+			{
+				RecreatePlayerOpusDecoder(consoleplayer);
+			}
 			result = opus_decode_float(g_player_opus_decoders[consoleplayer], encoded, result, g_local_voice_buffer, SRB2_VOICE_OPUS_FRAME_SIZE, 0);
 			S_QueueVoiceFrameFromPlayer(consoleplayer, g_local_voice_buffer, result * sizeof(float), false);
 		}
