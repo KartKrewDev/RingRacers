@@ -200,9 +200,11 @@ tic_t firstconnectattempttime = 0;
 
 static OpusDecoder *g_player_opus_decoders[MAXPLAYERS];
 static UINT64 g_player_opus_lastframe[MAXPLAYERS];
+static UINT32 g_player_voice_frames_this_tic[MAXPLAYERS];
+#define MAX_PLAYER_VOICE_FRAMES_PER_TIC 3
 static OpusEncoder *g_local_opus_encoder;
 static UINT64 g_local_opus_frame = 0;
-#define SRB2_VOICE_OPUS_FRAME_SIZE 480
+#define SRB2_VOICE_OPUS_FRAME_SIZE 960
 static float g_local_voice_buffer[SRB2_VOICE_OPUS_FRAME_SIZE];
 static INT32 g_local_voice_buffer_len = 0;
 static INT32 g_local_voice_threshold_time = 0;
@@ -3698,12 +3700,13 @@ static void InitializeLocalVoiceEncoder(void)
 	}
 	int error;
 	encoder = opus_encoder_create(48000, 1, OPUS_APPLICATION_VOIP, &error);
-	opus_encoder_ctl(encoder, OPUS_SET_VBR(0));
 	if (error != OPUS_OK)
 	{
 		CONS_Alert(CONS_WARNING, "Failed to create Opus voice encoder: opus error %d\n", error);
 		encoder = NULL;
 	}
+	opus_encoder_ctl(encoder, OPUS_SET_VBR(0));
+	opus_encoder_ctl(encoder, OPUS_SET_BITRATE(10000));
 	g_local_opus_encoder = encoder;
 	g_local_opus_frame = 0;
 }
@@ -5373,6 +5376,12 @@ static void PT_HandleVoiceServer(SINT8 node)
 		// ignore, they should not be able to broadcast voice
 		return;
 	}
+	g_player_voice_frames_this_tic[playernum] += 1;
+	if (g_player_voice_frames_this_tic[playernum] > MAX_PLAYER_VOICE_FRAMES_PER_TIC)
+	{
+		// ignore; they sent too many voice frames this tic
+		return;
+	}
 
 	// Preserve terminal bit, blank all other bits
 	pl->flags &= VOICE_PAK_FLAGS_TERMINAL_BIT;
@@ -5401,6 +5410,7 @@ static void PT_HandleVoiceServer(SINT8 node)
 			HSendPacket(pnode, false, 0, doomcom->datalength - BASEPACKETSIZE);
 		}
 	}
+
 	PT_HandleVoiceClient(node, true);
 }
 
@@ -6867,6 +6877,12 @@ boolean TryRunTics(tic_t realtics)
 			{
 				break;
 			}
+
+			// Reset received voice frames per tic for all players
+			for (int i = 0; i < MAXPLAYERS; i++)
+			{
+				g_player_voice_frames_this_tic[i] = 0;
+			}
 		}
 
 		if (F_IsDeferredContinueCredits())
@@ -7489,7 +7505,8 @@ void NetVoiceUpdate(void)
 	{
 		// We need to drain the input queue completely, so do this in a full loop
 
-		INT32 to_read = (SRB2_VOICE_OPUS_FRAME_SIZE - g_local_voice_buffer_len) * sizeof(float);
+		UINT32 to_read = (SRB2_VOICE_OPUS_FRAME_SIZE - g_local_voice_buffer_len) * sizeof(float);
+
 		if (to_read > 0)
 		{
 			// Attempt to fill the voice frame buffer
@@ -7504,6 +7521,14 @@ void NetVoiceUpdate(void)
 
 		if (g_local_voice_buffer_len < SRB2_VOICE_OPUS_FRAME_SIZE)
 		{
+			continue;
+		}
+
+		if (S_SoundInputRemainingSamples() > 5 * SRB2_VOICE_OPUS_FRAME_SIZE)
+		{
+			// If there are too many frames worth of samples to dequeue (100ms), skip this frame instead of encoding.
+			// This is so we drain the queue without sending too many packets that might queue up on the network driver.
+			g_local_voice_buffer_len = 0;
 			continue;
 		}
 

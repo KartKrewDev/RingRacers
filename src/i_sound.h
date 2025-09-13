@@ -252,6 +252,7 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping);
 boolean I_SoundInputIsEnabled(void);
 boolean I_SoundInputSetEnabled(boolean enabled);
 UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len);
+UINT32 I_SoundInputRemainingSamples(void);
 
 // VOICE CHAT
 

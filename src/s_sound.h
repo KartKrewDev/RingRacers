@@ -295,6 +295,7 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 boolean S_SoundInputIsEnabled(void);
 boolean S_SoundInputSetEnabled(boolean enabled);
 UINT32 S_SoundInputDequeueSamples(void *data, UINT32 len);
+UINT32 S_SoundInputRemainingSamples(void);
 
 void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal);
 void S_SetPlayerVoiceActive(INT32 playernum);

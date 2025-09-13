@@ -710,7 +710,7 @@ static void Got_Saycmd(const UINT8 **p, INT32 playernum)
 			}
 		}
 	}
-	
+
 	if (LUA_HookPlayerMsg(playernum, target, flags, msg))
 		return;
 
@@ -1116,15 +1116,13 @@ boolean HU_Responder(event_t *ev)
 		|| ev->data1 == gamecontrol[0][gc_voicepushtotalk][2]
 		|| ev->data1 == gamecontrol[0][gc_voicepushtotalk][3])
 	{
-		if (ev->type == ev_keydown)
+		if (ev->type == ev_keydown && !chat_on)
 		{
 			g_voicepushtotalk_on = true;
-			return true;
 		}
 		else if (ev->type == ev_keyup)
 		{
 			g_voicepushtotalk_on = false;
-			return true;
 		}
 	}
 
