@@ -332,7 +332,7 @@ static boolean SPBSeekSoundPlaying(mobj_t *spb)
 
 static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 {
-	const fixed_t desiredSpeed = SPB_DEFAULTSPEED*(7/4); // Seeks the player out 175% faster than its usual speed when locked in
+	const fixed_t desiredSpeed = SPB_DEFAULTSPEED*(2); // Seeks the player out 2x faster than its usual speed when locked in
 
 	waypoint_t *curWaypoint = NULL;
 	waypoint_t *destWaypoint = NULL;
