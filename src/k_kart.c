@@ -16972,6 +16972,9 @@ static fixed_t K_GradingFactorPower(player_t *player)
 	if (opponents < 8)
 		power += (8 - opponents) * power/4;
 
+	if (opponents > 8)
+		power -= (opponents - 8) * (power/24);
+
 	return power;
 }
 
