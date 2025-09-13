@@ -7911,7 +7911,8 @@ void K_drawKartHUD(void)
 				(
 					!stplyr->karthud[khud_lapanimation] &&
 					stplyr->karthud[khud_splittimer] &&
-					(stplyr->karthud[khud_splittimer] > TICRATE/3 || stplyr->karthud[khud_splittimer]%2 || cv_reducevfx.value)
+					(stplyr->karthud[khud_splittimer] > TICRATE/3 || stplyr->karthud[khud_splittimer]%2 || cv_reducevfx.value) &&
+					!stplyr->exiting
 				)
 				|| debug_alwaysdrawsplits
 			)
@@ -7955,7 +7956,7 @@ void K_drawKartHUD(void)
 				}
 
 
-				Draw row = Draw(BASEVIDWIDTH/2, BASEVIDHEIGHT/4).align(Draw::Align::kCenter)
+				Draw row = Draw(BASEVIDWIDTH/2, BASEVIDHEIGHT/6).align(Draw::Align::kCenter)
 					.font(Draw::Font::kThinTimer).flags(V_30TRANS);
 
 				std::string arrow = (ahead == 1 || ahead == -2) ? "(" : ")";
