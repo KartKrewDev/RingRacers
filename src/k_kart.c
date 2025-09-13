@@ -10032,7 +10032,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 		*/
 
-		starttime = leveltime;
+		if (starttime > leveltime)
+			starttime = leveltime;
+
 		G_SetDemoAttackTiming(leveltime);
 
 		Music_Stop("position");

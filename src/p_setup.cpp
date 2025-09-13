@@ -8961,6 +8961,15 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		I_Error("Playing binary maps is disabled; please convert to UDMF TEXTMAP and rebuild nodes.");
 	}
 
+	if (!netgame)
+	{
+		// There is literally no reason to preserve ticcmds from a previous map
+		// offline, even and especially if mindelay is involved.
+		// Stop
+		D_ResetTiccmds();
+		memset(netcmds, 0, sizeof(netcmds)); // This is somehow actually necessary.
+	}
+
 	if (!fromnetsave)
 	{
 		INT32 buf = gametic % BACKUPTICS;
