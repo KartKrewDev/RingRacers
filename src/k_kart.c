@@ -8153,6 +8153,17 @@ static void K_DeleteHnextList(player_t *player)
 	}
 }
 
+static fixed_t K_BubbleSpeedCap(player_t *player)
+{
+	fixed_t scam = K_PlayerScamPercentage(player, BUBBLESCAM);
+	fixed_t basespeed = K_GetKartSpeed(player, false, false);
+
+	fixed_t targetspeed = 4 * basespeed;
+	targetspeed -= FixedMul(scam, targetspeed);
+
+	return targetspeed;
+}
+
 void K_DropHnextList(player_t *player)
 {
 	mobj_t *work = player->mo, *nextwork, *dropwork;
@@ -10838,15 +10849,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			fixed_t scam = K_PlayerScamPercentage(player, BUBBLESCAM);
 			fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
-			fixed_t basespeed = K_GetKartSpeed(player, false, false);
-
-			fixed_t targetspeed = 4 * basespeed;
-			targetspeed -= FixedMul(scam, targetspeed);
-
-			// CONS_Printf("spd %d tspd %d psp %d\n", speed, targetspeed, scam);
-
+			fixed_t targetspeed = K_BubbleSpeedCap(player);
 			fixed_t div = 12*FRACUNIT; // bigger number slower drag
 
 			if (speed > targetspeed)
@@ -14096,7 +14100,11 @@ boolean K_FastFallBounce(player_t *player)
 			// speed makes your sustained speed heavily gamespeed dependent.
 			fixed_t minspeed = 12*K_GetKartSpeed(player, false, false)/10;
 			fixed_t fallspeed = abs(player->fastfall);
-			P_InstaThrust(player->mo, player->mo->angle, 11*max(minspeed, fallspeed)/10);
+
+			fixed_t interspeed = 11*max(minspeed, fallspeed)/10;
+			interspeed = min(interspeed, K_BubbleSpeedCap(player) + K_GetKartSpeed(player, false, false)/5);
+
+			P_InstaThrust(player->mo, player->mo->angle, interspeed);
 
 			player->ignoreAirtimeLeniency = max(player->ignoreAirtimeLeniency, TICRATE);
 			player->bubbledrag = true;
