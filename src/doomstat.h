@@ -198,7 +198,7 @@ typedef enum
 	GRADE_S
 } gp_rank_e;
 
-#define SEALED_STAR_ENTRY (365*FRACUNIT/400)
+#define SEALED_STAR_ENTRY (360*FRACUNIT/400)
 
 struct cupwindata_t
 {
