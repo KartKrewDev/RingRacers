@@ -3756,6 +3756,9 @@ void K_drawKartTeamScores(boolean fromintermission, INT32 interoffset)
 	if (r_splitscreen > 1 && !K_FirstActiveDisplayPlayer(stplyr))
 		return;
 
+	if (gametyperules & GTR_POINTLIMIT)
+		return; // Just can't be fucked right now LMAO
+
 	if (TEAM__MAX != 3)
 		return; // "maybe someday" - the magic conch
 
