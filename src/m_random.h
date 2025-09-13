@@ -60,7 +60,7 @@ typedef enum
 	PR_RANDOMAUDIENCE, // Audience randomisation
 
 	PR_RULESCRAMBLE, // Rule scrambing events
-	
+
 	PR_MUSICSELECT, // Randomized music selection
 
 	PR_ITEM_ROULETTE, // Item results. Overwritten constantly by K_FillItemRouletteData, not meant for typical use.
@@ -92,9 +92,11 @@ typedef enum
 	PR_ITEM_SPAWNER = PROLDDEMO, // Battle mode item spawners
 	PR_TEAMS, // Teamplay shuffling
 
-	PR_NUISANCE, // Margin Boost HUD
+	PR__PLACEHOLDER_DUMMY, // Whoops, screwed up PR_NUISANCE before, guess this lives here forever now
 
 	PRNUMSYNCED,
+
+	PR_NUISANCE, // Margin Boost HUD
 
 	PR_INTERPHUDRANDOM = PRNUMSYNCED, // Interpolation-accomodating HUD randomisation
 
