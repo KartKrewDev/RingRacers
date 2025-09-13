@@ -78,7 +78,12 @@ void K_PopBubbleShield(player_t *player)
 		return;
 
 	S_StartSound(player->mo, sfx_kc31);
-	K_StripItems(player);
+
+	player->curshield = KSHIELD_NONE;
+	player->itemtype = 0;
+	player->itemamount = 0;
+	player->itemflags &= ~(IF_ITEMOUT|IF_EGGMANOUT);
+
 	K_AddHitLag(player->mo, 4, false);
 	vector3_t offset = { 0, 0, 0 };
 	K_SpawnSingleHitLagSpark(player->mo, &offset, player->mo->scale*2, 4, 0, player->skincolor);
