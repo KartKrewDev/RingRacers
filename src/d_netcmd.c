@@ -932,7 +932,7 @@ VaguePartyDescription (int playernum, int size, int default_color)
 	return party_description;
 }
 
-void D_WritePlayerSkinAndColor(const UINT8 n, const player_t *player, UINT8 **p)
+void D_FillPlayerSkinAndColor(const UINT8 n, const player_t *player, player_config_t *config)
 {
 	if (player != NULL)
 	{
@@ -1008,18 +1008,10 @@ void D_WritePlayerSkinAndColor(const UINT8 n, const player_t *player, UINT8 **p)
 		}
 	}
 
-	WRITEUINT16(*p, (UINT16)cv_skin[n].value);
-	WRITEUINT16(*p, sendColor);
-	if (horngoner)
-	{
-		WRITEINT16(*p, (-1));
-	}
-	else
-	{
-		WRITEINT16(*p, (INT16)cv_follower[n].value);
-	}
-	//CONS_Printf("Sending follower id %d\n", (INT16)cv_follower[n].value);
-	WRITEUINT16(*p, sendFollowerColor);
+	config->skin = (UINT16)cv_skin[n].value;
+	config->color = sendColor;
+	config->follower = (horngoner ? -1 : (INT16)cv_follower[n].value);
+	config->follower_color = sendFollowerColor;
 }
 
 static INT32 snacpending[MAXSPLITSCREENPLAYERS] = {0,0,0,0};
@@ -1046,8 +1038,6 @@ static void SendNameAndColor(const UINT8 n)
 	}
 
 	player_t *player = &players[playernum];
-	UINT8 buf[MAXPLAYERNAME+13];
-	UINT8 *p = buf;
 
 	// Don't change name if muted
 	if (player_name_changes[player - players] >= MAXNAMECHANGES)
@@ -1064,8 +1054,18 @@ static void SendNameAndColor(const UINT8 n)
 		CleanupPlayerName(player - players, cv_playername[n].zstring);
 	}
 
+	player_config_t config;
+	D_FillPlayerSkinAndColor(n, player, &config);
+
+	UINT8 buf[MAXPLAYERNAME + 13];
+	UINT8 *p = buf;
+
 	WRITESTRINGN(p, cv_playername[n].zstring, MAXPLAYERNAME);
-	D_WritePlayerSkinAndColor(n, player, &p);
+	WRITEUINT16(p, config.skin);
+	WRITEUINT16(p, config.color);
+	WRITEINT16(p, config.follower);
+	//CONS_Printf("Sending follower id %d\n", config.follower);
+	WRITEUINT16(p, config.follower_color);
 
 	snacpending[n]++;
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
@@ -1221,7 +1221,7 @@ enum {
 	// HOURS LOST TO G_PlayerReborn: UNCOUNTABLE
 };
 
-void D_WritePlayerWeaponPref(const UINT8 n, UINT8 **p)
+void D_FillPlayerWeaponPref(const UINT8 n, player_config_t *config)
 {
 	UINT8 prefs = 0;
 
@@ -1252,15 +1252,21 @@ void D_WritePlayerWeaponPref(const UINT8 n, UINT8 **p)
 	if (cv_strictfastfall[n].value)
 		prefs |= WP_STRICTFASTFALL;
 
-	WRITEUINT8(*p, prefs);
-	WRITEUINT8(*p, cv_mindelay.value);
+	config->weapon_prefs = prefs;
+	config->min_delay = cv_mindelay.value;
 }
 
 void WeaponPref_Send(UINT8 ssplayer)
 {
+	player_config_t config;
+	D_FillPlayerWeaponPref(ssplayer, &config);
+
 	UINT8 buf[2];
 	UINT8 *p = buf;
-	D_WritePlayerWeaponPref(ssplayer, &p);
+
+	WRITEUINT8(p, config.weapon_prefs);
+	WRITEUINT8(p, config.min_delay);
+
 	SendNetXCmdForPlayer(ssplayer, XD_WEAPONPREF, buf, p - buf);
 }
 
