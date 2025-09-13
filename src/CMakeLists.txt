@@ -176,6 +176,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_deepcopy.cpp
 )
 
+set_target_properties(SRB2SDL2 PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/sdl/macosx/MacOSXBundleInfo.plist.in")
+
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	target_sources(SRB2SDL2 PRIVATE m_avrecorder.cpp)
 endif()
