@@ -8961,7 +8961,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		I_Error("Playing binary maps is disabled; please convert to UDMF TEXTMAP and rebuild nodes.");
 	}
 
-	if (!netgame)
+	if (!(netgame || demo.playback))
 	{
 		// There is literally no reason to preserve ticcmds from a previous map
 		// offline, even and especially if mindelay is involved.
