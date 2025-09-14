@@ -222,7 +222,7 @@ void Obj_JawzThink(mobj_t *th)
 		ghost->colorized = true;
 	}
 
-	if (JawzSteersBetter() == true)
+	if (JawzSteersBetter() == true && !jawz_stillturn(th) && (th->momx != 0 && th->momy != 0))
 	{
 		th->friction = max(0, 3 * th->friction / 4);
 	}
