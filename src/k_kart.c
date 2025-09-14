@@ -10529,11 +10529,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->overdrive > 0 && onground == true)
 		{
 			player->overdrive--;
+			if (player->overdrive && scamming)
+				player->overdrive--;
 		}
 
 		if (player->overshield > 0 && onground == true)
 		{
 			player->overshield--;
+			if (player->overshield && scamming)
+				player->overshield--;
 		}
 	}
 
