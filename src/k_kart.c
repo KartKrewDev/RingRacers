@@ -7979,6 +7979,8 @@ boolean K_CanSuperTransfer(player_t *player)
 {
 	if (!player->transfer)
 		return false;
+	if (P_PlayerInPain(player))
+		return false;
 	return (abs(player->mo->momz) < (2*abs(player->transfer)/4)) || (player->mo->momz > 0) != (player->transfer > 0);
 }
 
