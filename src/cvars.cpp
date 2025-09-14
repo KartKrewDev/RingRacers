@@ -666,40 +666,42 @@ consvar_t cv_cheats = UnsavedNetVar(cvlist_command)("cheats",
 consvar_t cv_countdowntime = UnsavedNetVar("countdowntime", "30").min_max(15, 9999);
 consvar_t cv_duelspectatorreentry = UnsavedNetVar("duelspectatorreentry", "180").min_max(0, 10*60);
 
+void KartItem_OnChange(void);
+
 // SRB2kart
 consvar_t cv_items[] = {
-	UnsavedNetVar("sneaker",			"On").on_off(),
-	UnsavedNetVar("rocketsneaker",		"On").on_off(),
-	UnsavedNetVar("invincibility",		"On").on_off(),
-	UnsavedNetVar("banana",				"On").on_off(),
-	UnsavedNetVar("eggmark",			"On").on_off(),
-	UnsavedNetVar("orbinaut",			"On").on_off(),
-	UnsavedNetVar("jawz",				"On").on_off(),
-	UnsavedNetVar("mine",				"On").on_off(),
-	UnsavedNetVar("landmine",			"On").on_off(),
-	UnsavedNetVar("ballhog",			"On").on_off(),
-	UnsavedNetVar("selfpropelledbomb",	"On").on_off(),
-	UnsavedNetVar("grow",				"On").on_off(),
-	UnsavedNetVar("shrink",				"On").on_off(),
-	UnsavedNetVar("lightningshield",	"On").on_off(),
-	UnsavedNetVar("bubbleshield",		"On").on_off(),
-	UnsavedNetVar("flameshield",		"On").on_off(),
-	UnsavedNetVar("hyudoro",			"On").on_off(),
-	UnsavedNetVar("pogospring",			"On").on_off(),
-	UnsavedNetVar("superring",			"On").on_off(),
-	UnsavedNetVar("kitchensink",		"On").on_off(),
-	UnsavedNetVar("droptarget",			"On").on_off(),
-	UnsavedNetVar("gardentop",			"On").on_off(),
-	UnsavedNetVar("gachabom",			"On").on_off(),
-	UnsavedNetVar("stoneshoe",			"On").on_off(),
-	UnsavedNetVar("toxomister",			"On").on_off(),
-	UnsavedNetVar("dualsneaker",		"On").on_off(),
-	UnsavedNetVar("triplesneaker",		"On").on_off(),
-	UnsavedNetVar("triplebanana",		"On").on_off(),
-	UnsavedNetVar("tripleorbinaut",		"On").on_off(),
-	UnsavedNetVar("quadorbinaut",		"On").on_off(),
-	UnsavedNetVar("dualjawz",			"On").on_off(),
-	UnsavedNetVar("triplegachabom",		"On").on_off(),
+	UnsavedNetVar("sneaker",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("rocketsneaker",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("invincibility",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("banana",				"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("eggmark",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("orbinaut",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("jawz",				"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("mine",				"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("landmine",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("ballhog",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("selfpropelledbomb",	"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("grow",				"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("shrink",				"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("lightningshield",	"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("bubbleshield",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("flameshield",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("hyudoro",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("pogospring",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("superring",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("kitchensink",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("droptarget",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("gardentop",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("gachabom",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("stoneshoe",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("toxomister",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("dualsneaker",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("triplesneaker",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("triplebanana",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("tripleorbinaut",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("quadorbinaut",		"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("dualjawz",			"On").on_off().onchange_noinit(KartItem_OnChange),
+	UnsavedNetVar("triplegachabom",		"On").on_off().onchange_noinit(KartItem_OnChange),
 };
 
 consvar_t cv_kartbot = UnsavedNetVar("bots", "Off").values({
@@ -784,7 +786,9 @@ consvar_t cv_shoutcolor = UnsavedNetVar("shout_color", "Red").values({
 consvar_t cv_shoutname = UnsavedNetVar("shout_name", "SERVER");
 
 consvar_t cv_spectatorreentry = UnsavedNetVar("spectatorreentry", "30").min_max(0, 10*60);
-consvar_t cv_thunderdome = UnsavedNetVar("thunderdome", "Off").on_off();
+
+void ThunderDome_OnChange(void);
+consvar_t cv_thunderdome = UnsavedNetVar("thunderdome", "Off").on_off().onchange_noinit(ThunderDome_OnChange);
 
 void TimeLimit_OnChange(void);
 consvar_t cv_timelimit = UnsavedNetVar("timelimit", "Default").min_max(1, 30*60, {{0, "None"}, {-1, "Default"}}).onchange_noinit(TimeLimit_OnChange);
