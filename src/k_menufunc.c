@@ -468,8 +468,8 @@ boolean M_Responder(event_t *ev)
 			// Special mid-game input behaviours
 			if (Playing() && !demo.playback)
 			{
-				// Quick Retry (Z in modeattacking)
-				if (modeattacking && G_PlayerInputDown(0, gc_vote, splitscreen + 1) == true)
+				// Quick Retry (Y in modeattacking)
+				if (modeattacking && G_PlayerInputDown(0, gc_bail, splitscreen + 1) == true)
 				{
 					if (!blockreset)
 					{
