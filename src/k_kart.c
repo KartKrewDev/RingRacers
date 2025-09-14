@@ -9711,6 +9711,7 @@ boolean K_PressingEBrake(const player_t *player)
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 {
 	const boolean onground = P_IsObjectOnGround(player->mo);
+	const fixed_t scamming = K_PlayerScamPercentage(player, 1);
 
 	/* reset sprite offsets :) */
 	player->mo->sprxoff = 0;
@@ -10528,11 +10529,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->overdrive > 0 && onground == true)
 		{
 			player->overdrive--;
+			if (player->overdrive && scamming)
+				player->overdrive--;
 		}
 
 		if (player->overshield > 0 && onground == true)
 		{
 			player->overshield--;
+			if (player->overshield && scamming)
+				player->overshield--;
 		}
 	}
 
@@ -10582,7 +10587,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->invincibilitytimer && (player->ignoreAirtimeLeniency > 0 || onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
 	{
 		player->invincibilitytimer--;
-		if (player->invincibilitytimer && K_PlayerScamPercentage(player, 1))
+		if (player->invincibilitytimer && scamming)
 			player->invincibilitytimer--;
 
 		// Extra tripwire leniency for the end of invincibility
@@ -10801,7 +10806,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->growshrinktimer > 0 && (onground == true || player->ignoreAirtimeLeniency > 0))
 		{
 			player->growshrinktimer--;
-			if (player->growshrinktimer && K_PlayerScamPercentage(player, 1))
+			if (player->growshrinktimer && scamming)
 				player->growshrinktimer--;
 		}
 
