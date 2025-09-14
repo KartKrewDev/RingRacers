@@ -273,6 +273,19 @@ struct fileack_pak
 
 #define MAXAPPLICATION 16
 
+struct player_config_t
+{
+	char name[MAXPLAYERNAME];
+	UINT16 skin;
+	UINT16 color;
+	INT16 follower;
+	UINT16 follower_color;
+	UINT8 weapon_prefs;
+	UINT8 min_delay;
+	uint8_t key[PUBKEYLENGTH];
+	UINT16 pwr[PWRLV_NUMTYPES];
+};
+
 struct clientconfig_pak
 {
 	UINT8 _255;/* see serverinfo_pak */
@@ -282,9 +295,10 @@ struct clientconfig_pak
 	UINT8 subversion; // Contains build version
 	UINT8 localplayers;	// number of splitscreen players
 	UINT8 mode;
-	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
+	char _names_outdated[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
 	UINT8 availabilities[MAXAVAILABILITY];
 	uint8_t challengeResponse[MAXSPLITSCREENPLAYERS][SIGNATURELENGTH];
+	player_config_t player_configs[MAXSPLITSCREENPLAYERS];
 } ATTRPACK;
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed

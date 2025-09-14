@@ -932,27 +932,14 @@ VaguePartyDescription (int playernum, int size, int default_color)
 	return party_description;
 }
 
-static INT32 snacpending[MAXSPLITSCREENPLAYERS] = {0,0,0,0};
-static INT32 chmappending = 0;
-
-// name, color, or skin has changed
-//
-static void SendNameAndColor(const UINT8 n)
+void D_FillPlayerSkinAndColor(const UINT8 n, const player_t *player, player_config_t *config)
 {
-	const INT32 playernum = g_localplayers[n];
-	player_t *player = NULL;
-
-	if (splitscreen < n)
+	if (player != NULL)
 	{
-		return; // can happen if skin4/color4/name4 changed
+		// We cannot return during this function,
+		// handle your input sanitizing before
+		I_Assert(splitscreen >= n);
 	}
-
-	if (playernum == -1)
-	{
-		return;
-	}
-
-	player = &players[playernum];
 
 	UINT16 sendColor = cv_playercolor[n].value;
 	UINT16 sendFollowerColor = cv_followercolor[n].value;
@@ -960,7 +947,9 @@ static void SendNameAndColor(const UINT8 n)
 	// don't allow inaccessible colors
 	if (sendColor != SKINCOLOR_NONE && K_ColorUsable(sendColor, false, true) == false)
 	{
-		if (player->skincolor && K_ColorUsable(player->skincolor, false, true) == true)
+		if (player != NULL // in-game change
+			&& player->skincolor != SKINCOLOR_NONE
+			&& K_ColorUsable(player->skincolor, false, true) == true)
 		{
 			// Use our previous color
 			CV_StealthSetValue(&cv_playercolor[n], player->skincolor);
@@ -971,7 +960,11 @@ static void SendNameAndColor(const UINT8 n)
 			CV_StealthSetValue(&cv_playercolor[n], SKINCOLOR_NONE);
 		}
 
-		lastgoodcolor[playernum] = sendColor = cv_playercolor[n].value;
+		sendColor = cv_playercolor[n].value;
+		if (player != NULL)
+		{
+			lastgoodcolor[player - players] = sendColor;
+		}
 	}
 
 	// ditto for follower colour:
@@ -981,14 +974,8 @@ static void SendNameAndColor(const UINT8 n)
 		sendFollowerColor = cv_followercolor[n].value;
 	}
 
-	// We'll handle it later if we're not playing.
-	if (!Playing())
-	{
-		return;
-	}
-
 	// Don't change skin if the server doesn't want you to.
-	if (!CanChangeSkin(playernum))
+	if (player != NULL && !CanChangeSkin(player - players))
 	{
 		CV_StealthSet(&cv_skin[n], skins[player->skin]->name);
 	}
@@ -996,7 +983,7 @@ static void SendNameAndColor(const UINT8 n)
 	// check if player has the skin loaded (cv_skin may have
 	// the name of a skin that was available in the previous game)
 	cv_skin[n].value = R_SkinAvailableEx(cv_skin[n].string, false);
-	if ((cv_skin[n].value < 0) || !R_SkinUsable(playernum, cv_skin[n].value, false))
+	if ((cv_skin[n].value < 0) || !R_SkinUsable((player ? player - players : -1), cv_skin[n].value, false))
 	{
 		CV_StealthSet(&cv_skin[n], DEFAULTSKIN);
 		cv_skin[n].value = 0;
@@ -1021,52 +1008,66 @@ static void SendNameAndColor(const UINT8 n)
 		}
 	}
 
-	// Don't send if everything was identical.
-	if (!strcmp(cv_playername[n].string, player_names[playernum])
-		&& sendColor == player->prefcolor
-		&& !stricmp(cv_skin[n].string, skins[player->prefskin]->name)
-		&& !stricmp(cv_follower[n].string,
-			(player->preffollower < 0 ? "None" : followers[player->preffollower].name))
-		&& sendFollowerColor == player->preffollowercolor)
+	config->skin = (UINT16)cv_skin[n].value;
+	config->color = sendColor;
+	config->follower = (horngoner ? -1 : (INT16)cv_follower[n].value);
+	config->follower_color = sendFollowerColor;
+}
+
+static INT32 snacpending[MAXSPLITSCREENPLAYERS] = {0,0,0,0};
+static INT32 chmappending = 0;
+
+// name, color, or skin has changed
+//
+static void SendNameAndColor(const UINT8 n)
+{
+	if (!Playing())
 	{
 		return;
 	}
 
-	snacpending[n]++;
+	if (splitscreen < n)
+	{
+		return; // can happen if skin4/color4/name4 changed
+	}
+
+	const INT32 playernum = g_localplayers[n];
+	if (playernum == -1)
+	{
+		return;
+	}
+
+	player_t *player = &players[playernum];
 
 	// Don't change name if muted
-	if (player_name_changes[playernum] >= MAXNAMECHANGES)
+	if (player_name_changes[player - players] >= MAXNAMECHANGES)
 	{
-		CV_StealthSet(&cv_playername[n], player_names[playernum]);
+		CV_StealthSet(&cv_playername[n], player_names[player - players]);
 		HU_AddChatText("\x85* You must wait to change your name again.", false);
 	}
-	else if (cv_mute.value && !(server || IsPlayerAdmin(playernum)))
+	else if (cv_mute.value && !(server || IsPlayerAdmin(player - players)))
 	{
-		CV_StealthSet(&cv_playername[n], player_names[playernum]);
+		CV_StealthSet(&cv_playername[n], player_names[player - players]);
 	}
 	else // Cleanup name if changing it
 	{
-		CleanupPlayerName(playernum, cv_playername[n].zstring);
+		CleanupPlayerName(player - players, cv_playername[n].zstring);
 	}
 
-	char buf[MAXPLAYERNAME+13];
-	char *p = buf;
+	player_config_t config;
+	D_FillPlayerSkinAndColor(n, player, &config);
 
-	// Finally write out the complete packet and send it off.
+	UINT8 buf[MAXPLAYERNAME + 13];
+	UINT8 *p = buf;
+
 	WRITESTRINGN(p, cv_playername[n].zstring, MAXPLAYERNAME);
-	WRITEUINT16(p, sendColor);
-	WRITEUINT16(p, (UINT16)cv_skin[n].value);
-	if (horngoner)
-	{
-		WRITEINT16(p, (-1));
-	}
-	else
-	{
-		WRITEINT16(p, (INT16)cv_follower[n].value);
-	}
-	//CONS_Printf("Sending follower id %d\n", (INT16)cv_follower[n].value);
-	WRITEUINT16(p, sendFollowerColor);
+	WRITEUINT16(p, config.skin);
+	WRITEUINT16(p, config.color);
+	WRITEINT16(p, config.follower);
+	//CONS_Printf("Sending follower id %d\n", config.follower);
+	WRITEUINT16(p, config.follower_color);
 
+	snacpending[n]++;
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
 
@@ -1131,6 +1132,46 @@ static void FinalisePlaystateChange(INT32 playernum)
 	P_CheckRacers(); // also SRB2Kart
 }
 
+void D_PlayerChangeSkinAndColor(player_t *p, UINT16 skin, UINT16 color, INT16 follower, UINT16 followercolor)
+{
+	const UINT16 old_color = p->prefcolor;
+	const UINT16 old_skin = p->prefskin;
+	const INT16 old_follower = p->preffollower;
+	const UINT16 old_follower_color = p->preffollowercolor;
+
+	// queue the rest for next round
+	p->prefcolor = color % numskincolors;
+
+	if (K_ColorUsable(p->prefcolor, false, false) == false)
+	{
+		p->prefcolor = SKINCOLOR_NONE;
+	}
+
+	p->prefskin = skin;
+	p->preffollowercolor = followercolor;
+	p->preffollower = follower;
+
+	if (
+		(p->jointime <= 1) // Just entered
+		|| (cv_restrictskinchange.value == 0 // Not restricted
+			&& !Y_IntermissionPlayerLock()) // Not start of intermission
+	)
+	{
+		// update preferences immediately
+		G_UpdatePlayerPreferences(p);
+	}
+	else if (P_IsMachineLocalPlayer(p) == true)
+	{
+		if (old_color != p->prefcolor
+			|| old_skin != p->prefskin
+			|| old_follower != p->preffollower
+			|| old_follower_color != p->preffollowercolor)
+		{
+			CONS_Alert(CONS_NOTICE, "Your changes will take effect next match.\n");
+		}
+	}
+}
+
 static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 {
 	player_t *p = &players[playernum];
@@ -1164,8 +1205,8 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 	}
 
 	READSTRINGN(*cp, name, MAXPLAYERNAME);
-	color = READUINT16(*cp);
 	skin = READUINT16(*cp);
+	color = READUINT16(*cp);
 	follower = READINT16(*cp);
 	followercolor = READUINT16(*cp);
 
@@ -1176,26 +1217,7 @@ static void Got_NameAndColor(const UINT8 **cp, INT32 playernum)
 			SetPlayerName(playernum, name);
 	}
 
-	// queue the rest for next round
-	p->prefcolor = color % numskincolors;
-	if (K_ColorUsable(p->prefcolor, false, false) == false)
-	{
-		p->prefcolor = SKINCOLOR_NONE;
-	}
-
-	p->prefskin = skin;
-	p->preffollowercolor = followercolor;
-	p->preffollower = follower;
-
-	if (
-		(p->jointime <= 1) // Just entered
-		|| (cv_restrictskinchange.value == 0 // Not restricted
-			&& !Y_IntermissionPlayerLock()) // Not start of intermission
-	)
-	{
-		// update preferences immediately
-		G_UpdatePlayerPreferences(p);
-	}
+	D_PlayerChangeSkinAndColor(p, skin, color, follower, followercolor);
 }
 
 enum {
@@ -1215,26 +1237,26 @@ enum {
 	// HOURS LOST TO G_PlayerReborn: UNCOUNTABLE
 };
 
-void WeaponPref_Send(UINT8 ssplayer)
+void D_FillPlayerWeaponPref(const UINT8 n, player_config_t *config)
 {
 	UINT8 prefs = 0;
 
-	if (cv_kickstartaccel[ssplayer].value)
+	if (cv_kickstartaccel[n].value)
 		prefs |= WP_KICKSTARTACCEL;
 
-	if (cv_autoroulette[ssplayer].value)
+	if (cv_autoroulette[n].value)
 		prefs |= WP_AUTOROULETTE;
 
-	if (cv_shrinkme[ssplayer].value)
+	if (cv_shrinkme[n].value)
 		prefs |= WP_SHRINKME;
 
-	if (gamecontrolflags[ssplayer] & GCF_ANALOGSTICK)
+	if (gamecontrolflags[n] & GCF_ANALOGSTICK)
 		prefs |= WP_ANALOGSTICK;
 
-	if (cv_autoring[ssplayer].value)
+	if (cv_autoring[n].value)
 		prefs |= WP_AUTORING;
 
-	if (ssplayer == 0)
+	if (n == 0)
 	{
 		if (cv_voice_selfmute.value)
 			prefs |= WP_SELFMUTE;
@@ -1243,14 +1265,25 @@ void WeaponPref_Send(UINT8 ssplayer)
 			prefs |= WP_SELFDEAFEN;
 	}
 
-	if (cv_strictfastfall[ssplayer].value)
+	if (cv_strictfastfall[n].value)
 		prefs |= WP_STRICTFASTFALL;
 
-	UINT8 buf[2];
-	buf[0] = prefs;
-	buf[1] = cv_mindelay.value;
+	config->weapon_prefs = prefs;
+	config->min_delay = cv_mindelay.value;
+}
 
-	SendNetXCmdForPlayer(ssplayer, XD_WEAPONPREF, buf, sizeof buf);
+void WeaponPref_Send(UINT8 ssplayer)
+{
+	player_config_t config;
+	D_FillPlayerWeaponPref(ssplayer, &config);
+
+	UINT8 buf[2];
+	UINT8 *p = buf;
+
+	WRITEUINT8(p, config.weapon_prefs);
+	WRITEUINT8(p, config.min_delay);
+
+	SendNetXCmdForPlayer(ssplayer, XD_WEAPONPREF, buf, p - buf);
 }
 
 void WeaponPref_Save(UINT8 **cp, INT32 playernum)
@@ -1280,12 +1313,9 @@ void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 	WRITEUINT8(*cp, prefs);
 }
 
-size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
+void WeaponPref_Set(INT32 playernum, UINT8 prefs)
 {
-	const UINT8 *p = bufstart;
 	player_t *player = &players[playernum];
-
-	UINT8 prefs = READUINT8(p);
 
 	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME|PF_AUTOROULETTE|PF_AUTORING);
 	player->pflags2 &= ~(PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_STRICTFASTFALL);
@@ -1315,14 +1345,14 @@ size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
 
 	if (prefs & WP_STRICTFASTFALL)
 		player->pflags2 |= PF2_STRICTFASTFALL;
+}
 
-	if (leveltime < 2)
-	{
-		// BAD HACK: No other place I tried to slot this in
-		// made it work for the host when they initally host,
-		// so this will have to do.
-		K_UpdateShrinkCheat(player);
-	}
+size_t WeaponPref_Parse(const UINT8 *bufstart, INT32 playernum)
+{
+	const UINT8 *p = bufstart;
+
+	UINT8 prefs = READUINT8(p);
+	WeaponPref_Set(playernum, prefs);
 
 	return p - bufstart;
 }

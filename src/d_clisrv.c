@@ -964,12 +964,32 @@ static boolean CL_SendJoin(void)
 	for (i = 0; i <= splitscreen; i++)
 	{
 		// the MAXPLAYERS addition is necessary to communicate that g_localplayers is not yet safe to reference
+		player_config_t temp;
+
 		CleanupPlayerName(MAXPLAYERS+i, cv_playername[i].zstring);
-		strncpy(netbuffer->u.clientcfg.names[i], cv_playername[i].zstring, MAXPLAYERNAME);
+
+		strncpy(temp.name, cv_playername[i].zstring, MAXPLAYERNAME);
+		D_FillPlayerSkinAndColor(i, NULL, &temp);
+		D_FillPlayerWeaponPref(i, &temp);
+
+		netbuffer->u.clientcfg.player_configs[i] = temp;
 	}
+
 	// privacy shield for the local players not joining this session
 	for (; i < MAXSPLITSCREENPLAYERS; i++)
-		strncpy(netbuffer->u.clientcfg.names[i], va("Player %c", 'A' + i), MAXPLAYERNAME);
+	{
+		player_config_t temp;
+
+		strncpy(temp.name, va("Player %c", 'A' + i), MAXPLAYERNAME);
+		temp.skin = 0;
+		temp.color = SKINCOLOR_NONE;
+		temp.follower = -1;
+		temp.follower_color = SKINCOLOR_NONE;
+		temp.weapon_prefs = 0;
+		temp.min_delay = 0;
+
+		netbuffer->u.clientcfg.player_configs[i] = temp;
+	}
 
 	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, -1), MAXAVAILABILITY*sizeof(UINT8));
 
@@ -3751,6 +3771,12 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 	newplayer = &players[newplayernum];
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
+	UINT16 skin = READUINT16(*p);
+	UINT16 color = READUINT16(*p);
+	INT16 follower = READINT16(*p);
+	UINT16 followercolor = READUINT16(*p);
+	UINT8 weaponprefs = READUINT8(*p);
+	UINT8 mindelay = READUINT8(*p);
 	READMEM(*p, public_key, PUBKEYLENGTH);
 	READMEM(*p, clientpowerlevels[newplayernum], sizeof(((serverplayer_t *)0)->powerlevels));
 
@@ -3790,13 +3816,20 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 		}
 
 		P_ForceLocalAngle(newplayer, newplayer->angleturn);
-
-		D_SendPlayerConfig(splitscreenplayer);
 		addedtogame = true;
+
+		if (server)
+		{
+			for (i = 0; i < G_LocalSplitscreenPartySize(newplayernum); ++i)
+				playerdelaytable[G_LocalSplitscreenPartyMember(newplayernum, i)] = mindelay;
+		}
 	}
 
-	players[newplayernum].splitscreenindex = splitscreenplayer;
-	players[newplayernum].bot = false;
+	newplayer->splitscreenindex = splitscreenplayer;
+	newplayer->bot = false;
+
+	D_PlayerChangeSkinAndColor(newplayer, skin, color, follower, followercolor);
+	WeaponPref_Set(newplayernum, weaponprefs);
 
 	// Previously called at the top of this function, commented as
 	// "caused desyncs in this spot :(". But we can't do this in
@@ -3979,14 +4012,10 @@ static void Got_ServerDeafenPlayer(const UINT8 **p, INT32 playernum)
 	}
 }
 
-static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
-	const char *name, uint8_t *key, UINT16 *pwr,
-	const char *name2, uint8_t *key2, UINT16 *pwr2,
-	const char *name3, uint8_t *key3, UINT16 *pwr3,
-	const char *name4, uint8_t *key4, UINT16 *pwr4)
+static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, player_config_t configs[MAXSPLITSCREENPLAYERS])
 {
 	INT32 n, newplayernum, i;
-	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY + sizeof(((serverplayer_t *)0)->powerlevels)];
+	UINT8 buf[4 + MAXPLAYERNAME + 10 + PUBKEYLENGTH + MAXAVAILABILITY + sizeof(((serverplayer_t *)0)->powerlevels)];
 	UINT8 *buf_p = buf;
 	boolean newplayer = false;
 
@@ -4037,6 +4066,30 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 			// before accepting the join
 			I_Assert(newplayernum < MAXPLAYERS);
 
+			if (playerpernode[node] < 1)
+			{
+				nodetoplayer[node] = newplayernum;
+			}
+			else if (playerpernode[node] < 2)
+			{
+				nodetoplayer2[node] = newplayernum;
+			}
+			else if (playerpernode[node] < 3)
+			{
+				nodetoplayer3[node] = newplayernum;
+			}
+			else if (playerpernode[node] < 4)
+			{
+				nodetoplayer4[node] = newplayernum;
+			}
+			else
+			{
+				// I don't know if it's safe to assert here,
+				// but I do know this should not be allowed
+				// to be reached.
+				return newplayer;
+			}
+
 			playernode[newplayernum] = (UINT8)node;
 
 			// Reset the buffer to the start for multiple joiners
@@ -4045,34 +4098,16 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 			WRITEUINT8(buf_p, (UINT8)node);
 			WRITEUINT8(buf_p, newplayernum);
 
-			if (playerpernode[node] < 1)
-			{
-				nodetoplayer[node] = newplayernum;
-				WRITESTRINGN(buf_p, name, MAXPLAYERNAME);
-				WRITEMEM(buf_p, key, PUBKEYLENGTH);
-				WRITEMEM(buf_p, pwr, sizeof(((serverplayer_t *)0)->powerlevels));
-			}
-			else if (playerpernode[node] < 2)
-			{
-				nodetoplayer2[node] = newplayernum;
-				WRITESTRINGN(buf_p, name2, MAXPLAYERNAME);
-				WRITEMEM(buf_p, key2, PUBKEYLENGTH);
-				WRITEMEM(buf_p, pwr2, sizeof(((serverplayer_t *)0)->powerlevels));
-			}
-			else if (playerpernode[node] < 3)
-			{
-				nodetoplayer3[node] = newplayernum;
-				WRITESTRINGN(buf_p, name3, MAXPLAYERNAME);
-				WRITEMEM(buf_p, key3, PUBKEYLENGTH);
-				WRITEMEM(buf_p, pwr3, sizeof(((serverplayer_t *)0)->powerlevels));
-			}
-			else if (playerpernode[node] < 4)
-			{
-				nodetoplayer4[node] = newplayernum;
-				WRITESTRINGN(buf_p, name4, MAXPLAYERNAME);
-				WRITEMEM(buf_p, key4, PUBKEYLENGTH);
-				WRITEMEM(buf_p, pwr4, sizeof(((serverplayer_t *)0)->powerlevels));
-			}
+			const player_config_t *config = &configs[playerpernode[node]];
+			WRITESTRINGN(buf_p, config->name, MAXPLAYERNAME);
+			WRITEUINT16(buf_p, config->skin);
+			WRITEUINT16(buf_p, config->color);
+			WRITEINT16(buf_p, config->follower);
+			WRITEUINT16(buf_p, config->follower_color);
+			WRITEUINT8(buf_p, config->weapon_prefs);
+			WRITEUINT8(buf_p, config->min_delay);
+			WRITEMEM(buf_p, config->key, PUBKEYLENGTH);
+			WRITEMEM(buf_p, config->pwr, sizeof(((serverplayer_t *)0)->powerlevels));
 
 			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
 			WRITEUINT8(buf_p, playerpernode[node]); // splitscreen num
@@ -4251,11 +4286,21 @@ boolean SV_SpawnServer(void)
 		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, -1);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
-			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(0)->public_key)->powerlevels,
-				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(1)->public_key)->powerlevels,
-				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(2)->public_key)->powerlevels,
-				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(3)->public_key)->powerlevels);
+		{
+			player_config_t configs[MAXSPLITSCREENPLAYERS];
+
+			INT32 i;
+			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				strncpy(configs[i].name, cv_playername[i].zstring, MAXPLAYERNAME);
+				D_FillPlayerSkinAndColor(i, NULL, &configs[i]);
+				D_FillPlayerWeaponPref(i, &configs[i]);
+				memcpy(configs[i].key, PR_GetLocalPlayerProfile(i)->public_key, sizeof(configs[i].key));
+				memcpy(configs[i].pwr, SV_GetStatsByKey(PR_GetLocalPlayerProfile(i)->public_key)->powerlevels, sizeof(configs[i].pwr));
+			}
+
+			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer, configs);
+		}
 	}
 	return result;
 #endif
@@ -4364,6 +4409,7 @@ static boolean IsPlayerGuest(UINT8 player)
   */
 static void HandleConnect(SINT8 node)
 {
+	player_config_t configs[MAXSPLITSCREENPLAYERS];
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME + 1];
 	INT32 i, j;
 	UINT8 availabilitiesbuffer[MAXAVAILABILITY];
@@ -4487,9 +4533,12 @@ static void HandleConnect(SINT8 node)
 		int sigcheck;
 		boolean newnode = false;
 
+		memcpy(configs, netbuffer->u.clientcfg.player_configs, sizeof(configs));
+
 		for (i = 0; i < netbuffer->u.clientcfg.localplayers - playerpernode[node]; i++)
 		{
-			strlcpy(names[i], netbuffer->u.clientcfg.names[i], MAXPLAYERNAME + 1);
+			strlcpy(names[i], configs[i].name, MAXPLAYERNAME + 1);
+
 			if (!EnsurePlayerNameIsGood(names[i], -1))
 			{
 				SV_SendRefuse(node, "Bad player name");
@@ -4610,11 +4659,15 @@ static void HandleConnect(SINT8 node)
 				DEBFILE("send savegame\n");
 			}
 
-			SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				names[0], lastReceivedKey[node][0], SV_GetStatsByKey(lastReceivedKey[node][0])->powerlevels,
-				names[1], lastReceivedKey[node][1], SV_GetStatsByKey(lastReceivedKey[node][1])->powerlevels,
-				names[2], lastReceivedKey[node][2], SV_GetStatsByKey(lastReceivedKey[node][2])->powerlevels,
-				names[3], lastReceivedKey[node][3], SV_GetStatsByKey(lastReceivedKey[node][3])->powerlevels);
+			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				strlcpy(configs[i].name, names[i], MAXPLAYERNAME + 1);
+				memcpy(configs[i].key, lastReceivedKey[node][i], sizeof(configs[i].key));
+				memcpy(configs[i].pwr, SV_GetStatsByKey(lastReceivedKey[node][i])->powerlevels, sizeof(configs[i].pwr));
+			}
+
+			SV_AddWaitingPlayers(node, availabilitiesbuffer, configs);
+
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}
