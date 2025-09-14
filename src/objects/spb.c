@@ -37,7 +37,7 @@
 #define SPB_CHASETIMESCALE (60*TICRATE)
 #define SPB_CHASETIMEMUL (3*FRACUNIT)
 
-#define SPB_SEEKTURN (FRACUNIT/8)
+#define SPB_SEEKTURN (FRACUNIT/4)
 #define SPB_CHASETURN (FRACUNIT/4)
 
 #define SPB_MANTA_SPACING (2750 * FRACUNIT)
@@ -332,7 +332,7 @@ static boolean SPBSeekSoundPlaying(mobj_t *spb)
 
 static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 {
-	const fixed_t desiredSpeed = SPB_DEFAULTSPEED;
+	const fixed_t desiredSpeed = SPB_DEFAULTSPEED*(2); // Seeks the player out 2x faster than its usual speed when locked in
 
 	waypoint_t *curWaypoint = NULL;
 	waypoint_t *destWaypoint = NULL;
