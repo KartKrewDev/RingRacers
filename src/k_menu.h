@@ -390,6 +390,7 @@ typedef enum
 	sopt_volume,
 	sopt_sfxvolume,
 	sopt_musicvolume,
+	sopt_voicevolume,
 	sopt_spacer1,
 	sopt_preferences,
 	sopt_chatnotifs,
