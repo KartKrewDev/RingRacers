@@ -651,10 +651,10 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // force no collide
 	}
 
-	if (!(g_tm.thing->player && g_tm.thing->player->markedfordeath && (K_IsMissileOrKartItem(thing) || thing->type == MT_INSTAWHIP)))
+	if (!(g_tm.thing->player && g_tm.thing->player->markedfordeath && (K_IsMissileOrKartItem(thing) || thing->type == MT_INSTAWHIP || thing->type == MT_PLAYER)))
 		return BMIT_CONTINUE;
 
-	if (!(thing->player && thing->player->markedfordeath && (K_IsMissileOrKartItem(g_tm.thing) || g_tm.thing->type == MT_INSTAWHIP)))
+	if (!(thing->player && thing->player->markedfordeath && (K_IsMissileOrKartItem(g_tm.thing) || g_tm.thing->type == MT_INSTAWHIP || g_tm.thing->type == MT_PLAYER)))
 		return BMIT_CONTINUE;
 
 	// Blend-Eye internal noclip
