@@ -1541,38 +1541,57 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	// Should we bias towards items that get us back to the action?
 	// This will set the "loneliness" percentage to be used later.
 	UINT32 lonelinessThreshold = 3*DISTVAR; // How far away can we be before items are considered useless?
-	UINT32 toAttacker = lonelinessThreshold; // Distance to the player trying to kill us.
-	UINT32 toDefender = lonelinessThreshold; // Distance to the player we are trying to kill.
+	UINT32 toFront = lonelinessThreshold; // Distance to the player trying to kill us.
+	UINT32 toBack = lonelinessThreshold; // Distance to the player we are trying to kill.
 	fixed_t loneliness = 0;
 
 	if (player->position > 1) // Loneliness is expected when frontrunnning, don't influence their item table.
 	{
 		if ((gametyperules & GTR_CIRCUIT) && specialstageinfo.valid == false)
 		{
+			player_t *front = NULL;
+			player_t *back = NULL;
+
+			// Find the closest enemy players ahead of and behind us.
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
+				if (playeringame[i] == false || players[i].spectator == true || players[i].exiting || G_SameTeam(&players[i], player))
 					continue;
 
-				if (players[i].position == player->position + 1)
-					toAttacker = K_UndoMapScaling(players[i].distancetofinish - player->distancetofinish);
+				player_t *check = &players[i];
 
-				if (players[i].position == player->position - 1)
-					toDefender = K_UndoMapScaling(player->distancetofinish - players[i].distancetofinish);
+				if (check->distancetofinish > player->distancetofinish)
+				{
+					if (!back || check->distancetofinish < back->distancetofinish)
+						back = check;
+				}
+				else if (check->distancetofinish < player->distancetofinish)
+				{
+					if (!front || check->distancetofinish > front->distancetofinish)
+						front = check;
+				}
 			}
+
+			if (front)
+				toFront = K_UndoMapScaling(player->distancetofinish - front->distancetofinish);
+
+			if (back)
+				toBack = K_UndoMapScaling(back->distancetofinish - player->distancetofinish);
 		}
 
 		// Your relationship to each closest player counts for half, but will be eased later.
 		// If you're far from an attacker but close to a defender, that Ballhog is still useful!
-		loneliness += min(FRACUNIT/2, FRACUNIT * toAttacker / lonelinessThreshold / 2);
-		loneliness += min(FRACUNIT/2, FRACUNIT * toDefender / lonelinessThreshold / 2);
+		loneliness += min(FRACUNIT/2, FRACUNIT * toFront / lonelinessThreshold / 2);
+		loneliness += min(FRACUNIT/2, FRACUNIT * toBack / lonelinessThreshold / 2);
+
+		loneliness = Easing_InCubic(loneliness, 0, FRACUNIT);
 
 		// Give interaction items a nudge against initial selection if you're lonely..
 		for (i = 1; i < NUMKARTRESULTS; i++)
 		{
 			if (!K_IsItemSpeed(i))
 			{
-				deltas[i] = Easing_InCubic(loneliness, deltas[i], deltas[i] + (4*DISTVAR));
+				deltas[i] = Easing_Linear(loneliness, deltas[i], deltas[i] + (4*DISTVAR));
 			}
 		}
 	}
@@ -1650,9 +1669,9 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 			UINT16 BASE_X = 18;
 			UINT16 BASE_Y = 5+12*i;
 			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTOLEFT;
-			V_DrawThinString(BASE_X + 35, BASE_Y, FLAGS, va("P%d", powers[bestitem]/humanscaler));
-			V_DrawThinString(BASE_X + 65, BASE_Y, FLAGS, va("D%d", deltas[bestitem]/humanscaler));
-			V_DrawThinString(BASE_X + 20, BASE_Y, FLAGS, va("%d", dupetolerance[bestitem]));
+			V_DrawRightAlignedThinString(BASE_X + 35, BASE_Y, FLAGS, va("P%d", powers[bestitem]/humanscaler));
+			V_DrawRightAlignedThinString(BASE_X + 65, BASE_Y, FLAGS, va("D%d", deltas[bestitem]/humanscaler));
+			V_DrawRightAlignedThinString(BASE_X + 20, BASE_Y, FLAGS, va("%d", dupetolerance[bestitem]));
 			V_DrawFixedPatch(BASE_X*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(bestitem), NULL);
 			UINT8 amount = K_ItemResultToAmount(bestitem, roulette);
 			if (amount > 1)
@@ -1711,17 +1730,20 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 			UINT16 BASE_X = 280;
 			UINT16 BASE_Y = 5+12*debugcount;
 			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTORIGHT;
-			V_DrawThinString(BASE_X - 12, 5, FLAGS, va("%d", targetpower/humanscaler));
-			V_DrawThinString(BASE_X - 12, 5+12, FLAGS, va("%d", toAttacker));
-			V_DrawThinString(BASE_X - 12, 5+24, FLAGS, va("%d", toDefender));
-			V_DrawThinString(BASE_X - 12, 5+36, FLAGS, va("%d", loneliness));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5, FLAGS, va("%d", targetpower/humanscaler));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5+12, FLAGS, va("%d", toFront));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5+24, FLAGS, va("%d", toBack));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5+36, FLAGS, va("%d", loneliness));
 			for(UINT8 k = 0; k < candidates[i]; k++)
 				V_DrawFixedPatch((BASE_X + 3*k)*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(i), NULL);
 			UINT8 amount = K_ItemResultToAmount(i, roulette);
 			if (amount > 1)
 				V_DrawThinString(BASE_X, BASE_Y, FLAGS, va("x%d", amount));
+
+			/*
 			if (reject)
 				V_DrawThinString(BASE_X, BASE_Y, FLAGS|V_60TRANS, va("WEAK"));
+			*/
 			debugcount++;
 		}
 
