@@ -85,7 +85,12 @@ void Obj_ExpThink (mobj_t *exp)
             exp->extravalue1++;
 
             if (exp->extravalue1 >= 16)
+			{
+				S_StopSoundByID(exp->target, sfx_exp);
+				S_StartSound(exp->target, sfx_exp);
                 P_RemoveMobj(exp);
+			}
+
 
             return;
         }

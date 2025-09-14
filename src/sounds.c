@@ -1266,6 +1266,9 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"hint",    false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Hint Ring"},
 
+  {"exp",    false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "EXP Crystal"}, // When it gets sucked in
+
+
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
   {"dmga2",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
