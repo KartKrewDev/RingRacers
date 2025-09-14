@@ -1775,6 +1775,51 @@ boolean P_CheckRacers(void)
 	return false;
 }
 
+void P_UpdateRemovedOrbital(mobj_t *target, mobj_t *inflictor, mobj_t *source)
+{
+	// SRB2kart
+	// I wish I knew a better way to do this
+	if (!P_MobjWasRemoved(target->target) && target->target->player && !P_MobjWasRemoved(target->target->player->mo))
+	{
+		if ((target->target->player->itemflags & IF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
+			target->target->player->itemflags &= ~IF_EGGMANOUT;
+
+		if (target->target->player->itemflags & IF_ITEMOUT)
+		{
+			if ((target->type == MT_BANANA_SHIELD && target->target->player->itemtype == KITEM_BANANA) // trail items
+				|| (target->type == MT_SSMINE_SHIELD && target->target->player->itemtype == KITEM_MINE)
+				|| (target->type == MT_DROPTARGET_SHIELD && target->target->player->itemtype == KITEM_DROPTARGET)
+				|| (target->type == MT_SINK_SHIELD && target->target->player->itemtype == KITEM_KITCHENSINK))
+			{
+				if (target->movedir != 0 && target->movedir < (UINT16)target->target->player->itemamount)
+				{
+					if (target->target->hnext && !P_MobjWasRemoved(target->target->hnext))
+						K_KillBananaChain(target->target->hnext, inflictor, source);
+					target->target->player->itemamount = 0;
+				}
+				else if (target->target->player->itemamount)
+					target->target->player->itemamount--;
+			}
+			else if ((target->type == MT_ORBINAUT_SHIELD && target->target->player->itemtype == KITEM_ORBINAUT) // orbit items
+				|| (target->type == MT_JAWZ_SHIELD && target->target->player->itemtype == KITEM_JAWZ))
+			{
+				if (target->target->player->itemamount)
+					target->target->player->itemamount--;
+				if (target->lastlook != 0)
+				{
+					K_RepairOrbitChain(target);
+				}
+			}
+
+			if (!target->target->player->itemamount)
+				target->target->player->itemflags &= ~IF_ITEMOUT;
+
+			if (target->target->hnext == target)
+				P_SetTarget(&target->target->hnext, NULL);
+		}
+	}
+}
+
 /** Kills an object.
   *
   * \param target    The victim.
@@ -1826,47 +1871,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 	//K_SetHitLagForObjects(target, inflictor, source, MAXHITLAGTICS, true);
 
-	// SRB2kart
-	// I wish I knew a better way to do this
-	if (!P_MobjWasRemoved(target->target) && target->target->player && !P_MobjWasRemoved(target->target->player->mo))
-	{
-		if ((target->target->player->itemflags & IF_EGGMANOUT) && target->type == MT_EGGMANITEM_SHIELD)
-			target->target->player->itemflags &= ~IF_EGGMANOUT;
-
-		if (target->target->player->itemflags & IF_ITEMOUT)
-		{
-			if ((target->type == MT_BANANA_SHIELD && target->target->player->itemtype == KITEM_BANANA) // trail items
-				|| (target->type == MT_SSMINE_SHIELD && target->target->player->itemtype == KITEM_MINE)
-				|| (target->type == MT_DROPTARGET_SHIELD && target->target->player->itemtype == KITEM_DROPTARGET)
-				|| (target->type == MT_SINK_SHIELD && target->target->player->itemtype == KITEM_KITCHENSINK))
-			{
-				if (target->movedir != 0 && target->movedir < (UINT16)target->target->player->itemamount)
-				{
-					if (target->target->hnext && !P_MobjWasRemoved(target->target->hnext))
-						K_KillBananaChain(target->target->hnext, inflictor, source);
-					target->target->player->itemamount = 0;
-				}
-				else if (target->target->player->itemamount)
-					target->target->player->itemamount--;
-			}
-			else if ((target->type == MT_ORBINAUT_SHIELD && target->target->player->itemtype == KITEM_ORBINAUT) // orbit items
-				|| (target->type == MT_JAWZ_SHIELD && target->target->player->itemtype == KITEM_JAWZ))
-			{
-				if (target->target->player->itemamount)
-					target->target->player->itemamount--;
-				if (target->lastlook != 0)
-				{
-					K_RepairOrbitChain(target);
-				}
-			}
-
-			if (!target->target->player->itemamount)
-				target->target->player->itemflags &= ~IF_ITEMOUT;
-
-			if (target->target->hnext == target)
-				P_SetTarget(&target->target->hnext, NULL);
-		}
-	}
+	P_UpdateRemovedOrbital(target, inflictor, source);
 	// Above block does not clean up rocket sneakers when a player dies, so we need to do it here target->target is null when using rocket sneakers
 	if (target->player)
 		K_DropRocketSneaker(target->player);

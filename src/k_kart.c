@@ -17257,6 +17257,7 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile)
 
 	K_AddHitLag(victim, 3, false);
 
+	P_UpdateRemovedOrbital(inflictor, victim, victim);
 	P_RemoveMobj(inflictor);
 	return true;
 }
