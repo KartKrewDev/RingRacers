@@ -1570,9 +1570,9 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		// Give interaction items a nudge against initial selection if you're lonely..
 		for (i = 1; i < NUMKARTRESULTS; i++)
 		{
-			if (K_IsItemUselessAlone(i))
+			if (!K_IsItemSpeed(i))
 			{
-				deltas[i] = Easing_InCubic(loneliness, deltas[i], deltas[i] + (2*DISTVAR));
+				deltas[i] = Easing_InCubic(loneliness, deltas[i], deltas[i] + (4*DISTVAR));
 			}
 		}
 	}
@@ -1695,6 +1695,10 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		// don't really like to be duplicated. Favor the player; high-rolling
 		// feels exciting, low-rolling feels punishing!
 		boolean reject = (filterweakitems) && (powers[i] + DISTVAR < meanreelpower);
+
+		// If we're far away from interactions, be extra aggressive about tossing attack items.
+		if (filterweakitems && !reject && !K_IsItemSpeed(i))
+			reject = (powers[i] + Easing_Linear(loneliness, DISTVAR, -2 * DISTVAR) < meanreelpower);
 
 		// Popcorn Super Ring is always strong enough, we put it there on purpose.
 		if (i == KITEM_SUPERRING && !canfiltersuperring)
