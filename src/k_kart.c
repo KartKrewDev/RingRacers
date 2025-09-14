@@ -16374,10 +16374,8 @@ void K_CheckSpectateStatus(boolean considermapreset)
 
 			// Mid-race joins cause all kind of jank, including replay issues
 			// that literally none of us can figure out. Whoops.
-			if (numingame < 2 || leveltime == 0)
-				continue;
-
-			return;
+			if (numhumans > 1 && leveltime != 0)
+				return;
 
 			// Unseal when someone feels like debugging.
 #if 0
@@ -16494,9 +16492,8 @@ void K_CheckSpectateStatus(boolean considermapreset)
 		return;
 
 	// Reset the match when 2P joins 1P, DUEL mode
-	// Reset the match when 3P joins 1P and 2P, DUEL mode must be disabled
 	extern consvar_t cv_debugnewchallenger;
-	if (i > 0 && !mapreset && gamestate == GS_LEVEL && (previngame < 3 && numingame >= 2) && !cv_debugnewchallenger.value)
+	if (i > 0 && !mapreset && gamestate == GS_LEVEL && ((previngame < 3 && numingame >= 2) || (numhumans <= 2)) && !cv_debugnewchallenger.value)
 	{
 		Music_Play("comeon"); // COME ON
 		mapreset = 3*TICRATE; // Even though only the server uses this for game logic, set for everyone for HUD
