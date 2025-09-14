@@ -1029,7 +1029,7 @@ static boolean K_IsItemFirstPermitted(kartitems_t item)
 	}
 }
 
-static boolean K_IsItemUselessAlone(kartitems_t item)
+ATTRUNUSED static boolean K_IsItemUselessAlone(kartitems_t item)
 {
 	switch (item)
 	{
@@ -1641,7 +1641,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 
 		// Conversely, if we're lonely, try not to reselect an item that wouldn't be useful to us
 		// without any players to use it on.
-		if (K_IsItemUselessAlone(bestitem))
+		if (!K_IsItemSpeed(bestitem))
 			deltapenalty = Easing_Linear(loneliness, deltapenalty, 5*deltapenalty);
 
 		// Draw complex odds debugger. This one breaks down all the calcs in order.
