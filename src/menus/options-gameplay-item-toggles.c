@@ -135,10 +135,11 @@ void M_HandleItemToggles(INT32 choice)
 
 	if (M_MenuExtraPressed(pid))
 	{
-		INT32 v = !M_AnyItemsEnabled();
+		const boolean check = !M_AnyItemsEnabled();
 		for (i = 0; i < NUMKARTRESULTS-1; i++)
 		{
-			CV_SetValue(&cv_items[i], v);
+			if (cv_items[i].value != check)
+				CV_SetValue(&cv_items[i], check);
 		}
 		// KartItem_OnChange will toggle thunderdome and play sound
 
