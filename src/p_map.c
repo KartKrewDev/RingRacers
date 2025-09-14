@@ -651,6 +651,13 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // force no collide
 	}
 
+	// markedfordeath players will phase through most things, unless its funny
+	if (g_tm.thing->player && g_tm.thing->player->markedfordeath && !(K_IsMissileOrKartItem(thing) || thing->type == MT_INSTAWHIP || thing->type == MT_PLAYER))
+		return BMIT_CONTINUE;
+
+	if (thing->player && thing->player->markedfordeath && !(K_IsMissileOrKartItem(g_tm.thing) || g_tm.thing->type == MT_INSTAWHIP || g_tm.thing->type == MT_PLAYER))
+		return BMIT_CONTINUE;
+
 	// Blend-Eye internal noclip
 	if ((thing->type == MT_BLENDEYE_GLASS || thing->type == MT_BLENDEYE_SHIELD || thing->type == MT_BLENDEYE_EGGBEATER)
 	&& (g_tm.thing->type == MT_BLENDEYE_MAIN || g_tm.thing->type == MT_BLENDEYE_EYE || g_tm.thing->type == MT_BLENDEYE_PUYO))
