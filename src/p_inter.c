@@ -2875,6 +2875,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	player_t *playerInflictor;
 	boolean force = false;
 	boolean spbpop = false;
+	boolean downgraded = false;
 
 	INT32 laglength = 6;
 
@@ -3304,7 +3305,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (G_SameTeam(source->player, player))
 					{
 						if (type != DMG_EXPLODE)
+						{
 							type = DMG_STUMBLE;
+							downgraded = true;
+						}
 					}
 					else
 					{
@@ -3457,8 +3461,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				player->ringburst += 5; // IT'S THE DAMAGE STUMBLE HACK AGAIN AAAAAAAAHHHHHHHHHHH
 				K_PopPlayerShield(player);
 			}
-
-			boolean downgraded = false;
 
 			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency && !P_PlayerInPain(player))
 			{
