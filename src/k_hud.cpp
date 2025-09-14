@@ -4298,7 +4298,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 	if (stplyr->hudrings <= 0 && stplyr->ringvisualwarning > 1)
 	{
 		colorring = true;
-		if ((leveltime/2 & 1))
+		if ((leveltime/2 & 1) || (cv_reducevfx.value))
 		{
 			ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		}
@@ -4307,7 +4307,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_WHITE, GTC_CACHE);
 		}
 	}
-	else if (stplyr->hudrings <= 0 && (leveltime/5 & 1)) // In debt
+	else if (stplyr->hudrings <= 0 && ((leveltime/5 & 1) || (cv_reducevfx.value))) // In debt
 	{
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		colorring = true;
