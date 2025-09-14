@@ -14115,11 +14115,12 @@ boolean K_FastFallBounce(player_t *player)
 			// This is a slightly irritating way of doing this, but because ground contact while
 			// bubblebouncing gives you 1 tic of ground friction, naively using a factor of player
 			// speed makes your sustained speed heavily gamespeed dependent.
-			fixed_t minspeed = 12*K_GetKartSpeed(player, false, false)/10;
+			fixed_t basespeed = K_GetKartSpeed(player, false, false);
+			fixed_t minspeed = 12*basespeed/10;
 			fixed_t fallspeed = abs(player->fastfall);
 
 			fixed_t interspeed = 11*max(minspeed, fallspeed)/10;
-			interspeed = min(interspeed, K_BubbleSpeedCap(player) + K_GetKartSpeed(player, false, false)/5);
+			interspeed = min(interspeed, K_BubbleSpeedCap(player) + basespeed/5);
 
 			P_InstaThrust(player->mo, player->mo->angle, interspeed);
 
