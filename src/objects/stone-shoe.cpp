@@ -354,7 +354,8 @@ void Obj_CollideStoneShoe(mobj_t *mover, mobj_t *mobj)
 			Shoe* shoe = static_cast<Shoe*>(mobj);
 
 			if (!shoe->try_damage(static_cast<Player*>(mover), shoe))
-				K_KartSolidBounce(mover, shoe);
+				if (shoe->follow() != mover)
+					K_KartSolidBounce(mover, shoe);
 			break;
 		}
 
