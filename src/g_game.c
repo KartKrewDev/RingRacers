@@ -2454,7 +2454,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 	else
 	{
-		rings = 10;
+		rings = 20; // POSITION is fucking serious now
 	}
 
 	saveroundconditions = false;
