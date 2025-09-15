@@ -3510,9 +3510,20 @@ void A_AttractChase(mobj_t *actor)
 
 	if (actor->extravalue1 && actor->type != MT_EMERALD) // SRB2Kart
 	{
-		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player
-		|| actor->target->player->baildrop || actor->target->player->bailcharge || actor->target->player->defenseLockout > PUNISHWINDOW)
+		// Screwed this up for staffghosts, so have a mess.
+		// 1. Insta-Whip's extended punish window used to delete flingrings off you while they were attracting
+		// 2. ALL conditions that deleted flingrings off you didn't decrement pickuprings, desyncing your ring count
+		boolean stale = (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player);
+
+		boolean blocked = (actor->target->player->baildrop || actor->target->player->bailcharge);
+		if (G_CompatLevel(0x0010))
+			blocked |= (actor->target->player->defenseLockout > PUNISHWINDOW);
+
+		if (stale || blocked)
 		{
+			if (!G_CompatLevel(0x0010) && !stale)
+				actor->target->player->pickuprings--;
+
 			P_RemoveMobj(actor);
 			return;
 		}
