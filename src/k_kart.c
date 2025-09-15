@@ -8401,6 +8401,9 @@ SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
+		if (!K_ItemEnabled(i))
+			continue;
+
 		// Avoid calling K_FillItemRouletteData since that
 		// function resets PR_ITEM_ROULETTE.
 		spawnchance[i] = (
