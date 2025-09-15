@@ -1013,13 +1013,18 @@ boolean I_SoundInputSetEnabled(boolean enabled)
 		SDL_AudioSpec input_desired {};
 		input_desired.format = AUDIO_F32SYS;
 		input_desired.channels = 1;
-		input_desired.samples = 2048;
+		input_desired.samples = 1024;
 		input_desired.freq = 48000;
 		SDL_AudioSpec input_obtained {};
 		g_input_device_id = SDL_OpenAudioDevice(nullptr, SDL_TRUE, &input_desired, &input_obtained, 0);
 		if (!g_input_device_id)
 		{
 			CONS_Alert(CONS_WARNING, "Failed to open input audio device: %s\n", SDL_GetError());
+			return false;
+		}
+		if (input_obtained.freq != 48000 || input_obtained.format != AUDIO_F32SYS || input_obtained.channels != 1)
+		{
+			CONS_Alert(CONS_WARNING, "Input audio device has unexpected unusable format: %s\n", SDL_GetError());
 			return false;
 		}
 		SDL_PauseAudioDevice(g_input_device_id, SDL_FALSE);
@@ -1049,6 +1054,16 @@ UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
 
 	UINT32 ret = SDL_DequeueAudio(g_input_device_id, data, std::min(len, avail));
 	return ret;
+}
+
+UINT32 I_SoundInputRemainingSamples(void)
+{
+	if (!g_input_device_id)
+	{
+		return 0;
+	}
+	UINT32 avail = SDL_GetQueuedAudioSize(g_input_device_id);
+	return avail / sizeof(float);
 }
 
 void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal)

@@ -2872,6 +2872,11 @@ UINT32 S_SoundInputDequeueSamples(void *data, UINT32 len)
 	return I_SoundInputDequeueSamples(data, len);
 }
 
+UINT32 S_SoundInputRemainingSamples(void)
+{
+	return I_SoundInputRemainingSamples();
+}
+
 static INT32 g_playerlastvoiceactive[MAXPLAYERS];
 
 void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal)

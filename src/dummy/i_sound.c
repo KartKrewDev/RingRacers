@@ -240,6 +240,11 @@ UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
 	return 0;
 }
 
+UINT32 I_SoundInputRemainingSamples(void)
+{
+	return 0;
+}
+
 void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal)
 {
 }
