@@ -10006,6 +10006,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (onground && player->transfer)
 	{
+
+		if (player->fastfall) // If you elected to supertransfer, you get a small dropdash boost on land
+		{
+			S_StartSound(player->mo, sfx_s23c);
+			player->dropdashboost = 50;
+			K_SpawnDashDustRelease(player);
+		}
 		player->fastfall = 0;
 		player->transfer = 0;
 		player->pflags2 &= ~PF2_SUPERTRANSFERVFX;
