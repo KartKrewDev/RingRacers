@@ -3439,6 +3439,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		}
 	}
 
+	thiscam->chaseheight = FixedDiv(camheight, cameraScale);
+	// CONS_Printf("thiscam camheight %d\n", thiscam->chaseheight/FRACUNIT);
+
 	if (loop_in < loop->zoom_in_speed)
 	{
 		fixed_t f = loop_out < loop->zoom_out_speed
