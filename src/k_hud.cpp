@@ -6741,7 +6741,7 @@ static void K_drawKartStartBulbs(void)
 			}
 		}
 
-		INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_30TRANS : 0;
+		INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_50TRANS : 0;
 
 		V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOTOP|V_SPLITSCREEN|hudtransflags,
 			(r_splitscreen ? kp_prestartbulb_split[patchnum] : kp_prestartbulb[patchnum]), NULL);
@@ -6796,7 +6796,7 @@ static void K_drawKartStartBulbs(void)
 static void K_drawKartStartCountdown(void)
 {
 	INT32 pnum = 0;
-	INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_30TRANS : 0;
+	INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_50TRANS : 0;
 
 	if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
 	{
@@ -7110,7 +7110,7 @@ static void K_drawLapStartAnim(void)
 	oldval = (48 - (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 	interpy = R_InterpolateFixed(oldval, newval);
 
-	INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_30TRANS : V_HUDTRANS;
+	INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_50TRANS : V_HUDTRANS;
 
 	V_DrawFixedPatch(
 		interpx, interpy,
