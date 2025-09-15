@@ -5265,6 +5265,7 @@ static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p, I
 static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	int playernum = p - players;
+	flags &= ~V_FLIP; // does not support this
 	if (p->cmd.flags & TICCMD_TYPING || S_IsPlayerVoiceActive(playernum))
 	{
 		V_DrawFixedPatch(x, y, FRACUNIT, V_SPLITSCREEN|flags, kp_talk, NULL);
