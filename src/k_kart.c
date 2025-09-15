@@ -12753,7 +12753,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			// Airtime means we're not gaining speed. Get grounded!
 			if (!onground)
-				player->mo->momz -= player->speed/2;
+				player->mo->momz -= (player->mo->eflags & MFE_VERTICALFLIP ? -1 : 1) * player->speed/2;
 
 			if (player->driftcharge < 0)
 			{
