@@ -7456,6 +7456,7 @@ static void K_DrawBotDebugger(void)
 
 	V_DrawSmallString(8, 76, 0, va("Prediction error: %.2fdeg", FIXED_TO_FLOAT(FixedDiv(bot->botvars.predictionError, ANG1))));
 	V_DrawSmallString(8, 80, 0, va("Recent deflection: %.2fdeg", FIXED_TO_FLOAT(FixedDiv(bot->botvars.recentDeflection, ANG1))));
+	V_DrawSmallString(8, 84, 0, va("Bumpslow: %d", bot->botvars.bumpslow));
 }
 
 static void K_DrawGPRankDebugger(void)
