@@ -5997,8 +5997,10 @@ void M_DrawItemToggles(void)
 	}
 
 	// Button prompts
-	K_DrawGameControl(
-		(BASEVIDWIDTH/2) - cv_kartfrantic.value, BASEVIDHEIGHT-20, 0,
+	x = (BASEVIDWIDTH/2) - cv_kartfrantic.value;
+	y = BASEVIDHEIGHT-20;
+	INT32 w = K_DrawGameControl(
+		x, y, 0,
 		va(
 			"<c_animated> Toggle All %s<white>   <r_animated> Frantic Mode: %s",
 			cv_thunderdome.value ? "<yellow>(Ring Box Mode) " : "<gold>(Item Box Mode)",
@@ -6007,6 +6009,14 @@ void M_DrawItemToggles(void)
 		1, TINY_FONT,
 		(((row == height-1) && (drawnum > 1)) ? V_TRANSLUCENT : 0)
 	);
+
+	if (cv_kartfrantic.value != franticitems)
+	{
+		V_DrawThinString(
+			x + w/2, y, 0,
+			(cv_kartfrantic.value ? "\x85 (next)" : "\x86 (next)")
+		);
+	}
 }
 
 

@@ -7464,6 +7464,26 @@ void NumLaps_OnChange(void)
 	}
 }
 
+boolean M_AnyItemsEnabled(void);
+void KartItem_OnChange(void);
+void KartItem_OnChange(void)
+{
+	if (netgame && !server)
+		return;
+
+	const boolean check = !M_AnyItemsEnabled();
+	if (cv_thunderdome.value != check)
+		CV_SetValue(&cv_thunderdome, check);
+}
+
+void ThunderDome_MenuSound(void);
+void ThunderDome_OnChange(void);
+void ThunderDome_OnChange(void)
+{
+	ThunderDome_MenuSound();
+}
+
+void KartFrantic_MenuSound(void);
 void KartFrantic_OnChange(void);
 void KartFrantic_OnChange(void)
 {
@@ -7481,6 +7501,8 @@ void KartFrantic_OnChange(void)
 	{
 		CONS_Printf(M_GetText("Frantic items will be turned %s next round.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
 	}
+
+	KartFrantic_MenuSound();
 }
 
 void KartSpeed_OnChange(void);

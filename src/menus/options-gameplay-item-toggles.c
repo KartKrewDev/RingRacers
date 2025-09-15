@@ -85,7 +85,8 @@ menu_t OPTIONS_GameplayItemsDef = {
 	NULL,
 };
 
-static boolean M_AnyItemsEnabled(void)
+boolean M_AnyItemsEnabled(void);
+boolean M_AnyItemsEnabled(void)
 {
 	INT32 i;
 	for (i = 0; i < NUMKARTRESULTS-1; i++)
@@ -96,9 +97,29 @@ static boolean M_AnyItemsEnabled(void)
 	return false;
 }
 
-static void M_ToggleThunderdome(void)
+void ThunderDome_MenuSound(void);
+void ThunderDome_MenuSound(void)
 {
-	CV_SetValue(&cv_thunderdome, !M_AnyItemsEnabled());
+	if (!menuactive || currentMenu != &OPTIONS_GameplayItemsDef)
+		return;
+
+	if (cv_thunderdome.value)
+	{
+		S_StartSoundAtVolume(NULL, sfx_slot02, 80);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_itrolf);
+	}
+}
+
+void KartFrantic_MenuSound(void);
+void KartFrantic_MenuSound(void)
+{
+	if (!menuactive || currentMenu != &OPTIONS_GameplayItemsDef)
+		return;
+
+	S_StartSound(NULL, (cv_kartfrantic.value ? sfx_noooo2 : sfx_kc48));
 }
 
 void M_HandleItemToggles(INT32 choice)
@@ -114,20 +135,13 @@ void M_HandleItemToggles(INT32 choice)
 
 	if (M_MenuExtraPressed(pid))
 	{
-		INT32 v = !M_AnyItemsEnabled();
+		const boolean check = !M_AnyItemsEnabled();
 		for (i = 0; i < NUMKARTRESULTS-1; i++)
 		{
-			CV_SetValue(&cv_items[i], v);
+			if (cv_items[i].value != check)
+				CV_SetValue(&cv_items[i], check);
 		}
-		M_ToggleThunderdome();
-		if (cv_thunderdome.value)
-		{
-			S_StartSoundAtVolume(NULL, sfx_slot02, 80);
-		}
-		else
-		{
-			S_StartSound(NULL, sfx_itrolf);
-		}
+		// KartItem_OnChange will toggle thunderdome and play sound
 
 		M_SetMenuDelay(pid);
 	}
@@ -135,7 +149,6 @@ void M_HandleItemToggles(INT32 choice)
 	else if (M_MenuButtonPressed(pid, MBT_R))
 	{
 		CV_AddValue(&cv_kartfrantic, 1);
-		S_StartSound(NULL, (cv_kartfrantic.value ? sfx_noooo2 : sfx_kc48));
 
 		M_SetMenuDelay(pid);
 	}
@@ -219,7 +232,7 @@ void M_HandleItemToggles(INT32 choice)
 				S_StartSound(NULL, sfx_s1ba);
 			}
 			CV_AddValue(&cv_items[currentMenu->menuitems[itemOn].mvar1-1], 1);
-			M_ToggleThunderdome();
+			// KartItem_OnChange will toggle thunderdome and play sound
 		}
 	}
 
