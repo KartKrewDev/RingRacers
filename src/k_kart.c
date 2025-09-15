@@ -13944,7 +13944,7 @@ static void K_KartSpindash(player_t *player)
 				player->transfer = 0;
 			}
 		}
-		else
+		else if (!G_CompatLevel(0x0010))
 		{
 			boolean ebrakelasttic = (player->oldcmd.buttons & BT_EBRAKEMASK);
 			if (player->pflags2 & PF2_STRICTFASTFALL)
