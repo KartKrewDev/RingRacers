@@ -350,9 +350,6 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 		case KITEM_INVINCIBILITY:
 		case KITEM_GROW:
 		case KITEM_SHRINK:
-		case KITEM_LIGHTNINGSHIELD:
-		case KITEM_BUBBLESHIELD:
-		case KITEM_FLAMESHIELD:
 		{
 			// Items that drastically improve your own defense and/or speed.
 			return BOT_ITEM_PR_POWER;
@@ -389,6 +386,9 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 		case KITEM_JAWZ:
 		case KITEM_BANANA:
 		case KITEM_MINE:
+		case KITEM_LIGHTNINGSHIELD:
+		case KITEM_BUBBLESHIELD:
+		case KITEM_FLAMESHIELD:
 		{
 			// Used in all other instances (close to other players, no priority override)
 			// Typically attack items that give you protection.

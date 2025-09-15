@@ -47,7 +47,7 @@
 --------------------------------------------------*/
 static inline boolean K_ItemButtonWasDown(const player_t *player)
 {
-	return (player->oldcmd.buttons & BT_ATTACK);
+	return !!(player->oldcmd.buttons & BT_ATTACK);
 }
 
 /*--------------------------------------------------
@@ -1233,6 +1233,9 @@ static void K_BotItemBubble(const player_t *player, ticcmd_t *cmd)
 	ZoneScoped;
 
 	boolean hold = false;
+
+	if (player->botvars.itemconfirm > 10*TICRATE)
+		hold = true;
 
 	if (player->bubbleblowup <= 0)
 	{
