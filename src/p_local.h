@@ -97,6 +97,8 @@ struct camera_t
 
 	angle_t aiming;
 
+	fixed_t chaseheight; // Effective chasecam height, unscaled
+
 	// Things used by FS cameras.
 	fixed_t viewheight;
 	angle_t startangle;

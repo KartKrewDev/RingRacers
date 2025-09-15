@@ -6741,7 +6741,9 @@ static void K_drawKartStartBulbs(void)
 			}
 		}
 
-		V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOTOP|V_SPLITSCREEN,
+		INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_HUDTRANSHALF : 0;
+
+		V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOTOP|V_SPLITSCREEN|hudtransflags,
 			(r_splitscreen ? kp_prestartbulb_split[patchnum] : kp_prestartbulb[patchnum]), NULL);
 		x += spacing;
 	}
@@ -6794,6 +6796,7 @@ static void K_drawKartStartBulbs(void)
 static void K_drawKartStartCountdown(void)
 {
 	INT32 pnum = 0;
+	INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_HUDTRANSHALF : 0;
 
 	if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
 	{
@@ -6835,7 +6838,7 @@ static void K_drawKartStartCountdown(void)
 		if (r_splitscreen) // splitscreen
 			pnum += 10;
 
-		V_DrawScaledPatch(STCD_X - (SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (SHORT(kp_startcountdown[pnum]->height)/2), V_SPLITSCREEN, kp_startcountdown[pnum]);
+		V_DrawScaledPatch(STCD_X - (SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (SHORT(kp_startcountdown[pnum]->height)/2), V_SPLITSCREEN|hudtransflags, kp_startcountdown[pnum]);
 	}
 }
 
@@ -7107,9 +7110,11 @@ static void K_drawLapStartAnim(void)
 	oldval = (48 - (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 	interpy = R_InterpolateFixed(oldval, newval);
 
+	INT32 hudtransflags = (camera[R_GetViewNumber()].chaseheight > HUDTRANS_CAMHEIGHT_MAX) ? V_HUDTRANSHALF : V_HUDTRANS;
+
 	V_DrawFixedPatch(
 		interpx, interpy,
-		FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
+		FRACUNIT, V_SNAPTOTOP|hudtransflags,
 		(modeattacking ? kp_lapanim_emblem[1] : kp_lapanim_emblem[0]), colormap);
 
 	if (stplyr->karthud[khud_laphand] >= 1 && stplyr->karthud[khud_laphand] <= 3)
@@ -7120,7 +7125,7 @@ static void K_drawLapStartAnim(void)
 
 		V_DrawFixedPatch(
 			interpx, interpy,
-			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
+			FRACUNIT, V_SNAPTOTOP|hudtransflags,
 			kp_lapanim_hand[stplyr->karthud[khud_laphand]-1], NULL);
 	}
 
@@ -7133,7 +7138,7 @@ static void K_drawLapStartAnim(void)
 		V_DrawFixedPatch(
 			interpx, // 27
 			30*FRACUNIT, // 24
-			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
+			FRACUNIT, V_SNAPTOTOP|hudtransflags,
 			kp_lapanim_final[std::min(progress/2, 10)], NULL);
 
 		if (progress/2-12 >= 0)
@@ -7145,7 +7150,7 @@ static void K_drawLapStartAnim(void)
 			V_DrawFixedPatch(
 				interpx, // 194
 				30*FRACUNIT, // 24
-				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
+				FRACUNIT, V_SNAPTOTOP|hudtransflags,
 				kp_lapanim_lap[std::min(progress/2-12, 6)], NULL);
 		}
 	}
@@ -7158,7 +7163,7 @@ static void K_drawLapStartAnim(void)
 		V_DrawFixedPatch(
 			interpx, // 61
 			30*FRACUNIT, // 24
-			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
+			FRACUNIT, V_SNAPTOTOP|hudtransflags,
 			kp_lapanim_lap[std::min(progress/2, 6)], NULL);
 
 		if (progress/2-8 >= 0)
@@ -7170,7 +7175,7 @@ static void K_drawLapStartAnim(void)
 			V_DrawFixedPatch(
 				interpx, // 194
 				30*FRACUNIT, // 24
-				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
+				FRACUNIT, V_SNAPTOTOP|hudtransflags,
 				kp_lapanim_number[(((UINT32)stplyr->latestlap) / 10)][std::min(progress/2-8, 2)], NULL);
 
 			if (progress/2-10 >= 0)
@@ -7182,7 +7187,7 @@ static void K_drawLapStartAnim(void)
 				V_DrawFixedPatch(
 					interpx, // 221
 					30*FRACUNIT, // 24
-					FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
+					FRACUNIT, V_SNAPTOTOP|hudtransflags,
 					kp_lapanim_number[(((UINT32)stplyr->latestlap) % 10)][std::min(progress/2-10, 2)], NULL);
 			}
 		}

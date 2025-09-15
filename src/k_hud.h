@@ -27,6 +27,8 @@ extern "C" {
 
 #define MARGINLEVELS 24
 
+#define HUDTRANS_CAMHEIGHT_MAX (120*FRACUNIT) // The camera height past this point where hud transparency should take affect
+
 extern INT32 MINI_X, MINI_Y;
 
 struct trackingResult_t
