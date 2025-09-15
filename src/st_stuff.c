@@ -1587,9 +1587,9 @@ void ST_Drawer(void)
 	char nag[256];
 	snprintf(nag, sizeof(nag), "KartKrew.org - %s %s - Pre-release testing version", SRB2VERSION, BETAVERSION);
 
-	V_DrawCenteredMenuString(BASEVIDWIDTH/2, 2, V_30TRANS|V_SNAPTOTOP, nag);
+	V_DrawCenteredMenuString(BASEVIDWIDTH/2, 2, V_60TRANS|V_SNAPTOTOP, nag);
 
-	V_DrawCenteredMenuString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 10, V_30TRANS|V_SNAPTOBOTTOM, nag);
+	V_DrawCenteredMenuString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 10, V_60TRANS|V_SNAPTOBOTTOM, nag);
 
 #endif
 
