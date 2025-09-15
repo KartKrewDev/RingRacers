@@ -398,21 +398,14 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				{
 					// On A rank pace? Then you get a chance for S rank!
 					fixed_t rankforline = K_CalculateGPPercent(&grandprixinfo.rank);
+					fixed_t required = K_SealedStarEntryRequirement(&grandprixinfo.rank);
 
-					data.showrank = (rankforline >= SEALED_STAR_ENTRY);
+					data.showrank = (rankforline >= required);
 
 					data.linemeter =
-						(std::min(rankforline, SEALED_STAR_ENTRY)
+						(std::min(rankforline, required)
 							* (2 * TICRATE)
-						) / SEALED_STAR_ENTRY;
-
-					// G_NextMap will float you to rank-restricted stages on Master wins.
-					// Fudge the rank display.
-					if (grandprixinfo.masterbots && grandprixinfo.rank.position <= 1)
-					{
-						data.showrank = true;
-						data.linemeter = 2*TICRATE;
-					}
+						) / required;
 
 					// A little extra time to take it all in
 					timer += TICRATE;
