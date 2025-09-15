@@ -27,6 +27,7 @@
 #include "k_race.h"
 #include "command.h"
 #include "k_objects.h"
+#include "m_cond.h"
 
 // I was ALMOST tempted to start tearing apart all
 // of the map loading code and turning it into C++
@@ -311,7 +312,7 @@ void gpRank_t::Init(void)
 		}
 	}
 
-	// Calculate players 
+	// Calculate players
 	numPlayers = numHumans;
 	totalPlayers = K_GetGPPlayerCount(numHumans);
 
@@ -588,6 +589,19 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 	return static_cast<gp_rank_e>(retGrade);
 }
 
+fixed_t K_SealedStarEntryRequirement(gpRank_t *rankData)
+{
+	fixed_t entry = 370*FRACUNIT/400;
+
+	if (gamedata->everseenspecial)
+		entry -= 350*FRACUNIT/400;
+
+	if (grandprixinfo.masterbots && grandprixinfo.rank.position <= 1)
+		entry = K_CalculateGPPercent(rankData);
+
+	return entry;
+}
+
 /*--------------------------------------------------
 	gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
@@ -638,10 +652,10 @@ fixed_t K_CalculateGPPercent(gpRank_t *rankData)
 
 	rankData->scoreContinues -= (rankData->continuesUsed - RANK_CONTINUE_PENALTY_START) * continuesPenalty;
 
-	rankData->scoreTotal = 
+	rankData->scoreTotal =
 		rankData->scorePosition +
 		// rankData->scoreGPPoints +
-		rankData->scoreExp + 
+		rankData->scoreExp +
 		rankData->scorePrisons +
 		rankData->scoreRings +
 		rankData->scoreContinues;
