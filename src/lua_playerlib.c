@@ -295,6 +295,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastringboost);
 	else if (fastcmp(field,"amps"))
 		lua_pushinteger(L, plr->amps);
+	else if (fastcmp(field,"recentamps"))
+		lua_pushinteger(L, plr->recentamps);
 	else if (fastcmp(field,"amppickup"))
 		lua_pushinteger(L, plr->amppickup);
 	else if (fastcmp(field,"ampspending"))
@@ -958,6 +960,8 @@ static int player_set(lua_State *L)
 		plr->lastringboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"amps"))
 		plr->amps = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"recentamps"))
+		plr->recentamps = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"amppickup"))
 		plr->amppickup = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ampspending"))
