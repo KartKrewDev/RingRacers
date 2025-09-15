@@ -589,14 +589,14 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 	return static_cast<gp_rank_e>(retGrade);
 }
 
-fixed_t K_SealedStarEntryRequirement(gpRank_t *rankData)
+fixed_t K_SealedStarEntryRequirement(gpRank_t *rankData) // Sealed Star entry is hard at first and then gets easy, avoid newbie accidents
 {
 	fixed_t entry = 370*FRACUNIT/400;
 
 	if (gamedata->everseenspecial)
-		entry -= 350*FRACUNIT/400;
+		entry -= 20*FRACUNIT/400; // Goes down to 350 for good once seen
 
-	if (grandprixinfo.masterbots && grandprixinfo.rank.position <= 1)
+	if (grandprixinfo.masterbots && grandprixinfo.rank.position <= 1) // Master Mode Sealed Star entry only requires 1st place
 		entry = K_CalculateGPPercent(rankData);
 
 	return entry;
