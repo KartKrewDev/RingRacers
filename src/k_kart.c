@@ -13946,7 +13946,7 @@ static void K_KartSpindash(player_t *player)
 		}
 		else if (!G_CompatLevel(0x0010))
 		{
-			boolean ebrakelasttic = (player->oldcmd.buttons & BT_EBRAKEMASK);
+			boolean ebrakelasttic = ((player->oldcmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK);
 			if (player->pflags2 & PF2_STRICTFASTFALL)
 				ebrakelasttic = (player->oldcmd.buttons & BT_SPINDASH);
 
