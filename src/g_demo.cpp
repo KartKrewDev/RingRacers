@@ -2241,7 +2241,7 @@ void G_BeginRecording(void)
 			// Save follower's colour
 			for (j = (numskincolors+2)-1; j > 0; j--)
 			{
-				if (Followercolor_cons_t[j].value == players[i].followercolor)
+				if (Followercolor_cons_t[j].value == player->followercolor)
 					break;
 			}
 			demobuf.p += copy_fixed_buf(demobuf.p, Followercolor_cons_t[j].strvalue, g_buffer_sizes.color_name);	// Not KartColor_Names because followercolor has extra values such as "Match"
