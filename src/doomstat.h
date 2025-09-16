@@ -605,6 +605,7 @@ struct mapheader_t
 #define LF_NOZONE             (1<<1) ///< Don't include "ZONE" on level title
 #define LF_SECTIONRACE        (1<<2) ///< Section race level
 #define LF_SUBTRACTNUM        (1<<3) ///< Use subtractive position number (for bright levels)
+#define LF_NOCOMMS			  (1<<4) ///< Disable dialogue "communications in progress" graphic
 
 #define LF2_HIDEINMENU		(1<<0) ///< Hide in the multiplayer menu
 #define LF2_NOTIMEATTACK	(1<<1) ///< Hide this map in Time Attack modes

@@ -1506,6 +1506,13 @@ void readlevelheader(MYFILE *f, char * name)
 
 				mapheaderinfo[num]->cameraHeight = camheight;;
 			}
+			else if (fastcmp(word, "NOCOMMS") || fastcmp(word, "NOCOMM"))
+			{
+				if (i || word2[0] == 'T' || word2[0] == 'Y')
+					mapheaderinfo[num]->levelflags |= LF_NOCOMMS;
+				else
+					mapheaderinfo[num]->levelflags &= ~LF_NOCOMMS;
+			}
 			else
 				deh_warning("Level header %d: unknown word '%s'", num, word);
 		}

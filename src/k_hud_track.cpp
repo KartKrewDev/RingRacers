@@ -290,6 +290,22 @@ private:
 				};
 			}
 
+			if (cv_reducevfx.value)
+			{
+				return {
+					{ // Near
+						{8, 2, {kp_capsuletarget_near[0]}}, // 1P
+						{{8, 2, {kp_capsuletarget_near[1]}}}, // 4P
+					},
+					{{ // Far
+						{2, 16, foreground ?
+							layers {kp_capsuletarget_far[0], kp_capsuletarget_far_text} :
+							layers {kp_capsuletarget_far[0]}}, // 1P
+						{{2, 16, {kp_capsuletarget_far[1]}}}, // 4P
+					}},
+				};
+			}
+				
 			return {
 				{ // Near
 					{8, 2, {kp_capsuletarget_near[0]}}, // 1P
@@ -679,13 +695,19 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		if (target.mobj->type == MT_BATTLECAPSULE
 			|| target.mobj->type == MT_CDUFO)
 		{
-			targetPatch = kp_capsuletarget_icon[timer & 1];
+			if (cv_reducevfx.value)
+				targetPatch = kp_capsuletarget_icon[(timer/6) & 1];
+			else
+				targetPatch = kp_capsuletarget_icon[timer & 1];
 		}
 
 		if (abs(borderDir.x) > abs(borderDir.y))
 		{
 			// Horizontal arrow
-			arrowPatch = kp_capsuletarget_arrow[1][timer & 1];
+			if (cv_reducevfx.value)
+				arrowPatch = kp_capsuletarget_arrow[1][(timer/6) & 1];
+			else
+				arrowPatch = kp_capsuletarget_arrow[1][timer & 1];
 			arrowDir.y = 0;
 
 			if (borderDir.x < 0)
@@ -702,7 +724,10 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		else
 		{
 			// Vertical arrow
-			arrowPatch = kp_capsuletarget_arrow[0][timer & 1];
+			if (cv_reducevfx.value)
+				arrowPatch = kp_capsuletarget_arrow[0][(timer/6) & 1];
+			else
+				arrowPatch = kp_capsuletarget_arrow[0][timer & 1];
 			arrowDir.x = 0;
 
 			if (borderDir.y < 0)
