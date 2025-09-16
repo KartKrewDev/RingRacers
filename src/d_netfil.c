@@ -204,7 +204,7 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 		// Store in the upper four bits
 		if (!cv_downloading.value)
 			filestatus += (2 << 4); // Won't send
-		else if ((wadfiles[i]->filesize <= (UINT32)cv_maxsend.value * 1024))
+		else if (cv_maxsend.value == -1 || wadfiles[i]->filesize <= (UINT32)cv_maxsend.value * 1024)
 			filestatus += (1 << 4); // Will send if requested
 		// else
 			// filestatus += (0 << 4); -- Won't send, too big
@@ -964,7 +964,7 @@ static boolean AddFileToSendQueue(INT32 node, const char *filename, UINT8 fileid
 	}
 
 	// Handle huge file requests (i.e. bigger than cv_maxsend.value KB)
-	if (wadfiles[i]->filesize > (UINT32)cv_maxsend.value * 1024)
+	if (cv_maxsend.value != -1 && wadfiles[i]->filesize > (UINT32)cv_maxsend.value * 1024)
 	{
 		// Too big
 		// Don't inform client (client sucks, man)
