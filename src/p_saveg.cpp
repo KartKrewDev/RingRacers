@@ -708,6 +708,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].lastringboost);
 
 		WRITEUINT8(save->p, players[i].amps);
+		WRITEUINT8(save->p, players[i].recentamps);
 		WRITEUINT8(save->p, players[i].amppickup);
 		WRITEUINT8(save->p, players[i].ampspending);
 
@@ -1383,6 +1384,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].lastringboost = READUINT32(save->p);
 
 		players[i].amps =READUINT8(save->p);
+		players[i].recentamps =READUINT8(save->p);
 		players[i].amppickup =READUINT8(save->p);
 		players[i].ampspending =READUINT8(save->p);
 

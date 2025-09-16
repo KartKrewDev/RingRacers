@@ -4430,6 +4430,22 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	// 	FixedMul(scaledamps<<FRACBITS, itemdistmult)>>FRACBITS);
 	scaledamps = FixedMul(scaledamps<<FRACBITS, itemdistmult)>>FRACBITS;
 
+	//CONS_Printf("SA=%d ", scaledamps);
+
+	// Arbitrary tuning constants.
+	// Reduce amp payouts by 1/40th for each 2 amps obtained recently
+	UINT8 num = 40;
+	UINT8 div = 40;
+	UINT8 reduction = min(30, player->recentamps);
+
+	num -= reduction;
+
+	//CONS_Printf("N=%d D=%d RA=%d ", num, div, player->recentamps);
+
+	scaledamps = num * scaledamps / div;
+
+	//CONS_Printf("SA2=%d\n", scaledamps);
+
 	/*
 	if (player->position <= 1)
 		scaledamps /= 2;
@@ -4446,6 +4462,7 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 		pickup->color = player->skincolor;
 		P_SetTarget(&pickup->target, player->mo);
 		player->ampspending++;
+		player->recentamps++;
 	}
 }
 
@@ -10607,6 +10624,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->spindashspeed = player->spindashboost = 0;
 		}
 	}
+
+	if (player->recentamps && (leveltime%TICRATE == 0))
+		player->recentamps--;
 
 	if (player->invincibilitytimer && (player->ignoreAirtimeLeniency > 0 || onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
 	{

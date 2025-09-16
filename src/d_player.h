@@ -1131,6 +1131,7 @@ struct player_t
 	UINT32 lastringboost; // What was our accumulated boost when locking the award?
 
 	UINT8 amps;
+	UINT8 recentamps;
 	UINT8 amppickup;
 	UINT8 ampspending;
 
