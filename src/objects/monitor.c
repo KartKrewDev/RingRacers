@@ -467,7 +467,7 @@ adjust_monitor_drop
 		drop->momz *= 8;
 	}
 
-	K_FlipFromObject(drop, monitor);
+	K_FlipFromObjectNoInterp(drop, monitor);
 
 	return drop;
 }

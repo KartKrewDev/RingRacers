@@ -4372,7 +4372,7 @@ static void P_RingThinker(mobj_t *mobj)
 			{
 				mobj->renderflags &= ~RF_DONTDRAW;
 				spark = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_SIGNSPARKLE);	// Spawn a fancy sparkle
-				K_MatchGenericExtraFlags(spark, mobj);
+				K_MatchGenericExtraFlagsNoInterp(spark, mobj);
 				spark->colorized = true;
 				spark->color = mobj->color ? mobj->color : SKINCOLOR_YELLOW;	// Use yellow if the ring doesn't use a skin color. (It should be red for SPB rings, but let normal rings look fancy too!)
 				P_RemoveMobj(mobj);	// Adieu, monde cruel!
@@ -4423,7 +4423,7 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 		if (mobj->flags2 & MF2_CLASSICPUSH) // centered items should not be flipped
 			mobj->renderflags = (mobj->renderflags & ~RF_DONTDRAW) | (target->renderflags & RF_DONTDRAW);
 		else
-			K_GenericExtraFlagsNoZAdjust(mobj, target);
+			K_MatchGenericExtraFlagsNoZAdjust(mobj, target);
 
 		x = target->x + target->sprxoff;
 		y = target->y + target->spryoff;
@@ -6164,7 +6164,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			fixed_t z = P_RandomRange(PR_SMOLDERING, 0, 70)*mobj->scale;
 			mobj_t *smoke = P_SpawnMobj(mobj->x + x, mobj->y + y, mobj->z + z, MT_SMOKE);
 			P_SetMobjState(smoke, S_OPAQUESMOKE1);
-			K_MatchGenericExtraFlags(smoke, mobj);
+			K_MatchGenericExtraFlagsNoInterp(smoke, mobj);
 			smoke->scale = mobj->scale * 2;
 			smoke->destscale = mobj->scale * 6;
 			smoke->momz = P_RandomRange(PR_SMOLDERING, 4, 9)*mobj->scale*P_MobjFlip(smoke);
@@ -6178,11 +6178,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		{
 			fixed_t x = P_RandomRange(PR_EXPLOSION, -16, 16)*mobj->scale;
 			fixed_t y = P_RandomRange(PR_EXPLOSION, -16, 16)*mobj->scale;
-			fixed_t z = P_RandomRange(PR_EXPLOSION, 0, 32)*mobj->scale*P_MobjFlip(mobj);
+			fixed_t z = P_RandomRange(PR_EXPLOSION, 0, 32)*mobj->scale;
 			if (leveltime % 2 == 0)
 			{
 				mobj_t *smoke = P_SpawnMobj(mobj->x + x, mobj->y + y, mobj->z + z, MT_BOSSEXPLODE);
-				K_MatchGenericExtraFlags(smoke, mobj);
+				K_MatchGenericExtraFlagsNoInterp(smoke, mobj);
 				P_SetMobjState(smoke, S_QUICKBOOM1);
 				smoke->scale = mobj->scale/2;
 				smoke->destscale = mobj->scale;
@@ -6192,7 +6192,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			{
 				mobj_t *smoke = P_SpawnMobj(mobj->x + x, mobj->y + y, mobj->z + z, MT_SMOKE);
 				P_SetMobjState(smoke, S_OPAQUESMOKE1);
-				K_MatchGenericExtraFlags(smoke, mobj);
+				K_MatchGenericExtraFlagsNoInterp(smoke, mobj);
 				smoke->scale = mobj->scale;
 				smoke->destscale = mobj->scale*2;
 			}
@@ -6808,8 +6808,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		P_SetScale(mobj, (mobj->destscale = myscale));
 
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
-		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
-		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		K_MatchFlipFlags(mobj, mobj->target);
 
 		mobj->extravalue1++;
 
@@ -8043,8 +8042,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			target->y + FixedMul(xofs, cos) + FixedMul(frontoffset, sin),
 			target->z + zofs + (target->height / 2));
 		mobj->angle = facing + ANGLE_90 + (mobj->extravalue1 ? ANGLE_45 : -1*ANGLE_45);
-		K_MatchGenericExtraFlags(mobj, target);
 		P_InstaScale(mobj, FixedMul(target->scale, easedscale));
+		K_MatchGenericExtraFlagsNoInterp(mobj, target);
 
 		UINT8 maxtranslevel = NUMTRANSMAPS - 2;
 		UINT8 trans = FixedInt(FixedMul(percentvisible, FRACUNIT*(maxtranslevel+1)));
@@ -8194,6 +8193,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_MoveOrigin(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
 			mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
 		P_SetScale(mobj, mobj->target->scale);
+		K_FlipFromObject(mobj, mobj->target);
 
 		mobj->roll = mobj->target->roll;
 		mobj->pitch = mobj->target->pitch;
@@ -8219,6 +8219,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			fixed_t rand_angle;
 			fixed_t rand_move;
 			mobj_t *smoke = P_SpawnMobj(mobj->x, mobj->y, mobj->z+(8<<FRACBITS), MT_BOOSTSMOKE);
+			K_FlipFromObjectNoInterp(smoke, mobj);
 
 			P_SetScale(smoke, mobj->target->scale/2);
 			smoke->destscale = 3*mobj->target->scale/2;
@@ -8345,8 +8346,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (mobj->movefactor < mobj->target->height)
 				mobj->movefactor = mobj->target->height;
 		}
-		K_MatchGenericExtraFlags(mobj, mobj->target);
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height/2) + mobj->movefactor);
+		K_MatchGenericExtraFlags(mobj, mobj->target);
 		break;
 	case MT_RINGSPARKS:
 		if (!mobj->target || P_MobjWasRemoved(mobj->target))
@@ -8357,11 +8358,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		mobj->z = mobj->target->z;
 
-		K_MatchGenericExtraFlags(mobj, mobj->target);
-
 		P_MoveOrigin(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
 				mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
-				mobj->z + (mobj->target->height * P_MobjFlip(mobj)));
+				mobj->z + mobj->target->height);
+		K_MatchGenericExtraFlags(mobj, mobj->target);
 		break;
 	case MT_GAINAX:
 	{
@@ -8396,20 +8396,19 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		mobj->angle = mobj->target->player->drawangle;
-		mobj->z = mobj->target->z;
+
+		P_MoveOrigin(mobj, mobj->target->x + FixedMul(34 * mapobjectscale, FINECOSINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
+				mobj->target->y + FixedMul(34 * mapobjectscale, FINESINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
+				mobj->z + (32 * mapobjectscale));
 
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 
 		mobj->renderflags = (mobj->renderflags & ~RF_DONTDRAW)|K_GetPlayerDontDrawFlag(mobj->target->player);
 		if (vfx)
+		{
 			mobj->renderflags ^= INT32_MAX;
-
-		P_MoveOrigin(mobj, mobj->target->x + FixedMul(34 * mapobjectscale, FINECOSINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
-				mobj->target->y + FixedMul(34 * mapobjectscale, FINESINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
-				mobj->z + (32 * mapobjectscale * P_MobjFlip(mobj)));
-
-		if (vfx)
 			break;
+		}
 
 		{
 			statenum_t gainaxstate = mobj->state-states;
@@ -8442,22 +8441,20 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 
-		mobj->z = mobj->target->z;
-
-		K_MatchGenericExtraFlags(mobj, mobj->target);
-
 		{
-			INT32 perpendicular = ((mobj->extravalue1 & 1) ? -ANGLE_90 : ANGLE_90);
+			const INT32 perpendicular = ((mobj->extravalue1 & 1) ? -ANGLE_90 : ANGLE_90);
 			fixed_t newx = mobj->target->x + P_ReturnThrustX(NULL, mobj->target->angle + perpendicular, 8*mobj->target->scale);
 			fixed_t newy = mobj->target->y + P_ReturnThrustY(NULL, mobj->target->angle + perpendicular, 8*mobj->target->scale);
 
 			P_MoveOrigin(mobj, newx, newy, mobj->target->z);
+			K_MatchGenericExtraFlags(mobj, mobj->target);
 
 			if (mobj->extravalue1 & 1)
 				mobj->angle = mobj->target->angle - ANGLE_45;
 			else
 				mobj->angle = mobj->target->angle + ANGLE_45;
 		}
+
 		break;
 	case MT_TIREGREASE:
 		if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->player
@@ -8467,22 +8464,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 
-		K_MatchGenericExtraFlags(mobj, mobj->target);
-
 		{
 			const angle_t off = FixedAngle(40*FRACUNIT);
 			angle_t ang = K_MomentumAngle(mobj->target);
-			fixed_t z;
 			UINT8 trans = (mobj->target->player->tiregrease * (NUMTRANSMAPS+1)) / greasetics;
 
 			if (trans > NUMTRANSMAPS)
 				trans = NUMTRANSMAPS;
 
 			trans = NUMTRANSMAPS - trans;
-
-			z = mobj->target->z;
-			if (mobj->eflags & MFE_VERTICALFLIP)
-				z += mobj->target->height;
 
 			if (mobj->extravalue1)
 				ang = (signed)(ang - off);
@@ -8492,7 +8482,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_MoveOrigin(mobj,
 				mobj->target->x - FixedMul(mobj->target->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
 				mobj->target->y - FixedMul(mobj->target->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
-				z);
+				mobj->target->z);
+			K_MatchGenericExtraFlags(mobj, mobj->target);
 			mobj->angle = ang;
 
 			if (!P_IsObjectOnGround(mobj->target))
@@ -8632,12 +8623,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 
-		statenum_t stateindex = mobj->target->state - states;
+		const statenum_t stateindex = mobj->target->state - states;
 
-		mobj->x = mobj->target->x;
-		mobj->y = mobj->target->y;
-		mobj->z = mobj->target->z + mobj->target->height/4;
-
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/4);
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 
 		mobj->color = mobj->target->color;
@@ -8830,8 +8818,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
-		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
-		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
+		K_FlipFromObject(mobj, mobj->target);
 
 		break;
 	}
@@ -9033,7 +9020,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					fast->momy = 3*mobj->target->momy/4;
 					fast->momz = 3*P_GetMobjZMovement(mobj->target)/4;
 
-					K_MatchGenericExtraFlags(fast, mobj);
+					K_MatchGenericExtraFlagsNoInterp(fast, mobj);
 					P_SetMobjState(fast, S_FLAMESHIELDLINE1 + i);
 				}
 			}
@@ -9062,9 +9049,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		// Taken from K_FlipFromObject. We just want to flip the visual according to its target, but that's it.
-		mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + mobj->target->height/2);
+		K_MatchFlipFlags(mobj, mobj->target);
 		mobj->angle = K_MomentumAngle(mobj->target);
 
 		if (underlayst != S_NULL)
@@ -9279,8 +9265,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 
 			// Update mobj antigravity status:
-			mobj->eflags = (mobj->eflags & ~MFE_VERTICALFLIP)|(mobj->target->eflags & MFE_VERTICALFLIP);
-			mobj->flags2 = (mobj->flags2 & ~MF2_OBJECTFLIP)|(mobj->target->flags2 & MF2_OBJECTFLIP);
+			K_MatchFlipFlags(mobj, mobj->target);
 
 			// Now for the wheels
 			{
@@ -10058,7 +10043,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 						P_SetTarget(&wave->target, mobj);
 						wave->angle = mobj->angle - (ANGLE_90 * sign); // point completely perpendicular from the bubble
-						K_FlipFromObject(wave, mobj);
+						K_FlipFromObjectNoInterp(wave, mobj);
 
 						P_Thrust(wave, wave->angle, 4*mobj->scale);
 					}
@@ -12789,31 +12774,31 @@ void P_SpawnPlayer(INT32 playernum)
 		mobj_t *ring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKRING);
 		P_SetTarget(&ring->target, p->mo);
 		P_SetScale(ring, p->mo->scale);
-		K_MatchGenericExtraFlags(ring, p->mo);
+		K_MatchGenericExtraFlagsNoInterp(ring, p->mo);
 		ring->renderflags &= ~RF_DONTDRAW;
 
 		mobj_t *body = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKBODY);
 		P_SetTarget(&body->target, p->mo);
 		P_SetScale(body, p->mo->scale);
-		K_MatchGenericExtraFlags(body, p->mo);
+		K_MatchGenericExtraFlagsNoInterp(body, p->mo);
 		body->renderflags |= RF_DONTDRAW;
 
 		mobj_t *aring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_AMPRING);
 		P_SetTarget(&aring->target, p->mo);
 		P_SetScale(aring, p->mo->scale);
-		K_MatchGenericExtraFlags(aring, p->mo);
+		K_MatchGenericExtraFlagsNoInterp(aring, p->mo);
 		aring->renderflags |= RF_DONTDRAW;
 
 		mobj_t *abody = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_AMPBODY);
 		P_SetTarget(&abody->target, p->mo);
 		P_SetScale(abody, p->mo->scale);
-		K_MatchGenericExtraFlags(abody, p->mo);
+		K_MatchGenericExtraFlagsNoInterp(abody, p->mo);
 		abody->renderflags |= RF_DONTDRAW;
 
 		mobj_t *aaura = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_AMPAURA);
 		P_SetTarget(&aaura->target, p->mo);
 		P_SetScale(aaura, p->mo->scale);
-		K_MatchGenericExtraFlags(aaura, p->mo);
+		K_MatchGenericExtraFlagsNoInterp(aaura, p->mo);
 		aaura->renderflags |= RF_DONTDRAW;
 
 		if (K_PlayerGuard(p))

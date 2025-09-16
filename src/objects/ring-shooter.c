@@ -171,6 +171,7 @@ static void UpdateRingShooterParts(mobj_t *mo)
 	part = mo->tracer;
 	part->z = mo->z + FixedMul(refNipple->height, rs_base_yscale(mo));
 	MovePart(part, mo, refNipple);
+	K_FlipFromObject(part, mo);
 	ScalePart(part, mo);
 }
 
@@ -516,7 +517,7 @@ static void SpawnRingShooter(player_t *player)
 	rs_base_karted(base) = -(RS_KARTED_INC * TICRATE); // wait for "3"
 	rs_base_grabberdist(base) = RS_GRABBER_START;
 
-	K_FlipFromObject(base, mo);
+	K_FlipFromObjectNoInterp(base, mo);
 	P_SetScale(base, base->destscale = FixedMul(base->destscale, scale));
 	base->angle = mo->angle;
 	base->scalespeed = FRACUNIT/2;

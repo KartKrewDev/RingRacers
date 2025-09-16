@@ -101,7 +101,7 @@ static void SpawnUFOSpeedLines(mobj_t *ufo)
 	fast->color = SKINCOLOR_WHITE;
 	fast->colorized = true;
 
-	K_MatchGenericExtraFlags(fast, ufo);
+	K_MatchGenericExtraFlagsNoZAdjust(fast, ufo);
 }
 
 static void SpawnEmeraldSpeedLines(mobj_t *mo)
@@ -124,7 +124,7 @@ static void SpawnEmeraldSpeedLines(mobj_t *mo)
 	fast->momy = 3*mo->momy/4;
 	fast->momz = 3*P_GetMobjZMovement(mo)/4;
 
-	K_MatchGenericExtraFlags(fast, mo);
+	K_MatchGenericExtraFlagsNoZAdjust(fast, mo);
 	P_SetTarget(&fast->owner, mo);
 	fast->renderflags |= RF_REDUCEVFX;
 

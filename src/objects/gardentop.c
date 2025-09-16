@@ -407,8 +407,7 @@ anchor
 	const fixed_t x = P_ReturnThrustX(us, angle, radius);
 	const fixed_t y = P_ReturnThrustY(us, angle, radius);
 
-	/* FIXME: THIS FUNCTION FUCKING SUCKS */
-	K_FlipFromObject(us, them);
+	K_MatchFlipFlags(us, them);
 
 	P_MoveOrigin(us, them->x + x, them->y + y,
 			them->z + K_FlipZOffset(us, them));
@@ -439,7 +438,7 @@ anchor_top (mobj_t *top)
 
 	anchor(top, rider, rider->angle, 0);
 
-	K_GenericExtraFlagsNoZAdjust(top, rider);
+	K_MatchGenericExtraFlagsNoZAdjust(top, rider);
 
 	/* Copying the Z momentum lets the Top squash and stretch
 	   as it falls with the player. Don't copy the X/Y

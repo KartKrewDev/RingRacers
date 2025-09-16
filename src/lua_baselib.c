@@ -3766,18 +3766,6 @@ static int lib_kKartPainEnergyFling(lua_State *L)
 	return 0;
 }
 
-static int lib_kFlipFromObject(lua_State *L)
-{
-	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *master = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	NOHUD
-	INLEVEL
-	if (!mo || !master)
-		return LUA_ErrInvalid(L, "mobj_t");
-	K_FlipFromObject(mo, master);
-	return 0;
-}
-
 static int lib_kKartSolidBounce(lua_State *L)
 {
 	mobj_t *bounceMobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3792,6 +3780,30 @@ static int lib_kKartSolidBounce(lua_State *L)
 	return 1;
 }
 
+static int lib_kFlipFromObject(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *master = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mo || !master)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_FlipFromObject(mo, master);
+	return 0;
+}
+
+static int lib_kFlipFromObjectNoInterp(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *master = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mo || !master)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_FlipFromObjectNoInterp(mo, master);
+	return 0;
+}
+
 static int lib_kMatchGenericExtraFlags(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3802,6 +3814,32 @@ static int lib_kMatchGenericExtraFlags(lua_State *L)
 	if (!master)
 		return LUA_ErrInvalid(L, "mobj_t");
 	K_MatchGenericExtraFlags(mo, master);
+	return 0;
+}
+
+static int lib_kMatchGenericExtraFlagsNoInterp(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *master = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	if (!master)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_MatchGenericExtraFlagsNoInterp(mo, master);
+	return 0;
+}
+
+static int lib_kMatchGenericExtraFlagsNoZAdjust(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *master = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	if (!master)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_MatchGenericExtraFlagsNoZAdjust(mo, master);
 	return 0;
 }
 
@@ -3904,7 +3942,7 @@ static int lib_kGenericExtraFlagsNoZAdjust(lua_State *L)
 	INLEVEL
 	if (!mo || !master)
 		return LUA_ErrInvalid(L, "mobj_t");
-	K_GenericExtraFlagsNoZAdjust(mo, master);
+	K_MatchGenericExtraFlagsNoZAdjust(mo, master);
 	return 0;
 }
 
@@ -6719,8 +6757,11 @@ static luaL_Reg lib[] = {
 	{"K_KartBouncing",lib_kKartBouncing},
 	{"K_KartPainEnergyFling",lib_kKartPainEnergyFling},
 	{"K_FlipFromObject",lib_kFlipFromObject},
+	{"K_FlipFromObjectNoInterp",lib_kFlipFromObjectNoInterp},
 	{"K_KartSolidBounce",lib_kKartSolidBounce},
 	{"K_MatchGenericExtraFlags",lib_kMatchGenericExtraFlags},
+	{"K_MatchGenericExtraFlagsNoInterp",lib_kMatchGenericExtraFlagsNoInterp},
+	{"K_MatchGenericExtraFlagsNoZAdjust",lib_kMatchGenericExtraFlagsNoZAdjust},
 	{"K_SpawnDashDustRelease",lib_kSpawnDashDustRelease},
 	{"K_SpawnDriftBoostClip",lib_kSpawnDriftBoostClip},
 	{"K_SpawnDriftBoostClipSpark",lib_kSpawnDriftBoostClipSpark},
@@ -6728,7 +6769,7 @@ static luaL_Reg lib[] = {
 	{"K_SpawnGardenTopSpeedLines",lib_kSpawnGardenTopSpeedLines},
 	{"K_SpawnInvincibilitySpeedLines",lib_kSpawnInvincibilitySpeedLines},
 	{"K_SpawnBumpEffect",lib_kSpawnBumpEffect},
-	{"K_GenericExtraFlagsNoZAdjust",lib_kGenericExtraFlagsNoZAdjust},
+	{"K_MatchGenericExtraFlagsNoZAdjust",lib_kGenericExtraFlagsNoZAdjust},
 	{"K_PressingEBrake",lib_kPressingEBrake},
 	{"K_MomentumAngleEx",lib_kMomentumAngleEx},
 	{"K_MomentumAngleReal",lib_kMomentumAngleReal},
