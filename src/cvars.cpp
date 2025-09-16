@@ -1410,6 +1410,10 @@ consvar_t cv_voice_loopback = Player("voice_loopback", "Off")
 	.dont_save()
 	.description("When on, plays the local player's voice");
 
+consvar_t cv_voice_denoise = Player("voice_denoise", "On")
+	.on_off()
+	.description("When on, denoises the voice microphone signal");
+
 consvar_t cv_voice_proximity = NetVar("voice_proximity", "On")
 	.on_off()
 	.description("Whether proximity effects for voice chat are enabled on the server.");
