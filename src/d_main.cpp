@@ -1209,6 +1209,7 @@ void D_ClearState(void)
 	SV_StopServer();
 	SV_ResetServer();
 	serverlistultimatecount = 0;
+	serverlistmode = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
