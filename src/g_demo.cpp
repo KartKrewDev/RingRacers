@@ -182,7 +182,7 @@ demoghost *ghosts = NULL;
 // - 0x0010 (Ring Racers 2.4 staff ghosts part 3 - skinlimit raise. don't say we never did anythin for 'ya)
 
 #define MINDEMOVERSION 0x000E
-#define DEMOVERSION 0x0010
+#define DEMOVERSION 0x0011
 
 boolean G_CompatLevel(UINT16 level)
 {

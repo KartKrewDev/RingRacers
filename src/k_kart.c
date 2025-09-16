@@ -13971,6 +13971,22 @@ static void K_KartSpindash(player_t *player)
 				player->transfer = 0;
 			}
 		}
+		else if (!G_CompatLevel(0x0010))
+		{
+			boolean ebrakelasttic = ((player->oldcmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK);
+			if (player->pflags2 & PF2_STRICTFASTFALL)
+				ebrakelasttic = (player->oldcmd.buttons & BT_SPINDASH);
+
+			boolean ebrakenow = K_PressingEBrake(player);
+			if (player->pflags2 & PF2_STRICTFASTFALL && !(player->cmd.buttons & BT_SPINDASH))
+				ebrakenow = false;
+
+			if (!ebrakelasttic && ebrakenow && player->fastfall && player->transfer)
+			{
+				player->transfer = 0;
+				S_StartSound(player->mo, sfx_s3k7d);
+			}
+		}
 
 		// Update fastfall.
 		player->fastfall = player->mo->momz;
