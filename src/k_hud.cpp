@@ -5280,7 +5280,7 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 	else if (S_IsPlayerVoiceActive(playernum))
 	{
 		patch_t* voxmic = kp_voice_tagactive[(leveltime / 3) % 3];
-		V_DrawFixedPatch(x + 6*FRACUNIT, y - 12*FRACUNIT, FRACUNIT, V_SPLITSCREEN|flags, voxmic, NULL);
+		V_DrawFixedPatch(x + 6*FRACUNIT, y - ((flags & V_VFLIP) ? -1 : 1)*12*FRACUNIT, FRACUNIT, V_SPLITSCREEN|flags, voxmic, NULL);
 	}
 }
 
