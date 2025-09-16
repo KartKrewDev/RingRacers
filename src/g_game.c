@@ -496,7 +496,11 @@ bademblem:
 
 	if (!gonnadrawtime && showownrecord)
 	{
-		stickermedalinfo.timetoreach = G_GetBestTime(map);
+		stickermedalinfo.timetoreach = (encoremode == true)
+			? mapheaderinfo[map]->records.spbattack.time
+			: mapheaderinfo[map]->records.timeattack.time;
+		if (!stickermedalinfo.timetoreach)
+			stickermedalinfo.timetoreach = UINT32_MAX;
 	}
 
 	if (stickermedalinfo.timetoreach != UINT32_MAX)
