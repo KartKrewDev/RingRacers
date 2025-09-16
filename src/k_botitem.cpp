@@ -950,7 +950,7 @@ static void K_BotItemOrbinaut(const player_t *player, ticcmd_t *cmd)
 		cmd->buttons |= BT_LOOKBACK;
 	}
 
-	if (player->botvars.itemconfirm > 25*TICRATE)
+	if (player->botvars.itemconfirm > 10*TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -1178,7 +1178,7 @@ static void K_BotItemJawz(const player_t *player, ticcmd_t *cmd)
 		cmd->buttons |= BT_LOOKBACK;
 	}
 
-	if (player->botvars.itemconfirm > 25*TICRATE)
+	if (player->botvars.itemconfirm > 10*TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
