@@ -1723,6 +1723,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		HWD.pfnSetShader(SHADER_MODEL);	// model shader
 		{
 			float this_scale = FIXED_TO_FLOAT(spr->mobj->scale);
+			fixed_t floorClip = spr->mobj->terrain ? spr->mobj->terrain->floorClip : 0;
+			float finalfloorClip = FIXED_TO_FLOAT(FixedMul(floorClip, mapobjectscale)*P_MobjFlip(spr->mobj));
 
 			float xs = this_scale * FIXED_TO_FLOAT(spr->mobj->spritexscale);
 			float ys = this_scale * FIXED_TO_FLOAT(spr->mobj->spriteyscale);
@@ -1733,7 +1735,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			// offset perpendicular to the camera angle
 			p.x -= ox * gl_viewsin;
 			p.y += ox * gl_viewcos;
-			p.z += oy;
+			p.z += oy - finalfloorClip;
 
 			if (R_ThingIsUsingBakedOffsets(spr->mobj))
 			{

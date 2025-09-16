@@ -3415,6 +3415,11 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 			return; // cap
 
 		blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
+
+		// if sprite has PF_ALWAYSONTOP, draw on top of everything.
+		if (cv_debugrender_spriteclip.value || spr->mobj->renderflags & RF_ALWAYSONTOP)
+			blend |= PF_NoDepthTest;
+
 		if (!trans && !blendmode)
 		{
 			// BP: i agree that is little better in environement but it don't
@@ -3896,6 +3901,11 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 				return; // cap
 
 			blend = HWR_SurfaceBlend(blendmode, trans, &Surf);
+
+			// if sprite has PF_ALWAYSONTOP, draw on top of everything.
+			if (cv_debugrender_spriteclip.value || spr->mobj->renderflags & RF_ALWAYSONTOP)
+				blend |= PF_NoDepthTest;
+
 			if (!trans && !blendmode)
 			{
 				// BP: i agree that is little better in environement but it don't
@@ -3921,7 +3931,10 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 
 		if (HWR_UseShader())
 		{
-			shader = (R_ThingIsPaperSprite(spr->mobj) || R_ThingIsFloorSprite(spr->mobj)) ? SHADER_SPRITE : SHADER_SPRITECLIPHACK;;
+			shader = (R_ThingIsPaperSprite(spr->mobj)
+				|| R_ThingIsFloorSprite(spr->mobj)
+				|| (spr->mobj->terrain && spr->mobj->terrain->floorClip)
+				) ? SHADER_SPRITE : SHADER_SPRITECLIPHACK;
 			blend |= PF_ColorMapped;
 		}
 
@@ -5006,6 +5019,9 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		z2 = tr_y - x2 * rightsin;
 		x1 = tr_x + x1 * rightcos;
 		x2 = tr_x - x2 * rightcos;
+
+		if (thing->terrain && thing->terrain->floorClip)
+			spr_topoffset -=  thing->terrain->floorClip;
 
 		if (vflip)
 		{
