@@ -225,24 +225,21 @@ void Environment::loadModule(ACSVM::Module *module)
 	size_t lumpLen = 0;
 	std::vector<ACSVM::Byte> data;
 
-	I_Assert(name->i >= 0 && name->i < nummapheaders);
-	const lumpnum_t lumpnum = mapheaderinfo[name->i]->lumpnum;
-
-	if (lumpnum == LUMPERROR)
+	if (name->i == (size_t)LUMPERROR)
 	{
 		// No lump given for module.
 		throw ACSVM::ReadError("invalid lump");
 	}
 
-	lumpLen = W_LumpLength(lumpnum);
+	lumpLen = W_LumpLength(name->i);
 
-	if (W_IsLumpWad(lumpnum) == true || lumpLen == 0)
+	if (W_IsLumpWad(name->i) == true || lumpLen == 0)
 	{
 		CONS_Debug(DBG_SETUP, "Attempting to load ACS module from the BEHAVIOR lump of map '%s'...\n", name->s->str);
 
 		// The lump given is a virtual resource.
 		// Try to grab a BEHAVIOR lump from inside of it.
-		virtres_t *vRes = vres_GetMap(lumpnum);
+		virtres_t *vRes = vres_GetMap(name->i);
 		auto _ = srb2::finally([vRes]() { vres_Free(vRes); });
 
 		virtlump_t *vLump = vres_Find(vRes, "BEHAVIOR");
@@ -264,7 +261,7 @@ void Environment::loadModule(ACSVM::Module *module)
 		ACSVM::Byte *lump = static_cast<ACSVM::Byte *>(Z_Calloc(lumpLen, PU_STATIC, nullptr));
 		auto _ = srb2::finally([lump]() { Z_Free(lump); });
 
-		W_ReadLump(lumpnum, lump);
+		W_ReadLump(name->i, lump);
 		data.insert(data.begin(), lump, lump + lumpLen);
 	}
 
