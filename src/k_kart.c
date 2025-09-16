@@ -10052,6 +10052,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_DropItems(player);
 	}
 
+	if (K_InRaceDuel() && D_NumPlayersInRace() < 2)
+		P_DoPlayerExit(player, 0);
+
 	if (G_TimeAttackStart() && !attacktimingstarted && player->speed && leveltime > introtime)
 	{
 		attacktimingstarted = leveltime;
