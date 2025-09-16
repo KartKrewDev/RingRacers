@@ -153,7 +153,7 @@ void ACS_LoadLevelScripts(size_t mapID)
 		ACSVM::ModuleName name = ACSVM::ModuleName(
 			env->getString( mapheaderinfo[mapID]->lumpname ),
 			nullptr,
-			mapID
+			mapheaderinfo[mapID]->lumpnum
 		);
 
 		modules.push_back(env->getModule(name));
