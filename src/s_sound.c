@@ -1011,7 +1011,11 @@ void S_UpdateVoicePositionalProperties(void)
 		float pdirx = px / p2ddistance;
 		float pdiry = py / p2ddistance;
 		float angle = acosf(pdirx * ldirx + pdiry * ldiry);
-		angle = PointIsLeft(ldirx, ldiry, pdirx, pdiry) ? -angle : angle;
+		angle = (
+			PointIsLeft(ldirx, ldiry, pdirx, pdiry)
+			^ stereoreverse.value
+			^ encoremode
+		) ? -angle : angle;
 
 		float plrvolume = 1.0f;
 
