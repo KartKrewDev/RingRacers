@@ -1909,7 +1909,7 @@ void K_SpawnDashDustRelease(player_t *player)
 	if (!P_IsObjectOnGround(player->mo))
 		return;
 
-	if (!player->speed && !player->startboost && !player->spindash && !player->dropdashboost)
+	if (!player->speed && !player->startboost && !player->spindash && !player->dropdashboost && !player->aciddropdashboost)
 		return;
 
 	travelangle = player->mo->angle;
@@ -3778,6 +3778,11 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->dropdashboost) // Drop dash
 	{
 		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, HANDLESCALING); // + 33% top speed, + 400% acceleration, +50% handling
+	}
+
+	if (player->aciddropdashboost) // Great value Drop dash
+	{
+		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, HANDLESCALING/3); // + 33% top speed, + 400% acceleration, +33% handling, No sliptides here
 	}
 
 	if (player->driftboost) // Drift Boost
@@ -10023,6 +10028,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (onground && player->transfer)
 	{
+
+		if (G_CompatLevel(0x0010))
+		{
+			// Ghosts prior to 2.4 RC2 don't get this
+		}
+		else
+		{
+			if (player->fastfall) // If you elected to acid drop, you get a small dropdash boost on landing
+			{
+				S_StartSound(player->mo, sfx_s23c);
+				player->aciddropdashboost = max(player->aciddropdashboost, 35);
+				K_SpawnDashDustRelease(player);
+			}
+		}
 		player->fastfall = 0;
 		player->transfer = 0;
 		player->pflags2 &= ~PF2_SUPERTRANSFERVFX;
@@ -10542,6 +10561,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	if (player->dropdashboost)
 		player->dropdashboost--;
+
+	if (player->aciddropdashboost)
+		player->aciddropdashboost--;
 
 	if (player->wavedashboost > 0 && onground == true)
 	{

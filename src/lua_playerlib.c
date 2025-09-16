@@ -321,6 +321,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->startboost);
 	else if (fastcmp(field,"dropdashboost"))
 		lua_pushinteger(L, plr->dropdashboost);
+	else if (fastcmp(field,"aciddropdashboost"))
+		lua_pushinteger(L, plr->aciddropdashboost);
 	else if (fastcmp(field,"aizdriftstrat"))
 		lua_pushinteger(L, plr->aizdriftstrat);
 	else if (fastcmp(field,"aizdriftextend"))
@@ -986,6 +988,8 @@ static int player_set(lua_State *L)
 		plr->startboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"dropdashboost"))
 		plr->dropdashboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"aciddropdashboost"))
+		plr->aciddropdashboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdriftstrat"))
 		plr->aizdriftstrat = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdrifttilt"))
