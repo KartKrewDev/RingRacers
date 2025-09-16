@@ -7750,7 +7750,7 @@ void K_drawKartHUD(void)
 
 		// Tacitcal Normie Countermeasure
 		INT32 dfade = K_GetDialogueFade();
-		if (dfade)
+		if (dfade && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOCOMMS))
 		{
 			V_DrawFadeScreen(31, dfade); // Fade out
 
