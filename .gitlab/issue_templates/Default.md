@@ -16,4 +16,4 @@
 
 # Logs, videos, or screenshots that showcase the issue
 
-(For crash bugs, look for an .RPT file, or your `latest-log.txt`. You can drag it directly into this window.)
+(For crash bugs, look for an .RPT file, or your `latest-log.txt`. For gameplay glitches or oddities, try to attach a replay or video that contains the issue (check `media/replay`, or hit F9 in-game to start recording). You can drag files directly into this window.)
