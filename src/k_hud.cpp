@@ -8232,21 +8232,22 @@ void K_drawKartHUD(void)
 	}
 
 	// TODO better voice chat speaking indicator integration for spectators
-	{
-		char speakingstring[2048];
-		memset(speakingstring, 0, sizeof(speakingstring));
+	// Just kidding spectator voice is disabled in-level anyway
+	// {
+	// 	char speakingstring[2048];
+	// 	memset(speakingstring, 0, sizeof(speakingstring));
 
-		for (int i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && players[i].spectator && S_IsPlayerVoiceActive(i))
-			{
-				strcat(speakingstring, player_names[i]);
-				strcat(speakingstring, " ");
-			}
-		}
+	// 	for (int i = 0; i < MAXPLAYERS; i++)
+	// 	{
+	// 		if (netgame && cv_voice_allowservervoice.value && playeringame[i] && players[i].spectator && S_IsPlayerVoiceActive(i))
+	// 		{
+	// 			strcat(speakingstring, player_names[i]);
+	// 			strcat(speakingstring, " ");
+	// 		}
+	// 	}
 
-		V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT, speakingstring);
-	}
+	// 	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT, speakingstring);
+	// }
 
 	// Draw the countdowns after everything else.
 	if (stplyr->lives <= 0 && stplyr->playerstate == PST_DEAD)

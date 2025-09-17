@@ -1209,7 +1209,7 @@ void Y_VoteDrawer(void)
 
 		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-			if (S_IsPlayerVoiceActive(i))
+			if (netgame && cv_voice_allowservervoice.value && S_IsPlayerVoiceActive(i))
 			{
 				strcat(speakingstring, player_names[i]);
 				strcat(speakingstring, " ");

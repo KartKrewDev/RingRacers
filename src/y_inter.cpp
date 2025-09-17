@@ -793,7 +793,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				player_names[pnum]
 			);
 
-			if (netgame)
+			if (netgame && cv_voice_allowservervoice.value)
 			{
 				patch_t *voxpat;
 				int voxxoffs = 0;
