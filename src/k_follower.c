@@ -516,7 +516,7 @@ void K_HandleFollower(player_t *player)
 		player->follower->colorized = player->mo->colorized;
 
 		P_SetScale(player->follower, FixedMul(fl->scale, player->mo->scale));
-		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo); // Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
+		K_MatchGenericExtraFlagsNoZAdjust(player->follower, player->mo); // Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
 
 		// Match how the player is being drawn
 		player->follower->renderflags = player->mo->renderflags;
@@ -623,7 +623,7 @@ void K_HandleFollower(player_t *player)
 			P_MoveOrigin(bmobj, player->follower->x, player->follower->y, player->follower->z);
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
-			K_GenericExtraFlagsNoZAdjust(bmobj, player->follower);
+			K_MatchGenericExtraFlagsNoZAdjust(bmobj, player->follower);
 			bmobj->renderflags = player->mo->renderflags;
 
 			if (player->follower->threshold)
@@ -712,7 +712,7 @@ void K_HandleFollower(player_t *player)
 				player->follower->z + player->follower->height
 			);
 
-			K_FlipFromObject(honk, player->follower);
+			K_FlipFromObjectNoInterp(honk, player->follower);
 
 			honk->angle = R_PointToAngle2(
 				player->mo->x,
@@ -856,7 +856,7 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 			P_SetTarget(&taunter->follower->hprev, honk);
 			P_SetTarget(&honk->target, taunter->follower);
 
-			K_FlipFromObject(honk, taunter->follower);
+			K_FlipFromObjectNoInterp(honk, taunter->follower);
 
 			honk->color = taunter->skincolor;
 

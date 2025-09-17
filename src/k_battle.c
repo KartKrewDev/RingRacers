@@ -620,12 +620,12 @@ void K_RunPaperItemSpawners(void)
 					flip = P_MobjFlip(spotList[r]);
 
 					drop = K_SpawnSphereBox(
-						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
+						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale),
 							FixedAngle(P_RandomRange(PR_ITEM_SPAWNER, 0, 359) * FRACUNIT), flip,
 							10
 					);
 
-					K_FlipFromObject(drop, spotList[r]);
+					K_FlipFromObjectNoInterp(drop, spotList[r]);
 
 					spotCount--;
 					if (key != spotCount)

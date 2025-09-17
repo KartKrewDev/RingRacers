@@ -5265,6 +5265,7 @@ static void K_DrawTypingDot(fixed_t x, fixed_t y, UINT8 duration, player_t *p, I
 static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 {
 	int playernum = p - players;
+	flags &= ~V_FLIP; // does not support this
 	if (p->cmd.flags & TICCMD_TYPING || S_IsPlayerVoiceActive(playernum))
 	{
 		V_DrawFixedPatch(x, y, FRACUNIT, V_SPLITSCREEN|flags, kp_talk, NULL);
@@ -5279,7 +5280,7 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p, INT32 flags)
 	else if (S_IsPlayerVoiceActive(playernum))
 	{
 		patch_t* voxmic = kp_voice_tagactive[(leveltime / 3) % 3];
-		V_DrawFixedPatch(x + 6*FRACUNIT, y - 12*FRACUNIT, FRACUNIT, V_SPLITSCREEN|flags, voxmic, NULL);
+		V_DrawFixedPatch(x + 6*FRACUNIT, y - ((flags & V_VFLIP) ? -1 : 1)*12*FRACUNIT, FRACUNIT, V_SPLITSCREEN|flags, voxmic, NULL);
 	}
 }
 
@@ -5298,6 +5299,8 @@ static void K_DrawNameTagItemSpy(INT32 x, INT32 y, player_t *p, INT32 flags)
 		flip = P_MobjFlip(p->mo);
 		flipboxoffset = 8;
 	}
+
+	flags &= ~V_FLIP;
 
 	Draw bar = Draw(x, y).flags(V_NOSCALESTART|flags);
 	Draw box = tiny ? bar.xy(-22 * vid.dupx, (-17+flipboxoffset) * vid.dupy) : bar.xy(-40 * vid.dupx, (-26+flipboxoffset) * vid.dupy);
@@ -5406,7 +5409,7 @@ static void K_DrawRivalTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 fl
 		bary = (y * vid.dupy) / FRACUNIT;
 
 		barx += (16 * vid.dupx);
-		bary -= (25 * vid.dupx);
+		bary -= P_MobjFlip(p->mo) * (25 * vid.dupx);
 
 		// Center it if necessary
 		if (vid.width != BASEVIDWIDTH * vid.dupx)
@@ -5437,7 +5440,7 @@ static void K_DrawCPUTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 flag
 		bary = (y * vid.dupy) / FRACUNIT;
 
 		barx += (16 * vid.dupx);
-		bary -= (25 * vid.dupx);
+		bary -= P_MobjFlip(p->mo) * (25 * vid.dupx);
 
 		// Center it if necessary
 		if (vid.width != BASEVIDWIDTH * vid.dupx)
@@ -5466,15 +5469,22 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 fla
 
 	UINT8 *colormap = V_GetStringColormap(clr);
 	INT32 barx = 0, bary = 0, barw = 0;
-	INT32 flipped = P_MobjFlip(p->mo), flipfilloffset = 0, flipfontoffset = 0, flipspheresoffset = 0;
-	if (flipped == -1)
+	INT32 flipped = 1, flipfilloffset = 0, flipfontoffset = 0, flipspheresoffset = 0;
+
+	const UINT8 cnum = R_GetViewNumber();
+
+	const UINT32 hadflags = flags;
+
+	if ((flags & V_VFLIP) == V_VFLIP)
 	{
+		flags &= ~V_VFLIP;
+		flipped = P_MobjFlip(p->mo);
 		flipfilloffset = -3; // You cannot really flip drawfill.
 		flipfontoffset = -9; // Accounts for font height.
 		flipspheresoffset = 2;
 	}
 
-	UINT8 cnum = R_GetViewNumber();
+	flags &= ~V_FLIP;
 
 	// Since there's no "V_DrawFixedFill", and I don't feel like making it,
 	// fuck it, we're gonna just V_NOSCALESTART hack it
@@ -5512,12 +5522,12 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 fla
 	if ((p->itemtype != KITEM_NONE && p->itemamount != 0)
 		|| (p->itemRoulette.active == true && p->itemRoulette.ringbox == false))
 	{
-		K_DrawNameTagItemSpy(barx, bary, p, flags);
+		K_DrawNameTagItemSpy(barx, bary, p, hadflags);
 	}
 
 	if (gametyperules & GTR_SPHERES)
 	{
-		K_DrawNameTagSphereMeter(barx, bary + (((4 + flipspheresoffset) * vid.dupy) * P_MobjFlip(p->mo)), barw, p->spheres, flags);
+		K_DrawNameTagSphereMeter(barx, bary + (((4 + flipspheresoffset) * vid.dupy) * P_MobjFlip(p->mo)), barw, p->spheres, hadflags);
 	}
 
 	// Lat: 10/06/2020: colormap can be NULL on the frame you join a game, just arbitrarily use palette indexes 31 and 0 instead of whatever the colormap would give us instead to avoid crashes.
@@ -5526,7 +5536,7 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 fla
 	// END DRAWFILL DUMBNESS
 
 	// Draw the stem
-	V_DrawFixedPatch(x, y, FRACUNIT, flags, kp_nametagstem, colormap);
+	V_DrawFixedPatch(x, y, FRACUNIT, (hadflags & ~V_FLIP), kp_nametagstem, colormap);
 
 	// Draw the name itself
 	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (((26 + flipfontoffset) * FRACUNIT) * P_MobjFlip(p->mo)), clr|flags, player_names[p - players]);
@@ -5534,7 +5544,7 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT32 fla
 
 playertagtype_t K_WhichPlayerTag(player_t *p)
 {
-	UINT8 cnum = R_GetViewNumber();
+	const UINT8 cnum = R_GetViewNumber();
 
 	if (!(demo.playback == true && camera[cnum].freecam == true) && P_IsDisplayPlayer(p) &&
 		p != &players[displayplayers[cnum]])
@@ -5571,7 +5581,7 @@ playertagtype_t K_WhichPlayerTag(player_t *p)
 
 void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, boolean foreground)
 {
-	INT32 flags = P_IsObjectFlipped(p->mo) ? V_VFLIP : 0;
+	INT32 flags = P_IsObjectFlipped(p->mo) ? (V_VFLIP|V_FLIP) : 0;
 
 	switch (type)
 	{
@@ -5651,7 +5661,7 @@ static void K_DrawWeakSpot(weakspotdraw_t *ws)
 static void K_drawKartNameTags(void)
 {
 	vector3_t c;
-	UINT8 cnum = R_GetViewNumber();
+	const UINT8 cnum = R_GetViewNumber();
 	size_t i, j;
 
 	if (stplyr == NULL || stplyr->mo == NULL || P_MobjWasRemoved(stplyr->mo))

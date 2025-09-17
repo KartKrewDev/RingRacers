@@ -95,6 +95,10 @@ sine_bob
 	hyu->sprzoff = FixedMul(kBobHeight,
 			sineofs + FINESINE(a >> ANGLETOFINESHIFT)) * P_MobjFlip(hyu);
 
+	// todo I think this is slightly wrong
+	// but I am literally fixing every single
+	// K_FlipFromObject in the code at once
+	// and this is impossible in basegame rn
 	if (P_IsObjectFlipped(hyu))
 		hyu->sprzoff -= hyu->height;
 }
@@ -306,7 +310,7 @@ struct Flicky : mobj_t
 			color = super_color();
 		}
 
-		K_FlipFromObject(this, source());
+		K_MatchFlipFlags(this, source());
 		bob_in_place(this, phase() * 8, 32);
 	}
 
@@ -401,7 +405,7 @@ struct Flicky : mobj_t
 		fast->colorized = true;
 		fast->renderflags |= RF_ADD;
 
-		K_MatchGenericExtraFlags(fast, this);
+		K_MatchGenericExtraFlagsNoZAdjust(fast, this);
 	}
 
 	void range_check()

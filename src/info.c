@@ -14052,7 +14052,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_GOIIT
+	{           // MT_GOTIT
 		-1,             // doomednum
 		S_GOTIT,    // spawnstate
 		1000,           // spawnhealth

@@ -182,7 +182,7 @@ static void SpawnSPBDust(mobj_t *spb)
 			dust->angle = spb->angle - FixedAngle(FRACUNIT*90 - FRACUNIT*180*i); // The first one will spawn to the right of the spb, the second one to the left.
 			P_Thrust(dust, dust->angle, 6*dust->scale);
 
-			K_MatchGenericExtraFlags(dust, spb);
+			K_MatchGenericExtraFlagsNoZAdjust(dust, spb);
 
 			sa += ANG1*120;	// Add 120 degrees to get to mo->angle + ANG1*60
 		}
@@ -229,7 +229,7 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 			spark->momx = (6*spb->momx)/5;
 			spark->momy = (6*spb->momy)/5;
 
-			K_MatchGenericExtraFlags(spark, spb);
+			K_MatchGenericExtraFlagsNoZAdjust(spark, spb);
 		}
 	}
 
@@ -253,7 +253,7 @@ static void SpawnSPBSpeedLines(mobj_t *spb)
 	fast->color = SKINCOLOR_RED;
 	fast->colorized = true;
 
-	K_MatchGenericExtraFlags(fast, spb);
+	K_MatchGenericExtraFlagsNoZAdjust(fast, spb);
 }
 
 static fixed_t SPBDist(mobj_t *a, mobj_t *b)

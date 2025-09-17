@@ -177,10 +177,10 @@ demoghost *ghosts = NULL;
 // - 0x000D (Ring Racers v2.3)
 
 // Currently supported:
-// - 0x000E (Ring Racers 2.4 staff ghosts part 1 - initial recordings)
-// - 0x000F (Ring Racers 2.4 staff ghosts part 2 - dynslopes thinker fix)
-// - 0x0010 (Ring Racers 2.4 staff ghosts part 3 - skinlimit raise. don't say we never did anythin for 'ya)
-// - 0x0011 (Ring Racers 2.4 staff ghosts part 4 - acid dropdash)
+// - 0x000E -- RR 2.4 indev (staff ghosts part 1 - initial recordings)
+// - 0x000F -- RR 2.4 indev (staff ghosts part 2 - dynslopes thinker fix)
+// - 0x0010 -- RR 2.4 rc1   (staff ghosts part 3 - skinlimit raise. don't say we never did anythin for 'ya)
+// - 0x0011 -- RR 2.4 rc2   (K_FlipFromObject oversight)
 
 #define MINDEMOVERSION 0x000E
 #define DEMOVERSION 0x0011

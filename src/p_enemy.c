@@ -3578,7 +3578,7 @@ void A_AttractChase(mobj_t *actor)
 				fixed_t offsZ = FixedMul(actor->movefactor, offsFrac);
 
 				//P_SetScale(actor, (actor->destscale = actor->target->scale));
-				K_MatchGenericExtraFlags(actor, actor->target);
+				K_MatchGenericExtraFlagsNoZAdjust(actor, actor->target);
 
 				P_MoveOrigin(
 					actor,
@@ -3615,7 +3615,7 @@ void A_AttractChase(mobj_t *actor)
 
 				P_SetScale(actor, (actor->destscale = mapobjectscale - ((mapobjectscale/14) * actor->extravalue1)));
 				actor->z = actor->target->z;
-				K_MatchGenericExtraFlags(actor, actor->target);
+				K_MatchGenericExtraFlagsNoZAdjust(actor, actor->target);
 				P_MoveOrigin(actor,
 					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
 					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),

@@ -92,11 +92,9 @@ struct Aura : mobj_t
 		{
 			return;
 		}
-		
-		K_FlipFromObject(this, origin());
-		fixed_t flipoffset = P_IsObjectFlipped(origin()) ? origin()->height : 0;
 
-		P_MoveOrigin(this, origin()->x, origin()->y, origin()->z - flipoffset);
+		P_MoveOrigin(this, origin()->x, origin()->y, origin()->z);
+		K_FlipFromObject(this, origin());
 		P_InstaScale(this, 11 * origin()->scale / 10);
 
 		translate();

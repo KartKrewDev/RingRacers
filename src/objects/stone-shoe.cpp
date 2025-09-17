@@ -272,10 +272,7 @@ private:
 
 		sprzoff(30 * scale());
 
-		if (is_flipped() != follow()->is_flipped())
-		{
-			K_FlipFromObject(this, follow());
-		}
+		K_MatchFlipFlags(this, follow());
 	}
 
 	void move_chain()
@@ -297,7 +294,7 @@ private:
 		while (Mobj::valid(node))
 		{
 			node->move_origin({p, pz});
-			K_FlipFromObject(node, this);
+			K_MatchFlipFlags(node, this);
 			node->sprzoff(sprzoff());
 
 			// Let chain flicker like shoe does
