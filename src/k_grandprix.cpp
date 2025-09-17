@@ -316,7 +316,7 @@ void K_InitGrandPrixBots(void)
 				// Intentionally referenced before (currently dummied out) unlock check. Such a tease!
 				if (rivalnum != -1 && grabskins[(UINT16)rivalnum] != MAXSKINS)
 				{
-					botskinlist[botskinlistpos++] = (UINT8)rivalnum;
+					botskinlist[botskinlistpos++] = (UINT16)rivalnum;
 					grabskins[(UINT16)rivalnum] = MAXSKINS;
 				}
 			}
