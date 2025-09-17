@@ -176,7 +176,7 @@ void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 		if (cv == &cv_nettimeout || cv == &cv_jointimeout)
 			choice *= (TICRATE/7);
 		else if (cv == &cv_maxsend)
-			choice *= 512;
+			choice *= 1024;
 
 		CV_AddValue(cv, choice);
 	}
@@ -547,9 +547,6 @@ void M_PlayMenuJam(void)
 		musicstatepermitted = true;
 		return;
 	}
-
-	if (soundtest.playing)
-		return;
 
 	const boolean trulystarted = M_GameTrulyStarted();
 	const boolean profilemode = (

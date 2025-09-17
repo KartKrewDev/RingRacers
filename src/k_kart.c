@@ -1937,7 +1937,7 @@ void K_SpawnDashDustRelease(player_t *player)
 	if (!P_IsObjectOnGround(player->mo))
 		return;
 
-	if (!player->speed && !player->startboost && !player->spindash && !player->dropdashboost)
+	if (!player->speed && !player->startboost && !player->spindash && !player->dropdashboost && !player->aciddropdashboost)
 		return;
 
 	travelangle = player->mo->angle;
@@ -3802,6 +3802,11 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, HANDLESCALING); // + 33% top speed, + 400% acceleration, +50% handling
 	}
 
+	if (player->aciddropdashboost) // Great value Drop dash
+	{
+		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, HANDLESCALING/3); // + 33% top speed, + 400% acceleration, +33% handling, No sliptides here
+	}
+
 	if (player->driftboost) // Drift Boost
 	{
 		// Rebuff Eggman's stat block corner
@@ -4452,6 +4457,22 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	// 	FixedMul(scaledamps<<FRACBITS, itemdistmult)>>FRACBITS);
 	scaledamps = FixedMul(scaledamps<<FRACBITS, itemdistmult)>>FRACBITS;
 
+	//CONS_Printf("SA=%d ", scaledamps);
+
+	// Arbitrary tuning constants.
+	// Reduce amp payouts by 1/40th for each 2 amps obtained recently
+	UINT8 num = 40;
+	UINT8 div = 40;
+	UINT8 reduction = min(30, player->recentamps);
+
+	num -= reduction;
+
+	//CONS_Printf("N=%d D=%d RA=%d ", num, div, player->recentamps);
+
+	scaledamps = num * scaledamps / div;
+
+	//CONS_Printf("SA2=%d\n", scaledamps);
+
 	/*
 	if (player->position <= 1)
 		scaledamps /= 2;
@@ -4468,6 +4489,7 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 		pickup->color = player->skincolor;
 		P_SetTarget(&pickup->target, player->mo);
 		player->ampspending++;
+		player->recentamps++;
 	}
 }
 
@@ -10012,6 +10034,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (onground && player->transfer)
 	{
+
+		if (G_CompatLevel(0x0010))
+		{
+			// Ghosts prior to 2.4 RC2 don't get this
+		}
+		else
+		{
+			if (player->fastfall) // If you elected to acid drop, you get a small dropdash boost on landing
+			{
+				S_StartSound(player->mo, sfx_s23c);
+				player->aciddropdashboost = max(player->aciddropdashboost, 35);
+				K_SpawnDashDustRelease(player);
+			}
+		}
 		player->fastfall = 0;
 		player->transfer = 0;
 		player->pflags2 &= ~PF2_SUPERTRANSFERVFX;
@@ -10021,6 +10057,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		K_DropItems(player);
 	}
+
+	if (K_InRaceDuel() && D_NumPlayersInRace() < 2)
+		P_DoPlayerExit(player, 0);
 
 	if (G_TimeAttackStart() && !attacktimingstarted && player->speed && leveltime > introtime)
 	{
@@ -10468,8 +10507,22 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->trickboost)
 		player->trickboost--;
 
-	if (K_PlayerUsesBotMovement(players) && player->botvars.bumpslow && player->incontrol)
+	/*
+	if (K_PlayerUsesBotMovement(player) && player->botvars.bumpslow && player->incontrol)
 		player->botvars.bumpslow--;
+	*/
+
+	// WHOOPS! 2.4 bots were tuned around a bugged version of bumpslow that NEVER decayed
+	// if the player in slot 0 was a human. People seem to like this tuning, but the dampened
+	// rubberbanding only started applying after a bot wallbonked or got hit, which is
+	// probably why people report weird runaways.
+	//
+	// I'd like to retune this later, but for now, just set bumpslow on every bot, as if they all
+	// contact a wall instantly—consistently giving them the softer rubberband advancement.
+	// What the fuck making games is hard.
+	if (K_PlayerUsesBotMovement(player))
+		player->botvars.bumpslow = TICRATE*2;
+
 
 	if (player->flamedash)
 	{
@@ -10531,6 +10584,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	if (player->dropdashboost)
 		player->dropdashboost--;
+
+	if (player->aciddropdashboost)
+		player->aciddropdashboost--;
 
 	if (player->wavedashboost > 0 && onground == true)
 	{
@@ -10613,6 +10669,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->spindashspeed = player->spindashboost = 0;
 		}
 	}
+
+	if (player->recentamps && (leveltime%TICRATE == 0))
+		player->recentamps--;
 
 	if (player->invincibilitytimer && (player->ignoreAirtimeLeniency > 0 || onground == true || K_PowerUpRemaining(player, POWERUP_SMONITOR)))
 	{
@@ -12759,7 +12818,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			// Airtime means we're not gaining speed. Get grounded!
 			if (!onground)
-				player->mo->momz -= player->speed/2;
+				player->mo->momz -= (player->mo->eflags & MFE_VERTICALFLIP ? -1 : 1) * player->speed/2;
 
 			if (player->driftcharge < 0)
 			{
@@ -13975,6 +14034,22 @@ static void K_KartSpindash(player_t *player)
 			else
 			{
 				player->transfer = 0;
+			}
+		}
+		else if (!G_CompatLevel(0x0010))
+		{
+			boolean ebrakelasttic = ((player->oldcmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK);
+			if (player->pflags2 & PF2_STRICTFASTFALL)
+				ebrakelasttic = (player->oldcmd.buttons & BT_SPINDASH);
+
+			boolean ebrakenow = K_PressingEBrake(player);
+			if (player->pflags2 & PF2_STRICTFASTFALL && !(player->cmd.buttons & BT_SPINDASH))
+				ebrakenow = false;
+
+			if (!ebrakelasttic && ebrakenow && player->fastfall && player->transfer)
+			{
+				player->transfer = 0;
+				S_StartSound(player->mo, sfx_s3k7d);
 			}
 		}
 

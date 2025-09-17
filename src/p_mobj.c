@@ -15569,7 +15569,7 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle, UINT8 allowai
 //
 void P_FlashPal(player_t *pl, UINT16 type, UINT16 duration)
 {
-	if (!pl)
+	if (!pl || cv_reducevfx.value)
 		return;
 	pl->flashcount = duration;
 	pl->flashpal = type;

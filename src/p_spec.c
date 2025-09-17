@@ -2071,8 +2071,6 @@ static void K_HandleLapIncrement(player_t *player)
 				{
 					S_StartSound(player->mo, sfx_s23c);
 					player->startboost = 125;
-					if (!K_PlayerUsesBotMovement(player) && grandprixinfo.gp)
-						player->startboost /= 2;
 
 					K_SpawnDriftBoostExplosion(player, 4);
 					K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);

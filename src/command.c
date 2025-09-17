@@ -103,7 +103,7 @@ CV_PossibleValue_t gpdifficulty_cons_t[] = {
 	{0, NULL}
 };
 CV_PossibleValue_t descriptiveinput_cons_t[] = {
-	{0, "\"Emulator\""}, 
+	{0, "\"Emulator\""},
 	{1, "Modern"},
 	{2, "Modern Flip"},
 	{3, "6Bt. (Auto)"},
@@ -112,6 +112,7 @@ CV_PossibleValue_t descriptiveinput_cons_t[] = {
 	{6, "6Bt. (C)"},
 	{7, "6Bt. (D)"},
 	{8, "6Bt. (E)"},
+	{9, "6Bt. (F)"},
 	{0, NULL}
 };
 

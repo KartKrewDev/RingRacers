@@ -20,6 +20,14 @@
         - libvorbis + libvorbisenc
           Copyright (c) 2002-2020 Xiph.org Foundation
           https://github.com/xiph/vorbis
+        - ReNameNoise + rnnoise
+          Copyright (c) 2024 The Mumble Developers
+          Copyright (c) 2017 Mozilla
+          Copyright (c) 2007-2017 Jean-Marc Valin
+          Copyright (c) 2005-2017 Xiph.Org Foundation
+          Copyright (c) 2003-2004 Mark Borgerding
+          https://github.com/mumble-voip/ReNameNoise
+
 --------------------------------------------------------------------------------
 
 Redistribution and use in source and binary forms, with or without

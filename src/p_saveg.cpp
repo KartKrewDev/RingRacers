@@ -468,6 +468,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].bigwaypointgap);
 		WRITEUINT8(save->p, players[i].startboost);
 		WRITEUINT8(save->p, players[i].dropdashboost);
+		WRITEUINT8(save->p, players[i].aciddropdashboost);
 
 		WRITEUINT16(save->p, players[i].flashing);
 		WRITEUINT16(save->p, players[i].spinouttimer);
@@ -708,6 +709,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].lastringboost);
 
 		WRITEUINT8(save->p, players[i].amps);
+		WRITEUINT8(save->p, players[i].recentamps);
 		WRITEUINT8(save->p, players[i].amppickup);
 		WRITEUINT8(save->p, players[i].ampspending);
 
@@ -1145,6 +1147,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].bigwaypointgap = READUINT16(save->p);
 		players[i].startboost = READUINT8(save->p);
 		players[i].dropdashboost = READUINT8(save->p);
+		players[i].aciddropdashboost = READUINT8(save->p);
 
 		players[i].flashing = READUINT16(save->p);
 		players[i].spinouttimer = READUINT16(save->p);
@@ -1383,6 +1386,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].lastringboost = READUINT32(save->p);
 
 		players[i].amps =READUINT8(save->p);
+		players[i].recentamps =READUINT8(save->p);
 		players[i].amppickup =READUINT8(save->p);
 		players[i].ampspending =READUINT8(save->p);
 

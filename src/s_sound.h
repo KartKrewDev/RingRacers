@@ -52,6 +52,7 @@ extern consvar_t cv_voice_selfdeafen;
 extern consvar_t cv_voice_mode;
 extern consvar_t cv_voice_selfmute;
 extern consvar_t cv_voice_loopback;
+extern consvar_t cv_voice_denoise;
 extern consvar_t cv_voice_inputamp;
 extern consvar_t cv_voice_activationthreshold;
 extern consvar_t cv_voice_proximity;

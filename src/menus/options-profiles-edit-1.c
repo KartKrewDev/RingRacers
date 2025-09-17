@@ -135,8 +135,7 @@ static void M_ProfileEditExit(void)
 	}
 	else
 	{
-		M_ResetOptions();			// Reset all options variables otherwise things are gonna go reaaal bad lol.
-		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
+		M_ResetOptions(); // Reset all options variables otherwise things are gonna go reaaal bad lol.
 	}
 
 	PR_SaveProfiles();					// save profiles after we do that.

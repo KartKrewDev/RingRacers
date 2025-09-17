@@ -4320,7 +4320,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 	if (stplyr->hudrings <= 0 && stplyr->ringvisualwarning > 1)
 	{
 		colorring = true;
-		if ((leveltime/2 & 1))
+		if ((leveltime/2 & 1) || (cv_reducevfx.value))
 		{
 			ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		}
@@ -4329,7 +4329,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 			ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_WHITE, GTC_CACHE);
 		}
 	}
-	else if (stplyr->hudrings <= 0 && (leveltime/5 & 1)) // In debt
+	else if (stplyr->hudrings <= 0 && ((leveltime/5 & 1) || (cv_reducevfx.value))) // In debt
 	{
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		colorring = true;
@@ -7466,6 +7466,7 @@ static void K_DrawBotDebugger(void)
 
 	V_DrawSmallString(8, 76, 0, va("Prediction error: %.2fdeg", FIXED_TO_FLOAT(FixedDiv(bot->botvars.predictionError, ANG1))));
 	V_DrawSmallString(8, 80, 0, va("Recent deflection: %.2fdeg", FIXED_TO_FLOAT(FixedDiv(bot->botvars.recentDeflection, ANG1))));
+	V_DrawSmallString(8, 84, 0, va("Bumpslow: %d", bot->botvars.bumpslow));
 }
 
 static void K_DrawGPRankDebugger(void)
@@ -7803,7 +7804,7 @@ void K_drawKartHUD(void)
 
 		// Tacitcal Normie Countermeasure
 		INT32 dfade = K_GetDialogueFade();
-		if (dfade)
+		if (dfade && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOCOMMS))
 		{
 			V_DrawFadeScreen(31, dfade); // Fade out
 

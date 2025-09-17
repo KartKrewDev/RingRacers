@@ -53,8 +53,7 @@ void M_FirstPickProfile(INT32 c)
 {
 	if (c == MA_YES)
 	{
-		M_ResetOptions();			// Reset all options variables otherwise things are gonna go reaaal bad lol.
-		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
+		M_ResetOptions(); // Reset all options variables otherwise things are gonna go reaaal bad lol.
 
 		PR_ApplyProfile(optionsmenu.profilen, 0);
 
@@ -162,7 +161,7 @@ void M_HandleProfileSelect(INT32 ch)
 
 	if (menutransition.tics == 0 && optionsmenu.resetprofile)
 	{
-		optionsmenu.profile = NULL;	// Make sure to reset that when transitions are done.'
+		optionsmenu.profile = NULL;	// Make sure to reset that when transitions are done.
 		optionsmenu.resetprofile = false;
 	}
 

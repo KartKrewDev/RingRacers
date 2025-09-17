@@ -184,6 +184,23 @@ static const srb2::HashMap<INT32, char> saturntypeE = {
 	{nc_back, gb_back},
 };
 
+// Saturn Type F - Mayflash XInput Saturn adapter, CZ = RS LS
+// Cannot be disambiguated. GEE I SURE WISH THERE WERE A STANDARD
+static const srb2::HashMap<INT32, char> saturntypeF = {
+	{nc_a, sb_a},
+	{nc_b, sb_b},
+	{nc_x, sb_x},
+	{nc_y, sb_y},
+	{nc_rt, gb_rt},
+	{nc_rb, gb_rb},
+	{nc_lb, gb_lb},
+	{nc_lt, gb_lt},
+	{nc_ls, sb_z},
+	{nc_rs, sb_c},
+	{nc_start, gb_start},
+	{nc_back, gb_back},
+};
+
 namespace srb2
 {
 

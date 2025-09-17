@@ -28,6 +28,9 @@ menuitem_t OPTIONS_Voice[] =
 	{IT_STRING | IT_CVAR, "Input Amplifier", "Amplify your voice, in decibels. Negative values are quieter.",
 		NULL, {.cvar = &cv_voice_inputamp}, 0, 0},
 
+	{IT_STRING | IT_CVAR, "Input Noise Suppression", "Suppress background noise from your voice.",
+		NULL, {.cvar = &cv_voice_denoise}, 0, 0},
+
 	{IT_STRING | IT_CVAR, "Input Sensitivity", "Voice higher than this threshold will transmit, in decibels.",
 		NULL, {.cvar = &cv_voice_activationthreshold}, 0, 0},
 

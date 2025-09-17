@@ -508,6 +508,7 @@ struct serverelem_t
 
 extern serverelem_t serverlist[MAXSERVERLIST];
 extern UINT32 serverlistcount, serverlistultimatecount;
+extern boolean serverlistmode;
 extern INT32 mapchangepending;
 
 // Points inside doomcom

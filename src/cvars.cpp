@@ -622,7 +622,7 @@ void Lagless_OnChange(void);
 consvar_t cv_lagless = NetVar("lagless", "Off").on_off().onchange(Lagless_OnChange);
 
 // max file size to send to a player (in kilobytes)
-consvar_t cv_maxsend = NetVar("maxsend", "51200").min_max(0, 51200);
+consvar_t cv_maxsend = NetVar("maxsend", "204800").min_max(-1, 999999999);
 
 consvar_t cv_noticedownload = NetVar("noticedownload", "Off").on_off();
 consvar_t cv_pingtimeout = NetVar("maxdelaytimeout", "10").min_max(8, 120);
@@ -1409,6 +1409,10 @@ consvar_t cv_voice_loopback = Player("voice_loopback", "Off")
 	.on_off()
 	.dont_save()
 	.description("When on, plays the local player's voice");
+
+consvar_t cv_voice_denoise = Player("voice_denoise", "On")
+	.on_off()
+	.description("When on, denoises the voice microphone signal");
 
 consvar_t cv_voice_proximity = NetVar("voice_proximity", "On")
 	.on_off()
