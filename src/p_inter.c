@@ -3102,8 +3102,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				boolean clash = false;
 				sfxenum_t sfx = sfx_None;
 
-				CONS_Printf("unforced case\n");
-
 				if (!(gametyperules & GTR_BUMPERS))
 				{
 					if (damagetype & DMG_STEAL)
@@ -3164,11 +3162,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					return false;
 				}
 
-				CONS_Printf("xd\n");
-
 				if (invincible && type != DMG_WHUMBLE)
 				{
-					CONS_Printf("invinc case\n");
 					const INT32 oldHitlag = target->hitlag;
 					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
 
