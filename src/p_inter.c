@@ -3102,6 +3102,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				boolean clash = false;
 				sfxenum_t sfx = sfx_None;
 
+				CONS_Printf("unforced case\n");
+
 				if (!(gametyperules & GTR_BUMPERS))
 				{
 					if (damagetype & DMG_STEAL)
@@ -3130,6 +3132,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				else if (player->overshield &&
 					(type != DMG_EXPLODE || inflictor->type != MT_SPBEXPLOSION || !inflictor->movefactor))
 				{
+					CONS_Printf("overshield case\n");
 					clash = true;
 				}
 				else if (player->hyudorotimer > 0)
@@ -3151,6 +3154,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					clash = false;
 				}
 
+				CONS_Printf("invinc=%d clash=%d ad=%d type=%d whumb=%d\n", invincible, clash, player->pflags2 & PF2_ALWAYSDAMAGED, type, DMG_WHUMBLE);
+
 				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
 				// And it may be kind of yucky.
 				// But this is easier than accounting for every condition in PIT_CheckThing!
@@ -3159,8 +3164,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					return false;
 				}
 
-				if (invincible && type != DMG_STUMBLE && type != DMG_WHUMBLE)
+				CONS_Printf("xd\n");
+
+				if (invincible && type != DMG_WHUMBLE)
 				{
+					CONS_Printf("invinc case\n");
 					const INT32 oldHitlag = target->hitlag;
 					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
 
@@ -3195,6 +3203,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 					if (clash)
 					{
+						CONS_Printf("clash case\n");
 						player->spheres = max(player->spheres - 5, 0);
 
 						if (inflictor)
@@ -3214,7 +3223,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_DoInstashield(player);
 					return false;
 				}
-
 				{
 					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
 					boolean allowcombo = ((hardhit || (type == DMG_STUMBLE || type == DMG_WHUMBLE)) == !(damagetype & DMG_WOMBO));
@@ -3289,6 +3297,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (type == DMG_STING || type == DMG_STUMBLE)
 			{
 				damage = 0;
+
+				if (source && source != player->mo && source->player)
+				{
+					if (!P_PlayerInPain(player) && (player->defenseLockout || player->instaWhipCharge))
+					{
+						K_SpawnAmps(source->player, 20, target);
+					}
+				}
 			}
 			else
 			{
@@ -3461,6 +3477,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				&& inflictor->type != MT_BANANA) // Are there other designed trap items that can be deployed and dropped? If you add one, list it here!
 			{
 				type = DMG_STUMBLE;
+				downgraded = true;
 				player->ringburst += 5; // IT'S THE DAMAGE STUMBLE HACK AGAIN AAAAAAAAHHHHHHHHHHH
 				K_PopPlayerShield(player);
 			}
@@ -3499,7 +3516,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				case DMG_STUMBLE:
 				case DMG_WHUMBLE:
 					K_StumblePlayer(player);
-					ringburst = 0;
+					ringburst = 5;
 					break;
 				case DMG_TUMBLE:
 					K_TumblePlayer(player, inflictor, source, softenTumble);
@@ -3526,22 +3543,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				ringburst = 0;
 			}
 
+			player->ringburst += ringburst;
+
+			K_PopPlayerShield(player);
+
 			if ((type != DMG_STUMBLE && type != DMG_WHUMBLE) || (type == DMG_STUMBLE && downgraded))
 			{
 				if (type != DMG_STING)
 					player->flashing = K_GetKartFlashing(player);
-
-				player->ringburst += ringburst;
-
-				K_PopPlayerShield(player);
 				player->instashield = 15;
+			}
 
-				K_PlayPainSound(target, source);
-			}
-			else if (inflictor && inflictor->type == MT_INSTAWHIP)
-			{
-				K_PopPlayerShield(player);
-			}
+			K_PlayPainSound(target, source);
 
 			if (gametyperules & GTR_BUMPERS)
 				player->spheres = min(player->spheres + 10, 40);
