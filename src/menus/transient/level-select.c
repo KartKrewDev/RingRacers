@@ -660,9 +660,12 @@ void M_LevelSelectInit(INT32 choice)
 			levellist.levelsearch.timeattack = false;
 			levellist.canqueue = true;
 
-			CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
-			CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
-			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto Gear" : cv_dummykartspeed.string);
+			if (gamestate == GS_MENU)
+			{
+				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
+				CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
+				CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto Gear" : cv_dummykartspeed.string);
+			}
 
 			break;
 		case 1:
