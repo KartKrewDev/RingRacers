@@ -117,7 +117,7 @@ extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 #define ASSET_HASH_FOLLOWERS_PK3				"4b61428e5f2ec806de398de8a5fba5f0"
 #define ASSET_HASH_MAPS_PK3						"2a6f80666effb7e7f9345d99e15b67af"
 #define ASSET_HASH_UNLOCKS_PK3					"a4de35ba9f83829ced44dfc1316ba33e"
-#define ASSET_HASH_STAFFGHOSTS_PK3				"c40bb7c2e42ad6a95945cdc993bbcce1"
+#define ASSET_HASH_STAFFGHOSTS_PK3				"f2ea75218c9b8ef479a75f287cc32d11"
 #define ASSET_HASH_SHADERS_PK3					"bc0b47744d457956db2ee9ea00f59eff"
 #ifdef USE_PATCH_FILE
 #define ASSET_HASH_PATCH_PK3					"00000000000000000000000000000000"
