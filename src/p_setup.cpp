@@ -9499,6 +9499,7 @@ void Command_dumprrautomedaltimes(void)
 		);
 	}
 	fclose(out);
+	CONS_Printf("Medal times written to %s\n", outname);
 }
 
 void Command_Platinums(void)
