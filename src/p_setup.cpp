@@ -9508,6 +9508,7 @@ void Command_dumprrautomedaltimes(void)
 		);
 	}
 	fclose(out);
+	CONS_Printf("Medal times written to %s\n", outname);
 }
 
 void Command_Platinums(void)
@@ -9558,8 +9559,10 @@ void Command_Platinums(void)
 			}
 			else
 			{
-				CONS_Printf(", %s (+%d:%02d)", stafftime.second.c_str(),
-					G_TicsToSeconds(stafftime.first - platinumtime), G_TicsToCentiseconds(stafftime.first - platinumtime));
+				CONS_Printf(", %s (+%d:%02d:%02d)", stafftime.second.c_str(),
+					G_TicsToMinutes(stafftime.first - platinumtime, true), 
+					G_TicsToSeconds(stafftime.first - platinumtime), 
+					G_TicsToCentiseconds(stafftime.first - platinumtime));
 			}
 
 			names[stafftime.second]++;
