@@ -91,7 +91,7 @@ static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 	{1, 3}, // landmine
 	{25, 3}, // ballhog
 	{58, 6}, // selfpropelledbomb
-	{60, 7}, // grow
+	{55, 7}, // grow
 	{70, 8}, // shrink
 	{1, 1}, // lightningshield
 	{25, 4}, // bubbleshield
@@ -1540,7 +1540,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	// A lot of items suck if no players are nearby to interact with them.
 	// Should we bias towards items that get us back to the action?
 	// This will set the "loneliness" percentage to be used later.
-	UINT32 lonelinessThreshold = 4*DISTVAR; // How far away can we be before items are considered useless?
+	UINT32 lonelinessThreshold = 3*DISTVAR; // How far away can we be before items are considered useless?
 	UINT32 toFront = lonelinessThreshold; // Distance to the player trying to kill us.
 	UINT32 toBack = lonelinessThreshold; // Distance to the player we are trying to kill.
 	fixed_t loneliness = 0;
@@ -1662,7 +1662,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		// Conversely, if we're lonely, try not to reselect an item that wouldn't be useful to us
 		// without any players to use it on.
 		if (!K_IsItemSpeed(bestitem))
-			deltapenalty = Easing_Linear(loneliness, deltapenalty, 3*deltapenalty);
+			deltapenalty = Easing_Linear(loneliness, deltapenalty, 5*deltapenalty);
 
 		// Draw complex odds debugger. This one breaks down all the calcs in order.
 		if (cv_kartdebugdistribution.value > 1)

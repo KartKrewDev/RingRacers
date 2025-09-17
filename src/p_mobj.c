@@ -8399,7 +8399,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		P_MoveOrigin(mobj, mobj->target->x + FixedMul(34 * mapobjectscale, FINECOSINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
 				mobj->target->y + FixedMul(34 * mapobjectscale, FINESINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
-				mobj->target->z + (32 * mapobjectscale));
+				mobj->z + (32 * mapobjectscale));
 
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 
