@@ -275,7 +275,7 @@ struct fileack_pak
 
 struct player_config_t
 {
-	char name[MAXPLAYERNAME];
+	char name[MAXPLAYERNAME+1];
 	UINT16 skin;
 	UINT16 color;
 	INT16 follower;
@@ -284,7 +284,7 @@ struct player_config_t
 	UINT8 min_delay;
 	uint8_t key[PUBKEYLENGTH];
 	UINT16 pwr[PWRLV_NUMTYPES];
-};
+} ATTRPACK;
 
 struct clientconfig_pak
 {
@@ -470,7 +470,7 @@ struct doomdata_t
 		char filetxpak[sizeof (filetx_pak)];//         139 bytes
 		char fileack[sizeof (fileack_pak)];
 		UINT8 filereceived;
-		clientconfig_pak clientcfg;         //         136 bytes
+		clientconfig_pak clientcfg;         //         650 bytes
 		UINT8 md5sum[16];
 		serverinfo_pak serverinfo;          //        1024 bytes
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
