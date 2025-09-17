@@ -27,6 +27,7 @@ void M_ServerListFillDebug(void);
 static boolean M_ServerBrowserQuit(void)
 {
 	serverlistultimatecount = 0;
+	serverlistmode = false;
 	return true;
 }
 
@@ -239,6 +240,8 @@ void M_ServersMenu(INT32 choice)
 	(void)choice;
 	// modified game check: no longer handled
 	// we don't request a restart unless the filelist differs
+
+	serverlistmode = true;
 
 	CL_UpdateServerList();
 

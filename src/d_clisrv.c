@@ -1587,6 +1587,7 @@ static void SendAskInfo(INT32 node)
 serverelem_t serverlist[MAXSERVERLIST];
 UINT32 serverlistcount = 0;
 UINT32 serverlistultimatecount = 0;
+boolean serverlistmode = false;
 
 static boolean resendserverlistnode[MAXNETNODES];
 static tic_t serverlistepoch;
@@ -1657,7 +1658,7 @@ static boolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
 	if (i == UINT32_MAX)
 	{
 		// Still not added to list... check for modifiedgame rejections
-		if (serverlistultimatecount)
+		if (serverlistmode)
 		{
 			// We're on the server browser page. We can reject based on our room.
 			if (
