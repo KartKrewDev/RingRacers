@@ -3743,7 +3743,7 @@ static void InitializeLocalVoiceEncoder(void)
 		encoder = NULL;
 	}
 	opus_encoder_ctl(encoder, OPUS_SET_VBR(0));
-	opus_encoder_ctl(encoder, OPUS_SET_BITRATE(10000));
+	opus_encoder_ctl(encoder, OPUS_SET_BITRATE(28000));
 	g_local_opus_encoder = encoder;
 	g_local_opus_frame = 0;
 }
