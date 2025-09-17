@@ -533,7 +533,7 @@ static void M_ChallengesTutorial(UINT8 option)
 		{
 			M_StartMessage("Big Challenges & Chao Keys",
 				M_GetText(
-				"Watch out! You need 10 Chao Keys.\n"
+				"Watch out! You need 10 Chao Keys\n"
 				"to break open Big Challenge tiles.\n"
 				"\n"
 				"You'll also need to unlock\n"
