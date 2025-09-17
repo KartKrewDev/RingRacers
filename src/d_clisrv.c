@@ -4303,7 +4303,11 @@ boolean SV_SpawnServer(void)
 
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
-	{
+
+	// in a listen server, this sends the local player information to the server so
+	// that the client has players replicated on the server. in dedicated, there is
+	// no local player!
+	if (!dedicated) {
 		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, -1);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
