@@ -2075,7 +2075,7 @@ static void K_HandleLapIncrement(player_t *player)
 					K_SpawnDriftBoostExplosion(player, 4);
 					K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
 					if (!G_TimeAttackStart())
-						K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 35, player->mo);
+						K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 20, player->mo);
 
 					if (g_teamplay)
 					{
