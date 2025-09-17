@@ -10726,6 +10726,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSound(pmo, sfx_gshad);
 		}
 
+		player->rings = -20;
+
 		player->baildrop--;
 		if (player->baildrop == 0)
 			player->ringboost /= 3;
@@ -10751,7 +10753,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		player->rings = -20;
 		player->superring = 0;
-		player->pickuprings = 0;
 		player->ringboxaward = 0;
 		player->ringboxdelay = 0;
 		player->superringdisplay = 0;
