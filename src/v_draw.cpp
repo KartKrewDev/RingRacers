@@ -263,6 +263,9 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 						case 8:
 							padconfig = saturntypeE;
 							break;
+						case 9:
+							padconfig = saturntypeF;
+							break;
 					}
 
 					if (auto pretty = prettyinputs.find(bind); pretty != prettyinputs.end()) // Gamepad direction or keyboard arrow, use something nice-looking

@@ -5673,6 +5673,9 @@ void M_DrawProfileControls(void)
 				case 8:
 					help = va("6Bt. (E): Saturn buttons, Hori/M30X layout. (LB/LT = LS/RS)");
 					break;
+				case 9:
+					help = va("6Bt. (F): Saturn buttons, Mayflash layout. (C/Z = RS/LS)");
+					break;
 			}
 
 			V_DrawThinString(12, ypos, V_YELLOWMAP, help);
