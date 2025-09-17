@@ -562,6 +562,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		}
 	}
 
+
 	fixed_t percent = K_CalculateGPPercent(rankData);
 
 	static const fixed_t gradePercents[GRADE_A] = {
@@ -571,6 +572,18 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		17*FRACUNIT/20		// A: 85% or higher
 	};
 
+	const fixed_t upgraderequirement = 370*FRACUNIT/400;
+
+	// If our last map was Special, check for "uncredited" continues to offset the rank bump.
+	fixed_t hiddenpercent = percent;
+	gpRank_level_t *lastgrade = &rankData->levels[rankData->numLevels - 1];
+	UINT32 id = lastgrade->id;
+
+	if (rankData->specialWon && (mapheaderinfo[id-1]->typeoflevel & G_TOLFlag(GT_SPECIAL)))
+	{
+		hiddenpercent -= FRACUNIT / RANK_CONTINUE_PENALTY_DIV * lastgrade->continues;
+	}
+
 	for (retGrade = GRADE_E; retGrade < GRADE_A; retGrade++)
 	{
 		if (percent < gradePercents[retGrade])
@@ -579,7 +592,7 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		}
 	}
 
-	if (rankData->specialWon == true)
+	if (rankData->specialWon == true && hiddenpercent >= upgraderequirement)
 	{
 		// Winning the Special Stage gives you
 		// a free grade increase.
