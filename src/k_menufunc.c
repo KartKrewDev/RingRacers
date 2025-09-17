@@ -548,9 +548,6 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	if (soundtest.playing)
-		return;
-
 	const boolean trulystarted = M_GameTrulyStarted();
 	const boolean profilemode = (
 		optionsmenu.profilemenu

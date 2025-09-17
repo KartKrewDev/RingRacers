@@ -91,6 +91,8 @@ void M_ResetOptions(void)
 	// For profiles:
 	memset(setup_player, 0, sizeof(setup_player));
 	optionsmenu.profile = NULL;
+	optionsmenu.profilemenu = false;
+	optionsmenu.resetprofilemenu = false;
 }
 
 void M_InitOptions(INT32 choice)
