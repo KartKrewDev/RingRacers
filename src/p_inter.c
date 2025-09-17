@@ -3130,7 +3130,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				else if (player->overshield &&
 					(type != DMG_EXPLODE || inflictor->type != MT_SPBEXPLOSION || !inflictor->movefactor))
 				{
-					CONS_Printf("overshield case\n");
 					clash = true;
 				}
 				else if (player->hyudorotimer > 0)
@@ -3151,8 +3150,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					invincible = false;
 					clash = false;
 				}
-
-				CONS_Printf("invinc=%d clash=%d ad=%d type=%d whumb=%d\n", invincible, clash, player->pflags2 & PF2_ALWAYSDAMAGED, type, DMG_WHUMBLE);
 
 				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
 				// And it may be kind of yucky.
