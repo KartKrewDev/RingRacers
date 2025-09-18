@@ -399,7 +399,7 @@ void Command_Numnodes(void)
 				connected, ingame);
 }
 
-static boolean hole_punch(ssize_t c)
+static boolean hole_punch(ptrdiff_t c)
 {
 	if (c == 10 && holepunchpacket->magic == hole_punch_magic)
 	{
@@ -425,7 +425,7 @@ static boolean SOCK_Get(void)
 {
 	size_t n;
 	int j;
-	ssize_t c;
+	ptrdiff_t c;
 	mysockaddr_t fromaddress;
 	socklen_t fromlen;
 
@@ -534,7 +534,7 @@ static boolean SOCK_CanGet(void)
 }
 #endif
 
-static inline ssize_t SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t *sockaddr)
+static inline ptrdiff_t SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t* sockaddr)
 {
 	socklen_t d4 = (socklen_t)sizeof(struct sockaddr_in);
 #ifdef HAVE_IPV6
@@ -556,8 +556,8 @@ static inline ssize_t SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t *sockaddr
 
 static void SOCK_Send(void)
 {
-	ssize_t c = ERRSOCKET;
-	size_t i, j;
+	ptrdiff_t c = ERRSOCKET;
+	ptrdiff_t i, j;
 
 	if (!nodeconnected[doomcom->remotenode])
 		return;

@@ -63,13 +63,13 @@ extern "C" {
 #define READFIXED(p)        ({ const fixed_t *p_tmp = (const fixed_t *)p; fixed_t b; memcpy(&b, p, sizeof(fixed_t)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
 #define READANGLE(p)        ({ const angle_t *p_tmp = (const angle_t *)p; angle_t b; memcpy(&b, p, sizeof(angle_t)); p_tmp++; *(const void**)(&(p)) = (const void *)p_tmp; b; })
 #else
-#define READUINT8(p)        ((const UINT8*)(*(const void**)(&(p)) = (const void*)&((const UINT8*)(p))[1]))[-1]
-#define READSINT8(p)        ((const SINT8*)(*(const void**)(&(p)) = (const void*)&((const SINT8*)(p))[1]))[-1]
-#define READINT16(p)        ((const INT16*)(*(const void**)(&(p)) = (const void*)&((const INT16*)(p))[1]))[-1]
-#define READUINT16(p)       ((const UINT16*)(*(const void**)(&(p)) = (const void*)&((const UINT16*)(p))[1]))[-1]
-#define READINT32(p)        ((const INT32*)(*(const void**)(&(p)) = (const void*)&((const INT32*)(p))[1]))[-1]
-#define READUINT32(p)       ((const UINT32*)(*(const void**)(&(p)) = (const void*)&((const UINT32*)(p))[1]))[-1]
-#define READCHAR(p)         ((const char*)(*(const void**)(&(p)) = (const void*)&((const char*)(p))[1]))[-1]
+#define READUINT8(p)        ((const UINT8*)  (*(const void**)(&(p)) = (const void*)&((const UINT8*)  (p))[1]))[-1]
+#define READSINT8(p)        ((const SINT8*)  (*(const void**)(&(p)) = (const void*)&((const SINT8*)  (p))[1]))[-1]
+#define READINT16(p)        ((const INT16*)  (*(const void**)(&(p)) = (const void*)&((const INT16*)  (p))[1]))[-1]
+#define READUINT16(p)       ((const UINT16*) (*(const void**)(&(p)) = (const void*)&((const UINT16*) (p))[1]))[-1]
+#define READINT32(p)        ((const INT32*)  (*(const void**)(&(p)) = (const void*)&((const INT32*)  (p))[1]))[-1]
+#define READUINT32(p)       ((const UINT32*) (*(const void**)(&(p)) = (const void*)&((const UINT32*) (p))[1]))[-1]
+#define READCHAR(p)         ((const char*)   (*(const void**)(&(p)) = (const void*)&((const char*)   (p))[1]))[-1]
 #define READFIXED(p)        ((const fixed_t*)(*(const void**)(&(p)) = (const void*)&((const fixed_t*)(p))[1]))[-1]
 #define READANGLE(p)        ((const angle_t*)(*(const void**)(&(p)) = (const void*)&((const angle_t*)(p))[1]))[-1]
 #endif

@@ -1149,6 +1149,8 @@ boolean K_CanChangeRules(boolean allowdemos)
 	return true;
 }
 
+extern "C" consvar_t cv_forcebots;
+
 /*--------------------------------------------------
 	boolean K_BotDefaultSpectator(player_t *player);
 
@@ -1156,8 +1158,6 @@ boolean K_CanChangeRules(boolean allowdemos)
 --------------------------------------------------*/
 boolean K_BotDefaultSpectator(void)
 {
-	extern consvar_t cv_forcebots;
-
 	if (cv_forcebots.value)
 	{
 		return false;

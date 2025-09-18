@@ -100,25 +100,25 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Rumble", "For gamepad users - should your device rumble?",
-		NULL, {.cvar = &cv_dummyprofilerumble}, 0, 0},
+		NULL, srb2::itemaction(&cv_dummyprofilerumble), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Auto Roulette", "Item roulette auto-stops on a random result.",
-		NULL, {.cvar = &cv_dummyprofileautoroulette}, 0, 0},
+		NULL, srb2::itemaction(&cv_dummyprofileautoroulette), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Auto Ring", "Auto-use rings to maintain momentum.",
-		NULL, {.cvar = &cv_dummyprofileautoring}, 0, 0},
+		NULL, srb2::itemaction(&cv_dummyprofileautoring), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Kickstart Accel", "Hold A to auto-accel. Tap it to cancel.",
-		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
+		NULL, srb2::itemaction(&cv_dummyprofilekickstart), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Lite Steer", "Hold DOWN on d-pad/keyboard for shallow turns.",
-		NULL, {.cvar = &cv_dummyprofilelitesteer}, 0, 0},
+		NULL, srb2::itemaction(&cv_dummyprofilelitesteer), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Strict Fastfall", "Fastfall only with the Spindash button.",
-		NULL, {.cvar = &cv_dummyprofilestrictfastfall}, 0, 0},
+		NULL, srb2::itemaction(&cv_dummyprofilestrictfastfall), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Field of View", "Higher FOV lets you see more.",
-		NULL, {.cvar = &cv_dummyprofilefov}, 0, 0},
+		NULL, srb2::itemaction(&cv_dummyprofilefov), 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -127,19 +127,19 @@ menuitem_t OPTIONS_ProfileAccessibility[] = {
 		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Minimum Input Delay", "Practice for online play! 0 = instant response.",
-		NULL, {.cvar = &cv_mindelay}, 0, 0},
+		NULL, srb2::itemaction(&cv_mindelay), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Screen Tilting", "View rotation on inclines.",
-		NULL, {.cvar = &cv_tilting}, 0, 0},
+		NULL, srb2::itemaction(&cv_tilting), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Reduce Effects", "If overwhelmed, hide less-important particle cues.",
-		NULL, {.cvar = &cv_reducevfx}, 0, 0},
+		NULL, srb2::itemaction(&cv_reducevfx), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Screenshake", "Adjust shake intensity from hazards and offroad.",
-		NULL, {.cvar = &cv_screenshake}, 0, 0},
+		NULL, srb2::itemaction(&cv_screenshake), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Display", "Show virtual controller on the HUD.",
-		NULL, {.cvar = &cv_drawinput}, 0, 0},
+		NULL, srb2::itemaction(&cv_drawinput), 0, 0},
 };
 
 menu_t OPTIONS_ProfileAccessibilityDef = {

@@ -34,6 +34,8 @@
 #include "SDL.h"
 
 #ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#define RPC_NO_WINDOWS_H
 #include <windows.h>
 #pragma warning(default : 4214 4244)
 #endif
@@ -348,9 +350,10 @@ static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 	return 0;
 }
 
+extern "C" consvar_t cv_alwaysgrabmouse;
+
 static boolean IgnoreMouse(void)
 {
-	extern consvar_t cv_alwaysgrabmouse;
 	if (cv_alwaysgrabmouse.value)
 		return false;
 	if (menuactive)
@@ -1517,6 +1520,8 @@ static void Impl_VideoSetupBuffer(void)
 	}
 }
 
+extern "C" CVarList* cvlist_graphics_driver;
+
 void I_StartupGraphics(void)
 {
 	if (dedicated)
@@ -1531,10 +1536,7 @@ void I_StartupGraphics(void)
 	COM_AddCommand ("vid_info", VID_Command_Info_f);
 	COM_AddCommand ("vid_modelist", VID_Command_ModeList_f);
 	COM_AddCommand ("vid_mode", VID_Command_Mode_f);
-	{
-		extern CVarList *cvlist_graphics_driver;
-		CV_RegisterList(cvlist_graphics_driver);
-	}
+	CV_RegisterList(cvlist_graphics_driver);
 	disable_mouse = static_cast<SDL_bool>(M_CheckParm("-nomouse"));
 	disable_fullscreen = M_CheckParm("-win") ? SDL_TRUE : SDL_FALSE;
 

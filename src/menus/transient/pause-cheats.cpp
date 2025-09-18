@@ -79,7 +79,7 @@ void list_cvars()
 			height += 16;
 		}
 
-		g_menu.push_back(menuitem_t {status, var->name, var->description, nullptr, {.cvar = var}, 0, height});
+		g_menu.push_back(menuitem_t {status, var->name, var->description, nullptr, srb2::itemaction(var), 0, height});
 	}
 }
 
@@ -94,7 +94,7 @@ void list_commands()
 			continue;
 		}
 
-		g_menu.push_back(menuitem_t {IT_STRING | IT_CALL, cmd->name, nullptr, nullptr, {.routine = call}, 0, 8});
+		g_menu.push_back(menuitem_t {IT_STRING | IT_CALL, cmd->name, nullptr, nullptr, srb2::itemaction(call), 0, 8});
 	}
 }
 

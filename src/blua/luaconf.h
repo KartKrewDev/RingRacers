@@ -10,13 +10,7 @@
 
 #include <limits.h>
 #include <stddef.h>
-
-#ifdef _MSC_VER
-#define INT32 __int32
-#else
 #include <stdint.h>
-#define INT32 int32_t
-#endif
 
 
 /*
@@ -147,7 +141,7 @@
 ** CHANGE that if ptrdiff_t is not adequate on your machine. (On most
 ** machines, ptrdiff_t gives a good choice between int or long.)
 */
-#define LUA_INTEGER	INT32
+#define LUA_INTEGER	int32_t
 
 
 /*
@@ -418,9 +412,9 @@
 ** longs.) Probably you do not need to change this.
 */
 #if LUAI_BITSINT >= 32
-#define LUAI_UINT32	unsigned int
-#define LUAI_INT32	int
-#define LUAI_MAXINT32	INT_MAX
+#define LUAI_UINT32	uint32_t
+#define LUAI_INT32	int32_t
+#define LUAI_MAXINT32	INT32_MAX
 #define LUAI_UMEM	size_t
 #define LUAI_MEM	ptrdiff_t
 #else
@@ -509,13 +503,13 @@
 */
 
 //#define LUA_NUMBER_DOUBLE
-#define LUA_NUMBER	INT32
+#define LUA_NUMBER	int32_t
 
 /*
 @@ LUAI_UACNUMBER is the result of an 'usual argument conversion'
 @* over a number.
 */
-#define LUAI_UACNUMBER	INT32
+#define LUAI_UACNUMBER int32_t
 
 
 /*

@@ -1238,90 +1238,93 @@ static JsonValue parse_number(const Token& token)
 		throw JsonParseError("only sign present on number");
 	}
 
-	const char* integral_start = s.begin();
-	const char* integral_end;
-	const char* decimal = nullptr;
-	while (!s.empty())
+	std::string_view::const_iterator integral_start = s.begin();
+	std::string_view::const_iterator integral_end;
+	bool decimal_found = false;
+	std::string_view::const_iterator decimal;
+	size_t pos = 0;
+	while (pos < s.size())
 	{
-		if (s[0] == '.')
+		if (s[pos] == '.')
 		{
-			decimal = s.begin();
-			integral_end = s.begin();
-			s.remove_prefix(1);
+			decimal_found = true;
+			decimal = std::next(s.begin(), pos);
+			integral_end = std::next(s.begin(), pos);
+			pos += 1;
 			break;
 		}
-		else if (s[0] < '0' || s[0] > '9')
+		else if (s[pos] < '0' || s[pos] > '9')
 		{
-			integral_end = s.begin() - 1;
+			integral_end = std::next(s.begin(), pos - 1);
 			break;
 		}
-		integral_end = s.begin() + 1;
-		s.remove_prefix(1);
+		integral_end = std::next(s.begin(), pos + 1);
+		pos += 1;
 	}
 
-	const char* decimal_start = s.end();
-	const char* decimal_end = s.end();
-	const char* exponent_start = s.end();
-	const char* exponent_end = s.end();
+	std::string_view::const_iterator decimal_start = s.end();
+	std::string_view::const_iterator decimal_end = s.end();
+	std::string_view::const_iterator exponent_start = s.end();
+	std::string_view::const_iterator exponent_end = s.end();
 	bool should_have_exponent = false;
-	if (decimal != nullptr && (decimal + 1) < s.end())
+	if (decimal_found && (decimal + 1) < s.end())
 	{
 		decimal_start = decimal + 1;
 	}
-	while (!s.empty())
+	while (pos < s.size())
 	{
 		// ingest decimal
-		if (s[0] == 'E' || s[0] == 'e')
+		if (s[pos] == 'E' || s[pos] == 'e')
 		{
 			if (decimal_start != s.end()) decimal_end = s.begin();
-			exponent_start = s.begin() + 1;
+			exponent_start = std::next(s.begin(), pos + 1);
 			should_have_exponent = true;
-			s.remove_prefix(1);
+			pos += 1;
 			break;
 		}
-		else if ((s[0] < '0' || s[0] > '9') && s[0] != '+' && s[0] != '-')
+		else if ((s[pos] < '0' || s[pos] > '9') && s[pos] != '+' && s[pos] != '-')
 		{
 			throw JsonParseError("invalid character after decimal");
 		}
-		decimal_end = s.begin() + 1;
-		s.remove_prefix(1);
+		decimal_end = std::next(s.begin(), pos + 1);
+		pos += 1;
 	}
 
 	bool exponent_negative = false;
 
 	if (should_have_exponent)
 	{
-		if (s.empty())
+		if (pos >= s.size())
 		{
 			throw JsonParseError("exponent started but not specified");
 		}
 		bool exponent_was_signed = false;
 		while (!s.empty())
 		{
-			if (s[0] == '-')
+			if (s[pos] == '-')
 			{
 				if (exponent_was_signed) throw JsonParseError("multiple signs on exponent");
 				exponent_negative = true;
 				exponent_start++;
 				exponent_was_signed = true;
-				s.remove_prefix(1);
+				pos += 1;
 				continue;
 			}
-			else if (s[0] == '+')
+			else if (s[pos] == '+')
 			{
 				if (exponent_was_signed) throw JsonParseError("multiple signs on exponent");
 				exponent_start++;
 				exponent_was_signed = true;
-				s.remove_prefix(1);
+				pos += 1;
 				continue;
 			}
 
-			if (s[0] < '0' || s[0] > '9')
+			if (s[pos] < '0' || s[pos] > '9')
 			{
 				throw JsonParseError("invalid character after exponent");
 			}
-			exponent_end = s.begin() + 1;
-			s.remove_prefix(1);
+			exponent_end = std::next(s.begin(), pos + 1);
+			pos += 1;
 		}
 		if ((exponent_end - exponent_start) == 0)
 		{
@@ -1329,9 +1332,21 @@ static JsonValue parse_number(const Token& token)
 		}
 	}
 
-	std::string_view integral_view { integral_start, (size_t)(integral_end - integral_start) };
-	std::string_view decimal_view { decimal_start, (size_t)(decimal_end - decimal_start) };
-	std::string_view exponent_view { exponent_start, (size_t)(exponent_end - exponent_start) };
+	std::string_view integral_view = "";
+	if (integral_start != s.end())
+	{
+		integral_view = std::string_view { &*integral_start, (size_t)(integral_end - integral_start) };
+	}
+	std::string_view decimal_view = "";
+	if (decimal_start != s.end())
+	{
+		decimal_view = std::string_view { &*decimal_start, (size_t)(decimal_end - decimal_start) };
+	}
+	std::string_view exponent_view = "";
+	if (exponent_start != s.end())
+	{
+		std::string_view { &*exponent_start, (size_t)(exponent_end - exponent_start) };
+	}
 
 	if (should_have_exponent && decimal_start != s.end() && decimal_view.empty())
 	{

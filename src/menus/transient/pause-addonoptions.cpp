@@ -97,7 +97,7 @@ void list_cvars()
 			height += 16;
 		}
 
-		g_menu.push_back(menuitem_t {status, var->name, var->description, nullptr, {.cvar = var}, 0, height});
+		g_menu.push_back(menuitem_t{ status, var->name, var->description, nullptr, srb2::itemaction(var), 0, height });
 	}
 }
 
@@ -146,7 +146,7 @@ void list_commands()
 		if (flags & COM_NOSHOWHELP)
 			continue;
 
-		g_menu.push_back(menuitem_t {IT_STRING | IT_CALL, cmd->name, "No information available for commands. Press to execute.", nullptr, {.routine = call}, 0, 8});
+		g_menu.push_back(menuitem_t{ IT_STRING | IT_CALL, cmd->name, "No information available for commands. Press to execute.", nullptr, srb2::itemaction(call), 0, 8 });
 	}
 }
 

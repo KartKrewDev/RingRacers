@@ -17,9 +17,7 @@
 #define __M_FIXED__
 
 #include "doomtype.h"
-#ifdef __GNUC__
 #include <stdlib.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {

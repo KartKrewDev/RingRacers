@@ -29,6 +29,7 @@
 #include <signal.h>
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #define RPC_NO_WINDOWS_H
 #include <windows.h>
 #include "../doomtype.h"
@@ -1729,6 +1730,8 @@ static INT32 errorcount = 0;
 */
 static boolean shutdowning = false;
 
+extern "C" consvar_t cv_fuzz;
+
 void I_Error(const char *error, ...)
 {
 	va_list argptr;
@@ -1813,7 +1816,6 @@ void I_Error(const char *error, ...)
 	I_ShutdownGraphics();
 	I_ShutdownInput();
 
-	extern consvar_t cv_fuzz;
 	if (!cv_fuzz.value)
 		I_ShowErrorMessageBox(buffer, false);
 
@@ -1974,7 +1976,7 @@ void I_GetDiskFreeSpace(INT64 *freespace)
 
 	if (!testwin95)
 	{
-		*(void**)&pfnGetDiskFreeSpaceEx = FUNCPTRCAST(GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetDiskFreeSpaceExA"));
+		pfnGetDiskFreeSpaceEx = reinterpret_cast<decltype(pfnGetDiskFreeSpaceEx)>(GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetDiskFreeSpaceExA"));
 		testwin95 = true;
 	}
 	if (pfnGetDiskFreeSpaceEx)

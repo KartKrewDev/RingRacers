@@ -41,18 +41,50 @@
 			}
 		},
 		{
+			"name": "__debug-cl",
+			"hidden": true,
+			"cacheVariables": {
+				"CMAKE_C_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC0",
+				"CMAKE_CXX_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od /RTC0",
+				"SRB2_CONFIG_DEV_BUILD": "ON",
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "__develop-cl",
+			"hidden": true,
+			"cacheVariables": {
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "/MD /O2 /Ob2 /DNDEBUG",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "/MD /O2 /Ob2 /DNDEBUG",
+				"SRB2_CONFIG_DEV_BUILD": "ON",
+				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
+			}
+		},
+		{
+			"name": "__release-cl",
+			"hidden": true,
+			"cacheVariables": {
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "/MD /O2 /Ob2 /DNDEBUG",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "/MD /O2 /Ob2 /DNDEBUG",
+				"SRB2_CONFIG_DEV_BUILD": "OFF",
+				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
+			}
+		},
+		{
 			"name": "__ninja",
 			"hidden": true,
 			"generator": "Ninja",
 			"cacheVariables": {
-				"CMAKE_COLOR_DIAGNOSTICS": "ON"
+				"CMAKE_COLOR_DIAGNOSTICS": "ON",
+				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
 			}
 		},
 		{
 			"name": "__vcpkg-toolchain",
 			"hidden": true,
 			"cacheVariables": {
-				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+				"VCPKG_OVERLAY_PORTS": "${sourceDir}/thirdparty/overlay-ports"
 			}
 		},
 		{
@@ -76,6 +108,16 @@
 			"cacheVariables": {
 				"VCPKG_HOST_TRIPLET": "x86-mingw-static",
 				"VCPKG_TARGET_TRIPLET": "x86-mingw-static"
+			}
+		},
+		{
+			"name": "__x64-windows",
+			"hidden": true,
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "clang-cl",
+				"CMAKE_CXX_COMPILER": "clang-cl",
+				"VCPKG_HOST_TRIPLET": "x64-windows-static-md",
+				"VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
 			}
 		},
 		{
@@ -173,6 +215,25 @@
 		},
 
 		{
+			"name": "ninja-x64_windows_vcpkg-debug",
+			"hidden": false,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"inherits": [ "__debug-cl", "__ninja", "__vcpkg-toolchain", "__x64-windows" ]
+		},
+		{
+			"name": "ninja-x64_windows_vcpkg-develop",
+			"hidden": false,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"inherits": [ "__develop-cl", "__ninja", "__vcpkg-toolchain", "__x64-windows" ]
+		},
+		{
+			"name": "ninja-x64_windows_vcpkg-release",
+			"hidden": false,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"inherits": [ "__release-cl", "__ninja", "__vcpkg-toolchain", "__x64-windows" ]
+		},
+
+		{
 			"name": "ninja-x64_osx_vcpkg-debug",
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
@@ -225,6 +286,18 @@
 			"configurePreset": "ninja-release"
 		},
 		{
+			"name": "ninja-vcpkg-debug",
+			"configurePreset": "ninja-vcpkg-debug"
+		},
+		{
+			"name": "ninja-vcpkg-develop",
+			"configurePreset": "ninja-vcpkg-develop"
+		},
+		{
+			"name": "ninja-vcpkg-release",
+			"configurePreset": "ninja-vcpkg-release"
+		},
+		{
 			"name": "ninja-x86_mingw_static_vcpkg-debug",
 			"configurePreset": "ninja-x86_mingw_static_vcpkg-debug"
 		},
@@ -239,6 +312,18 @@
 		{
 			"name": "ninja-x86_mingw_static_vcpkg-testers",
 			"configurePreset": "ninja-x86_mingw_static_vcpkg-testers"
+		},
+		{
+			"name": "ninja-x64_windows_vcpkg-debug",
+			"configurePreset": "ninja-x64_windows_vcpkg-debug"
+		},
+		{
+			"name": "ninja-x64_windows_vcpkg-develop",
+			"configurePreset": "ninja-x64_windows_vcpkg-develop"
+		},
+		{
+			"name": "ninja-x64_windows_vcpkg-release",
+			"configurePreset": "ninja-x64_windows_vcpkg-release"
 		},
 		{
 			"name": "ninja-x64_osx_vcpkg-debug",

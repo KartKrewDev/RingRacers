@@ -230,7 +230,10 @@ public:
 			size_t count_destroyed = 0;
 			for (auto itr = itr_begin; itr != itr_end; itr++)
 			{
-				itr->~T();
+				if constexpr (std::is_destructible_v<T>)
+				{
+					(*itr).~T();
+				}
 				count_destroyed++;
 			}
 			size_ = s;

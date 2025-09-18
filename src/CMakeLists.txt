@@ -224,6 +224,10 @@ if(("${CMAKE_COMPILER_IS_GNUCC}" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND 
 	endif()
 endif()
 
+if(MSVC OR CMAKE_CXX_LINK_EXECUTABLE MATCHES "lld-link.exe")
+	target_link_options(SRB2SDL2 PRIVATE /MANIFEST:NO)
+endif()
+
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
 set_target_properties(SRB2SDL2 PROPERTIES
 	C_STANDARD 11
@@ -441,8 +445,12 @@ if (NOT SRB2_CONFIG_FORCE_NO_MS_BITFIELDS)
 endif()
 
 # Yes we know we use insecure CRT functions...
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	target_compile_definitions(SRB2SDL2 PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+if(WIN32 OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	target_compile_definitions(SRB2SDL2 PRIVATE
+		-D_CRT_SECURE_NO_WARNINGS
+		-D_CRT_NONSTDC_NO_WARNINGS
+		-D_WINSOCK_DEPRECATED_NO_WARNINGS
+	)
 endif()
 
 # Compiler warnings configuration
@@ -535,13 +543,21 @@ target_compile_options(SRB2SDL2 PRIVATE
 
 	# C, Clang and Apple Clang
 	$<$<AND:$<COMPILE_LANGUAGE:C>,$<OR:$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>>:
-		-Wall
-		-Wno-absolute-value
-		-Wno-trigraphs
-		-Wno-error=non-literal-null-conversion
-		-Wno-error=constant-conversion
-		-Wno-unused-but-set-variable
-		-Wno-error=unused-but-set-variable
+		#-Wall
+		-Werror=microsoft
+		-Wreturn-type # Missing returns in non-void function
+		-Wduplicate-decl-specifier
+		-Wsometimes-uninitialized
+		-Wno-trigraphs # Trigraphs are disabled
+		-Wc11-extensions # Don't use C11 language extensions not part of baseline
+		-Wno-unused-but-set-variable # Setting unread variables is fine
+		-Wno-misleading-indentation # Some cases in code currently
+		-Wno-deprecated-non-prototype # We have no intention of using C23 yet.
+		-Wno-parentheses-equality
+		-Wno-unsafe-buffer-usage # Very common in this codebase
+		-Wno-unused-const-variable
+		-Wno-unused-variable
+		-Wno-unused-function
 	>
 
 	# C, MSVC
@@ -551,16 +567,35 @@ target_compile_options(SRB2SDL2 PRIVATE
 		/Wv:19.20.27004.0
 	>
 
-	# C++, GNU, Clang and Apple Clang
-	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>>:
+	# C++, GNU
+	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:
 		-Wall
+	>
+
+	# C++, GNU, Clang and Apple Clang
+	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<OR:$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:Clang>>>:
+		#-Wall
+		-Werror=microsoft
+		-Wdelete-abstract-non-virtual-dtor
+		-Wreturn-type # Missing returns in non-void function
+		-Wduplicate-decl-specifier
+		-Wsometimes-uninitialized
+		-Wno-trigraphs # Trigraphs are disabled
+		-Wno-c++98-compat
+		-Wno-c++11-compat
+		-Wno-c++14-compat # No C++14 compat needed
+		-Wno-unused-but-set-variable # Setting unread variables is fine (nontrivial C++ types issue)
+		-Wno-misleading-indentation # Some cases in code currently
+		-Wno-deprecated-non-prototype # We have no intention of using C23 yet.
+		-Wno-parentheses-equality
+		-Wno-unsafe-buffer-usage # Very common in this codebase
+		-Wno-unused-const-variable
+		-Wno-unused-variable
 		-Wno-unused-function
-		-Wno-unused-but-set-variable
-		-Wno-unused-private-field
 	>
 
 	# C++, MSVC
-	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<C_COMPILER_ID:MSVC>>:
+	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:
 		/Wv:19.20.27004.0
 	>
 
@@ -641,7 +676,7 @@ add_subdirectory(modp_b64)
 
 # strip debug symbols into separate file when using gcc or clang.
 # to be consistent with Makefile, don't generate for OS X.
-if((CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")  AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
+if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
 	if(${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo OR SRB2_CONFIG_ALWAYS_MAKE_DEBUGLINK)
 		message(STATUS "Will make separate debug symbols in *.debug")
 		add_custom_command(TARGET SRB2SDL2 POST_BUILD
@@ -654,7 +689,7 @@ if((CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")  AND NOT 
 endif()
 
 # copy DLLs to bin/ directory if building internal shared on windows
-if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}")
+if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}" AND NOT MSVC)
 	# also copy implicitly linked system libraries
 	set(ADDITIONAL_DLLS "")
 	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL GNU)

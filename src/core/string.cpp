@@ -171,11 +171,13 @@ String& String::insert(size_type index, const char* s, size_type count)
 
 String& String::insert(size_type index, std::string_view str)
 {
-	return insert(index, str.begin(), (size_type)str.size());
+	if (str.empty()) return *this;
+	return insert(index, &*str.begin(), (size_type)str.size());
 }
 
 String& String::insert(size_type index, std::string_view str, size_t s_index, size_t count)
 {
+	if (str.empty()) return *this;
 	if (s_index > str.size())
 	{
 		throw std::out_of_range("s_index > str.size()");
@@ -343,7 +345,7 @@ String& String::replace(const_iterator first, const_iterator last, std::string_v
 	{
 		throw std::out_of_range("string replacement range out of bounds");
 	}
-	size_type index = first - data_.data();
+	size_type index = &*first - data_.data();
 	size_type count = last - first;
 
 	return replace(index, count, str);

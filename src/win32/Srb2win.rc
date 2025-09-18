@@ -1,4 +1,4 @@
-#include <winuser.h>
+#include <winres.h>
 
 //Microsoft Developer Studio generated resource script.
 //
@@ -75,11 +75,9 @@ END
 // Version
 //
 
-#include "../doomdef.h" // Needed for version string
-
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,0,0
- PRODUCTVERSION 2,2,0,0
+ FILEVERSION 2,4,0,0
+ PRODUCTVERSION 2,4,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -97,14 +95,14 @@ BEGIN
             VALUE "Comments", "Go go-karting with Dr. Robotnik!\0"
             VALUE "CompanyName", "Kart Krew Dev\0"
             VALUE "FileDescription", "Dr. Robotnik's Ring Racers\0"
-            VALUE "FileVersion", VERSIONSTRING_RC
+            VALUE "FileVersion", "2.4"
             VALUE "InternalName", "ringracers\0"
             VALUE "LegalCopyright", "Copyright 2018-2024 Kart Krew Dev\0"
             VALUE "LegalTrademarks", "Dr. Robotnik and related characters are trademarks of Sega.\0"
             VALUE "OriginalFilename", "ringracers.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Dr. Robotnik's Ring Racers\0"
-            VALUE "ProductVersion", VERSIONSTRING_RC
+            VALUE "ProductVersion", "2.4"
             VALUE "SpecialBuild", "\0"
         END
     END

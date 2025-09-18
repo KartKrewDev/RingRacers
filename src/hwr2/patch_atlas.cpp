@@ -278,7 +278,7 @@ void PatchAtlasCache::pack(Rhi& rhi)
 					atlas.entries_.insert_or_assign(patch, std::move(entry));
 					patch_lookup_.insert_or_assign(patch, atlas_index);
 					patches_to_upload_.insert(patch);
-					rects.erase(itr);
+					itr = rects.erase(itr);
 					continue;
 				}
 				++itr;

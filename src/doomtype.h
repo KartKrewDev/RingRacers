@@ -23,48 +23,20 @@ extern "C" {
 #endif
 
 #ifdef _WIN32
-//#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #define RPC_NO_WINDOWS_H
 #include <windows.h>
+// win32 sucks
+#undef min
+#undef max
 #endif
 
 /* 7.18.1.1  Exact-width integer types */
-#ifdef _MSC_VER
-// libopenmpt.h will include stdint.h later;
-// include it now so that INT8_MAX etc. don't get redefined
-#ifdef HAVE_OPENMPT
-#include <stdint.h>
-#endif
-
-#define UINT8 unsigned __int8
-#define SINT8 signed __int8
-
-#define UINT16 unsigned __int16
-#define INT16 __int16
-
-#define INT32 __int32
-#define UINT32 unsigned __int32
-
-#define INT64  __int64
-#define UINT64 unsigned __int64
-
-typedef long ssize_t;
-
-/* Older Visual C++ headers don't have the Win64-compatible typedefs... */
-#if (_MSC_VER <= 1200)
-	#ifndef DWORD_PTR
-		#define DWORD_PTR DWORD
-	#endif
-	#ifndef PDWORD_PTR
-		#define PDWORD_PTR PDWORD
-	#endif
-#endif
-#else
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 
+#ifndef _MSC_VER
 #define UINT8 uint8_t
-#define SINT8 int8_t
 
 #define UINT16 uint16_t
 #define INT16 int16_t
@@ -74,6 +46,8 @@ typedef long ssize_t;
 #define INT64  int64_t
 #define UINT64 uint64_t
 #endif
+
+#define SINT8 int8_t
 
 #ifdef __APPLE_CC__
 #define DIRECTFULLSCREEN 1
