@@ -3519,15 +3519,19 @@ void A_AttractChase(mobj_t *actor)
 		if (G_CompatLevel(0x0010))
 			blocked |= !!(actor->target->player->bailcharge || actor->target->player->defenseLockout > PUNISHWINDOW);
 
-		if (stale || blocked)
+		if (!G_CompatLevel(0x0010) || actor->extravalue2)
 		{
-			if (!G_CompatLevel(0x0010) && !stale)
-				if (actor->target->player->pickuprings)
-					actor->target->player->pickuprings--;
+			if (stale || blocked)
+			{
+				if (!G_CompatLevel(0x0010) && !stale)
+					if (actor->target->player->pickuprings)
+						actor->target->player->pickuprings--;
 
-			P_RemoveMobj(actor);
-			return;
+				P_RemoveMobj(actor);
+				return;
+			}
 		}
+
 
 		if (actor->extravalue2) // Using for ring boost
 		{
