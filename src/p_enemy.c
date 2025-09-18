@@ -3522,7 +3522,8 @@ void A_AttractChase(mobj_t *actor)
 		if (stale || blocked)
 		{
 			if (!G_CompatLevel(0x0010) && !stale)
-				actor->target->player->pickuprings--;
+				if (actor->target->player->pickuprings)
+					actor->target->player->pickuprings--;
 
 			P_RemoveMobj(actor);
 			return;
@@ -3605,7 +3606,9 @@ void A_AttractChase(mobj_t *actor)
 				actor->target->player->ringvolume -= RINGVOLUMECOLLECTPENALTY;
 				actor->target->player->ringtransparency -= RINGTRANSPARENCYCOLLECTPENALTY;
 
-				actor->target->player->pickuprings--;
+				if (actor->target->player->pickuprings || !G_CompatLevel(0x0011))
+					actor->target->player->pickuprings--;
+
 				P_RemoveMobj(actor);
 				return;
 			}
