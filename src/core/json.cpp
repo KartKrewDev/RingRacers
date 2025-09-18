@@ -1513,9 +1513,6 @@ static JsonValue parse_string(const Token& token)
 				hex[3] = *++itr;
 				if (hex[0] == -1 || hex[1] == -1 || hex[2] == -1 || hex[3] == -1)
 					throw JsonParseError("invalid unicode escape");
-				char byte[2];
-				byte[0] = (hexconv(hex[0]) << 4) | hexconv(hex[1]);
-				byte[1] = (hexconv(hex[2]) << 4) | hexconv(hex[3]);
 				uint16_t utf16 = hexconv(hex[0]) << 12 | hexconv(hex[1]) << 8 | hexconv(hex[2]) << 4 | hexconv(hex[3]);
 				bool valid_codepoint = false;
 				uint32_t codepoint = 0;

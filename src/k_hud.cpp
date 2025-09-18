@@ -2026,13 +2026,11 @@ static void K_drawBackupItem(void)
 {
 	bool tiny = r_splitscreen > 1;
 	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
-	patch_t *localbg = (kp_itembg[2]);
 	patch_t *localinv = kp_invincibility[((leveltime % (6*3)) / 3) + 7 + tiny];
 	INT32 fx = 0, fy = 0, fflags = 0, tx = 0, ty = 0;	// final coords for hud and flags...
 	const INT32 numberdisplaymin = 2;
 	skincolornum_t localcolor[3] = { static_cast<skincolornum_t>(stplyr->skincolor) };
 	SINT8 colormode[3] = { TC_RAINBOW };
-	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
 
 	if (stplyr->backupitemamount <= 0)
 		return;
@@ -2041,19 +2039,11 @@ static void K_drawBackupItem(void)
 	{
 		case KITEM_INVINCIBILITY:
 			localpatch[1] = localinv;
-			localbg = kp_itembg[2];
 			break;
 
 		case KITEM_ORBINAUT:
 			localpatch[1] = kp_orbinaut[tiny+4];
 			break;
-
-		case KITEM_SPB:
-		case KITEM_LIGHTNINGSHIELD:
-		case KITEM_BUBBLESHIELD:
-		case KITEM_FLAMESHIELD:
-			localbg = kp_itembg[2];
-			/*FALLTHRU*/
 
 		default:
 			localpatch[1] = K_GetCachedItemPatch(stplyr->backupitemtype, 1 + tiny);
@@ -2075,7 +2065,7 @@ static void K_drawBackupItem(void)
 		fx = ITEM2_X;
 		fy = ITEM2_Y;
 		fflags = V_SNAPTORIGHT|V_SNAPTOTOP|V_SPLITSCREEN;
-		flipamount = true;
+		//flipamount = true;
 	}
 
 	if (r_splitscreen == 1)

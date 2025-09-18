@@ -53,10 +53,6 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi)
 		color_tex.u_wrap = TextureWrapMode::kClamp;
 		color_tex.v_wrap = TextureWrapMode::kClamp;
 		color_ = rhi.create_texture(color_tex);
-
-		RenderbufferDesc depth_tex {};
-		depth_tex.width = vid_width;
-		depth_tex.height = vid_height;
 	}
 
 	RenderPassBeginInfo begin_info {};
