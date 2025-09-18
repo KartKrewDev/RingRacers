@@ -459,7 +459,7 @@ fixed_t FixedRescale(fixed_t value, fixed_t inmin, fixed_t inmax, easingfunc_t e
 		return outmin;
 
 	// Clamp the input value to the range
-	max(inmin, min(inmax, value));
+	value = max(inmin, min(inmax, value));
 
 	// Normalize the value to [0, FRACUNIT] range
 	fixed_t t = FixedDiv(value - inmin, inmax - inmin);
@@ -499,7 +499,7 @@ INT16 IntRescale(INT16 value, INT16 inmin, INT16 inmax, easingfunc_t easing_func
 		return outmin;
 
 	// Clamp the input value to the range
-	max(inmin, min(inmax, value));
+	value = max(inmin, min(inmax, value));
 
 	// Conversion shit
 	value = value<<FRACBITS;
