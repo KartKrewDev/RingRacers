@@ -33,9 +33,11 @@
 #include "k_color.h"
 #include "command.h"
 
-extern "C" consvar_t cv_dummyprofilefov, cv_fov[MAXSPLITSCREENPLAYERS];
+extern "C" {
+extern consvar_t cv_dummyprofilefov, cv_fov[MAXSPLITSCREENPLAYERS];
 
-extern "C" CV_PossibleValue_t lastprofile_cons_t[] = {{-1, "MIN"}, {MAXPROFILES, "MAX"}, {0, NULL}};
+CV_PossibleValue_t lastprofile_cons_t[] = {{-1, "MIN"}, {MAXPROFILES, "MAX"}, {0, NULL}};
+}
 
 // List of all the profiles.
 static profile_t *profilesList[MAXPROFILES+1]; // +1 because we're gonna add a default "GUEST' profile.
