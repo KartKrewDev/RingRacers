@@ -2075,7 +2075,7 @@ static void K_HandleLapIncrement(player_t *player)
 					K_SpawnDriftBoostExplosion(player, 4);
 					K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
 					if (!G_TimeAttackStart())
-						K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 35, player->mo);
+						K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 20, player->mo);
 
 					if (g_teamplay)
 					{
@@ -5422,7 +5422,12 @@ static void P_EvaluateDamageType(player_t *player, sector_t *sector, boolean isT
 			break;
 		case SD_STUMBLE:
 			if (isTouching)
+			{
+				player->pflags2 |= PF2_ALWAYSDAMAGED;
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_STUMBLE);
+				player->pflags2 &= ~PF2_ALWAYSDAMAGED;
+			}
+
 			break;
 		default:
 			break;

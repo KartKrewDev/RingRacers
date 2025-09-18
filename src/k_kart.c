@@ -10726,6 +10726,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			S_StartSound(pmo, sfx_gshad);
 		}
 
+		player->rings = -20;
+
 		player->baildrop--;
 		if (player->baildrop == 0)
 			player->ringboost /= 3;
@@ -10747,9 +10749,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT32 bailboost = FixedInt(FixedMul(totalrings*FRACUNIT, BAIL_BOOST));
 		UINT32 baildrop = FixedInt(FixedMul((totalrings)*FRACUNIT, BAIL_DROP));
 
+		// CONS_Printf("R=%d SR=%d PR=%d DR=%d TR=%d\n", player->rings, player->superring, player->pickuprings, debtrings, totalrings);
+
 		player->rings = -20;
 		player->superring = 0;
-		player->pickuprings = 0;
 		player->ringboxaward = 0;
 		player->ringboxdelay = 0;
 		player->superringdisplay = 0;
@@ -10760,6 +10763,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// Below: The stun the player gets from bailing is reduced as a pity if you did it out of Burst. Longer charge, shorter stun.
 		player->stunned = BAILSTUN - player->bailcharge*5/4; // note: bailcharge goes up by 2 every tic, not 1, so this is actually - charge duration *2
 		player->bailcharge = 0;
+		player->defenseLockout = 2*PUNISHWINDOW;
 
 		player->ringboost += bailboost * (3+K_GetKartRingPower(player, true));
 		player->baildrop += baildrop * BAIL_DROPFREQUENCY + 1;
@@ -11645,6 +11649,13 @@ void K_KartResetPlayerColor(player_t *player)
 			fullbright = true;
 			goto finalise;
 		}
+	}
+
+	if (player->baildrop && (leveltime%4 == 0))
+	{
+		player->mo->colorized = true;
+		player->mo->color = SKINCOLOR_BLACK;
+		goto finalise;
 	}
 
 	if (player->eggmanTransferDelay)
@@ -14841,7 +14852,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					S_StartSound(player->mo, sfx_s3k7b);
 			player->bailcharge = 0;
 		}
-		else if ((player->itemtype && player->itemamount) || player->rings > 0 || player->superring > 0 || player->pickuprings > 0 || player->itemRoulette.active)
+		else if ((player->itemtype && player->itemamount) || (player->rings + player->superring + player->pickuprings > 0) || player->itemRoulette.active)
 		{
 			// Set up bail charge, provided we have something to bail with (any rings or item resource).
 			// boolean grounded = P_IsObjectOnGround(player->mo);
