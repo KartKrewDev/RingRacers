@@ -14843,7 +14843,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 	if (player->cmd.buttons & BT_BAIL && (player->cmd.buttons & BT_RESPAWNMASK) != BT_RESPAWNMASK)
 	{
-		if (leveltime < introtime || (gametyperules & GTR_SPHERES) || modeattacking || player->markedfordeath)
+		if (leveltime < introtime || (gametyperules & GTR_SPHERES) || modeattacking || player->markedfordeath
+			|| player->respawn.state != RESPAWNST_NONE)
 		{
 			// No bailing in GTR_SPHERES because I cannot be fucked to do manual Last Chance right now.
 			// Maybe someday!
