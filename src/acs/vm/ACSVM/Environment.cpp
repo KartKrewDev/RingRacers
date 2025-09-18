@@ -25,6 +25,7 @@
 #include "Script.hpp"
 #include "Serial.hpp"
 #include "Thread.hpp"
+#include "../../../w_wad.h"
 
 #include <iostream>
 #include <list>
@@ -596,7 +597,12 @@ namespace ACSVM
    ModuleName Environment::readModuleName(Serial &in) const
    {
       auto s = readString(in);
-      auto i = ReadVLN<std::size_t>(in);
+      size_t i = ReadVLN<std::size_t>(in);
+
+      if ((i = W_LumpFromNetSave(i)) == LUMPERROR)
+      {
+          CONS_Debug(DBG_GAMELOGIC, "lumpnum not found for ACS module '%s'\n", s->str);
+      }
 
       return {s, nullptr, i};
    }
@@ -768,7 +774,7 @@ namespace ACSVM
    void Environment::writeModuleName(Serial &out, ModuleName const &in) const
    {
       writeString(out, in.s);
-      WriteVLN(out, in.i);
+      WriteVLN<std::size_t>(out, W_LumpIntoNetSave(in.i));
    }
 
    //

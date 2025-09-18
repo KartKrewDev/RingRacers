@@ -1634,6 +1634,93 @@ UINT8 W_LumpExists(const char *name)
 	return false;
 }
 
+// Thanks to the introduction of "client side WAD files",
+// a notion which is insanity in any other branch of DOOM,
+// any direct wadnum ID is not a guaranteed index (and
+// lumpnum_t, which has it in their upper bits, suffer too)
+// We can do an O(n) conversion back and forth, which is
+// better than nothing, but still kind of annoying to do.
+// It was either this or killing musicwads lmao ~toast 180925
+
+lumpnum_t W_LumpIntoNetSave(lumpnum_t lump)
+{
+	UINT32 wad = (lump >> 16);
+	if (lump == LUMPERROR // Bad already
+	|| wad < mainwads) // Same between client/server
+	{
+		// Give what we get.
+		return lump;
+	}
+
+	if (wad >= numwadfiles // Outside of range
+	|| !wadfiles[wad]->important) // Can't convert local lumpnum
+	{
+		// No good return result!
+		return LUMPERROR;
+	}
+
+	// Count previous local files the client might not have.
+	UINT32 i = (mainwads + musicwads), localoffset = 0;
+	for (; i < wad; i++)
+	{
+		if (wadfiles[i]->important)
+			continue;
+
+		localoffset++;
+	}
+
+	if (!localoffset)
+	{
+		// No local files, return unchanged.
+		return lump;
+	}
+
+	if (localoffset <= wad)
+	{
+		// Success, return with the conversion.
+		return ((wad - localoffset) << 16) | (lump & UINT16_MAX);
+	}
+
+	// Death!!
+	return LUMPERROR;
+}
+
+lumpnum_t W_LumpFromNetSave(lumpnum_t lump)
+{
+	UINT32 netwad = (lump >> 16);
+	if (lump == LUMPERROR // Bad already
+	|| netwad < mainwads) // Same between client/server
+	{
+		// Give what we get.
+		return lump;
+	}
+
+	// Count previous local files the server would ignore.
+	UINT32 i = (mainwads + musicwads), localoffset = 0;
+	for (; (i - localoffset) <= netwad && i < numwadfiles; i++)
+	{
+		if (wadfiles[i]->important)
+			continue;
+
+		localoffset++;
+	}
+
+	if (!localoffset)
+	{
+		// No local files, return unchanged.
+		return lump;
+	}
+
+	if (netwad + localoffset < numwadfiles)
+	{
+		// Success, return with the conversion.
+		return ((netwad + localoffset) << 16) | (lump & UINT16_MAX);
+	}
+
+	// Death!!
+	return LUMPERROR;
+}
+
 size_t W_LumpLengthPwad(UINT16 wad, UINT16 lump)
 {
 	if (!TestValidLump(wad, lump))
