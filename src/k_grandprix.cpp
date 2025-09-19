@@ -682,49 +682,53 @@ void K_IncreaseBotDifficulty(player_t *bot)
 		totalRank += human->tally.rank;
 	}
 
-	SINT8 averageRank = totalRank / humanPlayers;
-
-	switch(averageRank)
+	if (humanPlayers)
 	{
-		case GRADE_E:
-		case GRADE_D:
-		case GRADE_C:
-			rankNudge = -1;
-			break;
-		case GRADE_B:
-			rankNudge = 0;
-			break;
-		case GRADE_A:
-			rankNudge = 1;
-			break;
-	}
+		SINT8 averageRank = totalRank / humanPlayers;
 
-	// RELAXED MODE:
-	// Continues don't drop bot difficulty, because we always advance.
-	// Bots will still level up from standard advancement; we need a
-	// much steeper rank nudge to keep difficulty at the right level.
-	if (grandprixinfo.gamespeed == KARTSPEED_EASY)
-	{
-		switch(averageRank)
+		// RELAXED MODE:
+		// Continues don't drop bot difficulty, because we always advance.
+		// Bots will still level up from standard advancement; we need a
+		// much steeper rank nudge to keep difficulty at the right level.
+		if (grandprixinfo.gamespeed == KARTSPEED_EASY)
 		{
-			case GRADE_E:
-				rankNudge = -4;
-				break;
-			case GRADE_D:
-				rankNudge = -2;
-				break;
-			case GRADE_C:
-				rankNudge = -1;
-				break;
-			case GRADE_B:
-				rankNudge = 0;
-				break;
-			case GRADE_A:
-				rankNudge = 1;
-				break;
+			switch (averageRank)
+			{
+				case GRADE_E:
+					rankNudge = -4;
+					break;
+				case GRADE_D:
+					rankNudge = -2;
+					break;
+				case GRADE_C:
+					rankNudge = -1;
+					break;
+				case GRADE_B:
+					rankNudge = 0;
+					break;
+				case GRADE_A:
+					rankNudge = 1;
+					break;
+			}
+		}
+		else
+		{
+			switch (averageRank)
+			{
+				case GRADE_E:
+				case GRADE_D:
+				case GRADE_C:
+					rankNudge = -1;
+					break;
+				case GRADE_B:
+					rankNudge = 0;
+					break;
+				case GRADE_A:
+					rankNudge = 1;
+					break;
+			}
 		}
 	}
-
 
 	increase += rankNudge;
 
