@@ -4,7 +4,7 @@
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
 // Note that we use this to help keep internal testing in check; this is why v2.0 is not version "2".
-#define MODVERSION 7
+#define MODVERSION 8
 
 // Define this as a prerelease version suffix
-#define BETAVERSION "RC4"
+#define BETAVERSION "RC5"
