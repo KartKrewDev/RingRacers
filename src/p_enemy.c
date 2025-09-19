@@ -3523,7 +3523,7 @@ void A_AttractChase(mobj_t *actor)
 				blocked |= !!(actor->target->player->bailcharge || actor->target->player->defenseLockout > PUNISHWINDOW);
 		}
 
-		if (!G_CompatLevel(0x0010) || (!stale && actor->extravalue2))
+		if (!G_CompatLevel(0x0010) || actor->extravalue2)
 		{
 			if (stale || blocked)
 			{
