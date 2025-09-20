@@ -1964,7 +1964,7 @@ static void K_HandleLapIncrement(player_t *player)
 		if (!G_TimeAttackStart() && leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
 			// freeze 'em until fault penalty is over
-			player->mo->hitlag = starttime - leveltime + TICRATE;
+			player->mo->hitlag = starttime - leveltime + 2*TICRATE;
 			P_ResetPlayer(player);
 			player->pflags |= PF_VOID;
 			player->mo->renderflags |= RF_DONTDRAW;
