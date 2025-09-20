@@ -1059,7 +1059,7 @@ ATTRUNUSED static boolean K_IsItemSpeed(kartitems_t item)
 		case KRITEM_TRIPLESNEAKER:
 		case KITEM_FLAMESHIELD:
 		case KITEM_SHRINK:
-		case KITEM_SUPERRING
+		case KITEM_SUPERRING:
 			return true;
 		default:
 			return false;
