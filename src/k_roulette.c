@@ -1412,11 +1412,6 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	roulette->preexpdist = K_GetItemRouletteDistance(player, roulette->playing);
 	roulette->dist = roulette->preexpdist;
 
-	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative())
-	{
-		roulette->dist = FixedMul(roulette->preexpdist, K_EffectiveGradingFactor(player));
-	}
-
 	// ===============================================================================
 	// Dynamic Roulette. Oh boy!
 	// Alright, here's the broad plan:
@@ -1435,6 +1430,22 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	UINT32 candidates[NUMKARTRESULTS]; // how many of this item should we try to insert?
 	UINT32 dupetolerance[NUMKARTRESULTS]; // how willing are we to select this item after already selecting it? higher values = lower dupe penalty
 	boolean permit[NUMKARTRESULTS]; // is this item allowed?
+
+	UINT32 lonelinessSuppressor = DISTVAR; // This close to 1st? Dampen loneliness (you have a target!)
+	UINT32 maxEXPDistanceCut = 3*DISTVAR/2; // The maximum amount you can be displaced by EXP
+
+	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative())
+	{
+		roulette->dist = FixedMul(roulette->preexpdist, K_EffectiveGradingFactor(player));
+
+		if (roulette->dist < roulette->preexpdist)
+		{
+			if (roulette->preexpdist - roulette->dist > maxEXPDistanceCut)
+			{
+				roulette->dist = roulette->preexpdist - maxEXPDistanceCut;
+			}
+		}
+	}
 
 	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
 	boolean filterweakitems = true; // strip unusually weak items from reel?
@@ -1587,6 +1598,12 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 
 		loneliness = Easing_InCubic(loneliness, 0, FRACUNIT);
 
+		// You are not lonely if you're super close to 1st, even if 3nd is far away.
+		if (roulette->preexpdist < lonelinessSuppressor)
+		{
+			loneliness = FixedRescale(roulette->preexpdist, 0, lonelinessSuppressor, Easing_InCubic, 0, loneliness);
+		}
+
 		// Give interaction items a nudge against initial selection if you're lonely..
 		for (i = 1; i < NUMKARTRESULTS; i++)
 		{
@@ -1732,10 +1749,10 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 			UINT16 BASE_X = 280;
 			UINT16 BASE_Y = 5+12*debugcount;
 			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTORIGHT;
-			V_DrawRightAlignedThinString(BASE_X - 12, 5, FLAGS, va("%d", targetpower/humanscaler));
-			V_DrawRightAlignedThinString(BASE_X - 12, 5+12, FLAGS, va("%d", toFront));
-			V_DrawRightAlignedThinString(BASE_X - 12, 5+24, FLAGS, va("%d", toBack));
-			V_DrawRightAlignedThinString(BASE_X - 12, 5+36, FLAGS, va("%d", loneliness));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5, FLAGS, va("TP %d", targetpower/humanscaler));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5+12, FLAGS, va("FB %d / %d", toFront, toBack));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5+24, FLAGS, va("L %d", loneliness));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5+36, FLAGS, va("D %d / %d", roulette->preexpdist, roulette->dist));
 			for(UINT8 k = 0; k < candidates[i]; k++)
 				V_DrawFixedPatch((BASE_X + 3*k)*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(i), NULL);
 			UINT8 amount = K_ItemResultToAmount(i, roulette);
