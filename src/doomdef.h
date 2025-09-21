@@ -457,7 +457,7 @@ enum {
 
 
 */
-void I_Error(const char *error, ...) FUNCIERROR;
+FUNCIERROR void ATTRNORETURN I_Error(const char *error, ...);
 
 /**	\brief	write a message to stderr (use before I_Quit) for when you need to quit with a msg, but need
  the return code 0 of I_Quit();

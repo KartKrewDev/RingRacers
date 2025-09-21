@@ -176,6 +176,41 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_deepcopy.cpp
 )
 
+# Always compile some files with optimizations in Debug config.
+# This is to make the debugging experience less slow for the majority of cases.
+set(always_optimize_options "")
+if(MSVC)
+	set(always_optimize_options "$<$<CONFIG:Debug>:/O2;/Ob2>")
+else()
+	set(always_optimize_options "$<$<CONFIG:Debug>:-O3>")
+endif()
+set_source_files_properties(
+	r_bsp.cpp
+	r_data.c
+	r_debug.cpp
+	r_debug_parser.cpp
+	r_debug_printer.cpp
+	r_draw.cpp
+	r_fps.cpp
+	r_main.cpp
+	r_plane.cpp
+	r_segs.cpp
+	r_skins.c
+	r_sky.c
+	r_splats.c
+	r_spritefx.cpp
+	r_things.cpp
+	r_bbox.c
+	r_textures.cpp
+	r_textures_dups.cpp
+	r_patch.cpp
+	r_patchrotation.c
+	r_picformats.c
+	r_portal.c
+	PROPERTIES
+	COMPILE_OPTIONS "${always_optimize_options}"
+)
+
 set_target_properties(SRB2SDL2 PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/sdl/macosx/MacOSXBundleInfo.plist.in")
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
@@ -210,7 +245,7 @@ add_custom_target(_SRB2_reconf ALL
 )
 add_dependencies(SRB2SDL2 _SRB2_reconf)
 
-if(("${CMAKE_COMPILER_IS_GNUCC}" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+if(("${CMAKE_COMPILER_IS_GNUCC}") AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	target_link_options(SRB2SDL2 PRIVATE "-Wl,--disable-dynamicbase")
 	if("${SRB2_CONFIG_STATIC_STDLIB}")
 		# On MinGW with internal libraries, link the standard library statically
@@ -224,8 +259,19 @@ if(("${CMAKE_COMPILER_IS_GNUCC}" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND 
 	endif()
 endif()
 
-if(MSVC OR CMAKE_CXX_LINK_EXECUTABLE MATCHES "lld-link.exe")
+if(MSVC OR CMAKE_CXX_LINK_EXECUTABLE MATCHES "lld-link\\.exe")
 	target_link_options(SRB2SDL2 PRIVATE /MANIFEST:NO)
+	target_link_libraries(SRB2SDL2 PRIVATE "dbghelp")
+
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND MSVC)
+	# Stuff to make paths not include the builder's file system paths on clang-cl
+	string(REPLACE "/" "\\" backslashes_cmake_source_dir "${CMAKE_SOURCE_DIR}")
+	target_compile_options(SRB2SDL2 PRIVATE "$<$<CONFIG:RelWithDebInfo,Release>:/clang:-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=X:/ringracers>")
+	target_compile_options(SRB2SDL2 PRIVATE "$<$<CONFIG:RelWithDebInfo,Release>:/clang:-fdebug-prefix-map=${backslashes_cmake_source_dir}=X:/ringracers>")
+	target_compile_options(SRB2SDL2 PRIVATE "$<$<CONFIG:RelWithDebInfo,Release>:/clang:-fdebug-compilation-dir=${CMAKE_SOURCE_DIR}>")
+	target_link_options(SRB2SDL2 PRIVATE "$<$<CONFIG:RelWithDebInfo,Release>:/pdbaltpath:%_PDB%>")
 endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
@@ -283,6 +329,10 @@ target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
 target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
 target_link_libraries(SRB2SDL2 PRIVATE CURL::libcurl)
 target_link_libraries(SRB2SDL2 PRIVATE Opus::opus)
+if(WIN32 AND NOT MINGW)
+	target_link_libraries(SRB2SDL2 PRIVATE cpptrace::cpptrace)
+	target_compile_definitions(SRB2SDL2 PRIVATE HAVE_CPPTRACE)
+endif()
 target_link_libraries(SRB2SDL2 PRIVATE ReNameNoise::renamenoise)
 if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 	target_link_libraries(SRB2SDL2 PRIVATE -lexecinfo)
@@ -461,6 +511,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 	# This is a direct translation from versions.mk
 	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:GNU>>:
 		-Wall
+		-Werror-implicit-function-declaration
 		-Wno-trigraphs
 		-W # Was controlled by RELAXWARNINGS
 		-pedantic
@@ -545,6 +596,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 	$<$<AND:$<COMPILE_LANGUAGE:C>,$<OR:$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>>:
 		#-Wall
 		-Werror=microsoft
+		-Werror=implicit-function-declaration
 		-Wreturn-type # Missing returns in non-void function
 		-Wduplicate-decl-specifier
 		-Wsometimes-uninitialized
@@ -570,9 +622,14 @@ target_compile_options(SRB2SDL2 PRIVATE
 	# C++, GNU
 	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:
 		-Wall
+		-Wno-c++98-compat
+		-Wno-c++11-compat
+		-Wno-c++14-compat # No C++14 compat needed
+		-Werror=c++20-extensions
+		-Werror=c++23-extensions # Disallow newer language features entirely
 	>
 
-	# C++, GNU, Clang and Apple Clang
+	# C++, Clang and Apple Clang
 	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<OR:$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:Clang>>>:
 		#-Wall
 		-Werror=microsoft
@@ -584,6 +641,8 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-c++98-compat
 		-Wno-c++11-compat
 		-Wno-c++14-compat # No C++14 compat needed
+		-Werror=c++20-extensions
+		-Werror=c++23-extensions # Disallow newer language features entirely
 		-Wno-unused-but-set-variable # Setting unread variables is fine (nontrivial C++ types issue)
 		-Wno-misleading-indentation # Some cases in code currently
 		-Wno-deprecated-non-prototype # We have no intention of using C23 yet.
@@ -593,6 +652,8 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-unused-variable
 		-Wno-unused-function
 	>
+
+	# C++, Clang and Apple Clang
 
 	# C++, MSVC
 	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:

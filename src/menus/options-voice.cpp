@@ -29,7 +29,7 @@ menuitem_t OPTIONS_Voice[] =
 		NULL, srb2::itemaction(&cv_voice_inputamp), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Noise Suppression", "Suppress background noise from your voice.",
-		NULL, {.cvar = &cv_voice_denoise}, 0, 0},
+		NULL, srb2::itemaction(&cv_voice_denoise), 0, 0},
 
 	{IT_STRING | IT_CVAR, "Input Sensitivity", "Voice higher than this threshold will transmit, in decibels.",
 		NULL, srb2::itemaction(&cv_voice_activationthreshold), 0, 0 },

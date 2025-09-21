@@ -54,8 +54,8 @@
 			"name": "__develop-cl",
 			"hidden": true,
 			"cacheVariables": {
-				"CMAKE_C_FLAGS_RELWITHDEBINFO": "/MD /O2 /Ob2 /DNDEBUG",
-				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "/MD /O2 /Ob2 /DNDEBUG",
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "/MD /Zi /O2 /Ob2 /DNDEBUG",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "/MD /Zi /O2 /Ob2 /DNDEBUG",
 				"SRB2_CONFIG_DEV_BUILD": "ON",
 				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
 			}
@@ -64,8 +64,8 @@
 			"name": "__release-cl",
 			"hidden": true,
 			"cacheVariables": {
-				"CMAKE_C_FLAGS_RELWITHDEBINFO": "/MD /O2 /Ob2 /DNDEBUG",
-				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "/MD /O2 /Ob2 /DNDEBUG",
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "/MD /Zi /O2 /Ob2 /DNDEBUG",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "/MD /Zi /O2 /Ob2 /DNDEBUG",
 				"SRB2_CONFIG_DEV_BUILD": "OFF",
 				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
 			}
