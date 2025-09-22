@@ -10507,10 +10507,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->trickboost)
 		player->trickboost--;
 
-	/*
-	if (K_PlayerUsesBotMovement(player) && player->botvars.bumpslow && player->incontrol)
-		player->botvars.bumpslow--;
-	*/
 
 	// WHOOPS! 2.4 bots were tuned around a bugged version of bumpslow that NEVER decayed
 	// if the player in slot 0 was a human. People seem to like this tuning, but the dampened
@@ -10520,8 +10516,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// I'd like to retune this later, but for now, just set bumpslow on every bot, as if they all
 	// contact a wall instantly—consistently giving them the softer rubberband advancement.
 	// What the fuck making games is hard.
-	if (K_PlayerUsesBotMovement(player))
-		player->botvars.bumpslow = TICRATE*2;
+	if (G_CompatLevel(0x0010))
+	{
+		// Backwards compatibility for bot takeover in staff ghosts.
+		if (K_PlayerUsesBotMovement(player) && player->botvars.bumpslow && player->incontrol)
+			player->botvars.bumpslow--;
+	}
+	else
+	{
+		if (K_PlayerUsesBotMovement(player))
+			player->botvars.bumpslow = TICRATE*2;
+	}
 
 
 	if (player->flamedash)
