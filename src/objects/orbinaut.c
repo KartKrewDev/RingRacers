@@ -218,7 +218,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 			if ((t1->type == MT_ORBINAUT_SHIELD || t1->type == MT_JAWZ_SHIELD)
 				&& !t2->player->invincibilitytimer && !K_IsBigger(t2, t1)) // UGH. Stumble ignores invinc. Fix this damage type someday.
 			{
-				P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO | DMG_STUMBLE);
+				P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO | DMG_WHUMBLE);
 			}
 			else
 			{

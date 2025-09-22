@@ -1036,8 +1036,6 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			// if you're here, you're getting hit
 			// Damage is a bit hacky, we want only a small loss-of-control
 			// while still behaving as if it's a "real" hit.
-			P_PlayRinglossSound(victim);
-			P_PlayerRingBurst(victimPlayer, 5);
 			P_DamageMobj(victim, shield, attacker, 1, DMG_WHUMBLE);
 
 			K_DropPowerUps(victimPlayer);

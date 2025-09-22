@@ -533,8 +533,8 @@ struct BasicFF_t
 #define DMG_STING   0x04
 #define DMG_KARMA   0x05 // Karma Bomb explosion -- works like DMG_EXPLODE, but steals half of their bumpers & deletes the rest
 #define DMG_VOLTAGE 0x06
-#define DMG_STUMBLE 0x07 // Does not award points in Battle
-#define DMG_WHUMBLE 0x08 // <-- But this one DOES!
+#define DMG_STUMBLE 0x07 // Harmless disruption.
+#define DMG_WHUMBLE 0x08 // Harmful disruption. (Awards points, strips rings, pops shields, etc)
 //// Death types - cannot be combined with damage types
 #define DMG_INSTAKILL  0x80
 #define DMG_DEATHPIT   0x81

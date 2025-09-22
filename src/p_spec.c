@@ -5423,9 +5423,7 @@ static void P_EvaluateDamageType(player_t *player, sector_t *sector, boolean isT
 		case SD_STUMBLE:
 			if (isTouching)
 			{
-				player->pflags2 |= PF2_ALWAYSDAMAGED;
-				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_STUMBLE);
-				player->pflags2 &= ~PF2_ALWAYSDAMAGED;
+				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_STUMBLE|DMG_WOMBO);
 			}
 
 			break;

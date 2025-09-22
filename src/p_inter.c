@@ -2878,7 +2878,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	player_t *playerInflictor;
 	boolean force = false;
 	boolean spbpop = false;
-	boolean downgraded = false;
+	ATTRUNUSED boolean downgraded = false;
+	boolean truewhumble = false; // Invincibility-ignoring DMG_WHUMBLE from the Insta-Whip itself.
 
 	INT32 laglength = 6;
 
@@ -3094,6 +3095,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
 
+			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_INSTAWHIP && type == DMG_WHUMBLE)
+				truewhumble = true;
+
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
 			if (!force)
@@ -3159,7 +3163,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					return false;
 				}
 
-				if (invincible && type != DMG_WHUMBLE)
+				if (invincible && !truewhumble)
 				{
 					const INT32 oldHitlag = target->hitlag;
 					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
@@ -3307,7 +3311,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (inflictor->type == MT_STONESHOE || inflictor->type == MT_STONESHOE_CHAIN)
 						softenTumble = true;
 					else
-						K_SpawnAmps(source->player, K_PvPAmpReward((type == DMG_WHUMBLE) ? 30 : 20, source->player, player), target);
+						K_SpawnAmps(source->player, K_PvPAmpReward((truewhumble) ? 30 : 20, source->player, player), target);
 
 
 					K_BotHitPenalty(player);
@@ -3467,10 +3471,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (inflictor && !P_MobjWasRemoved(inflictor) && P_IsKartItem(inflictor->type) && inflictor->cvmem
 				&& inflictor->type != MT_BANANA) // Are there other designed trap items that can be deployed and dropped? If you add one, list it here!
 			{
-				type = DMG_STUMBLE;
-				downgraded = true;
-				player->ringburst += 5; // IT'S THE DAMAGE STUMBLE HACK AGAIN AAAAAAAAHHHHHHHHHHH
-				K_PopPlayerShield(player);
+				type = DMG_WHUMBLE;
 			}
 
 			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency && !P_PlayerInPain(player))
@@ -3488,9 +3489,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					case DMG_NORMAL:
 					case DMG_WIPEOUT:
 						downgraded = true;
-						type = DMG_STUMBLE;
-						player->ringburst += 5; // THERE IS SIMPLY NO HOPE AT THIS POINT
-						K_PopPlayerShield(player);
+						type = DMG_WHUMBLE;
 						break;
 					default:
 						break;
@@ -3507,7 +3506,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				case DMG_STUMBLE:
 				case DMG_WHUMBLE:
 					K_StumblePlayer(player);
-					ringburst = 5;
+					ringburst = (type == DMG_WHUMBLE) ? 5 : 0;
 					break;
 				case DMG_TUMBLE:
 					K_TumblePlayer(player, inflictor, source, softenTumble);
@@ -3536,16 +3535,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			player->ringburst += ringburst;
 
-			K_PopPlayerShield(player);
-
-			if ((type != DMG_STUMBLE && type != DMG_WHUMBLE) || (type == DMG_STUMBLE && downgraded))
+			if (type != DMG_STUMBLE)
 			{
 				if (type != DMG_STING)
 					player->flashing = K_GetKartFlashing(player);
-				player->instashield = 15;
-			}
 
-			K_PlayPainSound(target, source);
+				K_PopPlayerShield(player);
+				player->instashield = 15;
+				K_PlayPainSound(target, source);
+			}
 
 			if (gametyperules & GTR_BUMPERS)
 				player->spheres = min(player->spheres + 10, 40);
@@ -3640,7 +3638,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	// Insta-Whip (DMG_WHUMBLE): do not reduce hitlag because
 	// this can leave room for double-damage.
-	if ((damagetype & DMG_TYPEMASK) != DMG_WHUMBLE && (gametyperules & GTR_BUMPERS) && !battleprisons)
+	if (truewhumble && (gametyperules & GTR_BUMPERS) && !battleprisons)
 		laglength /= 2;
 
 	if (!(target->player && (damagetype & DMG_DEATHMASK)))
