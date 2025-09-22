@@ -13565,7 +13565,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 
 	disttofinish = K_GetItemRouletteDistance(player, 8);
 
-	if (D_NumPlayersInRace() <= 1)
+	if (D_NumPlayersInRace() <= 1 || (gametyperules & GTR_CATCHER) || (gametype == GT_TUTORIAL))
 	{
 		return FLAMESHIELD_MAX; // max when alone, for testing
 		// and when in battle, for chaos
