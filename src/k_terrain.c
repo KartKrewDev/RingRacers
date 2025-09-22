@@ -501,7 +501,16 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 	if (terrain->damageType > 0)
 	{
 		UINT8 dmg = (terrain->damageType & 0xFF);
-		P_DamageMobj(mo, NULL, NULL, 1, dmg);
+
+		if (dmg & DMG_STUMBLE)
+		{
+			if (player->mo->hitlag == 0 && (player->mo->momz >= 0) == (P_MobjFlip(player->mo) >= 0))
+				K_StumblePlayer(player);
+		}
+		else
+		{
+			P_DamageMobj(mo, NULL, NULL, 1, dmg);
+		}
 	}
 
 	// Sneaker panel
@@ -2011,7 +2020,7 @@ static boolean K_TERRAINLumpParser(char *data, size_t size)
 			Z_Free(tkn);
 			tkn = M_GetToken(NULL);
 			pos = M_GetTokenPos();
-			
+
 			if (tkn && pos <= size)
 			{
 				if (stricmp(tkn, "optional") == 0)
