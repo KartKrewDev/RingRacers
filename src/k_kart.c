@@ -10474,6 +10474,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// CONS_Printf("%d - %d\n", player->ringboost, oldringboost - player->ringboost);
 	}
 
+	if (!G_CompatLevel(0x0010) && player->superring == 0 && player->ringboxdelay == 0 && player->ringboost < player->lastringboost)
+	{
+		player->lastringboost = player->ringboost;
+	}
+
 	if (player->sneakertimer)
 	{
 		player->sneakertimer--;
