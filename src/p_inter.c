@@ -3466,12 +3466,22 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				S_StartSound(target, sfx_gshc7);
 				player->flashing = TICRATE;
 				type = DMG_STUMBLE;
+				downgraded = true;
 			}
 
+			// Downgrade backthrown items that are not dedicated traps.
 			if (inflictor && !P_MobjWasRemoved(inflictor) && P_IsKartItem(inflictor->type) && inflictor->cvmem
-				&& inflictor->type != MT_BANANA) // Are there other designed trap items that can be deployed and dropped? If you add one, list it here!
+				&& inflictor->type != MT_BANANA)
 			{
 				type = DMG_WHUMBLE;
+				downgraded = true;
+			}
+
+			// Downgrade orbital items.
+			if (inflictor && !P_MobjWasRemoved(inflictor) && (inflictor->type == MT_ORBINAUT_SHIELD || inflictor->type == MT_JAWZ_SHIELD))
+			{
+				type = DMG_WHUMBLE;
+				downgraded = true;
 			}
 
 			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency && !P_PlayerInPain(player))

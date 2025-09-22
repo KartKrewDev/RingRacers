@@ -215,18 +215,12 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			// Player Damage
-			if ((t1->type == MT_ORBINAUT_SHIELD || t1->type == MT_JAWZ_SHIELD)
-				&& !t2->player->invincibilitytimer && !K_IsBigger(t2, t1)) // UGH. Stumble ignores invinc. Fix this damage type someday.
-			{
-				P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO | DMG_WHUMBLE);
-			}
-			else
-			{
-				P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO |
-					(tumbleitem ? DMG_TUMBLE : DMG_WIPEOUT));
-				if (tumbleitem || (gametyperules & GTR_SPHERES) || !t2->player->tripwireLeniency)
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO |
+				(tumbleitem ? DMG_TUMBLE : DMG_WIPEOUT));
+
+			if (tumbleitem || !t2->player->tripwireLeniency)
+				if ((gametyperules & GTR_SPHERES) || (t1->type != MT_ORBINAUT_SHIELD && t1->type != MT_JAWZ_SHIELD))
 					K_KartBouncing(t2, t1);
-			}
 
 			S_StartSound(t2, sfx_s3k7b);
 		}
