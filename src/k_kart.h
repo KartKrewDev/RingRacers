@@ -123,9 +123,6 @@ Make sure this matches the actual number of states
 #define AUTORESPAWN_TIME (10*TICRATE)
 #define AUTORESPAWN_THRESHOLD (7*TICRATE)
 
-// How many checkpoints is the last checkpoint worth?
-#define FINAL_CHECK_POWER (3)
-
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
 void K_PopBubbleShield(player_t *player);
@@ -135,6 +132,7 @@ boolean K_DuelItemAlwaysSpawns(mapthing_t *mt);
 boolean K_InRaceDuel(void);
 player_t *K_DuelOpponent(player_t *player);
 
+fixed_t K_FinalCheckpointPower(void);
 fixed_t K_EffectiveGradingFactor(const player_t *player);
 #define MINGRADINGFACTOR (FRACUNIT/2)
 #define MINFRANTICFACTOR (8*FRACUNIT/10)
@@ -355,7 +353,6 @@ fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max);
 UINT16 K_GetEXP(player_t *player);
 
 UINT32 K_GetNumGradingPoints(void);
-UINT32 K_GetNumEffectiveGradingPoints(void);
 
 boolean K_LegacyRingboost(const player_t *player);
 

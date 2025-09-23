@@ -4504,7 +4504,7 @@ void K_SpawnEXP(player_t *player, UINT8 exp, mobj_t *impact)
 
 	if (player->gradingpointnum == K_GetNumGradingPoints())
 	{
-		exp *= FINAL_CHECK_POWER;
+		exp *= 3;
 		special = true;
 	}
 
@@ -17112,6 +17112,18 @@ static UINT8 K_Opponents(player_t *player)
 	return opponents;
 }
 
+fixed_t K_FinalCheckpointPower(void)
+{
+	// How much of the final total is given out as a bonus for the last check?
+	fixed_t FINAL_CHECK_PERCENT = 25*FRACUNIT/100;
+
+	fixed_t theentirerace = K_GetNumGradingPoints()*FRACUNIT;
+	fixed_t theentireraceplusbonus = FixedDiv(theentirerace, FRACUNIT - FINAL_CHECK_PERCENT);
+	fixed_t bonusonly = theentireraceplusbonus - theentirerace;
+
+	return bonusonly;
+}
+
 static fixed_t K_GradingFactorPower(player_t *player, UINT32 gradingpoint)
 {
 	fixed_t power = EXP_POWER; // adjust to change overall exp volatility
@@ -17130,7 +17142,7 @@ static fixed_t K_GradingFactorPower(player_t *player, UINT32 gradingpoint)
 
 	if (gradingpoint-1 == gp)
 	{
-		power *= FINAL_CHECK_POWER;
+		power += FixedMul(power, K_FinalCheckpointPower());
 	}
 
 	return power;
@@ -17189,27 +17201,33 @@ fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
 
 UINT16 K_GetEXP(player_t *player)
 {
-	UINT32 gpn = player->gradingpointnum;
+	fixed_t gradingpointnum = FRACUNIT * player->gradingpointnum;
 
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-	UINT32 effgradingpoints = K_GetNumEffectiveGradingPoints();
+	fixed_t fixedgradingpoints = numgradingpoints * FRACUNIT;
+	fixed_t effgradingpoints = fixedgradingpoints + K_FinalCheckpointPower();
 
 	// Account for Final Check bonus
-	if (gpn == numgradingpoints)
-		gpn = effgradingpoints;
+	if (player->gradingpointnum == numgradingpoints)
+		gradingpointnum = effgradingpoints;
 
-	fixed_t targetminexp = (EXP_MIN*gpn<<FRACBITS) / max(1,effgradingpoints); // about what a last place player should be at this stage of the race
-	fixed_t targetmaxexp = (EXP_MAX*gpn<<FRACBITS) / max(1,effgradingpoints); // about what a 1.0 factor should be at this stage of the race
+	// fixed_t targetminexp = (EXP_MIN*gpn<<FRACBITS) / max(1,effgradingpoints); // about what a last place player should be at this stage of the race
+	// fixed_t targetmaxexp = (EXP_MAX*gpn<<FRACBITS) / max(1,effgradingpoints); // about what a 1.0 factor should be at this stage of the race
+	fixed_t targetminexp = FixedDiv(EXP_MIN * gradingpointnum, max(FRACUNIT, effgradingpoints));
+	fixed_t targetmaxexp = FixedDiv(EXP_MAX * gradingpointnum, max(FRACUNIT, effgradingpoints));
 	fixed_t factormin = K_GetGradingFactorMinMax(player, false);
 	fixed_t factormax = K_GetGradingFactorMinMax(player, true);
 
 	UINT16 exp = FixedRescale(player->gradingfactor, factormin, factormax, Easing_Linear, targetminexp, targetmaxexp)>>FRACBITS;
 
 	if (modeattacking)
-		exp = 100 * player->gradingpointnum / max(1, numgradingpoints); // No Final Check here, just a linear slide
+		exp = EXP_MAX * player->gradingpointnum / max(1, numgradingpoints); // No Final Check here, just a linear slide
 
-	// CONS_Printf("Player %s numgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n",
-	// 	player_names[player - players], numgradingpoints, player->gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);
+	/*
+	if (!player->bot)
+		CONS_Printf("Player %s fcp=%d effgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n",
+	 		player_names[player - players], K_FinalCheckpointPower(), effgradingpoints, gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);
+	*/
 
 	return exp;
 }
@@ -17220,16 +17238,6 @@ UINT32 K_GetNumGradingPoints(void)
 		return 0;
 
 	return numlaps * (1 + Obj_GetCheckpointCount());
-}
-
-// Final check counts for extra, used for EXP minmax etc
-UINT32 K_GetNumEffectiveGradingPoints(void)
-{
-	UINT32 gp = K_GetNumGradingPoints();
-	if (gp == 0)
-		return 0;
-	else
-		return gp + FINAL_CHECK_POWER - 1;
 }
 
 // ===
