@@ -502,7 +502,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 	{
 		UINT8 dmg = (terrain->damageType & 0xFF);
 
-		if (dmg & DMG_STUMBLE)
+		if (dmg & DMG_STUMBLE && !G_CompatLevel(0x0010))
 		{
 			if (player->mo->hitlag == 0 && (player->mo->momz >= 0) == (P_MobjFlip(player->mo) >= 0))
 				K_StumblePlayer(player);

@@ -6876,7 +6876,6 @@ static void Command_Staffsync(void)
 		demostarttime = I_GetTime();
 
 		staffbrief = mapheader->ghostBrief[staffsync_ghost];
-		G_DoPlayDemoEx("", (staffbrief->wad << 16) | staffbrief->lump);
 
 		staffsync_ghost++;
 		staffsync_done++;

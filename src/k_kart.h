@@ -42,7 +42,7 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_HOLD_DELAY (TICRATE*2)
 // MUST be longer or equal to INSTAWHIP_CHARGETIME.
 #define INSTAWHIP_TETHERBLOCK (TICRATE*4)
-#define PUNISHWINDOW (10*TICRATE/10)
+#define PUNISHWINDOW (G_CompatLevel(0x0010) ? 7*TICRATE/10 : 10*TICRATE/10)
 
 #define BAIL_MAXCHARGE (84) // tics to bail when in painstate nad in air, on ground is half, if you touch this, also update Obj_BailChargeThink synced animation logic
 #define BAIL_DROP (FRACUNIT) // How many rings it has to drop before stun starts
