@@ -2855,24 +2855,7 @@ static boolean P_FlashingException(const player_t *player, const mobj_t *inflict
 	return true;
 }
 
-/** Damages an object, which may or may not be a player.
-  * For melee attacks, source and inflictor are the same.
-  *
-  * \param target     The object being damaged.
-  * \param inflictor  The thing that caused the damage: creature, missile,
-  *                   gargoyle, and so forth. Can be NULL in the case of
-  *                   environmental damage, such as slime or crushing.
-  * \param source     The creature or person responsible. For example, if a
-  *                   player is hit by a ring, the player who shot it. In some
-  *                   cases, the target will go after this object after
-  *                   receiving damage. This can be NULL.
-  * \param damage     Amount of damage to be dealt.
-  * \param damagetype Type of damage to be dealt. If bit 7 (0x80) is set, this is an instant-kill.
-  * \return True if the target sustained damage, otherwise false.
-  * \todo Clean up this mess, split into multiple functions.
-  * \sa P_KillMobj
-  */
-boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+static boolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
 	player_t *player;
 	player_t *playerInflictor;
@@ -3641,6 +3624,833 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	// Insta-Whip (DMG_WHUMBLE): do not reduce hitlag because
 	// this can leave room for double-damage.
 	if ((damagetype & DMG_TYPEMASK) != DMG_WHUMBLE && (gametyperules & GTR_BUMPERS) && !battleprisons)
+		laglength /= 2;
+
+	if (!(target->player && (damagetype & DMG_DEATHMASK)))
+		K_SetHitLagForObjects(target, inflictor, source, laglength, true);
+
+	target->flags2 |= MF2_ALREADYHIT;
+
+	if (target->health <= 0)
+	{
+		P_KillMobj(target, inflictor, source, damagetype);
+		return true;
+	}
+
+	//K_SetHitLagForObjects(target, inflictor, source, laglength, true);
+
+	if (!player)
+	{
+		P_SetMobjState(target, target->info->painstate);
+
+		if (!P_MobjWasRemoved(target))
+		{
+			// if not intent on another player,
+			// chase after this one
+			P_SetTarget(&target->target, source);
+		}
+	}
+
+	return true;
+}
+
+/** Damages an object, which may or may not be a player.
+  * For melee attacks, source and inflictor are the same.
+  *
+  * \param target     The object being damaged.
+  * \param inflictor  The thing that caused the damage: creature, missile,
+  *                   gargoyle, and so forth. Can be NULL in the case of
+  *                   environmental damage, such as slime or crushing.
+  * \param source     The creature or person responsible. For example, if a
+  *                   player is hit by a ring, the player who shot it. In some
+  *                   cases, the target will go after this object after
+  *                   receiving damage. This can be NULL.
+  * \param damage     Amount of damage to be dealt.
+  * \param damagetype Type of damage to be dealt. If bit 7 (0x80) is set, this is an instant-kill.
+  * \return True if the target sustained damage, otherwise false.
+  * \todo Clean up this mess, split into multiple functions.
+  * \sa P_KillMobj
+  */
+boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+{
+	if (G_CompatLevel(0x0010))
+		return P_DamageMobjCompat(target, inflictor, source, damage, damagetype);
+
+	player_t *player;
+	player_t *playerInflictor;
+	boolean force = false;
+	boolean spbpop = false;
+	ATTRUNUSED boolean downgraded = false;
+	boolean truewhumble = false; // Invincibility-ignoring DMG_WHUMBLE from the Insta-Whip itself.
+
+	INT32 laglength = 6;
+
+	if (objectplacing)
+		return false;
+
+	if (target->health <= 0)
+		return false;
+
+	// Spectator handling
+	if (damagetype != DMG_SPECTATOR && target->player && target->player->spectator)
+		return false;
+
+	// source is checked without a removal guard in so many places that it's genuinely less work to do it here.
+	if (source && P_MobjWasRemoved(source))
+		source = NULL;
+
+	if (source && source->player && source->player->spectator)
+		return false;
+
+	if (((damagetype & DMG_TYPEMASK) == DMG_STING)
+	|| ((inflictor && !P_MobjWasRemoved(inflictor)) && inflictor->type == MT_BANANA && inflictor->health <= 1))
+	{
+		laglength = 2;
+	}
+	else if (target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD)
+	{
+		laglength = 0; // handled elsewhere
+	}
+
+	switch (target->type)
+	{
+		case MT_MONITOR:
+			damage = Obj_MonitorGetDamage(target, inflictor, damagetype);
+			Obj_MonitorOnDamage(target, inflictor, damage);
+			break;
+		case MT_CDUFO:
+			// Make it possible to pick them up during race
+			if (inflictor->type == MT_ORBINAUT_SHIELD || inflictor->type == MT_JAWZ_SHIELD)
+				return false;
+			break;
+
+		case MT_SPB:
+			spbpop = (damagetype & DMG_TYPEMASK) == DMG_VOLTAGE;
+			if (spbpop && source && source->player
+				&& source->player->roundconditions.spb_neuter == false)
+			{
+				source->player->roundconditions.spb_neuter = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	// Everything above here can't be forced.
+	{
+		UINT8 shouldForce = LUA_HookShouldDamage(target, inflictor, source, damage, damagetype);
+		if (P_MobjWasRemoved(target))
+			return (shouldForce == 1); // mobj was removed
+		if (shouldForce == 1)
+			force = true;
+		else if (shouldForce == 2)
+			return false;
+	}
+
+	switch (target->type)
+	{
+		case MT_BALLSWITCH_BALL:
+			Obj_BallSwitchDamaged(target, inflictor, source);
+			return false;
+
+		case MT_SA2_CRATE:
+		case MT_ICECAPBLOCK:
+			return Obj_TryCrateDamage(target, inflictor);
+
+		case MT_KART_LEFTOVER:
+			// intangible (do not let instawhip shred damage)
+			if (Obj_DestroyKart(target))
+				return false;
+
+			P_SetObjectMomZ(target, 12*FRACUNIT, false);
+			break;
+
+		default:
+			break;
+	}
+
+	if (!force)
+	{
+		if (!spbpop)
+		{
+			if (!(target->flags & MF_SHOOTABLE))
+				return false; // shouldn't happen...
+		}
+	}
+
+	if (target->flags2 & MF2_SKULLFLY)
+		target->momx = target->momy = target->momz = 0;
+
+	if (target->flags & (MF_ENEMY|MF_BOSS))
+	{
+		if (!force && target->flags2 & MF2_FRET) // Currently flashing from being hit
+			return false;
+
+		if (LUA_HookMobjDamage(target, inflictor, source, damage, damagetype) || P_MobjWasRemoved(target))
+			return true;
+
+		if (target->health > 1)
+			target->flags2 |= MF2_FRET;
+	}
+
+	player = target->player;
+	playerInflictor = inflictor ? inflictor->player : NULL;
+
+	if (playerInflictor)
+	{
+		AddTimesHit(playerInflictor);
+	}
+
+	if (player) // Player is the target
+	{
+		AddTimesHit(player);
+
+		if (player->pflags & PF_GODMODE)
+			return false;
+
+		if (!force)
+		{
+			// Player hits another player
+			if (source && source->player)
+			{
+				if (!P_PlayerHitsPlayer(target, inflictor, source, damage, damagetype))
+					return false;
+			}
+		}
+
+		if (source && source->player)
+		{
+			if (source->player->roundconditions.hit_midair == false
+				&& source != target
+				&& inflictor
+				&& K_IsMissileOrKartItem(inflictor)
+				&& target->player->airtime > TICRATE/2
+				&& source->player->airtime > TICRATE/2)
+			{
+				source->player->roundconditions.hit_midair = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+
+			if (source->player->roundconditions.hit_drafter_lookback == false
+				&& source != target
+				&& target->player->lastdraft == (source->player - players)
+				&& (K_GetKartButtons(source->player) & BT_LOOKBACK) == BT_LOOKBACK
+				/*&& (AngleDelta(K_MomentumAngle(source), R_PointToAngle2(source->x, source->y, target->x, target->y)) > ANGLE_90)*/)
+			{
+				source->player->roundconditions.hit_drafter_lookback = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+
+			if (source->player->roundconditions.giant_foe_shrunken_orbi == false
+				&& source != target
+				&& player->growshrinktimer > 0
+				&& !P_MobjWasRemoved(inflictor)
+				&& inflictor->type == MT_ORBINAUT
+				&& inflictor->scale < FixedMul((FRACUNIT + SHRINK_SCALE), mapobjectscale * 2)) // halfway between base scale and shrink scale, a little bit of leeway
+			{
+				source->player->roundconditions.giant_foe_shrunken_orbi = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+
+			if (source == target
+				&& !P_MobjWasRemoved(inflictor)
+				&& inflictor->type == MT_SPBEXPLOSION
+				&& inflictor->threshold == KITEM_EGGMAN
+				&& !P_MobjWasRemoved(inflictor->tracer)
+				&& inflictor->tracer != source
+				&& inflictor->tracer->player
+				&& inflictor->tracer->player->roundconditions.returntosender_mark == false)
+			{
+				inflictor->tracer->player->roundconditions.returntosender_mark = true;
+				inflictor->tracer->player->roundconditions.checkthisframe = true;
+			}
+		}
+		else if (!(inflictor && inflictor->player)
+			&& !(player->exiting || player->laps > numlaps)
+			&& damagetype != DMG_DEATHPIT)
+		{
+			// laps will never increment outside of GTR_CIRCUIT, so this is still fine
+			const UINT8 requiredbit = 1<<(player->laps & 7);
+
+			if (!(player->roundconditions.hittrackhazard[player->laps/8] & requiredbit))
+			{
+				player->roundconditions.hittrackhazard[player->laps/8] |= requiredbit;
+				player->roundconditions.checkthisframe = true;
+			}
+		}
+
+		// Instant-Death
+		if ((damagetype & DMG_DEATHMASK))
+		{
+			if (!P_KillPlayer(player, inflictor, source, damagetype))
+				return false;
+		}
+		else if (LUA_HookMobjDamage(target, inflictor, source, damage, damagetype))
+		{
+			return true;
+		}
+		else
+		{
+			UINT8 type = (damagetype & DMG_TYPEMASK);
+			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
+			INT16 ringburst = 5;
+
+			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_INSTAWHIP && type == DMG_WHUMBLE)
+				truewhumble = true;
+
+			// Check if the player is allowed to be damaged!
+			// If not, then spawn the instashield effect instead.
+			if (!force)
+			{
+				boolean invincible = true;
+				boolean clash = false;
+				sfxenum_t sfx = sfx_None;
+
+				if (!(gametyperules & GTR_BUMPERS))
+				{
+					if (damagetype & DMG_STEAL)
+					{
+						// Gametype does not have bumpers, steal damage is intended to not do anything
+						// (No instashield is intentional)
+						return false;
+					}
+				}
+
+				if (player->invincibilitytimer > 0)
+				{
+					sfx = sfx_invind;
+				}
+				else if (K_IsBigger(target, inflictor) == true &&
+					// SPB bypasses grow (K_IsBigger handles NULL check)
+					(type != DMG_EXPLODE || inflictor->type != MT_SPBEXPLOSION || !inflictor->movefactor))
+				{
+					sfx = sfx_grownd;
+				}
+				else if (K_PlayerGuard(player))
+				{
+					sfx = sfx_s3k3a;
+					clash = true;
+				}
+				else if (player->overshield &&
+					(type != DMG_EXPLODE || inflictor->type != MT_SPBEXPLOSION || !inflictor->movefactor))
+				{
+					clash = true;
+				}
+				else if (player->hyudorotimer > 0)
+					;
+				else
+				{
+					invincible = false;
+				}
+
+				// Hack for instawhip-guard counter, lets invincible players lose to guard
+				if (inflictor == target)
+				{
+					invincible = false;
+				}
+
+				if (player->pflags2 & PF2_ALWAYSDAMAGED)
+				{
+					invincible = false;
+					clash = false;
+				}
+
+				// TODO: doing this from P_DamageMobj limits punting to objects that damage the player.
+				// And it may be kind of yucky.
+				// But this is easier than accounting for every condition in PIT_CheckThing!
+				if (inflictor && K_PuntCollide(inflictor, target))
+				{
+					return false;
+				}
+
+				if (invincible && !truewhumble)
+				{
+					const INT32 oldHitlag = target->hitlag;
+					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
+
+					// Damage during hitlag should be a no-op
+					// for invincibility states because there
+					// are no flashing tics. If the damage is
+					// from a constant source, a deadlock
+					// would occur.
+
+					if (target->eflags & MFE_PAUSED)
+					{
+						player->timeshit--; // doesn't count
+
+						if (playerInflictor)
+						{
+							playerInflictor->timeshit--;
+						}
+
+						return false;
+					}
+
+					laglength = max(laglength / 2, 1);
+					K_SetHitLagForObjects(target, inflictor, source, laglength, false);
+
+					AddNullHitlag(player, oldHitlag);
+					AddNullHitlag(playerInflictor, oldHitlagInflictor);
+
+					if (player->timeshit > player->timeshitprev)
+					{
+						S_StartSound(target, sfx);
+					}
+
+					if (clash)
+					{
+						player->spheres = max(player->spheres - 5, 0);
+
+						if (inflictor)
+						{
+							K_DoPowerClash(target, inflictor);
+
+							if (inflictor->type == MT_SUPER_FLICKY)
+							{
+								Obj_BlockSuperFlicky(inflictor);
+							}
+						}
+						else if (source)
+							K_DoPowerClash(target, source);
+					}
+
+					// Full invulnerability
+					K_DoInstashield(player);
+					return false;
+				}
+				{
+					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
+					boolean allowcombo = ((hardhit || (type == DMG_STUMBLE || type == DMG_WHUMBLE)) == !(damagetype & DMG_WOMBO));
+
+					// Tumble/stumble is a special case.
+					if (type == DMG_TUMBLE)
+					{
+						// don't allow constant combo
+						if (player->tumbleBounces == 1 && (P_MobjFlip(target)*target->momz > 0))
+							allowcombo = false;
+					}
+					else if (type == DMG_STUMBLE || type == DMG_WHUMBLE)
+					{
+						// don't allow constant combo
+						if (player->tumbleBounces == TUMBLEBOUNCES-1 && (P_MobjFlip(target)*target->momz > 0))
+						{
+							if (type == DMG_STUMBLE)
+								return false; // No-sell strings of stumble
+
+							allowcombo = false;
+						}
+					}
+
+					if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->momx == 0 && inflictor->momy == 0 && inflictor->momz == 0)
+					{
+						// Probably a map hazard.
+						allowcombo = false;
+					}
+
+					if (allowcombo == false && (target->eflags & MFE_PAUSED))
+					{
+						return false;
+					}
+
+					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
+					if ((target->hitlag == 0 || allowcombo == false) &&
+						player->flashing > 0 &&
+						type != DMG_EXPLODE &&
+						type != DMG_STUMBLE &&
+						type != DMG_WHUMBLE &&
+						P_FlashingException(player, inflictor) == false)
+					{
+						// Post-hit invincibility
+						K_DoInstashield(player);
+						return false;
+					}
+					else if (target->flags2 & MF2_ALREADYHIT) // do not deal extra damage in the same tic
+					{
+						K_SetHitLagForObjects(target, inflictor, source, laglength, true);
+						return false;
+					}
+				}
+			}
+
+			if (gametyperules & GTR_BUMPERS)
+			{
+				if (damagetype & DMG_STEAL)
+				{
+					// Steals 2 bumpers
+					damage = 2;
+				}
+			}
+			else
+			{
+				// Do not die from damage outside of bumpers health system
+				damage = 0;
+			}
+
+			boolean softenTumble = false;
+
+			// Sting and stumble shouldn't be rewarding Battle hits.
+			if (type == DMG_STING || type == DMG_STUMBLE)
+			{
+				damage = 0;
+
+				if (source && source != player->mo && source->player)
+				{
+					if (!P_PlayerInPain(player) && (player->defenseLockout || player->instaWhipCharge))
+					{
+						K_SpawnAmps(source->player, 20, target);
+					}
+				}
+			}
+			else
+			{
+				// We successfully damaged them! Give 'em some bumpers!
+
+				if (source && source != player->mo && source->player)
+				{
+					// Stone Shoe handles amps on its own, but this is also a good place to set soften tumble for it
+					if (inflictor->type == MT_STONESHOE || inflictor->type == MT_STONESHOE_CHAIN)
+						softenTumble = true;
+					else
+						K_SpawnAmps(source->player, K_PvPAmpReward((truewhumble) ? 30 : 20, source->player, player), target);
+
+
+					K_BotHitPenalty(player);
+
+					if (G_SameTeam(source->player, player))
+					{
+						if (type != DMG_EXPLODE)
+						{
+							type = DMG_STUMBLE;
+							downgraded = true;
+						}
+					}
+					else
+					{
+						for (UINT8 i = 0; i < MAXPLAYERS; i++)
+						{
+							if (!playeringame[i] || players[i].spectator || !players[i].mo || P_MobjWasRemoved(players[i].mo))
+								continue;
+							if (!G_SameTeam(source->player, &players[i]))
+								continue;
+							if (source->player == &players[i])
+								continue;
+							K_SpawnAmps(&players[i], FixedInt(FixedMul(5, K_TeamComebackMultiplier(player))), target);
+						}
+					}
+
+
+					// Extend the invincibility if the hit was a direct hit.
+					if (inflictor == source && source->player->invincibilitytimer &&
+							!K_PowerUpRemaining(source->player, POWERUP_SMONITOR))
+					{
+						tic_t kinvextend;
+
+						softenTumble = true;
+
+						if (gametyperules & GTR_CLOSERPLAYERS)
+							kinvextend = 2*TICRATE;
+						else
+							kinvextend = 3*TICRATE;
+
+						// Reduce the value of subsequent invinc extensions
+						kinvextend = kinvextend / (1 + source->player->invincibilityextensions); // 50%, 33%, 25%[...]
+						kinvextend = max(kinvextend, TICRATE);
+
+						source->player->invincibilityextensions++;
+
+						source->player->invincibilitytimer += kinvextend;
+
+						if (P_IsDisplayPlayer(source->player))
+							S_StartSound(NULL, sfx_gsha7);
+					}
+
+					// if the inflictor is a landmine, its reactiontime will be non-zero if it is still moving
+					if (inflictor->type == MT_LANDMINE && inflictor->reactiontime > 0)
+					{
+						// reduce tumble severity to account for getting beaned point blank sometimes
+						softenTumble = true;
+						// make it more consistent with set landmines
+						inflictor->momx = 0;
+						inflictor->momy = 0;
+					}
+
+					K_TryHurtSoundExchange(target, source);
+
+					if (K_Cooperative() == false)
+					{
+						K_BattleAwardHit(source->player, player, inflictor, damage);
+					}
+
+					if (K_Bumpers(source->player) < K_StartingBumperCount() || (damagetype & DMG_STEAL))
+					{
+						K_TakeBumpersFromPlayer(source->player, player, damage);
+					}
+
+					if (damagetype & DMG_STEAL)
+					{
+						// Give them ALL of your emeralds instantly :)
+						source->player->emeralds |= player->emeralds;
+						player->emeralds = 0;
+						K_CheckEmeralds(source->player);
+					}
+				}
+
+				if (!(damagetype & DMG_STEAL))
+				{
+					// Drop all of your emeralds
+					K_DropEmeraldsFromPlayer(player, player->emeralds);
+				}
+			}
+
+			if (source && source != player->mo && source->player)
+			{
+				if (damagetype != DMG_DEATHPIT)
+				{
+					player->pitblame = source->player - players;
+				}
+			}
+
+			player->sneakertimer = player->numsneakers = 0;
+			player->panelsneakertimer = player->numpanelsneakers = 0;
+			player->weaksneakertimer = player->numweaksneakers = 0;
+			player->driftboost = player->strongdriftboost = 0;
+			player->gateBoost = 0;
+			player->fastfall = 0;
+			player->ringboost = 0;
+			player->glanceDir = 0;
+			player->preventfailsafe = TICRATE*3;
+			player->pflags &= ~PF_GAINAX;
+			Obj_EndBungee(player);
+			K_BumperInflate(target->player);
+
+			UINT32 hurtskinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin]->flags;
+			if (hurtskinflags & SF_IRONMAN)
+			{
+				if (gametyperules & GTR_BUMPERS)
+					SetRandomFakePlayerSkin(player, false, true);
+			}
+
+			// Explosions are explicit combo setups.
+			if (damagetype & DMG_EXPLODE)
+				player->bumperinflate = 0;
+
+			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
+			{
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin]->flags;
+
+				if (skinflags & SF_IRONMAN)
+				{
+					player->mo->skin = skins[player->skin];
+					player->charflags = skinflags;
+					K_SpawnMagicianParticles(player->mo, 5);
+				}
+			}
+
+			if (player->rings <= -20)
+			{
+				player->markedfordeath = true;
+				damagetype = DMG_TUMBLE;
+				type = DMG_TUMBLE;
+				P_StartQuakeFromMobj(5, 44 * player->mo->scale, 2560 * player->mo->scale, player->mo);
+				//P_KillPlayer(player, inflictor, source, damagetype);
+			}
+
+			// Death save! On your last hit, no matter what, demote to weakest damage type for one last escape chance.
+			if (player->mo->health == 2 && damage && gametyperules & GTR_BUMPERS)
+			{
+				K_AddMessageForPlayer(player, "\x8DLast Chance!", false, false);
+				S_StartSound(target, sfx_gshc7);
+				player->flashing = TICRATE;
+				type = DMG_STUMBLE;
+				downgraded = true;
+			}
+
+			// Downgrade backthrown items that are not dedicated traps.
+			if (inflictor && !P_MobjWasRemoved(inflictor) && P_IsKartItem(inflictor->type) && inflictor->cvmem
+				&& inflictor->type != MT_BANANA)
+			{
+				type = DMG_WHUMBLE;
+				downgraded = true;
+			}
+
+			// Downgrade orbital items.
+			if (inflictor && !P_MobjWasRemoved(inflictor) && (inflictor->type == MT_ORBINAUT_SHIELD || inflictor->type == MT_JAWZ_SHIELD))
+			{
+				type = DMG_WHUMBLE;
+				downgraded = true;
+			}
+
+			if (!(gametyperules & GTR_SPHERES) && player->tripwireLeniency && !P_PlayerInPain(player))
+			{
+				switch (type)
+				{
+					case DMG_EXPLODE:
+						type = DMG_TUMBLE;
+						downgraded = true;
+						softenTumble = true;
+						break;
+					case DMG_TUMBLE:
+						softenTumble = true;
+						break;
+					case DMG_NORMAL:
+					case DMG_WIPEOUT:
+						downgraded = true;
+						type = DMG_WHUMBLE;
+						break;
+					default:
+						break;
+				}
+			}
+
+			switch (type)
+			{
+				case DMG_STING:
+					K_DebtStingPlayer(player, source);
+					K_KartPainEnergyFling(player);
+					ringburst = 0;
+					break;
+				case DMG_STUMBLE:
+				case DMG_WHUMBLE:
+					K_StumblePlayer(player);
+					ringburst = (type == DMG_WHUMBLE) ? 5 : 0;
+					break;
+				case DMG_TUMBLE:
+					K_TumblePlayer(player, inflictor, source, softenTumble);
+					ringburst = 10;
+					break;
+				case DMG_EXPLODE:
+				case DMG_KARMA:
+					ringburst = K_ExplodePlayer(player, inflictor, source);
+					break;
+				case DMG_WIPEOUT:
+					K_SpinPlayer(player, inflictor, source, KSPIN_WIPEOUT);
+					K_KartPainEnergyFling(player);
+					break;
+				case DMG_VOLTAGE:
+				case DMG_NORMAL:
+				default:
+					K_SpinPlayer(player, inflictor, source, KSPIN_SPINOUT);
+					break;
+			}
+
+			// Have a shield? You get hit, but don't lose your rings!
+			if (player->curshield != KSHIELD_NONE)
+			{
+				ringburst = 0;
+			}
+
+			player->ringburst += ringburst;
+
+			if (type != DMG_STUMBLE)
+			{
+				if (type != DMG_STING)
+					player->flashing = K_GetKartFlashing(player);
+
+				K_PopPlayerShield(player);
+				player->instashield = 15;
+				K_PlayPainSound(target, source);
+			}
+
+			if (gametyperules & GTR_BUMPERS)
+				player->spheres = min(player->spheres + 10, 40);
+
+			if ((hardhit == true && !softenTumble) || cv_kartdebughuddrop.value)
+			{
+				K_DropItems(player);
+			}
+			else
+			{
+				K_DropHnextList(player);
+			}
+
+			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_BANANA)
+			{
+				player->flipDI = true;
+			}
+
+			// Apply stun!
+			if (type != DMG_STING)
+			{
+				K_ApplyStun(player, inflictor, source, damage, damagetype);
+			}
+
+			K_DefensiveOverdrive(target->player);
+		}
+	}
+	else
+	{
+		if (target->type == MT_SPECIAL_UFO)
+		{
+			return Obj_SpecialUFODamage(target, inflictor, source, damagetype);
+		}
+		else if (target->type == MT_BLENDEYE_MAIN)
+		{
+			VS_BlendEye_Damage(target, inflictor, source, damage);
+		}
+
+		if (damagetype & DMG_STEAL)
+		{
+			// Not a player, steal damage is intended to not do anything
+			return false;
+		}
+
+		if ((target->flags & MF_BOSS) == MF_BOSS)
+		{
+			targetdamaging_t targetdamaging = UFOD_GENERIC;
+			if (P_MobjWasRemoved(inflictor) == true)
+				;
+			else switch (inflictor->type)
+			{
+				case MT_GACHABOM:
+					targetdamaging = UFOD_GACHABOM;
+					break;
+				case MT_ORBINAUT:
+				case MT_ORBINAUT_SHIELD:
+					targetdamaging = UFOD_ORBINAUT;
+					break;
+				case MT_BANANA:
+					targetdamaging = UFOD_BANANA;
+					break;
+				case MT_INSTAWHIP:
+					inflictor->extravalue2 = 1; // Disable whip collision
+					targetdamaging = UFOD_WHIP;
+					break;
+				case MT_PLAYER:
+					targetdamaging = UFOD_BOOST;
+					break;
+				case MT_JAWZ:
+				case MT_JAWZ_SHIELD:
+					targetdamaging = UFOD_JAWZ;
+					break;
+				case MT_SPB:
+					targetdamaging = UFOD_SPB;
+					break;
+				default:
+					break;
+			}
+
+			P_TrackRoundConditionTargetDamage(targetdamaging);
+		}
+	}
+
+	// do the damage
+	if (damagetype & DMG_DEATHMASK)
+		target->health = 0;
+	else
+		target->health -= damage;
+
+	if (source && source->player && target)
+		G_GhostAddHit((INT32) (source->player - players), target);
+
+	// Insta-Whip (DMG_WHUMBLE): do not reduce hitlag because
+	// this can leave room for double-damage.
+	if (truewhumble && (gametyperules & GTR_BUMPERS) && !battleprisons)
 		laglength /= 2;
 
 	if (!(target->player && (damagetype & DMG_DEATHMASK)))

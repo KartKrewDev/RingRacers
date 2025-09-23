@@ -5421,11 +5421,19 @@ static void P_EvaluateDamageType(player_t *player, sector_t *sector, boolean isT
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 			break;
 		case SD_STUMBLE:
-			if (isTouching)
+ 			if (isTouching && G_CompatLevel(0x0010))
 			{
 				player->pflags2 |= PF2_ALWAYSDAMAGED;
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_STUMBLE);
 				player->pflags2 &= ~PF2_ALWAYSDAMAGED;
+
+			}
+			else
+			{
+				if (isTouching && player->mo->hitlag == 0 && (player->mo->momz >= 0) == (P_MobjFlip(player->mo) >= 0))
+				{
+					K_StumblePlayer(player);
+				}
 			}
 
 			break;
