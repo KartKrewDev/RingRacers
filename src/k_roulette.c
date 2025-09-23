@@ -80,7 +80,7 @@
 static UINT32 K_DynamicItemOddsRace[NUMKARTRESULTS-1][2] =
 {
 	// distance, duplication tolerance
-	{20, 10}, // sneaker
+	{25, 10}, // sneaker
 	{63, 12}, // rocketsneaker
 	{60, 19}, // invincibility
 	{8, 4}, // banana
@@ -491,12 +491,7 @@ UINT32 K_ScaleItemDistance(INT32 distance, UINT8 numPlayers)
 	return distance;
 }
 
-/*--------------------------------------------------
-	static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
-
-		See header file for description.
---------------------------------------------------*/
-UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
+static UINT32 K_GetUnscaledFirstDistance(const player_t *player)
 {
 	UINT32 pdis = 0;
 
@@ -546,6 +541,19 @@ UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 	}
 
 	pdis = K_UndoMapScaling(pdis);
+
+	return pdis;
+}
+
+
+/*--------------------------------------------------
+	static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
+{
+	UINT32 pdis = K_GetUnscaledFirstDistance(player);
 	pdis = K_ScaleItemDistance(pdis, numPlayers);
 
 	if (player->bot && (player->botvars.rival || cv_levelskull.value))
@@ -1422,12 +1430,6 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	// 5: Skim any items that are much weaker than the reel's average out of the roulette
 	// 6: Cram it all in
 
-	fixed_t largegamescaler = roulette->playing * 14 + 100; // Spread out item odds in large games for a less insane experience.
-	if (franticitems)
-		largegamescaler = 100; // Except in Frantic, where you know what you're getting
-
-	UINT32 targetpower = 100 * roulette->dist / largegamescaler; // fill roulette with items around this value!
-
 	UINT32 powers[NUMKARTRESULTS]; // how strong is each item? think of this as a "target distance" for this item to spawn at
 	UINT32 deltas[NUMKARTRESULTS]; // how different is that strength from target?
 	UINT32 candidates[NUMKARTRESULTS]; // how many of this item should we try to insert?
@@ -1436,6 +1438,11 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 
 	UINT32 lonelinessSuppressor = DISTVAR; // This close to 1st? Dampen loneliness (you have a target!)
 	UINT32 maxEXPDistanceCut = 3*DISTVAR/2; // The maximum amount you can be displaced by EXP
+
+	// If we're too close to 1st in absolute units, crush our top-end item odds down.
+	fixed_t crowdingFirst = 0;
+	if (player->position != 1)
+		crowdingFirst = FixedRescale(K_GetUnscaledFirstDistance(player), 0, 4*DISTVAR, Easing_InCubic, FRACUNIT, 0);
 
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative())
 	{
@@ -1449,6 +1456,14 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 			}
 		}
 	}
+
+	fixed_t largegamescaler = roulette->playing * 14 + 100; // Spread out item odds in large games for a less insane experience.
+	if (franticitems)
+		largegamescaler = 100; // Except in Frantic, where you know what you're getting
+
+	UINT32 targetpower = 100 * roulette->dist / largegamescaler; // fill roulette with items around this value!
+	if (!(specialstageinfo.valid))
+		targetpower = Easing_Linear(crowdingFirst, targetpower, targetpower/2);
 
 	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
 	boolean filterweakitems = true; // strip unusually weak items from reel?
@@ -1503,6 +1518,10 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		{
 			powers[i] = humanscaler * K_DynamicItemOddsRace[i-1][0];
 			dupetolerance[i] = K_DynamicItemOddsRace[i-1][1];
+
+			// Bias towards attack items when close to the leader, gotta work for the slingshot pass!
+			if (K_IsItemSpeed(i) && i != KITEM_SUPERRING)
+				powers[i] = Easing_Linear(crowdingFirst, powers[i], 2*powers[i]);
 		}
 
 		maxpower = max(maxpower, powers[i]);
@@ -1642,6 +1661,13 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	UINT8 added = 0; // How many items added so far?
 	UINT32 totalreelpower = 0; // How much total item power in the reel? Used for an average later.
 
+	UINT32 basepenalty = 4*DISTVAR; // How much to penalize repicked items, to ensure item variety.
+	// BUT, keep the item distribution tighter if we're close to the frontrunner...
+	UINT32 penalty = Easing_Linear(crowdingFirst, basepenalty, basepenalty/2);
+	if (player->position == 1) // ...unless we ARE the frontrunner.
+		penalty = basepenalty;
+
+
 	for (i = 0; i < reelsize; i++)
 	{
 		UINT32 lowestdelta = INT32_MAX;
@@ -1668,7 +1694,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		// Impose a penalty to this item's delta, to bias against selecting it again.
 		// This is naively slashed by an item's "duplicate tolerance":
 		// lower tolerance means that an item is less likely to be reselected (it's "rarer").
-		UINT32 deltapenalty = 4*DISTVAR*(1+candidates[bestitem])/dupetolerance[bestitem];
+		UINT32 deltapenalty = penalty*(1+candidates[bestitem])/dupetolerance[bestitem];
 
 		// Power items get better odds in frantic, or if you're the rival.
 		// (For the rival, this is way more likely to matter at lower skills, where they're
@@ -1754,7 +1780,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTORIGHT;
 			V_DrawRightAlignedThinString(BASE_X - 12, 5, FLAGS, va("TP %d", targetpower/humanscaler));
 			V_DrawRightAlignedThinString(BASE_X - 12, 5+12, FLAGS, va("FB %d / %d", toFront, toBack));
-			V_DrawRightAlignedThinString(BASE_X - 12, 5+24, FLAGS, va("L %d", loneliness));
+			V_DrawRightAlignedThinString(BASE_X - 12, 5+24, FLAGS, va("L %d / CF %d", loneliness, crowdingFirst));
 			V_DrawRightAlignedThinString(BASE_X - 12, 5+36, FLAGS, va("D %d / %d", roulette->preexpdist, roulette->dist));
 			for(UINT8 k = 0; k < candidates[i]; k++)
 				V_DrawFixedPatch((BASE_X + 3*k)*FRACUNIT, (BASE_Y-7)*FRACUNIT, (FRACUNIT >> 1), FLAGS, K_GetSmallStaticCachedItemPatch(i), NULL);
