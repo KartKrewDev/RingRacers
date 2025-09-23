@@ -7311,7 +7311,21 @@ static void K_drawDistributionDebugger(void)
 		return;
 	}
 
-	K_FillItemRouletteData(stplyr, &rouletteData, false, true);
+	{
+		// GROSS GROSS GROSS GROSS copypaste from K_FillItemRoulette
+		// but without the potential for Lua side-effects etc.
+		// This sucks the ass.
+		K_InitRoulette(&rouletteData);
+
+		rouletteData.baseDist = K_UndoMapScaling(stplyr->distancetofinish);
+
+		if (stplyr->pflags & PF_AUTOROULETTE)
+			rouletteData.autoroulette = true;
+
+		K_CalculateRouletteSpeed(&rouletteData);
+
+		K_FillItemRouletteData(stplyr, &rouletteData, false, true);
+	}
 
 	if (cv_kartdebugdistribution.value <= 1)
 		return;

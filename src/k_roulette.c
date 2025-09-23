@@ -735,7 +735,7 @@ boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void K_InitRoulette(itemroulette_t *const roulette)
+void K_InitRoulette(itemroulette_t *const roulette)
 {
 	size_t i;
 

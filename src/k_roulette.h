@@ -138,6 +138,19 @@ UINT32 K_UndoMapScaling(UINT32 distance);
 		N/A
 --------------------------------------------------*/
 
+void K_InitRoulette(itemroulette_t *const roulette);
+/*--------------------------------------------------
+	static void K_InitRoulette(itemroulette_t *const roulette)
+
+		Initializes the data for a new item roulette.
+
+	Input Arguments:-
+		roulette - The item roulette data to initialize.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
 void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item);
 
 /*--------------------------------------------------
