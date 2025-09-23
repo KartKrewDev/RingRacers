@@ -6877,6 +6877,8 @@ static void Command_Staffsync(void)
 
 		staffbrief = mapheader->ghostBrief[staffsync_ghost];
 
+		G_DoPlayDemoEx("", (staffbrief->wad << 16) | staffbrief->lump);
+
 		staffsync_ghost++;
 		staffsync_done++;
 
