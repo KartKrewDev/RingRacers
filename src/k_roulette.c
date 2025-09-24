@@ -1055,7 +1055,7 @@ ATTRUNUSED static boolean K_IsItemUselessAlone(kartitems_t item)
 	}
 }
 
-ATTRUNUSED static boolean K_IsItemSpeed(kartitems_t item)
+static boolean K_IsItemSpeed(kartitems_t item)
 {
 	switch (item)
 	{
