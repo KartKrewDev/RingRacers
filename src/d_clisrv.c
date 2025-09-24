@@ -206,8 +206,11 @@ static UINT32 g_player_voice_frames_this_tic[MAXPLAYERS];
 static OpusEncoder *g_local_opus_encoder;
 static ReNameNoiseDenoiseState *g_local_renamenoise_state;
 static UINT64 g_local_opus_frame = 0;
-#define SRB2_VOICE_OPUS_FRAME_SIZE 960
-static float g_local_voice_buffer[SRB2_VOICE_OPUS_FRAME_SIZE];
+#define SRB2_VOICE_OPUS_FRAME_SIZE (20 * 48)
+#define SRB2_VOICE_MAX_FRAMES 8
+#define SRB2_VOICE_MAX_DEQUEUE_SAMPLES (SRB2_VOICE_MAX_FRAMES * SRB2_VOICE_OPUS_FRAME_SIZE)
+#define SRB2_VOICE_MAX_DEQUEUE_BYTES (SRB2_VOICE_MAX_DEQUEUE_SAMPLES * sizeof(float))
+static float g_local_voice_buffer[SRB2_VOICE_MAX_DEQUEUE_SAMPLES];
 static INT32 g_local_voice_buffer_len = 0;
 static INT32 g_local_voice_threshold_time = 0;
 float g_local_voice_last_peak = 0;
@@ -3742,8 +3745,6 @@ static void InitializeLocalVoiceEncoder(void)
 		CONS_Alert(CONS_WARNING, "Failed to create Opus voice encoder: opus error %d\n", error);
 		encoder = NULL;
 	}
-	opus_encoder_ctl(encoder, OPUS_SET_VBR(0));
-	opus_encoder_ctl(encoder, OPUS_SET_BITRATE(28000));
 	g_local_opus_encoder = encoder;
 	g_local_opus_frame = 0;
 }
@@ -5379,7 +5380,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 	{
 		return;
 	}
-	float *decoded_out = Z_Malloc(sizeof(float) * SRB2_VOICE_OPUS_FRAME_SIZE, PU_STATIC, NULL);
+	float *decoded_out = Z_Malloc(sizeof(float) * 1920, PU_STATIC, NULL);
 
 	INT32 decoded_samples = 0;
 	UINT64 missedframes = 0;
@@ -5390,7 +5391,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 
 	for (UINT64 i = 0; i < missedframes; i++)
 	{
-		decoded_samples = opus_decode_float(decoder, NULL, 0, decoded_out, SRB2_VOICE_OPUS_FRAME_SIZE, 0);
+		decoded_samples = opus_decode_float(decoder, NULL, 0, decoded_out, 1920, 0);
 		if (decoded_samples < 0)
 		{
 			continue;
@@ -5402,7 +5403,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 	}
 	g_player_opus_lastframe[playernum] = framenum;
 
-	decoded_samples = opus_decode_float(decoder, frame, framesize, decoded_out, SRB2_VOICE_OPUS_FRAME_SIZE, 0);
+	decoded_samples = opus_decode_float(decoder, frame, framesize, decoded_out, 1920, 0);
 	if (decoded_samples < 0)
 	{
 		Z_Free(decoded_out);
@@ -7566,9 +7567,19 @@ void NetUpdate(void)
 	FileSendTicker();
 }
 
+static INT32 BiggestOpusFrameLength(INT32 samples)
+{
+	if (samples >= 1920) return 1920;
+	if (samples >= 960) return 960;
+	if (samples >= 480) return 480;
+	return 0;
+}
+
 void NetVoiceUpdate(void)
 {
 	UINT8 *encoded = NULL;
+	float *subframe_buffer = NULL;
+	float *denoise_buffer = NULL;
 
 	if (dedicated)
 	{
@@ -7576,42 +7587,25 @@ void NetVoiceUpdate(void)
 	}
 
 	UINT32 bytes_dequed = 0;
-	do
+
+	bytes_dequed = S_SoundInputDequeueSamples((void*)(g_local_voice_buffer + g_local_voice_buffer_len), SRB2_VOICE_MAX_DEQUEUE_BYTES - (g_local_voice_buffer_len * sizeof(float)));
+	g_local_voice_buffer_len += bytes_dequed / 4;
+
+	INT32 buffer_offset = 0;
+	INT32 frame_length = 0;
+	for (
+		;
+		(frame_length = BiggestOpusFrameLength(g_local_voice_buffer_len - buffer_offset)) > 0 && (buffer_offset + frame_length) < g_local_voice_buffer_len;
+		buffer_offset += frame_length
+	)
 	{
-		// We need to drain the input queue completely, so do this in a full loop
-
-		UINT32 to_read = (SRB2_VOICE_OPUS_FRAME_SIZE - g_local_voice_buffer_len) * sizeof(float);
-
-		if (to_read > 0)
-		{
-			// Attempt to fill the voice frame buffer
-
-			bytes_dequed = S_SoundInputDequeueSamples((void*)(g_local_voice_buffer + g_local_voice_buffer_len), to_read);
-			g_local_voice_buffer_len += bytes_dequed / 4;
-		}
-		else
-		{
-			bytes_dequed = 0;
-		}
-
-		if (g_local_voice_buffer_len < SRB2_VOICE_OPUS_FRAME_SIZE)
-		{
-			continue;
-		}
-
-		if (S_SoundInputRemainingSamples() > 5 * SRB2_VOICE_OPUS_FRAME_SIZE)
-		{
-			// If there are too many frames worth of samples to dequeue (100ms), skip this frame instead of encoding.
-			// This is so we drain the queue without sending too many packets that might queue up on the network driver.
-			g_local_voice_buffer_len = 0;
-			continue;
-		}
+		float *frame_buffer = g_local_voice_buffer + buffer_offset;
 
 		// Amp of +10 dB is appromiately "twice as loud"
 		float ampfactor = powf(10, (float) cv_voice_inputamp.value / 20.f);
-		for (int i = 0; i < g_local_voice_buffer_len; i++)
+		for (int i = 0; i < frame_length; i++)
 		{
-			g_local_voice_buffer[i] *= ampfactor;
+			frame_buffer[i] *= ampfactor;
 		}
 
 		if (cv_voice_denoise.value)
@@ -7620,30 +7614,34 @@ void NetVoiceUpdate(void)
 			{
 				InitializeLocalVoiceDenoiser();
 			}
-			int rnnoise_size = renamenoise_get_frame_size();
-			float *subframe_buffer = (float*) Z_Malloc(rnnoise_size * sizeof(float), PU_STATIC, NULL);
-			float *denoise_buffer = (float*) Z_Malloc(rnnoise_size * sizeof(float), PU_STATIC, NULL);
+			int rnnoise_size = renamenoise_get_frame_size(); // this is always 480
+			if (subframe_buffer == NULL)
+			{
+				subframe_buffer = (float*) Z_Malloc(rnnoise_size * sizeof(float), PU_STATIC, NULL);
+			}
+			if (denoise_buffer == NULL)
+			{
+				denoise_buffer = (float*) Z_Malloc(rnnoise_size * sizeof(float), PU_STATIC, NULL);
+			}
 
 			// rnnoise frames are smaller than opus, but we should not expect the opus frame to be an exact multiple of rnnoise
-			for (int denoise_position = 0; denoise_position < SRB2_VOICE_OPUS_FRAME_SIZE; denoise_position += rnnoise_size)
+			for (int denoise_position = 0; denoise_position < frame_length; denoise_position += rnnoise_size)
 			{
 				memset(subframe_buffer, 0, rnnoise_size * sizeof(float));
-				memcpy(subframe_buffer, g_local_voice_buffer + denoise_position, min(rnnoise_size * sizeof(float), (SRB2_VOICE_OPUS_FRAME_SIZE - denoise_position) * sizeof(float)));
+				memcpy(subframe_buffer, frame_buffer + denoise_position, min(rnnoise_size * sizeof(float), (frame_length - denoise_position) * sizeof(float)));
 				renamenoise_process_frame(g_local_renamenoise_state, denoise_buffer, subframe_buffer);
-				memcpy(g_local_voice_buffer + denoise_position, denoise_buffer, min(rnnoise_size * sizeof(float), (SRB2_VOICE_OPUS_FRAME_SIZE - denoise_position) * sizeof(float)));
+				memcpy(frame_buffer + denoise_position, denoise_buffer, min(rnnoise_size * sizeof(float), (frame_length - denoise_position) * sizeof(float)));
 			}
-			Z_Free(denoise_buffer);
-			Z_Free(subframe_buffer);
 		}
 
 		float softmem = 0.f;
-		opus_pcm_soft_clip(g_local_voice_buffer, SRB2_VOICE_OPUS_FRAME_SIZE, 1, &softmem);
+		opus_pcm_soft_clip(frame_buffer, frame_length, 1, &softmem);
 
 		// Voice detection gate open/close
 		float maxamplitude = 0.f;
-		for (int i = 0; i < g_local_voice_buffer_len; i++)
+		for (int i = 0; i < frame_length; i++)
 		{
-			maxamplitude = max(fabsf(g_local_voice_buffer[i]), maxamplitude);
+			maxamplitude = max(fabsf(frame_buffer[i]), maxamplitude);
 		}
 		// 20. * log_10(amplitude) -> decibels (up to 0)
 		// lower than -30 dB is usually inaudible
@@ -7660,7 +7658,6 @@ void NetVoiceUpdate(void)
 		case 0:
 			if (I_GetTime() - g_local_voice_threshold_time > 15)
 			{
-				g_local_voice_buffer_len = 0;
 				g_local_voice_detected = false;
 				continue;
 			}
@@ -7668,20 +7665,17 @@ void NetVoiceUpdate(void)
 		case 1:
 			if (!g_voicepushtotalk_on)
 			{
-				g_local_voice_buffer_len = 0;
 				g_local_voice_detected = false;
 				continue;
 			}
 			g_local_voice_detected = true;
 			break;
 		default:
-			g_local_voice_buffer_len = 0;
 			continue;
 		}
 
 		if (cv_voice_selfdeafen.value == 1)
 		{
-			g_local_voice_buffer_len = 0;
 			continue;
 		}
 
@@ -7696,7 +7690,7 @@ void NetVoiceUpdate(void)
 		}
 		OpusEncoder *encoder = g_local_opus_encoder;
 
-		INT32 result = opus_encode_float(encoder, g_local_voice_buffer, SRB2_VOICE_OPUS_FRAME_SIZE, encoded, 1400);
+		INT32 result = opus_encode_float(encoder, frame_buffer, frame_length, encoded, 1400);
 		if (result < 0)
 		{
 			continue;
@@ -7718,14 +7712,20 @@ void NetVoiceUpdate(void)
 			{
 				RecreatePlayerOpusDecoder(consoleplayer);
 			}
-			result = opus_decode_float(g_player_opus_decoders[consoleplayer], encoded, result, g_local_voice_buffer, SRB2_VOICE_OPUS_FRAME_SIZE, 0);
-			S_QueueVoiceFrameFromPlayer(consoleplayer, g_local_voice_buffer, result * sizeof(float), false);
+			result = opus_decode_float(g_player_opus_decoders[consoleplayer], encoded, result, frame_buffer, frame_length, 0);
+			S_QueueVoiceFrameFromPlayer(consoleplayer, frame_buffer, result * sizeof(float), false);
 		}
-
-		g_local_voice_buffer_len = 0;
 		g_local_opus_frame += 1;
-	} while (bytes_dequed > 0);
+	}
 
+	if (buffer_offset > 0)
+	{
+		memmove(g_local_voice_buffer, g_local_voice_buffer + buffer_offset, (g_local_voice_buffer_len - buffer_offset) * sizeof(float));
+		g_local_voice_buffer_len -= buffer_offset;
+	}
+
+	if (denoise_buffer) Z_Free(denoise_buffer);
+	if (subframe_buffer) Z_Free(subframe_buffer);
 	if (encoded) Z_Free(encoded);
 	return;
 }
