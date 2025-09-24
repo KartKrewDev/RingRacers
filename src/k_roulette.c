@@ -1437,7 +1437,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	boolean permit[NUMKARTRESULTS]; // is this item allowed?
 
 	UINT32 lonelinessSuppressor = DISTVAR; // This close to 1st? Dampen loneliness (you have a target!)
-	UINT32 maxEXPDistanceCut = 3*DISTVAR/2; // The maximum amount you can be displaced by EXP
+	UINT32 maxEXPDistanceCut = 3*DISTVAR; // The maximum amount you can be displaced by EXP
 
 	// If we're too close to 1st in absolute units, crush our top-end item odds down.
 	fixed_t crowdingFirst = 0;
