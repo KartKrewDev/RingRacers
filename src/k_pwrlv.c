@@ -393,7 +393,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 			if (exitBonus)
 			{
 				ourinc = FixedMul(ourinc, FRACUNIT + K_FinalCheckpointPower());
-				theirinc = FixedMul(ourinc, FRACUNIT + K_FinalCheckpointPower());
+				theirinc = FixedMul(theirinc, FRACUNIT + K_FinalCheckpointPower());
 				CONS_Debug(DBG_PWRLV, "Final check bonus (%d / %d * %d = %d)\n", prevInc/FRACUNIT, dvs, K_FinalCheckpointPower(), ourinc/FRACUNIT);
 			}
 			else
