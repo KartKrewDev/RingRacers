@@ -17473,7 +17473,7 @@ fixed_t K_TeamComebackMultiplier(player_t *player)
 void K_ApplyStun(player_t *player, mobj_t *inflictor, mobj_t *source, ATTRUNUSED INT32 damage, ATTRUNUSED UINT8 damagetype)
 {
 	#define BASE_STUN_TICS_MIN (4 * TICRATE)
-	#define BASE_STUN_TICS_MAX (10 * TICRATE)
+	#define BASE_STUN_TICS_MAX (8 * TICRATE)
 	#define MAX_STUN_REDUCTION (FRACUNIT/2)
 	#define STUN_REDUCTION_DISTANCE (20000)
 	INT32 stunTics = 0;
