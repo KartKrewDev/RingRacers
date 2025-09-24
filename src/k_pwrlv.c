@@ -384,14 +384,20 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 		}
 		else
 		{
-			if (exitBonus == false)
+			fixed_t prevInc = ourinc;
+
+			INT16 dvs = max(K_GetNumGradingPoints(), 1);
+			ourinc = FixedDiv(ourinc, dvs*FRACUNIT);
+			theirinc = FixedDiv(theirinc, dvs*FRACUNIT);
+
+			if (exitBonus)
 			{
-				fixed_t prevInc = ourinc;
-
-				INT16 dvs = max(K_GetNumGradingPoints(), 1);
-				ourinc = FixedDiv(ourinc, dvs*FRACUNIT);
-				theirinc = FixedDiv(theirinc, dvs*FRACUNIT);
-
+				ourinc = FixedMul(ourinc, FRACUNIT + K_FinalCheckpointPower());
+				theirinc = FixedMul(theirinc, FRACUNIT + K_FinalCheckpointPower());
+				CONS_Debug(DBG_PWRLV, "Final check bonus (%d / %d * %d = %d)\n", prevInc/FRACUNIT, dvs, K_FinalCheckpointPower(), ourinc/FRACUNIT);
+			}
+			else
+			{
 				CONS_Debug(DBG_PWRLV, "Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc/FRACUNIT, dvs, ourinc/FRACUNIT);
 			}
 		}
@@ -432,6 +438,8 @@ void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit)
 
 	if (checksleft <= 0)
 	{
+		if (!(gametyperules & GTR_CHECKPOINTS)) // We should probably do at least _one_ PWR update.
+			K_UpdatePowerLevels(player, player->gradingpointnum, onForfeit);
 		// We've done every checkpoint already.
 		return;
 	}

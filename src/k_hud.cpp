@@ -3307,18 +3307,12 @@ static void K_drawKartEmeralds(void)
 
 INT32 K_GetTransFlagFromFixed(fixed_t value, boolean midrace)
 {
-	fixed_t base = midrace ? GRADINGFACTORSOFTCAP : FRACUNIT;
+	fixed_t base = FRACUNIT;
 
     value = std::clamp(value, base - FRACUNIT/2, base + FRACUNIT/2);
 
     // Calculate distance from "base""
     fixed_t distance = abs(base - value);
-
-	if (midrace)
-	{
-		if (value > base)
-			distance = FixedMul(distance, GRADINGFACTORCAPSTRENGTH);
-	}
 
 	distance = std::clamp(distance, 0, FRACUNIT/2);
 

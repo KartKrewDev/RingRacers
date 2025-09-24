@@ -225,7 +225,7 @@ INT32 level_tally_t::CalculateGrade(void)
 		}
 	}
 
-	const INT32 positionWeight = (position > 0 && numPlayers > 2) ? 50 : 0;
+	const INT32 positionWeight =  0; // (position > 0 && numPlayers > 2) ? 50 : 0;
 	const INT32 total = positionWeight + bonusWeights[0] + bonusWeights[1];
 
 	INT32 ours = 0;

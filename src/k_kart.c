@@ -158,11 +158,8 @@ fixed_t K_EffectiveGradingFactor(const player_t *player)
 		return min;
 
 	fixed_t gf = player->gradingfactor;
-
-	if (gf > GRADINGFACTORSOFTCAP && !K_PlayerUsesBotMovement(player))
-		gf = GRADINGFACTORSOFTCAP + FixedDiv(gf - GRADINGFACTORSOFTCAP, GRADINGFACTORCAPSTRENGTH);
-
-	gf = (gf + FRACUNIT)/2;
+	if (franticitems)
+		gf = (gf + FRACUNIT)/2;
 
 	return max(min, gf);
 }
@@ -4500,6 +4497,15 @@ void K_SpawnEXP(player_t *player, UINT8 exp, mobj_t *impact)
 	if (exp == 0)
 		return;
 
+	boolean special = false;
+
+	if (player->gradingpointnum == K_GetNumGradingPoints())
+	{
+		exp *= 3;
+		special = true;
+	}
+
+
 	for (int i = 0; i < exp; i++)
 	{
 		mobj_t *pickup = P_SpawnMobj(impact->x, impact->y, impact->z, MT_EXP);
@@ -4510,6 +4516,14 @@ void K_SpawnEXP(player_t *player, UINT8 exp, mobj_t *impact)
 		pickup->momy += P_RandomRange(PR_ITEM_DEBRIS, -20*mapobjectscale, 20*mapobjectscale);
 		pickup->momz += P_RandomRange(PR_ITEM_DEBRIS, -20*mapobjectscale, 20*mapobjectscale);
 		// pickup->color = player->skincolor;
+
+		if (special)
+		{
+			P_InstaScale(pickup, 3*pickup->scale/2);
+			pickup->color = SKINCOLOR_SAPPHIRE;
+			pickup->colorized = true;
+		}
+
 		P_SetTarget(&pickup->target, player->mo);
 	}
 }
@@ -4719,7 +4733,7 @@ void K_CheckpointCrossAward(player_t *player)
 		K_HandleRaceSplits(player, leveltime - starttime, player->gradingpointnum);
 	}
 
-	player->gradingfactor += K_GetGradingFactorAdjustment(player);
+	player->gradingfactor += K_GetGradingFactorAdjustment(player, player->gradingpointnum);
 	player->gradingpointnum++;
 	player->exp = K_GetEXP(player);
 	//CONS_Printf("player: %s factor: %.2f exp: %d\n", player_names[player-players], FIXED_TO_FLOAT(player->gradingfactor), player->exp);
@@ -17095,7 +17109,19 @@ static UINT8 K_Opponents(player_t *player)
 	return opponents;
 }
 
-static fixed_t K_GradingFactorPower(player_t *player)
+fixed_t K_FinalCheckpointPower(void)
+{
+	// How much of the final total is given out as a bonus for the last check?
+	fixed_t FINAL_CHECK_PERCENT = 25*FRACUNIT/100;
+
+	fixed_t theentirerace = K_GetNumGradingPoints()*FRACUNIT;
+	fixed_t theentireraceplusbonus = FixedDiv(theentirerace, FRACUNIT - FINAL_CHECK_PERCENT);
+	fixed_t bonusonly = theentireraceplusbonus - theentirerace;
+
+	return bonusonly;
+}
+
+static fixed_t K_GradingFactorPower(player_t *player, UINT32 gradingpoint)
 {
 	fixed_t power = EXP_POWER; // adjust to change overall exp volatility
 	UINT8 opponents = K_Opponents(player);
@@ -17109,23 +17135,30 @@ static fixed_t K_GradingFactorPower(player_t *player)
 	if (opponents > 8)
 		power -= (opponents - 8) * (power/24);
 
+	UINT32 gp = K_GetNumGradingPoints();
+
+	if (gradingpoint-1 == gp)
+	{
+		power += FixedMul(power, K_FinalCheckpointPower());
+	}
+
 	return power;
 }
 
-static fixed_t K_GradingFactorGainPerWin(player_t *player)
+static fixed_t K_GradingFactorGainPerWin(player_t *player, UINT32 gradingpoint)
 {
-	return K_GradingFactorPower(player);
+	return K_GradingFactorPower(player, gradingpoint);
 }
 
-static fixed_t K_GradingFactorDrainPerCheckpoint(player_t *player)
+static fixed_t K_GradingFactorDrainPerCheckpoint(player_t *player, UINT32 gradingpoint)
 {
 	// EXP_STABLERATE: How low do you have to place before losing gradingfactor? 4*FRACUNIT/10 = top 40% of race gains, 60% loses.
 	UINT8 opponents = K_Opponents(player);
-	fixed_t power = K_GradingFactorPower(player);
+	fixed_t power = K_GradingFactorPower(player, gradingpoint);
 	return FixedMul(power, FixedMul(opponents*FRACUNIT, FRACUNIT - EXP_STABLERATE));
 }
 
-fixed_t K_GetGradingFactorAdjustment(player_t *player)
+fixed_t K_GetGradingFactorAdjustment(player_t *player, UINT32 gradingpoint)
 {
 	fixed_t result = 0;
 
@@ -17136,13 +17169,13 @@ fixed_t K_GetGradingFactorAdjustment(player_t *player)
 			continue;
 
 		if (player->position < players[i].position)
-			result += K_GradingFactorGainPerWin(player);
+			result += K_GradingFactorGainPerWin(player, gradingpoint);
 	}
 
 	// ...then take all of the gradingfactor you could possibly have earned,
 	// and lose it proportional to the stable rate. If you're below
 	// the stable threshold, this results in you losing gradingfactor
-	result -= K_GradingFactorDrainPerCheckpoint(player);
+	result -= K_GradingFactorDrainPerCheckpoint(player, gradingpoint);
 
 	return result;
 }
@@ -17156,8 +17189,8 @@ fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
 	for (UINT8 i = 0; i < player->gradingpointnum; i++) // For each gradingpoint you've reached...
 	{
 		for (UINT8 j = 0; j < winning; j++)
-			factor += K_GradingFactorGainPerWin(player); // If max, increase gradingfactor for each player you could have been beating.
-		factor -= K_GradingFactorDrainPerCheckpoint(player); // Then, drain like usual.
+			factor += K_GradingFactorGainPerWin(player, i); // If max, increase gradingfactor for each player you could have been beating.
+		factor -= K_GradingFactorDrainPerCheckpoint(player, i); // Then, drain like usual.
 	}
 
 	return factor;
@@ -17165,19 +17198,33 @@ fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
 
 UINT16 K_GetEXP(player_t *player)
 {
+	fixed_t gradingpointnum = FRACUNIT * player->gradingpointnum;
+
 	UINT32 numgradingpoints = K_GetNumGradingPoints();
-	fixed_t targetminexp = (EXP_MIN*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a last place player should be at this stage of the race
-	fixed_t targetmaxexp = (EXP_MAX*player->gradingpointnum<<FRACBITS) / max(1,numgradingpoints); // about what a 1.0 factor should be at this stage of the race
+	fixed_t fixedgradingpoints = numgradingpoints * FRACUNIT;
+	fixed_t effgradingpoints = fixedgradingpoints + K_FinalCheckpointPower();
+
+	// Account for Final Check bonus
+	if (player->gradingpointnum == numgradingpoints)
+		gradingpointnum = effgradingpoints;
+
+	// fixed_t targetminexp = (EXP_MIN*gpn<<FRACBITS) / max(1,effgradingpoints); // about what a last place player should be at this stage of the race
+	// fixed_t targetmaxexp = (EXP_MAX*gpn<<FRACBITS) / max(1,effgradingpoints); // about what a 1.0 factor should be at this stage of the race
+	fixed_t targetminexp = FixedDiv(EXP_MIN * gradingpointnum, max(FRACUNIT, effgradingpoints));
+	fixed_t targetmaxexp = FixedDiv(EXP_MAX * gradingpointnum, max(FRACUNIT, effgradingpoints));
 	fixed_t factormin = K_GetGradingFactorMinMax(player, false);
 	fixed_t factormax = K_GetGradingFactorMinMax(player, true);
 
 	UINT16 exp = FixedRescale(player->gradingfactor, factormin, factormax, Easing_Linear, targetminexp, targetmaxexp)>>FRACBITS;
 
 	if (modeattacking)
-		exp = 100 * player->gradingpointnum / numgradingpoints;
+		exp = EXP_MAX * player->gradingpointnum / max(1, numgradingpoints); // No Final Check here, just a linear slide
 
-	// CONS_Printf("Player %s numgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n",
-	// 	player_names[player - players], numgradingpoints, player->gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);
+	/*
+	if (!player->bot)
+		CONS_Printf("Player %s fcp=%d effgradingpoints=%d gradingpoint=%d targetminexp=%d targetmaxexp=%d factor=%.2f factormin=%.2f factormax=%.2f exp=%d\n",
+	 		player_names[player - players], K_FinalCheckpointPower(), effgradingpoints, gradingpointnum, targetminexp, targetmaxexp, FIXED_TO_FLOAT(player->gradingfactor), FIXED_TO_FLOAT(factormin), FIXED_TO_FLOAT(factormax), exp);
+	*/
 
 	return exp;
 }

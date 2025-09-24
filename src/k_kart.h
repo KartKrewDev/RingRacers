@@ -132,11 +132,10 @@ boolean K_DuelItemAlwaysSpawns(mapthing_t *mt);
 boolean K_InRaceDuel(void);
 player_t *K_DuelOpponent(player_t *player);
 
+fixed_t K_FinalCheckpointPower(void);
 fixed_t K_EffectiveGradingFactor(const player_t *player);
 #define MINGRADINGFACTOR (FRACUNIT/2)
 #define MINFRANTICFACTOR (8*FRACUNIT/10)
-#define GRADINGFACTORSOFTCAP (2*FRACUNIT)
-#define GRADINGFACTORCAPSTRENGTH (3*FRACUNIT)
 
 void K_TimerReset(void);
 void K_TimerInit(void);
@@ -347,7 +346,7 @@ boolean K_ThunderDome(void);
 
 boolean K_PlayerCanUseItem(player_t *player);
 
-fixed_t K_GetGradingFactorAdjustment(player_t *player);
+fixed_t K_GetGradingFactorAdjustment(player_t *player, UINT32 gradingpoint);
 fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max);
 UINT16 K_GetEXP(player_t *player);
 
