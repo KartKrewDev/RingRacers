@@ -162,6 +162,8 @@ fixed_t K_EffectiveGradingFactor(const player_t *player)
 	if (gf > GRADINGFACTORSOFTCAP && !K_PlayerUsesBotMovement(player))
 		gf = GRADINGFACTORSOFTCAP + FixedDiv(gf - GRADINGFACTORSOFTCAP, GRADINGFACTORCAPSTRENGTH);
 
+	gf = (gf + FRACUNIT)/2;
+
 	return max(min, gf);
 }
 
@@ -15508,7 +15510,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								}
 
 								player->growshrinktimer = max(0, player->growshrinktimer);
-								player->growshrinktimer += ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE;
+								player->growshrinktimer = max(player->growshrinktimer + 5*TICRATE, ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE);
 
 								S_StartSound(player->mo, sfx_kc5a);
 
