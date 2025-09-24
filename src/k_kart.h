@@ -136,8 +136,6 @@ fixed_t K_FinalCheckpointPower(void);
 fixed_t K_EffectiveGradingFactor(const player_t *player);
 #define MINGRADINGFACTOR (FRACUNIT/2)
 #define MINFRANTICFACTOR (8*FRACUNIT/10)
-#define GRADINGFACTORSOFTCAP (2*FRACUNIT)
-#define GRADINGFACTORCAPSTRENGTH (3*FRACUNIT)
 
 void K_TimerReset(void);
 void K_TimerInit(void);
