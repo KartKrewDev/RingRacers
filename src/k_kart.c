@@ -162,6 +162,8 @@ fixed_t K_EffectiveGradingFactor(const player_t *player)
 	if (gf > GRADINGFACTORSOFTCAP && !K_PlayerUsesBotMovement(player))
 		gf = GRADINGFACTORSOFTCAP + FixedDiv(gf - GRADINGFACTORSOFTCAP, GRADINGFACTORCAPSTRENGTH);
 
+	gf = (gf + FRACUNIT)/2;
+
 	return max(min, gf);
 }
 
