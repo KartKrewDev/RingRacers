@@ -155,7 +155,7 @@ public:
 
 			float left_scale = std::cos(sep_pan);
 			float right_scale = std::sin(sep_pan);
-			buffer[i] = {buffer[i].amplitudes[0] * volume_ * left_scale, buffer[i].amplitudes[1] * volume_ * right_scale};
+			buffer[i] = {std::clamp(buffer[i].amplitudes[0] * volume_ * left_scale, -1.f, 1.f), std::clamp(buffer[i].amplitudes[1] * volume_ * right_scale, -1.f, 1.f)};
 		}
 
 		return buffer.size();
@@ -1046,13 +1046,8 @@ UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
 	{
 		return 0;
 	}
-	UINT32 avail = SDL_GetQueuedAudioSize(g_input_device_id);
-	if (avail == 0)
-	{
-		return 0;
-	}
 
-	UINT32 ret = SDL_DequeueAudio(g_input_device_id, data, std::min(len, avail));
+	UINT32 ret = SDL_DequeueAudio(g_input_device_id, data, len);
 	return ret;
 }
 

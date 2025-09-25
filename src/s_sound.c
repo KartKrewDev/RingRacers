@@ -970,7 +970,7 @@ void S_UpdateVoicePositionalProperties(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || !voice_proximity_enabled)
+		if (!playeringame[i])
 		{
 			I_SetPlayerVoiceProperties(i, speakingplayerattenuation, 0.0f);
 			continue;
@@ -1025,7 +1025,7 @@ void S_UpdateVoicePositionalProperties(void)
 			attenuation_distance = voice_distanceattenuation_teamdistance;
 		}
 
-		if (attenuation_distance > 0 && voice_distanceattenuation_factor >= 0 && voice_distanceattenuation_factor <= 1.0f)
+		if (voice_proximity_enabled && attenuation_distance > 0 && voice_distanceattenuation_factor >= 0 && voice_distanceattenuation_factor <= 1.0f)
 		{
 			float invfactor = 1.0f - voice_distanceattenuation_factor;
 			float distfactor = max(0.f, min(attenuation_distance, pdistance)) / attenuation_distance;
