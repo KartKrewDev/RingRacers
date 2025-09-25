@@ -17057,6 +17057,11 @@ boolean K_PlayerCanPunt(player_t *player)
 		return true;
 	}
 
+	if (player->overshield > 0)
+	{
+		return true;
+	}
+
 	if (player->tripwirePass >= TRIPWIRE_BLASTER && player->speed >= K_PlayerTripwireSpeedThreshold(player))
 	{
 		return true;
