@@ -26,6 +26,8 @@ extern "C" {
 #define NUM_HITLAG_STATES (9)
 #define NUM_HITLAG_SOUNDS (4)
 
+void K_AddHitLagFromCollision(mobj_t *mo, INT32 tics);
+
 /*--------------------------------------------------
 	void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
 

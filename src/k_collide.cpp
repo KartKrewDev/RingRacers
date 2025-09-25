@@ -1289,8 +1289,15 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	auto doStumble = [](mobj_t *t1, mobj_t *t2)
 	{
-		K_StumblePlayer(t2->player);
-		K_SpawnAmps(t1->player, K_PvPAmpReward(20, t1->player, t2->player), t2);
+		if (gametyperules & GTR_BUMPERS)
+		{
+			K_StumblePlayer(t2->player);
+			K_SpawnAmps(t1->player, K_PvPAmpReward(20, t1->player, t2->player), t2);
+		}
+		else
+		{
+			P_DamageMobj(t2, t1, t1, 1, DMG_WHUMBLE);
+		}
 	};
 
 	if (forEither(shouldStumble, doStumble))

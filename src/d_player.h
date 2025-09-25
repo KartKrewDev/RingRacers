@@ -1071,8 +1071,6 @@ struct player_t
 	UINT16 wavedashboost; // The actual boost granted from wavedash.
 	fixed_t wavedashpower; // Is this a bullshit "tap" wavedash? Weaken lower-charge wavedashes while keeping long sliptides fully rewarding.
 
-	UINT16 speedpunt;
-
 	UINT16 trickcharge; // Landed normally from a trick panel? Get the benefits package!
 
 	UINT16 infinitether; // Generic infinitether time, used for infinitether leniency.

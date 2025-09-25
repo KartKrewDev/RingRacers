@@ -22,6 +22,26 @@
 #include "s_sound.h"
 #include "m_easing.h"
 
+// Use for adding hitlag that should be mostly ignored by impervious players.
+// (Currently only called in power clash, but in the future...?)
+void K_AddHitLagFromCollision(mobj_t *mo, INT32 tics)
+{
+	boolean doAnything = true;
+
+	if (mo->player == NULL || mo->type != MT_PLAYER)
+		doAnything = false;
+	else if (!K_PlayerCanPunt(mo->player))
+		doAnything = false;
+
+	if (!doAnything)
+	{
+		K_AddHitLag(mo, tics, false);
+		return;
+	}
+
+	K_AddHitLag(mo, min(tics, 2), false);
+}
+
 /*--------------------------------------------------
 	void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 
