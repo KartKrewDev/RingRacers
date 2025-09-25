@@ -133,8 +133,12 @@ void K_CheckBumpers(void)
 {
 	UINT8 i;
 	UINT8 numingame = 0;
+	UINT8 rednumingame = 0;
+	UINT8 bluenumingame = 0;
 	UINT8 nobumpers = 0;
 	UINT8 eliminated = 0;
+	UINT8 redeliminated = 0;
+	UINT8 blueeliminated = 0;
 	SINT8 kingofthehill = -1;
 
 	if (!(gametyperules & GTR_BUMPERS))
@@ -142,6 +146,8 @@ void K_CheckBumpers(void)
 
 	if (gameaction == ga_completed)
 		return;
+
+	boolean team = G_GametypeHasTeams();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -152,6 +158,11 @@ void K_CheckBumpers(void)
 			return;
 
 		numingame++;
+		if (team)
+		{
+			if (players[i].team == 1) rednumingame++;
+			if (players[i].team == 2) bluenumingame++;
+		}
 
 		if (!P_MobjWasRemoved(players[i].mo) && players[i].mo->health <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
@@ -161,11 +172,22 @@ void K_CheckBumpers(void)
 		if (players[i].pflags & PF_ELIMINATED)
 		{
 			eliminated++;
+			if (team)
+			{
+				if (players[i].team == 1) redeliminated++;
+				else if (players[i].team == 2) blueeliminated++;
+			}
 		}
 		else
 		{
 			kingofthehill = i;
 		}
+	}
+
+	boolean teamwin = false;
+	if (team && (rednumingame - redeliminated == 0 || bluenumingame - blueeliminated == 0))
+	{
+		teamwin = true;
 	}
 
 	if (numingame - eliminated == 2 && battleovertime.enabled && battleovertime.radius <= BARRIER_MIN_RADIUS)
@@ -186,9 +208,28 @@ void K_CheckBumpers(void)
 	{
 		// If every other player is eliminated, the
 		// last player standing wins by default.
-		if (eliminated >= numingame - 1)
+		// Or, if an entire team is eliminated.
+		if (eliminated >= numingame - 1 || teamwin)
 		{
-			K_EndBattleRound(kingofthehill != -1 ? &players[kingofthehill] : NULL);
+			if (teamwin)
+			{
+				// Find the player with the highest individual score
+				UINT32 highestscore = 0;
+				UINT32 highestplayer = 0;
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (playeringame[i] && players[i].score > highestscore)
+					{
+						highestplayer = i;
+						highestscore = players[i].score;
+					}
+				}
+				K_EndBattleRound(&players[highestplayer]);
+			}
+			else
+			{
+				K_EndBattleRound(kingofthehill != -1 ? &players[kingofthehill] : NULL);
+			}
 			return;
 		}
 	}
