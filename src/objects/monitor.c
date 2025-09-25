@@ -11,6 +11,7 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../info.h"
+#include "../g_game.h"
 #include "../k_objects.h"
 #include "../p_local.h"
 #include "../r_state.h"

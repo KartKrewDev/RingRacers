@@ -125,6 +125,9 @@ find_package(PNG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Opus REQUIRED)
+if(WIN32 AND NOT MINGW)
+	find_package(cpptrace CONFIG REQUIRED)
+endif()
 # Use the one in thirdparty/fmt to guarantee a minimum version
 #find_package(FMT CONFIG REQUIRED)
 

@@ -20,7 +20,6 @@
 #include "../core/string.h"
 
 #include <exception>
-#include <stdexcept>
 
 #include <tracy/tracy/Tracy.hpp>
 
@@ -32,11 +31,7 @@
 #include <errno.h>
 #endif
 
-extern "C" {
 #include "time.h" // For log timestamps
-}
-
-#ifdef HAVE_SDL
 
 #ifdef HAVE_TTF
 #include "SDL.h"
@@ -66,46 +61,6 @@ char logfilename[1024];
 #ifndef O_SEQUENTIAL
 #define O_SEQUENTIAL 0
 #endif
-#endif
-
-#if defined (_WIN32)
-extern "C" {
-#include "../win32/win_dbg.h"
-}
-typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
-#endif
-
-#if defined (_WIN32)
-static inline VOID MakeCodeWritable(VOID)
-{
-#ifdef USEASM // Disable write-protection of code segment
-	DWORD OldRights;
-	const DWORD NewRights = PAGE_EXECUTE_READWRITE;
-	PBYTE pBaseOfImage = (PBYTE)GetModuleHandle(NULL);
-	PIMAGE_DOS_HEADER dosH =(PIMAGE_DOS_HEADER)pBaseOfImage;
-	PIMAGE_NT_HEADERS ntH = (PIMAGE_NT_HEADERS)(pBaseOfImage + dosH->e_lfanew);
-	PIMAGE_OPTIONAL_HEADER oH = (PIMAGE_OPTIONAL_HEADER)
-		((PBYTE)ntH + sizeof (IMAGE_NT_SIGNATURE) + sizeof (IMAGE_FILE_HEADER));
-	LPVOID pA = pBaseOfImage+oH->BaseOfCode;
-	SIZE_T pS = oH->SizeOfCode;
-#if 1 // try to find the text section
-	PIMAGE_SECTION_HEADER ntS = IMAGE_FIRST_SECTION (ntH);
-	WORD s;
-	for (s = 0; s < ntH->FileHeader.NumberOfSections; s++)
-	{
-		if (memcmp (ntS[s].Name, ".text\0\0", 8) == 0)
-		{
-			pA = pBaseOfImage+ntS[s].VirtualAddress;
-			pS = ntS[s].Misc.VirtualSize;
-			break;
-		}
-	}
-#endif
-
-	if (!VirtualProtect(pA,pS,NewRights,&OldRights))
-		I_Error("Could not make code writable\n");
-#endif
-}
 #endif
 
 #ifdef LOGMESSAGES
@@ -212,10 +167,6 @@ static void init_exchndl()
 	if (pfnExcHndlInit != NULL)
 		(pfnExcHndlInit)();
 }
-#else
-static void init_exchndl()
-{
-}
 #endif
 
 #ifdef _WIN32
@@ -300,25 +251,12 @@ int main(int argc, char **argv)
 
 	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
-#if defined (_WIN32)
+
+#if defined (_WIN32) && !defined(_MSC_VER)
 	if (!M_CheckParm("-noexchndl"))
 	{
-#if 0 // just load the DLL
-		p_IsDebuggerPresent pfnIsDebuggerPresent = (p_IsDebuggerPresent)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsDebuggerPresent");
-		if ((!pfnIsDebuggerPresent || !pfnIsDebuggerPresent())
-#ifdef BUGTRAP
-			&& !InitBugTrap()
-#endif
-			)
-#endif
-		{
-			init_exchndl();
-		}
+		init_exchndl();
 	}
-#ifndef __MINGW32__
-	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
-#endif
-	MakeCodeWritable();
 #endif
 
 	try {
@@ -352,8 +290,6 @@ int main(int argc, char **argv)
 	// return to OS
 	return 0;
 }
-
-#endif
 
 #ifdef _MSC_VER
 int WINAPI WinMain(HINSTANCE pInstance, HINSTANCE pPrevInstance, LPSTR lpCmdLine, int nShowCmd)
