@@ -14075,9 +14075,15 @@ static void K_KartSpindash(player_t *player)
 		}
 		else if (!G_CompatLevel(0x0010))
 		{
-			boolean ebrakelasttic = ((player->oldcmd.buttons & BT_EBRAKEMASK) == BT_EBRAKEMASK);
+			UINT16 oldbuttons = player->oldcmd.buttons;
+
+			if (K_KartKickstart(player))
+				oldbuttons |= BT_ACCELERATE; // Not strictly correct, but better than nothing.
+			// Kickstart needs substrantial attention if we want this sort of thing to be clean.
+
+			boolean ebrakelasttic = (oldbuttons == BT_EBRAKEMASK);
 			if (player->pflags2 & PF2_STRICTFASTFALL)
-				ebrakelasttic = (player->oldcmd.buttons & BT_SPINDASH);
+				ebrakelasttic = (oldbuttons & BT_SPINDASH);
 
 			boolean ebrakenow = K_PressingEBrake(player);
 			if (player->pflags2 & PF2_STRICTFASTFALL && !(player->cmd.buttons & BT_SPINDASH))
