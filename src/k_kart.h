@@ -98,7 +98,7 @@ Make sure this matches the actual number of states
 #define FAILSAFETIME (4*TICRATE)
 
 #define DUELOVERTIME (cv_dueltimelimit.value)
-#define DUELWINNINGSCORE (999)
+#define DUELWINNINGSCORE (cv_duelscorelimit.value)
 
 #define MIN_WAVEDASH_CHARGE ((11*TICRATE/16)*9)
 
