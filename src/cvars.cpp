@@ -829,6 +829,7 @@ void ForceSkin_OnChange(void);
 consvar_t cv_forceskin = OnlineCheat("forcecharacter", "None").onchange(ForceSkin_OnChange).description("Force all players to use one character");
 
 consvar_t cv_fuzz = OnlineCheat("fuzz", "Off").on_off().description("Human players spam random inputs, get random items");
+consvar_t cv_skiprender = OnlineCheat("skiprender", "1").values(CV_Natural).description("Only render every X frames");
 
 consvar_t cv_kartdebugamount = OnlineCheat("debugitemamount", "1").min_max(1, 255).description("If debugitem, give multiple copies of an item");
 consvar_t cv_kartdebugbots = OnlineCheat("debugbots", "Off").on_off().description("Bot AI debugger");
