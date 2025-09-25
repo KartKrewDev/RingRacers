@@ -7166,11 +7166,13 @@ static void K_drawLapStartAnim(void)
 			oldval = (188 + (32 * std::max(0, progressOld - 76))) * FRACUNIT;
 			interpx = R_InterpolateFixed(oldval, newval);
 
+			UINT32 sanitizedlaps = std::min((UINT32)99, (UINT32)stplyr->latestlap);
+
 			V_DrawFixedPatch(
 				interpx, // 194
 				30*FRACUNIT, // 24
 				FRACUNIT, V_SNAPTOTOP|hudtransflags,
-				kp_lapanim_number[(((UINT32)stplyr->latestlap) / 10)][std::min(progress/2-8, 2)], NULL);
+				kp_lapanim_number[(sanitizedlaps / 10)][std::min(progress/2-8, 2)], NULL);
 
 			if (progress/2-10 >= 0)
 			{
@@ -7182,7 +7184,7 @@ static void K_drawLapStartAnim(void)
 					interpx, // 221
 					30*FRACUNIT, // 24
 					FRACUNIT, V_SNAPTOTOP|hudtransflags,
-					kp_lapanim_number[(((UINT32)stplyr->latestlap) % 10)][std::min(progress/2-10, 2)], NULL);
+					kp_lapanim_number[(sanitizedlaps % 10)][std::min(progress/2-10, 2)], NULL);
 			}
 		}
 	}
