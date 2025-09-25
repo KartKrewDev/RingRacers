@@ -408,8 +408,15 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_FLOATINGITEM: // SRB2Kart
 			if (special->extravalue1 > 0 && toucher != special->tracer)
 			{
-				player->pflags |= PF_CASTSHADOW;
-				return;
+				if (special->tracer && !P_MobjWasRemoved(special->tracer) && special->tracer->player)
+				{
+					if (!G_SameTeam(special->tracer->player, player))
+					{
+						player->pflags |= PF_CASTSHADOW;
+						return;
+					}
+				}
+
 			}
 
 			if (special->threshold >= FIRSTPOWERUP)
