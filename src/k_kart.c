@@ -14082,7 +14082,7 @@ static void K_KartSpindash(player_t *player)
 				oldbuttons |= BT_ACCELERATE; // Not strictly correct, but better than nothing.
 			// Kickstart needs substantial attention if we want this sort of thing to be clean.
 
-			boolean ebrakelasttic = !!(oldbuttons & BT_EBRAKEMASK);
+			boolean ebrakelasttic = ((oldbuttons & BT_EBRAKEMASK) == BT_EBRAKEMASK);
 			if (player->pflags2 & PF2_STRICTFASTFALL && !(oldbuttons & BT_SPINDASH))
 				ebrakelasttic = false;
 
