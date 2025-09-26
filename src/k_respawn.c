@@ -176,6 +176,12 @@ void K_DoIngameRespawn(player_t *player)
 		K_DoFault(player);
 	}
 
+	if (player->rings <= -20 && !player->respawn.fromRingShooter)
+	{
+		P_KillMobj(player->mo, NULL, NULL, DMG_INSTAKILL);
+		return;
+	}
+
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
 	player->gateBoost = 0;
@@ -740,7 +746,7 @@ static void K_DropDashWait(player_t *player)
 		player->respawn.timer--;
 
 	if (player->pflags & PF_FAULT)
-		return;	
+		return;
 
 	if (leveltime % 8 == 0)
 	{
