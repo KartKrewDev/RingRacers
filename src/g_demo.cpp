@@ -3269,6 +3269,8 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 
 	// net var data
 	demobuf.p += CV_LoadDemoVars(demobuf.p);
+	// Dumb hack for team play desyncs - https://gitlab.com/kart-krew-dev/ring-racers/-/issues/210
+	g_teamplay = cv_teamplay.value ? 1 : 0;
 
 	memset(&grandprixinfo, 0, sizeof grandprixinfo);
 	if ((demoflags & DF_GRANDPRIX))
