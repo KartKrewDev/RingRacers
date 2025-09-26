@@ -1328,7 +1328,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 		bool stung = false;
 
-		if (RINGTOTAL(t2->player) <= 0 && t2->health == 1 && !(t2->player->pflags2 & PF2_UNSTINGABLE))
+		if (RINGTOTAL(t2->player) <= 0 && t2->player->ringboostinprogress == 0 && t2->health == 1 && !(t2->player->pflags2 & PF2_UNSTINGABLE))
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
 			// CONS_Printf("T2 stung\n");

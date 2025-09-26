@@ -9975,7 +9975,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		// Race: spawn ring debt indicator
 		// Battle: spawn zero-bumpers indicator
-		if (!(player->pflags2 & PF2_UNSTINGABLE) && ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : RINGTOTAL(player) <= 0))
+		if (!(player->pflags2 & PF2_UNSTINGABLE) && player->ringboostinprogress == 0 && ((gametyperules & GTR_SPHERES) ? player->mo->health <= 1 : RINGTOTAL(player) <= 0))
 		{
 			UINT8 doubler;
 
@@ -10747,6 +10747,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->tripwireLeniency = max( player->tripwireLeniency, TICRATE );
 		}
 	}
+
+	if (player->ringboostinprogress)
+		player->ringboostinprogress--;
 
 	if (player->baildrop)
 	{
@@ -15041,6 +15044,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					{
 						P_SetOrigin(ring, ring->x, ring->y, ring->z);
 						ring->extravalue1 = 1;
+						player->ringboostinprogress = 25;
 					}
 
 

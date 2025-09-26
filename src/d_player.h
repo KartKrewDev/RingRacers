@@ -801,6 +801,8 @@ struct player_t
 	fixed_t spindashspeed;	// Spindash release speed
 	UINT8 spindashboost;	// Spindash release boost timer
 
+	UINT8 ringboostinprogress; // Ring overhead, don't sting!
+
 	fixed_t fastfall;		// Fast fall momentum
 	fixed_t fastfallBase;	// Fast fall base speed multiplier
 
