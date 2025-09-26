@@ -614,6 +614,7 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"EXPC",
 	
+	"TWBB",
 	"TWOK",
 	"TW_L",
 
@@ -2225,6 +2226,7 @@ state_t states[NUMSTATES] =
 	{SPR_AMPD,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_AMPAURA
 	{SPR_AMPB,                 FF_FULLBRIGHT|FF_ADD|FF_PAPERSPRITE|2, -1, {NULL}, 4, 2, S_NULL}, // S_AMPBURST
 
+	{SPR_TWBB,                 FF_ADD|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_SONICBOOM
 	{SPR_TWOK,                 FF_FULLBRIGHT|FF_ANIMATE|0, 56, {NULL}, 55, 1, S_NULL}, // S_TRIPWIREOK
 	{SPR_TW_L,                 FF_FULLBRIGHT|FF_ANIMATE|0, 56, {NULL}, 55, 1, S_NULL}, // S_TRIPWIRELOCKOUT
 
@@ -13974,6 +13976,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_AMPBURST
 		-1,             // doomednum
 		S_AMPBURST,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		67*FRACUNIT,    // radius
+		67*FRACUNIT,    // height
+		1,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SONICBOOM
+		-1,             // doomednum
+		S_SONICBOOM,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound

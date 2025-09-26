@@ -76,7 +76,7 @@ Make sure this matches the actual number of states
 
 #define EARLY_ITEM_FLICKER (NUMTRANSMAPS)
 
-#define TRIPWIRE_OK_SOUND (sfx_s3k40)
+#define TRIPWIRE_OK_SOUND (sfx_sonbo2)
 #define TRIPWIRE_NG_SOUND (sfx_gshaf)
 
 // 2023-08-26 +ang20 to Sal's OG values to make them friendlier - Tyron

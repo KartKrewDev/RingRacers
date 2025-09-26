@@ -1155,6 +1155,7 @@ typedef enum sprite
 
 	SPR_EXPC,
 	
+	SPR_TWBB, // Sonic Boom
 	SPR_TWOK, // Tripwire OK
 	SPR_TW_L, // Tripwire Lockout
 
@@ -2681,6 +2682,7 @@ typedef enum state
 	S_AMPAURA,
 	S_AMPBURST,
 
+	S_SONICBOOM,
 	S_TRIPWIREOK,
 	S_TRIPWIRELOCKOUT,
 
@@ -4706,6 +4708,7 @@ typedef enum mobj_type
 	MT_AMPAURA,
 	MT_AMPBURST,
 
+	MT_SONICBOOM,
 	MT_TRIPWIREOK,
 	MT_TRIPWIRELOCKOUT,
 

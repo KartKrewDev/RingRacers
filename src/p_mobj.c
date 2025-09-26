@@ -7997,7 +7997,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
-	case MT_TRIPWIREAPPROACH: {
+	case MT_TRIPWIREAPPROACH: { // Subsonic Visuals
 		if (!mobj->target || !mobj->target->health || !mobj->target->player)
 		{
 			P_RemoveMobj(mobj);
@@ -8007,17 +8007,53 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj_t *target = mobj->target;
 		player_t *player = target->player;
 		fixed_t myspeed = (player->speed);
-
+		boolean In_A_Race = ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking); // If you're in a real race.
+		boolean prorated_sonicboom_alert = (K_PlayerTripwireSpeedThreshold(player) > 2 * K_GetKartSpeed(player, false, false)) ; // If you're being prorated.
 		fixed_t maxspeed = K_PlayerTripwireSpeedThreshold(player); // Centered at this speed.
-		fixed_t minspeed = max(2 * maxspeed / 4, 16 * K_GetKartSpeed(player, false, false) / 10); // Starts appearing at this speed.
+		fixed_t minspeed = max(2 * maxspeed / 4, 7 * K_GetKartSpeed(player, false, false) / 5); // Starts appearing at this speed.
 		fixed_t alertspeed = 9 * maxspeed / 10; // When to flash?
 		fixed_t frontoffset = 5*target->scale; // How far in front?
-
+		
 		fixed_t percentvisible = 0;
+
 		if (myspeed > minspeed)
+		{
 			percentvisible = min(FRACUNIT, FixedDiv(myspeed - minspeed, maxspeed - minspeed));
+		}
+
 		if (myspeed >= maxspeed || player->tripwireLeniency)
-			percentvisible = 0;
+		{
+			player->subsonicleniency++; // Subsonic visual stays for a bit during tripwire leniency
+
+			if(player->subsonicleniency == 1 && player->tripwireLeniency && myspeed >= maxspeed && !S_SoundPlaying(player->mo, sfx_gsha7)) // Don't play during superring too
+			{
+			mobj_t *boost = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_SONICBOOM);
+			boost->momx = player->mo->momx/2;
+			boost->momy = player->mo->momy/2;
+			boost->momz = player->mo->momz/2;
+			boost->angle = player->mo->angle + ANGLE_90;
+			boost->scalespeed = boost->scale;
+			boost->destscale = boost->scale*8;
+			//sonicboom->color = SKINCOLOR_WHITE;
+			boost->fuse = 8;				
+			}
+		}
+		else
+		{
+			player->subsonicleniency = 0; // Goes back down otherwise
+		}
+		
+		if (player->subsonicleniency >= (3*TICRATE)) 
+		{
+			percentvisible = 0; // Once it stays long enough, no longer visible
+		} 
+
+#if 0
+		if (!K_PlayerUsesBotMovement(player))
+		{
+			CONS_Printf("SSL=%d, PV=%d\n", player->subsonicleniency, percentvisible);
+		}
+#endif
 
 #if 0
 		fixed_t hang = 85*FRACUNIT/100; // Dampen inward movement past a certain point
@@ -8045,8 +8081,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		P_InstaScale(mobj, FixedMul(target->scale, easedscale));
 		K_MatchGenericExtraFlagsNoInterp(mobj, target);
 
-		UINT8 maxtranslevel = NUMTRANSMAPS - 2;
+		UINT8 maxtranslevel = NUMTRANSMAPS;
 		UINT8 trans = FixedInt(FixedMul(percentvisible, FRACUNIT*(maxtranslevel+1)));
+		//UINT8 trans = FixedInt(FixedMul(percentvisible - player->subsonicleniency * FRACUNIT/100, FRACUNIT*(maxtranslevel+1)));
+
 		if (trans > maxtranslevel)
 			trans = maxtranslevel;
 		trans = NUMTRANSMAPS - trans;
@@ -8060,12 +8098,51 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->renderflags |= RF_PAPERSPRITE;
 
 		mobj->colorized = true;
-		if (myspeed > alertspeed)
-			mobj->color = (leveltime & 1) ? SKINCOLOR_LILAC : SKINCOLOR_JAWZ;
-		else
-			mobj->color = SKINCOLOR_WHITE;
+		
+/*
+		if (!K_PlayerUsesBotMovement(player))
+		{
+			CONS_Printf("In_A_Race=%d, Prorated_SonicBoom_Alert=%d\n", In_A_Race, prorated_sonicboom_alert);
+		}
+*/
+		if (In_A_Race == true && prorated_sonicboom_alert == true) 
+		{
+			mobj->color = (leveltime & 1) ? SKINCOLOR_KETCHUP : SKINCOLOR_RED; // If you're being prorated we flash red
+			trans = trans*2;
+		}
+		else if (myspeed > alertspeed)
+			mobj->color = (leveltime & 1) ? SKINCOLOR_LILAC : SKINCOLOR_JAWZ; // If the Subsonic lines meet we flash tripwire colors
+		else 
+			mobj->color = SKINCOLOR_WHITE; // Default
 
 		mobj->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+
+		// Alright, let's just handle all the sfx down here
+
+		if (P_IsDisplayPlayer(player))
+		{
+			UINT8 MIN_VOLUME = 25;
+			UINT8 MAX_VOLUME = 75;
+			UINT8 volume = FixedRescale(myspeed, minspeed, maxspeed, Easing_Linear, MIN_VOLUME, MAX_VOLUME);
+
+			if (myspeed >= minspeed && myspeed < maxspeed)
+			{	
+				S_StopSoundByID(mobj, sfx_sonbo1);
+				if(!S_SoundPlaying(mobj, sfx_sonbo3))
+					S_StartSoundAtVolume(mobj, sfx_sonbo3, volume); // Subsonic SFX
+			}
+			else if (myspeed >= maxspeed || player->tripwireLeniency)
+			{
+				S_StopSoundByID(mobj, sfx_sonbo3);
+				if(!S_SoundPlaying(mobj, sfx_sonbo1))
+					S_StartSoundAtVolume(mobj, sfx_sonbo1, MAX_VOLUME); // SonicBoom lingering SFX
+			}
+			else 
+			{
+				S_StopSoundByID(mobj, sfx_sonbo1);
+				S_StopSoundByID(mobj, sfx_sonbo3);
+			}
+		}
 
 		break;
 	}

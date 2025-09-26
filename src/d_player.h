@@ -383,7 +383,7 @@ typedef enum
 #define TUMBLEBOUNCES 3
 #define TUMBLEGRAVITY (4*FRACUNIT)
 
-#define TRIPWIRETIME (15)
+#define TRIPWIRETIME (50)
 
 #define BALLHOGINCREMENT (7)
 
@@ -821,6 +821,7 @@ struct player_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
 	UINT8 tripwireAirLeniency;	// Timer that elongates tripwire leniency when in midair.
 	UINT8 fakeBoost;	// Some items need to grant tripwire pass briefly, even when their effect is thrust/instathrust. This is a fake boost type to control that.
+	UINT16 subsonicleniency; // Keep the subsonic visual for just a little bit when your sonic boom is visible
 
 	itemroulette_t itemRoulette;	// Item roulette data
 
