@@ -440,7 +440,7 @@ void M_HandleStaffReplay(INT32 choice)
 		staffbrief_t *staffbrief;
 		restoreMenu = &PLAY_TAReplayDef;
 
-		M_ClearMenus(true);
+		M_ClearMenusNoTitle(true);
 		demo.loadfiles = false;
 		demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 
@@ -507,7 +507,7 @@ void M_ReplayTimeAttack(INT32 choice)
 
 	restoreMenu = &PLAY_TAReplayDef;
 
-	M_ClearMenus(true);
+	M_ClearMenusNoTitle(true);
 	demo.loadfiles = false;
 	demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 
@@ -692,7 +692,7 @@ void M_StartTimeAttack(INT32 choice)
 		false
 	);
 
-	M_ClearMenus(true);
+	M_ClearMenusNoTitle(true);
 
 	G_UpdateTimeStickerMedals(levellist.choosemap, true);
 }

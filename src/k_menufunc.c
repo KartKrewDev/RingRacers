@@ -912,10 +912,6 @@ void M_ClearMenus(boolean callexitmenufunc)
 	if (currentMenu->quitroutine && callexitmenufunc && !currentMenu->quitroutine())
 		return; // we can't quit this menu (also used to set parameter from the menu)
 
-#ifndef DC // Save the config file. I'm sick of crashing the game later and losing all my changes!
-	COM_BufAddText(va("saveconfig \"%s\" -silent\n", configfile));
-#endif //Alam: But not on the Dreamcast's VMUs
-
 	currentMenu->lastOn = itemOn;
 
 	if (gamestate == GS_MENU) // Back to title screen
@@ -927,6 +923,24 @@ void M_ClearMenus(boolean callexitmenufunc)
 		}
 		D_StartTitle();
 	}
+
+	M_AbortVirtualKeyboard();
+	menumessage.active = false;
+
+	menuactive = false;
+}
+
+void M_ClearMenusNoTitle(boolean callexitmenufunc)
+{
+	if (!menuactive)
+		return;
+
+	CON_ClearHUD();
+
+	if (currentMenu->quitroutine && callexitmenufunc && !currentMenu->quitroutine())
+		return; // we can't quit this menu (also used to set parameter from the menu)
+
+	currentMenu->lastOn = itemOn;
 
 	M_AbortVirtualKeyboard();
 	menumessage.active = false;
