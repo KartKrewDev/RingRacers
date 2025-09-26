@@ -3812,6 +3812,12 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 		newplayer->availabilities[i] = READUINT8(*p);
 	}
 
+	if (server)
+	{
+		for (i = 0; i < G_LocalSplitscreenPartySize(newplayernum); ++i)
+			playerdelaytable[G_LocalSplitscreenPartyMember(newplayernum, i)] = mindelay;
+	}
+
 	// the server is creating my player
 	if (node == mynode)
 	{
@@ -3839,12 +3845,6 @@ static void Got_AddPlayer(const UINT8 **p, INT32 playernum)
 
 		P_ForceLocalAngle(newplayer, newplayer->angleturn);
 		addedtogame = true;
-
-		if (server)
-		{
-			for (i = 0; i < G_LocalSplitscreenPartySize(newplayernum); ++i)
-				playerdelaytable[G_LocalSplitscreenPartyMember(newplayernum, i)] = mindelay;
-		}
 	}
 
 	newplayer->splitscreenindex = splitscreenplayer;
