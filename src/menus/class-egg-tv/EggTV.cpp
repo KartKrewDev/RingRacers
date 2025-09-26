@@ -438,7 +438,7 @@ void EggTV::watch() const
 	{
 		restoreMenu = currentMenu;
 
-		M_ClearMenus(false);
+		M_ClearMenusNoTitle(false);
 
 		demo.loadfiles = true;
 		demo.ignorefiles = false;
