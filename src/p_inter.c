@@ -3912,7 +3912,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (!force)
 			{
 				boolean invincible = true;
-				boolean clash = false;
+				boolean clash = true; // This effect is cool and reads well, why not
 				sfxenum_t sfx = sfx_None;
 
 				if (!(gametyperules & GTR_BUMPERS))
@@ -3938,12 +3938,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				else if (K_PlayerGuard(player))
 				{
 					sfx = sfx_s3k3a;
-					clash = true;
 				}
 				else if (player->overshield &&
 					(type != DMG_EXPLODE || inflictor->type != MT_SPBEXPLOSION || !inflictor->movefactor))
 				{
-					clash = true;
+					;
 				}
 				else if (player->hyudorotimer > 0)
 					;
@@ -3995,11 +3994,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						return false;
 					}
 
-					laglength = max(laglength / 2, 1);
-					K_SetHitLagForObjects(target, inflictor, source, laglength, false);
+					if (!clash) // Currently a no-op, damage floor hitlag kinda sucked ass
+					{
+						laglength = max(laglength / 2, 1);
+						K_SetHitLagForObjects(target, inflictor, source, laglength, false);
 
-					AddNullHitlag(player, oldHitlag);
-					AddNullHitlag(playerInflictor, oldHitlagInflictor);
+						AddNullHitlag(player, oldHitlag);
+						AddNullHitlag(playerInflictor, oldHitlagInflictor);
+					}
 
 					if (player->timeshit > player->timeshitprev)
 					{
@@ -4459,6 +4461,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	// this can leave room for double-damage.
 	if (truewhumble && (gametyperules & GTR_BUMPERS) && !battleprisons)
 		laglength /= 2;
+
+	if (target->type == MT_PLAYER && inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_PLAYER)
+		laglength /= 3;
 
 	if (!(target->player && (damagetype & DMG_DEATHMASK)))
 		K_SetHitLagForObjects(target, inflictor, source, laglength, true);

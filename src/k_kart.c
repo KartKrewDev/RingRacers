@@ -4958,8 +4958,10 @@ void K_DoInstashield(player_t *player)
 
 void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	mobj_t *clash;
-	UINT8 lag1 = 5;
-	UINT8 lag2 = 5;
+	UINT8 lag1 = 10; // Base value used for kartitem-to-player collision.
+	UINT8 lag2 = 10; // We want to preserve shooting invinc players to hinder them!
+	boolean slow1 = false; // If we _are_ hitting a kartitem, keep that value.
+	boolean slow2 = false; // Otherwise, route to K_AddHitLagFromCollision.
 
 	boolean stripbubble = (gametyperules & GTR_BUMPERS);
 
@@ -4967,24 +4969,32 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	if (t1->player)
 	{
 		t1->player->instashield = 1;
-		t1->player->speedpunt += 20;
-		lag1 -= min(lag1, t1->player->speedpunt/10);
 		if (stripbubble && t1->player->curshield == KSHIELD_BUBBLE)
 			K_PopBubbleShield(t1->player);
+		if (P_IsKartFieldItem(t2->type))
+			slow1 = true;
 	}
 
 	if (t2->player)
 	{
 		t2->player->instashield = 1;
-		t2->player->speedpunt += 20;
-		lag2 -= min(lag1, t2->player->speedpunt/10);
 		if (stripbubble && t2->player->curshield == KSHIELD_BUBBLE)
 			K_PopBubbleShield(t2->player);
+		if (P_IsKartFieldItem(t1->type))
+			slow2 = true;
 	}
 
 	S_StartSound(t1, sfx_parry);
-	K_AddHitLag(t1, lag1+1, false);
-	K_AddHitLag(t2, lag2+1, false);
+
+	if (slow1)
+		K_AddHitLag(t1, lag1, false);
+	else
+		K_AddHitLagFromCollision(t1, lag1);
+
+	if (slow2)
+		K_AddHitLag(t2, lag2, false);
+	else
+		K_AddHitLagFromCollision(t2, lag2);
 
 	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_POWERCLASH);
 
@@ -10698,13 +10708,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->wavedashpower = FRACUNIT; // Safety
 	}
-
-	if (player->speedpunt)
-		player->speedpunt--;
-
-	// This timer can get out of control fast, clamp to match player expectations about "new" hazards
-	if (player->speedpunt > TICRATE*4)
-		player->speedpunt = TICRATE*4;
 
 	if (player->trickcharge > 0 && onground == true)
 	{
@@ -17091,6 +17094,11 @@ boolean K_PlayerCanPunt(player_t *player)
 	}
 
 	if (player->growshrinktimer > 0)
+	{
+		return true;
+	}
+
+	if (player->overshield > 0)
 	{
 		return true;
 	}
