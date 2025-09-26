@@ -2862,6 +2862,8 @@ static boolean P_FlashingException(const player_t *player, const mobj_t *inflict
 	return true;
 }
 
+// P_DamageMobj for 0x0010 compat.
+// I know this sucks ass, but this function is legitimately too complicated to add more behavior switches.
 static boolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
 	player_t *player;
@@ -4381,6 +4383,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_PopPlayerShield(player);
 				player->instashield = 15;
 				K_PlayPainSound(target, source);
+				player->ringboost = 0;
 			}
 
 			if (gametyperules & GTR_BUMPERS)
