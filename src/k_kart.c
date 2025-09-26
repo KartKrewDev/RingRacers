@@ -3183,24 +3183,24 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	if (modeattacking && !(gametyperules & GTR_CATCHER))
 		required_speed = 4 * K_GetKartSpeed(player, false, false);
 
-	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking) 
+	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
-		/* 
+		/*
 		All of this will be for making Sonic Boom easier when you're drowning in the back, like a "reverse" proration
 		*/
 
 		#define REVERSED_SONICBOOM_PRORATION (30000)
 		#define MAX_SONICBOOM_REDUCTION (7*FRACUNIT/8)
 
-		UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace()); 
+		UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace());
 
-		if (dist > REVERSED_SONICBOOM_PRORATION) 
+		if (dist > REVERSED_SONICBOOM_PRORATION)
 		{
 			dist = REVERSED_SONICBOOM_PRORATION;
 		}
 
 		fixed_t distfactor = FixedDiv(dist, REVERSED_SONICBOOM_PRORATION); //
-		fixed_t sonicboom_aid = Easing_InCubic(distfactor, FRACUNIT, MAX_SONICBOOM_REDUCTION); 
+		fixed_t sonicboom_aid = Easing_InCubic(distfactor, FRACUNIT, MAX_SONICBOOM_REDUCTION);
 
 		required_speed = FixedMul(sonicboom_aid, required_speed);
 
@@ -3209,7 +3209,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 		*/
 
 		required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 3/2));
-		
+
 		if(player->position == 1)
 		{
 			required_speed = 9 * K_GetKartSpeed(player, false, false); // Seek employment
@@ -17099,6 +17099,11 @@ boolean K_PlayerCanPunt(player_t *player)
 	}
 
 	if (player->overshield > 0)
+	{
+		return true;
+	}
+
+	if (player->lightningcharge > 0)
 	{
 		return true;
 	}

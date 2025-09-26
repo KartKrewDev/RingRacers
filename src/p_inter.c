@@ -3944,6 +3944,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					;
 				}
+				else if (player->lightningcharge &&
+					(type != DMG_EXPLODE || inflictor->type != MT_SPBEXPLOSION || !inflictor->movefactor))
+				{
+					;
+					sfx = sfx_s3k45;
+				}
 				else if (player->hyudorotimer > 0)
 					;
 				else
@@ -4016,13 +4022,24 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						{
 							K_DoPowerClash(target, inflictor);
 
+							if (player->lightningcharge)
+							{
+								K_SpawnDriftElectricSparks(player, SKINCOLOR_PURPLE, true);
+							}
+
 							if (inflictor->type == MT_SUPER_FLICKY)
 							{
 								Obj_BlockSuperFlicky(inflictor);
 							}
+
+							S_StartSound(target, sfx);
 						}
 						else if (source)
+						{
 							K_DoPowerClash(target, source);
+							S_StartSound(target, sfx);
+						}
+
 					}
 
 					// Full invulnerability
