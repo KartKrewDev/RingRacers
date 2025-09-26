@@ -188,6 +188,9 @@ lumpnum_t W_CheckNumForNameInBlock(const char *name, const char *blockstart, con
 lumpnum_t W_CheckNumForNameInFolder(const char *lump, const char *folder);
 UINT8 W_LumpExists(const char *name); // Lua uses this.
 
+lumpnum_t W_LumpIntoNetSave(lumpnum_t lump);
+lumpnum_t W_LumpFromNetSave(lumpnum_t lump);
+
 size_t W_LumpLengthPwad(UINT16 wad, UINT16 lump);
 size_t W_LumpLength(lumpnum_t lumpnum);
 

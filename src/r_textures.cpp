@@ -1293,7 +1293,7 @@ Rloadtextures (INT32 i, INT32 w)
 			}
 
 			INT32 sizeLimit = 2048;
-			if (w <= mainwads)
+			if (w < mainwads)
 			{
 				// TODO: we ran out of time to do this properly.
 				// 4096 limit on textures may be incompatible with some older graphics cards (circa 2005-2008?).
