@@ -32,6 +32,7 @@
 #include "g_game.h"
 #include "k_menu.h"
 #include "m_cheat.h"
+#include "m_random.h"
 #include "m_cond.h"
 #include "m_pw.h"
 #include "m_pw_hash.h"
@@ -362,6 +363,111 @@ void f_maps()
 	{
 		M_StartMessage("// FIXME don't crash in certification test", "There are no maps to unlock.", NULL, MM_NOTHING, NULL, NULL);
 	}
+}
+
+void f_tutorials()
+{
+	UINT16 i;
+	boolean success = false;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
+		if (unlockables[i].conditionset == CH_FURYBIKE)
+			continue;
+		if (gamedata->unlocked[i])
+			continue;
+		if (unlockables[i].type != SECRET_MAP)
+			continue;
+
+		UINT16 mapnum = M_UnlockableMapNum(&unlockables[i]);
+		if (mapnum >= nummapheaders || !mapheaderinfo[mapnum])
+			continue;
+
+		if (G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel) != GT_TUTORIAL)
+			continue;
+
+		gamedata->unlocked[i] = true;
+		success = true;
+	}
+
+	if (success)
+	{
+		S_StartSound(0, sfx_kc42);
+		G_SaveGameData();
+	}
+
+	const char *knucklesrap;
+	const UINT8 numsections = 5;
+	static UINT8 section = numsections;
+	if (section == numsections)
+		section = M_RandomKey(numsections);
+
+	switch (section)
+	{
+		default:
+			knucklesrap =
+				"\x85""So here's what I'm thinkin',                    \n"
+				"\x85""        last time smart guys got together,\n"
+				"\x85""In a tough sandy place                        \n"
+				"\x85""                    with a lot of hot weather,\n"
+				"\x85""Playin' fundamental forces                  \n"
+				"\x85""                      at the top of their class,\n"
+				"\x85""They made the sky so much hotter        \n"
+				"\x85""                      and that sand into glass!\x80";
+			break;
+		case 1:
+			knucklesrap =
+				"\x85""But somethin's different, see?           \n"
+				"\x85""My homie right there, I trust him trustin'\n"
+				"\x85""             the Eggman like it's nothin',\n"
+				"\x85""A smart little guy                     \n"
+				"\x85""         with a brother I like fightin',\n"
+				"\x85""If there's somethin' cooking           \n"
+				"\x85""        I'm sure he'll do the right thing.\x80";
+			break;
+		case 2:
+			knucklesrap =
+				"\x85""I watched a space station fall,          \n"
+				"\x85""       straight down, fast fall, into the ground,\n"
+				"\x85""Pieces of fire, shooting stars,                 \n"
+				"\x85""                      don't make a wish, kids\n"
+				"\x85""Last second it's, gone, I ask how,            \n"
+				"\x85""              behold, they call it chaos control,\n"
+				"\x85""I don't know it, never heard it, seen it, felt it,  \n"
+				"\x85""  sensed it. Even to me, these powers are a mystery.\x80";
+			break;
+		case 3:
+			knucklesrap =
+				"\x85""The tide goes out, it carries time away,  \n"
+				"\x85""                     we call it yesterday,\n"
+				"\x85""The tide comes in, it rings, it sings,    \n"
+				"\x85""                      it brings a new age,\n"
+				"\x85""But right now it's just me and the water,  \n"
+				"\x85""       thoughts clear, future lookin' hotter,\n"
+				"\x85""I let myself sink in, feel the waves,     \n"
+				"\x85""                 feel my body get lighter.\x80";
+			break;
+		case 4:
+			knucklesrap =
+				"\x85""Somethin' brewin' at the edges,            \n"
+				"\x85""   that's what a ring is, nothin' but edges,\n"
+				"\x85""Circled light in a band,                  \n"
+				"\x85""                 hold 'em in in your hand,\n"
+				"\x85""But it's a miracle a thousand times over,\n"
+				"\x85""Small gasps of potential\n"
+				"\x85""               floatin' over the sand.\x80";
+			break;
+	}
+
+	section = (section + 1) % numsections;
+
+	M_StartMessage("\"Broken Arrow\" ...for Sunbeam Paradise",
+		va("\"%s\"\n\n%s",
+		knucklesrap,
+		(success ? "Unlocked all Tutorials." : "There are no more Tutorials to unlock.")),
+		NULL, MM_NOTHING, NULL, NULL);
 }
 
 void f_characters()
@@ -779,6 +885,7 @@ void M_PasswordInit(void)
 	passwords.emplace_back(f_colors, "aSk8dw6FzJtTEmovh8fVEtUBpu6lj3QlRT/B5lwiEhAw8dAhRBQLdvtYlPaQcZISWI4wneAfAo6w5d6uf5r++g==");
 	passwords.emplace_back(f_followers, "zYCIZw2qcnUbtF0P2ybLNHajdl8zrje0hzGex7yuMFe7fj4mvx4AegoMmvir28YvAbfAqkz/ekQRzr+RhrycHw==");
 	passwords.emplace_back(f_maps, "u/Svaf+DCnCpJ8xmP3AVP4CK6X6X4O3fY73cmIq88ZJEygwz+n+L66q4Vhlv13vWgld1PEyRszFErzflQt9WZw==");
+	passwords.emplace_back(f_tutorials, "G2FMttJpJ+lI/DeQu8tthL5i7AB4dk8uuksZR1c2N08Zrmpj3vTqWpbhxuSzSrhH10wJfWahR7QOgQdBkDbTdQ==");
 	passwords.emplace_back(f_characters, "MohmPqpaGSd3MEHLfQKUFl/Yg8pHE+12X1LHEP59Gs/5w1u8mPtGUXNv1GYTF+c8gQqT5hXpZ3FeZ/EfCxo34g==");
 	passwords.emplace_back(f_altmusic, "dZgxKNagOtB9F7wXqUUPzsuq4tfQlfK8ZqEeFXdI3Hd+k5tYfRm3ToLgbqawaNmwuLVrJ8PB+QnH4gT3ojnTMw==");
 	passwords.emplace_back(f_timeattack, "mFu5OB9d6jnc2kth7HE66wJ42F/GHDzSvuciK1Qw++6iGnpBccxcKjpoxgOvD3eIoqR606ruBINuXi23proXHQ==");

@@ -661,7 +661,7 @@ typedef enum
 	MA_NO
 } manswer_e;
 
-#define MAXMENUMESSAGE 256
+#define MAXMENUMESSAGE 448
 #define MENUMESSAGECLOSE 2
 extern struct menumessage_s
 {
