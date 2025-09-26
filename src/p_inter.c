@@ -4050,7 +4050,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						}
 					}
 
-					if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->momx == 0 && inflictor->momy == 0 && inflictor->momz == 0)
+					if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->momx == 0 && inflictor->momy == 0 && inflictor->momz == 0 && inflictor->type != MT_SPBEXPLOSION)
 					{
 						// Probably a map hazard.
 						allowcombo = false;
