@@ -2020,7 +2020,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			// finished race exit setup
-			if (player->laps > numlaps && !K_InRaceDuel())
+			if (player->laps > numlaps)
 			{
 				pflags_t applyflags = 0;
 				if (specialstageinfo.valid == true)
