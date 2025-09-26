@@ -5908,7 +5908,7 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 
 	if (player->hyudorotimer <= 0)
 	{
-		K_AddHitLag(player->mo, 10, false);
+		K_AddHitLag(player->mo, (state == TRIPSTATE_PASSED) ? 2 : 10, false);
 		player->mo->hitlag -= min(player->mo->hitlag, player->tripwireUnstuck/4);
 	}
 
