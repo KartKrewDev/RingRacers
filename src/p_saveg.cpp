@@ -533,6 +533,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].tripwireLeniency);
 		WRITEUINT8(save->p, players[i].tripwireAirLeniency);
 		WRITEUINT8(save->p, players[i].fakeBoost);
+		WRITEUINT16(save->p, players[i].subsonicleniency);
 
 		WRITESINT8(save->p, players[i].itemtype);
 		WRITEUINT8(save->p, players[i].itemamount);
@@ -1212,6 +1213,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].tripwireLeniency = READUINT16(save->p);
 		players[i].tripwireAirLeniency = READUINT8(save->p);
 		players[i].fakeBoost = READUINT8(save->p);
+		players[i].subsonicleniency = READUINT16(save->p);
 
 		players[i].itemtype = READSINT8(save->p);
 		players[i].itemamount = READUINT8(save->p);

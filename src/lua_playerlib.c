@@ -375,6 +375,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tripwirePass);
 	else if (fastcmp(field,"fakeboost"))
 		lua_pushinteger(L, plr->fakeBoost);
+	else if (fastcmp(field,"subsonicleniency"))
+		lua_pushinteger(L, plr->subsonicleniency);
 	else if (fastcmp(field,"tripwireleniency"))
 		lua_pushinteger(L, plr->tripwireLeniency);
 	else if (fastcmp(field,"tripwireairleniency"))
@@ -1040,6 +1042,8 @@ static int player_set(lua_State *L)
 		plr->tripwirePass = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"fakeboost"))
 		plr->fakeBoost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"subsonicleniency"))
+		plr->subsonicleniency = luaL_checkinteger(L, 3);	
 	else if (fastcmp(field,"tripwireleniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireairleniency"))

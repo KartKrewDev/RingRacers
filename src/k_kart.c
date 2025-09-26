@@ -3171,6 +3171,7 @@ boolean K_SlopeResistance(const player_t *player)
 
 fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 {
+
 	fixed_t required_speed = 2 * K_GetKartSpeed(player, false, false); // 200%
 
 	if (K_LegacyRingboost(player))
@@ -3182,15 +3183,48 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	if (modeattacking && !(gametyperules & GTR_CATCHER))
 		required_speed = 4 * K_GetKartSpeed(player, false, false);
 
-	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
+	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking) 
 	{
-		required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 2)); // Proration: Players near 1st need more speed!
-	}
+		/* 
+		All of this will be for making Sonic Boom easier when you're drowning in the back, like a "reverse" proration
+		*/
 
-	if (player->offroad && K_ApplyOffroad(player))
-	{
-		// Increase to 300% if you're lawnmowering.
-		required_speed = (required_speed * 3) / 2;
+		#define REVERSED_SONICBOOM_PRORATION (30000)
+		#define MAX_SONICBOOM_REDUCTION (7*FRACUNIT/8)
+
+		UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace()); 
+
+		if (dist > REVERSED_SONICBOOM_PRORATION) 
+		{
+			dist = REVERSED_SONICBOOM_PRORATION;
+		}
+
+		fixed_t distfactor = FixedDiv(dist, REVERSED_SONICBOOM_PRORATION); //
+		fixed_t sonicboom_aid = Easing_InCubic(distfactor, FRACUNIT, MAX_SONICBOOM_REDUCTION); 
+
+		required_speed = FixedMul(sonicboom_aid, required_speed);
+
+		/*
+		And then all of this will be for making it harder when you're in scam range, actual proration
+		*/
+
+		required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 3/2));
+		
+		if(player->position == 1)
+		{
+			required_speed = 9 * K_GetKartSpeed(player, false, false); // Seek employment
+		}
+
+		/*
+		if (!K_PlayerUsesBotMovement(player)) // Sonic Boom debug
+		{
+		//CONS_Printf("Sonic Boom threshold: %d percent, IN FRACUNIT: %d \n", ((required_speed *100) / K_GetKartSpeed(player, false, false)), required_speed);
+		CONS_Printf("D=%d DF=%d SBA=%d RS=%d RRS=%d\n", dist, distfactor, sonicboom_aid, required_speed, required_speed * 100 / K_GetKartSpeed(player, false, false));
+		}
+		*/
+
+		#undef REVERSED_SONICBOOM_PRORATION
+		#undef MAX_SONICBOOM_REDUCTION
 	}
 
 	if (player->botvars.rubberband > FRACUNIT && K_PlayerUsesBotMovement(player) == true)
@@ -9688,7 +9722,7 @@ static void K_UpdateTripwire(player_t *player)
 	tripwirepass_t triplevel = K_TripwirePassConditions(player);
 	boolean mightplaysound = false;
 
-	if (triplevel != TRIPWIRE_NONE)
+	if (triplevel != TRIPWIRE_NONE) // Sonic Boom, able to pass tripwire
 	{
 		if (!boostExists)
 		{
@@ -9894,7 +9928,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			{
 				mobj_t *ghost;
 				ghost = P_SpawnGhostMobj(player->mo);
-				ghost->extravalue1 = player->numboosts+1;
+				ghost->extravalue1 = player->numboosts;
 				ghost->extravalue2 = (leveltime % ghost->extravalue1);
 				ghost->fuse = ghost->extravalue1;
 				ghost->renderflags |= RF_FULLBRIGHT;

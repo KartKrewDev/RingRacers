@@ -1239,6 +1239,11 @@ typedef enum
 	sfx_waved3,
 	sfx_waved4,
 	sfx_waved5,
+	
+	// Sonic Boom & Subsonic
+	sfx_sonbo1,
+	sfx_sonbo2,
+	sfx_sonbo3,
 
 	// Passing sounds
 	sfx_pass01,
