@@ -1106,6 +1106,8 @@ void D_SRB2Loop(void)
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
 
+		extern consvar_t cv_skiprender;
+
 		// If time spent this game loop exceeds a single tic,
 		// it's probably because of rendering.
 		//
@@ -1119,6 +1121,13 @@ void D_SRB2Loop(void)
 			// SPECIAL: When checking staff demos for sync,
 			// draw as little as possible for speeeeeeed
 			if (frameskip < TICRATE*10)
+				frameskip++;
+			else
+				frameskip = 0;
+		}
+		else if (cv_skiprender.value > 1)
+		{
+			if (frameskip < cv_skiprender.value)
 				frameskip++;
 			else
 				frameskip = 0;
