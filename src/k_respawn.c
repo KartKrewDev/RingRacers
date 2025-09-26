@@ -176,7 +176,7 @@ void K_DoIngameRespawn(player_t *player)
 		K_DoFault(player);
 	}
 
-	if (player->rings <= -20)
+	if (player->rings <= -20 && (!player->ringShooter || P_MobjWasRemoved(player->ringShooter)))
 	{
 		P_KillMobj(player->mo, NULL, NULL, DMG_INSTAKILL);
 		return;
