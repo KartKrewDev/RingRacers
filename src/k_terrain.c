@@ -505,7 +505,11 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		if (dmg & DMG_STUMBLE && !G_CompatLevel(0x0010))
 		{
 			if (player->mo->hitlag == 0 && (player->mo->momz >= 0) == (P_MobjFlip(player->mo) >= 0))
-				K_StumblePlayer(player);
+			{
+				player->pflags2 |= PF2_ALWAYSDAMAGED;
+				P_DamageMobj(mo, NULL, NULL, 1, dmg);
+				player->pflags2 &= ~PF2_ALWAYSDAMAGED;
+			}
 		}
 		else
 		{
