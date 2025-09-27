@@ -4482,8 +4482,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (truewhumble && (gametyperules & GTR_BUMPERS) && !battleprisons)
 		laglength /= 2;
 
-	if (target->type == MT_PLAYER && inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_PLAYER)
-		laglength /= 3;
+	if (target->type == MT_PLAYER && inflictor && !P_MobjWasRemoved(inflictor)
+		 && inflictor->type == MT_PLAYER && K_PlayerCanPunt(inflictor->player))
+		laglength = max(laglength / 2, 2);
 
 	if (!(target->player && (damagetype & DMG_DEATHMASK)))
 		K_SetHitLagForObjects(target, inflictor, source, laglength, true);
