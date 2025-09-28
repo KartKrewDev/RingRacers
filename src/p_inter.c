@@ -496,7 +496,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse) // This box is respawning, but was broken very recently (see P_FuseThink)
 			{
 				// What was this box broken as?
-				if (!K_ThunderDome() && special->cvmem && !(special->flags2 & MF2_BOSSDEAD))
+				if (!K_ThunderDome() && special->cusval && !(special->flags2 & MF2_BOSSDEAD))
 					K_StartItemRoulette(player, false);
 				else
 					K_StartItemRoulette(player, true);
@@ -504,12 +504,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			else if (specialstate >= S_RANDOMITEM1 && specialstate <= S_RANDOMITEM12)
 			{
 				K_StartItemRoulette(player, false);
-				special->cvmem = 1; // Lenient pickup should be ITEM
+				special->cusval = 1; // Lenient pickup should be ITEM
 			}
 			else
 			{
 				K_StartItemRoulette(player, true);
-				special->cvmem = 0; // Lenient pickup should be RING
+				special->cusval = 0; // Lenient pickup should be RING
 			}
 
 			P_ItemPop(special);
