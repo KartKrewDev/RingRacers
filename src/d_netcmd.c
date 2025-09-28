@@ -6924,6 +6924,28 @@ static void Command_Staffsync(void)
 
 			CONS_Printf("\n");
 
+			CONS_Printf("   %d syncs (%d error)\n", result->numerror, result->totalerror/FRACUNIT);
+
+			CONS_Printf("   presync: ");
+
+			for (UINT32 j = 0; j < PRNUMSYNCED; j++)
+			{
+				if (result->rngerror_presync[j] > 0)
+					CONS_Printf("%s %d  ", rng_class_names[j], result->rngerror_presync[j]);
+			}
+
+			CONS_Printf("\n");
+
+			CONS_Printf("   postsync: ");
+
+			for (UINT32 j = 0; j < PRNUMSYNCED; j++)
+			{
+				if (result->rngerror_postsync[j] > 0)
+					CONS_Printf("%s %d  ", rng_class_names[j], result->rngerror_postsync[j]);
+			}
+
+			CONS_Printf("\n");
+
 			i++;
 		}
 

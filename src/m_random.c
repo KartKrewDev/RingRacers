@@ -21,7 +21,42 @@
 #include "m_random.h"
 #include "m_fixed.h"
 
-
+char rng_class_names[34][30] = {
+	"UNDEFINED",
+	"EXECUTOR",
+	"ACS",
+	"DECORATION",
+	"TERRAIN",
+	"BUBBLE",
+	"RANDOMANIM",
+	"PLAYERSTARTS",
+	"VOICES",
+	"RANDOMSKIN",
+	"RANDOMAUDIENCE",
+	"RULESCRAMBLE",
+	"MUSICSELECT",
+	"ITEM_ROULETTE",
+	"ITEM_RINGS",
+	"ITEM_SHRINK",
+	"ITEM_BUBBLE",
+	"ITEM_DEBRIS",
+	"ITEM_BOOST",
+	"EXPLOSION",
+	"SMOLDERING",
+	"SPARKLE",
+	"MOVINGTARGET",
+	"TRACKHAZARDD",
+	"BATTLEUFO",
+	"BOTS",
+	"AUTOROULETTE",
+	"FUZZ",
+	"FROSTTHROWERS",
+	"ITEM_SPAWNER",
+	"TEAMS",
+	"DUMMY",
+	"INTERPHUDRANDOM",
+	"NUISANCE"
+};
 
 // ---------------------------
 // RNG functions (not synched)

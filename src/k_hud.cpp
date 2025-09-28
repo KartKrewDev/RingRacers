@@ -7768,7 +7768,7 @@ void K_drawKartHUD(void)
 		return;
 	}
 
-	if (staffsync)
+	if (staffsync && staffsync_total)
 	{
 		V_DrawFadeScreen(31, 8);
 		V_DrawCenteredGamemodeString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 - 30, 0, 0, "Staff Ghost Sync Test");

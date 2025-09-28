@@ -1885,7 +1885,7 @@ void G_Ticker(boolean run)
 
 	P_MapStart();
 
-	if (demo.playback && staffsync && !demosynced)
+	if (demo.playback && staffsync && !demosynced && false) // We want to assess the magnitude of position desync, don't bail early!
 	{
 		G_ClearRetryFlag();
 		G_StopDemo();
