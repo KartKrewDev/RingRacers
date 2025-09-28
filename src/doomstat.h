@@ -245,6 +245,10 @@ struct staffsync_t
 	char name[MAXPLAYERNAME+1];
 	UINT32 reason;
 	UINT32 extra;
+	fixed_t totalerror;
+	UINT32 numerror;
+	UINT32 rngerror_presync[32];
+	UINT32 rngerror_postsync[32];
 };
 extern staffsync_t staffsync_results[1024];
 

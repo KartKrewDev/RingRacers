@@ -505,11 +505,19 @@ void G_ReadDemoExtraData(void)
 					{
 						P_SetRandSeed(static_cast<pr_class_t>(i), rng);
 
+						if (staffsync)
+						{
+							if (demosynced)
+								staffsync_results[staffsync_failed].rngerror_presync[i]++;
+							else
+								staffsync_results[staffsync_failed].rngerror_postsync[i]++;
+						}
+
 						if (demosynced)
 						{
 							if (G_FailStaffSync(SYNC_RNG, i))
 							{
-								CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
+								CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d - %s)!\n", i, rng_class_names[i]);
 								storesynced = false;
 							}
 						}
@@ -1267,6 +1275,12 @@ void G_ConsGhostTic(INT32 playernum)
 					G_FailStaffSync(SYNC_POSITION, 0);
 				}
 				demosynced = false;
+
+				if (staffsync)
+				{
+					staffsync_results[staffsync_failed].numerror++;
+					staffsync_results[staffsync_failed].totalerror += abs(testmo->x - oldghost[playernum].x) + abs(testmo->y - oldghost[playernum].y) + abs(testmo->z - oldghost[playernum].z);
+				}
 
 				P_UnsetThingPosition(testmo);
 				testmo->x = oldghost[playernum].x;
