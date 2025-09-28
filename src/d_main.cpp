@@ -843,6 +843,8 @@ static bool D_Display(bool world)
 
 tic_t rendergametic;
 
+extern "C" consvar_t cv_skiprender;
+
 void D_SRB2Loop(void)
 {
 	tic_t entertic = 0, oldentertics = 0, realtics = 0, rendertimeout = INFTICS;
@@ -1105,8 +1107,6 @@ void D_SRB2Loop(void)
 		// post-sleep time is literally being intentionally wasted
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
-
-		extern consvar_t cv_skiprender;
 
 		// If time spent this game loop exceeds a single tic,
 		// it's probably because of rendering.
