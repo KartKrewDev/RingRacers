@@ -303,18 +303,39 @@ boolean G_ConsiderEndingDemoRead(void)
 }
 
 // Demo failed sync during a sync test! Log the failure to be reported later.
-static void G_FailStaffSync(staffsync_reason_t reason, UINT32 extra)
+static boolean G_FailStaffSync(staffsync_reason_t reason, UINT32 extra)
 {
+	if (demo.attract != DEMO_ATTRACT_OFF) // Don't shout about RNG desyncs in titledemos
+		return false;
+
 	if (!staffsync)
-		return;
+		return true;
 
 	if (staffsync_results[staffsync_failed].reason != 0)
-		return;
+		return false;
+
+	if (reason == SYNC_RNG)
+	{
+		switch (extra)
+		{
+			case PR_ITEM_DEBRIS:
+			case PR_RANDOMAUDIENCE:
+			case PR_VOICES:
+			case PR_DECORATION:
+			case PR_RANDOMANIM:
+				CONS_Printf("[!] Ignored desync from RNG class %d\n", extra);
+				return false;
+			default:
+				break;
+		}
+	}
 
 	staffsync_results[staffsync_failed].map = gamemap;
 	memcpy(&staffsync_results[staffsync_failed].name, player_names[consoleplayer], sizeof(player_names[consoleplayer]));
 	staffsync_results[staffsync_failed].reason = reason;
 	staffsync_results[staffsync_failed].extra = extra;
+
+	return true;
 }
 
 void G_ReadDemoExtraData(void)
@@ -486,11 +507,16 @@ void G_ReadDemoExtraData(void)
 
 						if (demosynced)
 						{
-							CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
-							G_FailStaffSync(SYNC_RNG, i);
+							if (G_FailStaffSync(SYNC_RNG, i))
+							{
+								CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
+								storesynced = false;
+							}
 						}
-
-						storesynced = false;
+						else
+						{
+							storesynced = false;
+						}
 					}
 				}
 				demosynced = storesynced;
