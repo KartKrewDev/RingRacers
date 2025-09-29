@@ -3174,15 +3174,19 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	fixed_t base_speed = K_GetKartSpeed(player, false, false);
 	fixed_t required_speed = 5 * base_speed / 2; // 250%
 
-	if (K_LegacyRingboost(player))
-		return 2 * base_speed;
+	// 200% in Easy / Tutorial
+	if (gamespeed == KARTSPEED_EASY)
+		required_speed = 2 * base_speed;
 
+	// 150% in special
 	if (specialstageinfo.valid)
-		required_speed = 3 * base_speed / 2; // 150%
+		required_speed = 3 * base_speed / 2;
 
+	// 400% in Time Attack
 	if (modeattacking && !(gametyperules & GTR_CATCHER))
 		required_speed = 4 * base_speed;
 
+	// Race
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
 		/*
