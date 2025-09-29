@@ -507,7 +507,7 @@ boolean K_IsPlayerLosing(player_t *player)
 }
 
 // Some behavior should change if the player approaches the frontrunner unusually fast.
-fixed_t K_PlayerScamPercentage(const player_t *player, UINT8 mult)
+fixed_t K_PlayerScamPercentage(const player_t *player, fixed_t mult)
 {
 	if (!M_NotFreePlay())
 		return 0;
@@ -522,7 +522,7 @@ fixed_t K_PlayerScamPercentage(const player_t *player, UINT8 mult)
 	// "Why 2000?" Vibes
 
 	UINT32 distance = K_GetItemRouletteDistance(player, 8);
-	UINT32 scamdistance = mult * SCAMDIST;
+	UINT32 scamdistance = FixedMul(mult, SCAMDIST*FRACUNIT)/FRACUNIT;
 
 	if (distance >= scamdistance)
 		return 0;
@@ -3171,17 +3171,17 @@ boolean K_SlopeResistance(const player_t *player)
 
 fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 {
-
-	fixed_t required_speed = 2 * K_GetKartSpeed(player, false, false); // 200%
+	fixed_t base_speed = K_GetKartSpeed(player, false, false);
+	fixed_t required_speed = 5 * base_speed / 2; // 250%
 
 	if (K_LegacyRingboost(player))
-		return required_speed;
+		return 2 * base_speed;
 
 	if (specialstageinfo.valid)
-		required_speed = 3 * K_GetKartSpeed(player, false, false) / 2; // 150%
+		required_speed = 3 * base_speed / 2; // 150%
 
 	if (modeattacking && !(gametyperules & GTR_CATCHER))
-		required_speed = 4 * K_GetKartSpeed(player, false, false);
+		required_speed = 4 * base_speed;
 
 	if ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking)
 	{
@@ -3190,7 +3190,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 		*/
 
 		#define REVERSED_SONICBOOM_PRORATION (30000)
-		#define MAX_SONICBOOM_REDUCTION (7*FRACUNIT/8)
+		#define MAX_SONICBOOM_REDUCTION (7*FRACUNIT/10)
 
 		UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace());
 
@@ -3208,20 +3208,23 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 		And then all of this will be for making it harder when you're in scam range, actual proration
 		*/
 
-		required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, 3/2));
+		fixed_t scamcheck_in_2p = 3*FRACUNIT/2; // Lower values = need to be closer to be scamming
+		fixed_t scamcheck_in_16p = 3*FRACUNIT; // Higher values = tripwire threshold goes up when further away
+		fixed_t scamscaler = FixedRescale(D_NumPlayersInRace(), 2, 16, Easing_Linear, scamcheck_in_2p, scamcheck_in_16p);
+		required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, scamscaler));
 
-		if(player->position == 1)
+		if (player->position == 1)
 		{
 			required_speed = 9 * K_GetKartSpeed(player, false, false); // Seek employment
 		}
 
-		/*
+	#if 0
 		if (!K_PlayerUsesBotMovement(player)) // Sonic Boom debug
 		{
 		//CONS_Printf("Sonic Boom threshold: %d percent, IN FRACUNIT: %d \n", ((required_speed *100) / K_GetKartSpeed(player, false, false)), required_speed);
-		CONS_Printf("D=%d DF=%d SBA=%d RS=%d RRS=%d\n", dist, distfactor, sonicboom_aid, required_speed, required_speed * 100 / K_GetKartSpeed(player, false, false));
+		CONS_Printf("D=%d DF=%d SBA=%d SCAM=%d RRS=%d\n", dist, distfactor, sonicboom_aid, K_PlayerScamPercentage(player, scamscaler), required_speed * 100 / base_speed);
 		}
-		*/
+	#endif
 
 		#undef REVERSED_SONICBOOM_PRORATION
 		#undef MAX_SONICBOOM_REDUCTION
@@ -9827,7 +9830,7 @@ boolean K_PressingEBrake(const player_t *player)
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 {
 	const boolean onground = P_IsObjectOnGround(player->mo);
-	const fixed_t scamming = K_PlayerScamPercentage(player, 1);
+	const fixed_t scamming = K_PlayerScamPercentage(player, FRACUNIT);
 
 	/* reset sprite offsets :) */
 	player->mo->sprxoff = 0;
