@@ -3713,7 +3713,7 @@ static void K_GetKartBoostPower(player_t *player)
 		boostpower = (4*boostpower)/5;
 
 	if (player->stonedrag)
-		boostpower = (4*boostpower)/5;
+		boostpower = (70*boostpower)/100;
 
 	// Note: Handling will ONLY stack when sliptiding!
 	// > (NB 2023-03-06: This was previously unintentionally applied while drifting as well.)
