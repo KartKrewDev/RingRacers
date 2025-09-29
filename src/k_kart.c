@@ -3178,6 +3178,9 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 	if (gamespeed == KARTSPEED_EASY)
 		required_speed = 2 * base_speed;
 
+	if (K_LegacyRingboost(player))
+		return 2 * base_speed;
+
 	// 150% in special
 	if (specialstageinfo.valid)
 		required_speed = 3 * base_speed / 2;
