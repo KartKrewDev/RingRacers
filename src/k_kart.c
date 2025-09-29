@@ -10857,6 +10857,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		player->itemamount = 0;
 		player->itemtype = 0;
+		player->rocketsneakertimer = 0;
 
 		/*
 		if (player->itemamount)
