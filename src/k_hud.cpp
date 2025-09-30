@@ -5183,7 +5183,7 @@ static void K_drawKartPlayerCheck(void)
 			continue;
 		}
 
-		if ((checkplayer->invincibilitytimer <= 0) && (leveltime & 2))
+		if ((checkplayer->invincibilitytimer <= 0) && (leveltime & 2) && !(cv_reducevfx.value))
 		{
 			pnum++; // white frames
 		}

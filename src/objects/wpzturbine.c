@@ -220,6 +220,7 @@ void Obj_playerWPZTurbine(player_t *p)
 	}
 
 	mt = t->spawnpoint;
+	pmo->flags &= ~MF_NOGRAVITY;
 
 	opt1 = (mt->thing_args[0] != 0);
 

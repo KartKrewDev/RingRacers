@@ -1129,6 +1129,8 @@ struct player_t
 	boolean dotrickfx;
 	boolean stingfx;
 	UINT8 bumperinflate;
+	
+	boolean mfdfinish; // Did you cross the finish line while just about to explode?
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?

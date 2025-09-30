@@ -10891,7 +10891,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 
 		INT32 fls = K_GetEffectiveFollowerSkin(player);
-		if (player->follower && fls >= 0 && fls < numfollowers)
+		if (player->follower && fls >= 0 && fls < numfollowers && cv_karthorns.value)
 		{
 			const follower_t *fl = &followers[fls];
 			S_StartSound(player->follower, fl->hornsound);

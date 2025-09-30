@@ -1272,6 +1272,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 	if (!player->spectator && (gametyperules & GTR_CIRCUIT)) // Special Race-like handling
 	{
 		K_UpdateAllPlayerPositions();
+		player->mfdfinish = player->markedfordeath;
 	}
 
 	if (!(gametyperules & GTR_SPHERES) && (player->pflags & PF_RINGLOCK) && grandprixinfo.gp)

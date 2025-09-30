@@ -2312,6 +2312,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 bigwaypointgap;
 
 	INT16 duelscore;
+	
+	boolean mfdfinish;
 
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
@@ -2406,6 +2408,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	totalring = players[player].totalring;
 	xtralife = players[player].xtralife;
+	
+	mfdfinish = players[player].mfdfinish;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE|PF_ANALOGSTICK|PF_AUTORING));
 	pflags2 = (players[player].pflags2 & (PF2_SELFMUTE | PF2_SELFDEAFEN | PF2_SERVERTEMPMUTE | PF2_SERVERMUTE | PF2_SERVERDEAFEN | PF2_STRICTFASTFALL));
@@ -2483,6 +2487,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		lastsafecheatcheck = 0;
 		bigwaypointgap = 0;
 		duelscore = 0;
+		mfdfinish = 0;
 
 		finalized = false;
 
@@ -2675,6 +2680,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->xtralife = xtralife;
 
 	p->finalized = finalized;
+	
+	p->mfdfinish = mfdfinish;
 
 	// SRB2kart
 	p->itemtype = itemtype;

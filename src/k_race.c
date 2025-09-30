@@ -423,8 +423,8 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 --------------------------------------------------*/
 
 void K_RunFinishLineBeam(void)
-{
-	if ((gametyperules & GTR_ROLLINGSTART) || !(leveltime < starttime || rainbowstartavailable == true))
+{	
+	if ((gametyperules & GTR_ROLLINGSTART) || !(leveltime < starttime || rainbowstartavailable == true) || P_LevelIsFrozen())
 	{
 		return;
 	}
