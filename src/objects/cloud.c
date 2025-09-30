@@ -292,7 +292,7 @@ void Obj_BulbTouched(mobj_t *special, mobj_t *toucher)
 	P_MoveOrigin(toucher, special->x, special->y, special->z);
 	toucher->player->nocontrol = 1;
 	P_SetTarget(&toucher->tracer, special);
-	toucher->flags &= ~MF_SHOOTABLE;
+	toucher->flags &= ~(MF_SHOOTABLE|MF_NOGRAVITY);
 	toucher->renderflags |= RF_DONTDRAW;
 	P_SetTarget(&special->target, toucher);
 	special->extravalue1 = spd;
