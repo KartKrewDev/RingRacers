@@ -3172,7 +3172,7 @@ boolean K_SlopeResistance(const player_t *player)
 fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 {
 	fixed_t base_speed = K_GetKartSpeed(player, false, false);
-	fixed_t required_speed = 5 * base_speed / 2; // 250%
+	fixed_t required_speed = 9 * base_speed / 4; // 225%
 
 	// 200% in Easy / Tutorial
 	if (gamespeed == KARTSPEED_EASY)
@@ -3197,7 +3197,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 		*/
 
 		#define REVERSED_SONICBOOM_PRORATION (30000)
-		#define MAX_SONICBOOM_REDUCTION (7*FRACUNIT/10)
+		#define MAX_SONICBOOM_REDUCTION (8*FRACUNIT/10)
 
 		UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace());
 
@@ -3216,7 +3216,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 		*/
 
 		fixed_t scamcheck_in_2p = 3*FRACUNIT/2; // Lower values = need to be closer to be scamming
-		fixed_t scamcheck_in_16p = 3*FRACUNIT; // Higher values = tripwire threshold goes up when further away
+		fixed_t scamcheck_in_16p = 5*FRACUNIT/2; // Higher values = tripwire threshold goes up when further away
 		fixed_t scamscaler = FixedRescale(D_NumPlayersInRace(), 2, 16, Easing_Linear, scamcheck_in_2p, scamcheck_in_16p);
 		required_speed += FixedMul(required_speed, K_PlayerScamPercentage(player, scamscaler));
 
