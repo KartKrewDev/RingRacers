@@ -4104,8 +4104,6 @@ papercollision:
 
 static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 {
-	extern consvar_t cv_showgremlins;
-
 	fixed_t mmomx = 0, mmomy = 0;
 	fixed_t oldmomx = mo->momx, oldmomy = mo->momy;
 
@@ -4129,24 +4127,6 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 
 	slidemo = mo;
 	bestslideline = result->line;
-
-	if (bestslideline == NULL && cv_showgremlins.value)
-	{
-		// debug
-		mobj_t*x = P_SpawnMobj(mo->x, mo->y, mo->z, MT_THOK);
-		x->frame = FF_FULLBRIGHT | FF_ADD;
-		x->renderflags = RF_ALWAYSONTOP;
-		x->color = SKINCOLOR_RED;
-
-		CONS_Printf(
-			"GREMLIN: leveltime=%u x=%f y=%f z=%f angle=%f\n",
-			leveltime,
-			FixedToFloat(mo->x),
-			FixedToFloat(mo->y),
-			FixedToFloat(mo->z),
-			AngleToFloat(R_PointToAngle2(0, 0, oldmomx, oldmomy))
-		);
-	}
 
 	if (mo->health <= 0)
 	{
