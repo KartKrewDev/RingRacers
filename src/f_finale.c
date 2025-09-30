@@ -1593,6 +1593,7 @@ void F_StartGameEnd(void)
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 	F_WipeEndScreen();
 	F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+	Music_Stop("credits");
 
 	nextmap = NEXTMAP_TITLE;
 	G_EndGame();
