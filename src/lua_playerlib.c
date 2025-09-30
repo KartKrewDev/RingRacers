@@ -269,6 +269,8 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->transfer);
 	else if (fastcmp(field,"markedfordeath"))
 		lua_pushboolean(L, plr->markedfordeath);
+	else if (fastcmp(field,"mfdfinish"))
+		lua_pushboolean(L, plr->mfdfinish);
 	else if (fastcmp(field,"incontrol"))
 		lua_pushboolean(L, plr->incontrol);
 	else if (fastcmp(field,"progressivethrust"))
@@ -948,6 +950,8 @@ static int player_set(lua_State *L)
 		plr->transfer = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"markedfordeath"))
 		plr->markedfordeath = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"mfdfinish"))
+		plr->mfdfinish = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"dotrickfx"))
 		plr->dotrickfx = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"stingfx"))
