@@ -1,3 +1,5 @@
+include(CheckCXXCompilerFlag)
+
 add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	comptime.c
 	cxxutil.hpp
@@ -326,8 +328,10 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 endif()
 
 # Enable SSE2 for IA-32.
-if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID MATCHES "i[3-6]86")
-	if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+check_cxx_compiler_flag("-msse2" has_sse2)
+if(SRB2_SYSTEM_BITS EQUAL 32 AND has_sse2)
+	message(STATUS "Using sse2 for IA-32")
+	if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang|AppleClang)")
 		target_compile_options(SRB2SDL2 PRIVATE "-msse2")
 	elseif(MSVC)
 		target_compile_options(SRB2SDL2 PRIVATE "/arch:SSE2")
