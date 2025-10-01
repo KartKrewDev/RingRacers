@@ -325,6 +325,15 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMACOSX)
 endif()
 
+# Enable SSE2 for IA-32.
+if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID MATCHES "i[3-6]86")
+	if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+		target_compile_options(SRB2SDL2 PRIVATE "-msse2")
+	elseif(MSVC)
+		target_compile_options(SRB2SDL2 PRIVATE "/arch:SSE2")
+	endif()
+endif()
+
 target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
 target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
 target_link_libraries(SRB2SDL2 PRIVATE CURL::libcurl)
