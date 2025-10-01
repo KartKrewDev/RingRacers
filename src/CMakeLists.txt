@@ -622,11 +622,10 @@ target_compile_options(SRB2SDL2 PRIVATE
 	# C++, GNU
 	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:
 		-Wall
-		-Wno-c++98-compat
 		-Wno-c++11-compat
 		-Wno-c++14-compat # No C++14 compat needed
-		-Werror=c++20-extensions
-		-Werror=c++23-extensions # Disallow newer language features entirely
+		-Wc++20-extensions
+		-Wc++23-extensions # Disallow newer language features entirely
 	>
 
 	# C++, Clang and Apple Clang
