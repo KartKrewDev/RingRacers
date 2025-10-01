@@ -17206,7 +17206,7 @@ static fixed_t K_GradingFactorPower(player_t *player, UINT32 gradingpoint)
 
 	UINT32 gp = K_GetNumGradingPoints();
 
-	if (gradingpoint-1 == gp)
+	if (gradingpoint == gp - 1)
 	{
 		power += FixedMul(power, K_FinalCheckpointPower());
 	}
