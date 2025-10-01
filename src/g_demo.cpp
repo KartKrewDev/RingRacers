@@ -182,9 +182,10 @@ demoghost *ghosts = NULL;
 // - 0x000F -- RR 2.4 indev (staff ghosts part 2 - dynslopes thinker fix)
 // - 0x0010 -- RR 2.4 rc1   (staff ghosts part 3 - skinlimit raise. don't say we never did anythin for 'ya)
 // - 0x0011 -- RR 2.4 rc2   (K_FlipFromObject oversight)
+// - 0x0012 -- RR 2.4 rc6	(Waterskii regression from 2.3)
 
 #define MINDEMOVERSION 0x000E
-#define DEMOVERSION 0x0011
+#define DEMOVERSION 0x0012
 
 boolean G_CompatLevel(UINT16 level)
 {

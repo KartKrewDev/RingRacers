@@ -3323,7 +3323,7 @@ boolean K_WaterRun(mobj_t *mobj)
 			return false;
 		}
 
-		case MT_PLAYER:
+		case MT_PLAYER: // Waterskii
 		{
 			fixed_t minspeed = 0;
 			fixed_t flatspeed = 2 * K_GetKartSpeed(mobj->player, false, false);
@@ -3340,7 +3340,7 @@ boolean K_WaterRun(mobj_t *mobj)
 
 			minspeed = K_PlayerTripwireSpeedThreshold(mobj->player);
 
-			if (minspeed >= flatspeed)
+			if (minspeed >= flatspeed && !G_CompatLevel(0x0011))
 				minspeed = flatspeed;
 
 			if (mobj->player->invincibilitytimer
