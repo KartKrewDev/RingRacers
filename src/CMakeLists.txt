@@ -624,8 +624,6 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wall
 		-Wno-c++11-compat
 		-Wno-c++14-compat # No C++14 compat needed
-		-Wc++20-extensions
-		-Wc++23-extensions # Disallow newer language features entirely
 	>
 
 	# C++, Clang and Apple Clang
