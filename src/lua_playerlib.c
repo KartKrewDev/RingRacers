@@ -465,6 +465,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->ringdelay);
 	else if (fastcmp(field,"ringboost"))
 		lua_pushinteger(L, plr->ringboost);
+	else if (fastcmp(field,"momentboost"))
+		lua_pushinteger(L, plr->momentboost);
 	else if (fastcmp(field,"sparkleanim"))
 		lua_pushinteger(L, plr->sparkleanim);
 	else if (fastcmp(field,"superring"))
@@ -1049,7 +1051,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"fakeboost"))
 		plr->fakeBoost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"subsonicleniency"))
-		plr->subsonicleniency = luaL_checkinteger(L, 3);	
+		plr->subsonicleniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireleniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireairleniency"))

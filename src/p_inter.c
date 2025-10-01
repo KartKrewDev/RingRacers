@@ -4523,7 +4523,8 @@ void P_FlingBurst
 		mobjtype_t objType,
 		tic_t objFuse,
 		fixed_t objScale,
-		INT32 i)
+		INT32 i,
+		fixed_t dampen)
 {
 	mobj_t *mo = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, objType);
 	P_SetTarget(&mo->target, player->mo);
@@ -4550,7 +4551,8 @@ void P_FlingBurst
 	angle_t fp = offset + (((i / 2) % RING_LAYER_SIDE_SIZE) * (offset * 3 >> 1));
 
 	const UINT8 layer = i / RING_LAYER_SIZE;
-	const fixed_t thrust = (13 * mo->scale) + (7 * mo->scale * layer);
+	fixed_t thrust = (13 * mo->scale) + (7 * mo->scale * layer);
+	thrust = FixedDiv(thrust, dampen);
 	mo->momx = (player->mo->momx / 2) + FixedMul(FixedMul(thrust, FINECOSINE(fp >> ANGLETOFINESHIFT)), FINECOSINE(fa >> ANGLETOFINESHIFT));
 	mo->momy = (player->mo->momy / 2) + FixedMul(FixedMul(thrust, FINECOSINE(fp >> ANGLETOFINESHIFT)), FINESINE(fa >> ANGLETOFINESHIFT));
 	mo->momz = (player->mo->momz / 2) + (FixedMul(thrust, FINESINE(fp >> ANGLETOFINESHIFT)) * P_MobjFlip(mo));
@@ -4595,12 +4597,12 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 
 	for (i = 0; i < num_fling_rings; i++)
 	{
-		P_FlingBurst(player, fa, MT_FLINGRING, 60*TICRATE, FRACUNIT, i);
+		P_FlingBurst(player, fa, MT_FLINGRING, 60*TICRATE, FRACUNIT, i, FRACUNIT);
 	}
 
 	while (i < spill_total)
 	{
-		P_FlingBurst(player, fa, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, i++);
+		P_FlingBurst(player, fa, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, i++, FRACUNIT);
 	}
 
 	K_DefensiveOverdrive(player);

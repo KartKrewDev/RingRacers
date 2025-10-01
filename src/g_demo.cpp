@@ -184,7 +184,7 @@ demoghost *ghosts = NULL;
 // - 0x0011 -- RR 2.4 rc2   (K_FlipFromObject oversight)
 
 #define MINDEMOVERSION 0x000E
-#define DEMOVERSION 0x0011
+#define DEMOVERSION 0x0012
 
 boolean G_CompatLevel(UINT16 level)
 {
