@@ -3326,6 +3326,7 @@ boolean K_WaterRun(mobj_t *mobj)
 		case MT_PLAYER:
 		{
 			fixed_t minspeed = 0;
+			fixed_t flatspeed = 2 * K_GetKartSpeed(mobj->player, false, false);
 
 			if (mobj->player == NULL)
 			{
@@ -3339,10 +3340,8 @@ boolean K_WaterRun(mobj_t *mobj)
 
 			minspeed = K_PlayerTripwireSpeedThreshold(mobj->player);
 
-			if (mobj->player->speed < minspeed / 5) // 40%
-			{
-				return false;
-			}
+			if (minspeed >= flatspeed)
+				minspeed = flatspeed;
 
 			if (mobj->player->invincibilitytimer
 				|| mobj->player->sneakertimer
@@ -3353,6 +3352,11 @@ boolean K_WaterRun(mobj_t *mobj)
 				|| mobj->player->speed > minspeed)
 			{
 				return true;
+			}
+
+			if (mobj->player->speed < minspeed / 5) // Or if you're at half tripwire speed
+			{
+				return false;
 			}
 
 			return false;
