@@ -61,6 +61,8 @@ int ps_checkposition_calls = 0;
 precise_t ps_lua_thinkframe_time = 0;
 int ps_lua_mobjhooks = 0;
 
+precise_t ps_voiceupdatetime = 0;
+
 // dynamically allocated resizeable array for thinkframe hook stats
 ps_hookinfo_t *thinkframe_hooks = NULL;
 int thinkframe_hooks_length = 0;
@@ -208,6 +210,7 @@ static void M_DrawRenderStats(void)
 
 	perfstatrow_t tictime_row[] = {
 		{"logic  ", "Game logic:    ", &ps_tictime},
+		{"voice  ", "Voice update:  ", &ps_voiceupdatetime},
 		{0}
 	};
 

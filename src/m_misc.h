@@ -167,6 +167,13 @@ FUNCMATH UINT8 M_CountBits(UINT32 num, UINT8 size);
 
 extern char configfile[MAX_WADPATH];
 
+typedef INT32 floatdenormalstate_t;
+
+/** Enable floating point denormal-to-zero section, if necessary */
+floatdenormalstate_t M_EnterFloatDenormalToZero(void);
+/** Exit floating point denormal-to-zero section, if necessary, restoring previous state */
+void M_ExitFloatDenormalToZero(floatdenormalstate_t previous);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

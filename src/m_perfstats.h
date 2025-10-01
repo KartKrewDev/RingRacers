@@ -45,6 +45,8 @@ extern int       ps_checkposition_calls;
 extern precise_t ps_lua_thinkframe_time;
 extern int       ps_lua_mobjhooks;
 
+extern precise_t ps_voiceupdatetime;
+
 struct ps_hookinfo_t
 {
 	precise_t time_taken;
