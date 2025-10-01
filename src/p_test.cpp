@@ -30,10 +30,10 @@ void P_TestLine(line_t* ld)
 	g_lines.emplace_back(ld);
 }
 
+extern "C" consvar_t cv_showgremlins;
+
 line_t* P_SweepTestLines(fixed_t ax, fixed_t ay, fixed_t bx, fixed_t by, fixed_t r, vector2_t* return_normal)
 {
-	extern consvar_t cv_showgremlins;
-
 	using namespace srb2::math;
 	using namespace srb2::sweep;
 
@@ -96,7 +96,7 @@ line_t* P_SweepTestLines(fixed_t ax, fixed_t ay, fixed_t bx, fixed_t by, fixed_t
 			if (cv_showgremlins.value)
 			{
 				mobj_t *mo = g_tm.thing;
-				
+
 				if (mo)
 				{
 					mobj_t *x = P_SpawnMobj(mo->x, mo->y, mo->z, MT_THOK);

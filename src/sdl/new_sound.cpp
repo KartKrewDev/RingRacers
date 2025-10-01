@@ -31,6 +31,7 @@
 
 #include "../doomdef.h"
 #include "../i_sound.h"
+#include "../m_misc.h"
 #include "../s_sound.h"
 #include "../sounds.h"
 #include "../w_wad.h"
@@ -258,6 +259,8 @@ void audio_callback(void* userdata, Uint8* buffer, int len)
 	tracy::SetThreadName("SDL Audio Thread");
 	FrameMarkStart(kAudio);
 	ZoneScoped;
+	floatdenormalstate_t dtzstate = M_EnterFloatDenormalToZero();
+	auto dtzrestore = srb2::finally([dtzstate] { M_ExitFloatDenormalToZero(dtzstate); });
 
 	// The SDL Audio lock is implied to be held during callback.
 

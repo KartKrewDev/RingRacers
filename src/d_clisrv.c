@@ -7379,7 +7379,9 @@ void NetKeepAlive(void)
 	FileSendTicker();
 
 	// Update voice whenever possible.
-	NetVoiceUpdate();
+	{
+		NetVoiceUpdate();
+	}
 }
 
 // If a tree falls in the forest but nobody is around to hear it, does it make a tic?
@@ -7580,11 +7582,15 @@ void NetVoiceUpdate(void)
 	UINT8 *encoded = NULL;
 	float *subframe_buffer = NULL;
 	float *denoise_buffer = NULL;
+	ps_voiceupdatetime = I_GetPreciseTime();
 
 	if (dedicated)
 	{
+		ps_voiceupdatetime = I_GetPreciseTime() - ps_voiceupdatetime;
 		return;
 	}
+
+	floatdenormalstate_t dnzstate = M_EnterFloatDenormalToZero();
 
 	UINT32 bytes_dequed = 0;
 
@@ -7724,9 +7730,12 @@ void NetVoiceUpdate(void)
 		g_local_voice_buffer_len -= buffer_offset;
 	}
 
+	M_ExitFloatDenormalToZero(dnzstate);
+
 	if (denoise_buffer) Z_Free(denoise_buffer);
 	if (subframe_buffer) Z_Free(subframe_buffer);
 	if (encoded) Z_Free(encoded);
+	ps_voiceupdatetime = I_GetPreciseTime() - ps_voiceupdatetime;
 	return;
 }
 
