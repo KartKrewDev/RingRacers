@@ -4322,9 +4322,22 @@ void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencor
 			cupLevelNum = emeraldcup->cachedlevels[CUPCACHE_SPECIAL];
 			if (cupLevelNum < nummapheaders)
 			{
+				// In case of multiple TOLs, prioritize Special, then Versus, then guess.
+				if ((mapheaderinfo[cupLevelNum]->typeoflevel & TOL_SPECIAL) == TOL_SPECIAL)
+				{
+					bonusgt = GT_SPECIAL;
+				}
+				else if ((mapheaderinfo[cupLevelNum]->typeoflevel & TOL_VERSUS) == TOL_VERSUS)
+				{
+					bonusgt = GT_VERSUS;
+				}
+				else
+				{
+					bonusgt = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
+				}
 				G_MapIntoRoundQueue(
 					cupLevelNum,
-					G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel),
+					bonusgt,
 					setencore, // if this isn't correct, Got_Mapcmd will fix it
 					true // Rank-restricted!
 				);
