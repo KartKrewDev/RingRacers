@@ -14391,6 +14391,7 @@ void K_DappleEmployment(player_t *player)
 			}
 			
 				K_StumblePlayer(player);
+				player->mo->preventfailsafe = TICRATE*3;
 				S_StopSoundByID(player->mo, sfx_s3k9b); // Avoid stumble crunch noise 
 			
 		}
