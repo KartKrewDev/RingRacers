@@ -1977,6 +1977,8 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		lines[i].flags |= ML_NOTBOUNCY;
 	else if (fastcmp(param, "transfer") && fastcmp("true", val))
 		lines[i].flags |= ML_TFERLINE;
+	else if (fastcmp(param, "midtexinviswall") && fastcmp("true", val))
+		lines[i].flags |= ML_MIDTEXINVISWALL;
 	// Activation flags
 	else if (fastcmp(param, "repeatspecial") && fastcmp("true", val))
 		lines[i].activation |= SPAC_REPEATSPECIAL;
@@ -2787,6 +2789,8 @@ static void P_WriteTextmap(void)
 			fprintf(f, "notbouncy = true;\n");
 		if (wlines[i].flags & ML_TFERLINE)
 			fprintf(f, "transfer = true;\n");
+		if (wlines[i].flags & ML_MIDTEXINVISWALL)
+			fprintf(f, "midtexinviswall = true;\n");
 		if (wlines[i].activation & SPAC_REPEATSPECIAL)
 			fprintf(f, "repeatspecial = true;\n");
 		if (wlines[i].activation & SPAC_CROSS)
