@@ -14370,6 +14370,18 @@ boolean K_FastFallBounce(player_t *player)
 	return false;
 }
 
+void K_DappleEmployment(player_t *player)
+{
+	const boolean JustWallBonked = ((player->mo->eflags & MFE_JUSTBOUNCEDWALL) != 0); // some shit about signed...
+	const boolean NoMoreBubbleWallHump = ((player->ignoreAirtimeLeniency > 0) && JustWallBonked);
+
+		// No more vertical wall humping
+		if (NoMoreBubbleWallHump == true)
+			K_StumblePlayer(player);
+
+	CONS_Printf("ignoreAirtimeLeniency: %d JustWallBonked: %d\n", (player->ignoreAirtimeLeniency), JustWallBonked);
+}
+
 static void K_AirFailsafe(player_t *player)
 {
 	const fixed_t maxSpeed = 6*player->mo->scale;

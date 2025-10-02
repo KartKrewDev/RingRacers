@@ -295,6 +295,7 @@ boolean K_PlayerEBrake(const player_t *player);
 boolean K_PlayerGuard(const player_t *player);
 SINT8 K_Sliptiding(const player_t *player);
 boolean K_FastFallBounce(player_t *player);
+void K_DappleEmployment(player_t *player);
 fixed_t K_PlayerBaseFriction(const player_t *player, fixed_t original);
 void K_AdjustPlayerFriction(player_t *player);
 void K_MoveKartPlayer(player_t *player, boolean onground);
