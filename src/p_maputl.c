@@ -509,7 +509,9 @@ P_GetMidtextureTopBottom
 	else
 #endif
 	{
-		if ((linedef->flags & ML_WRAPMIDTEX) && !side->repeatcnt) // "infinite" repeat
+		const boolean invismidtexwall = !!(P_IsLineTripWire(linedef)) ^ !!(linedef->flags & ML_MIDTEXINVISWALL);
+
+		if (((linedef->flags & ML_WRAPMIDTEX) && !side->repeatcnt) || invismidtexwall) // "infinite" repeat
 		{
 			texbottom += side->rowoffset;
 			textop += side->rowoffset;
@@ -782,6 +784,10 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 			fixed_t textop, texbottom;
 			fixed_t texmid, delta1, delta2;
 
+			// Should we override typical behavior and extend teh midtexture to the ceiling, to include FoFs?
+			// const boolean inifiniteheight = linedef->flags & ML_INFINITEMIDTEXTUREHEIGHT;
+
+			
 			if (P_GetMidtextureTopBottom(linedef, cross.x, cross.y, &textop, &texbottom))
 			{
 				texmid = texbottom+(textop-texbottom)/2;

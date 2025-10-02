@@ -159,6 +159,9 @@ enum
 
 	// Transfers FOF properties.
 	ML_TFERLINE			= 0x00008000,
+
+	// Like ML_WRAPMIDTEX, but invisible wall style instead
+	ML_MIDTEXINVISWALL	= 0x00010000,
 };
 
 enum
