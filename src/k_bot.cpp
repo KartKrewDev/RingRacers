@@ -55,30 +55,16 @@ extern "C" consvar_t cv_forcebots;
 --------------------------------------------------*/
 void K_SetNameForBot(UINT8 newplayernum, const char *realname)
 {
-	UINT8 ix = MAXPLAYERS;
-
 	// These names are generally sourced from skins.
 	I_Assert(MAXPLAYERNAME >= SKINNAMESIZE+2);
 
+	boolean canApplyNameChange = true;
 	if (netgame == true)
 	{
-		// Check if a player is currently using the name, case-insensitively.
-		// We only do this if online, because it doesn't matter if there are multiple Eggrobo *off*line.
-		// See also EnsurePlayerNameIsGood
-		for (ix = 0; ix < MAXPLAYERS; ix++)
-		{
-			if (ix == newplayernum)
-				continue;
-			if (playeringame[ix] == false)
-				continue;
-			if (strcasecmp(realname, player_names[ix]) != 0)
-				continue;
-
-			break;
-		}
+		canApplyNameChange = IsPlayerNameUnique(realname, newplayernum);
 	}
 
-	if (ix == MAXPLAYERS)
+	if (canApplyNameChange)
 	{
 		// No conflict detected!
 		sprintf(player_names[newplayernum], "%s", realname);
