@@ -6102,6 +6102,14 @@ static char *M_GetGameplayMode(void)
 			return va("Intense");
 		return va("Relaxed");
 	}
+	
+	if (franticitems)
+	{
+		if (cv_4thgear.value)
+			return va("4th Gear! Frantic!");
+		else
+			return va("Gear %d - Frantic\n", gamespeed+1);
+	}
 
 	if (cv_4thgear.value)
 		return va("4th Gear!");
