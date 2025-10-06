@@ -3325,9 +3325,6 @@ boolean K_WaterRun(mobj_t *mobj)
 
 		case MT_PLAYER: // Waterskii
 		{
-			fixed_t minspeed = 0;
-			fixed_t flatspeed = 2 * K_GetKartSpeed(mobj->player, false, false);
-
 			if (mobj->player == NULL)
 			{
 				return false;
@@ -3338,10 +3335,23 @@ boolean K_WaterRun(mobj_t *mobj)
 				return K_IsHoldingDownTop(mobj->player) == false;
 			}
 
-			minspeed = K_PlayerTripwireSpeedThreshold(mobj->player);
+			fixed_t basefullspeed = K_GetKartSpeed(mobj->player, false, false);
+			fixed_t minspeed = K_PlayerTripwireSpeedThreshold(mobj->player);
 
-			if (minspeed >= flatspeed && !G_CompatLevel(0x0011))
-				minspeed = flatspeed;
+			if (G_CompatLevel(0x0011))
+			{
+				if (mobj->player->speed < minspeed / 5) // 40%
+				{
+					return false;
+				}
+			}
+			else // Don't factor tripwire speed for pre-boost cutoff
+			{
+				if (mobj->player->speed < basefullspeed  * 2/3) // 66%
+				{
+					return false;
+				}
+			}
 
 			if (mobj->player->invincibilitytimer
 				|| mobj->player->sneakertimer
@@ -3352,11 +3362,6 @@ boolean K_WaterRun(mobj_t *mobj)
 				|| mobj->player->speed > minspeed)
 			{
 				return true;
-			}
-
-			if (mobj->player->speed < minspeed / 5) // Or if you're at half tripwire speed
-			{
-				return false;
 			}
 
 			return false;
