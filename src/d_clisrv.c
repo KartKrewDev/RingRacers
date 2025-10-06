@@ -5396,7 +5396,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		{
 			continue;
 		}
-		if (cv_voice_selfdeafen.value != 1 && playernum != g_localplayers[0])
+		if (cv_voice_selfdeafen.value != 1 && playernum != g_localplayers[0] && !g_voice_disabled)
 		{
 			S_QueueVoiceFrameFromPlayer(playernum, (void*)decoded_out, decoded_samples * sizeof(float), false);
 		}
@@ -5410,7 +5410,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		return;
 	}
 
-	if (cv_voice_selfdeafen.value != 1 && playernum != g_localplayers[0])
+	if (cv_voice_selfdeafen.value != 1 && playernum != g_localplayers[0] && !g_voice_disabled)
 	{
 		S_QueueVoiceFrameFromPlayer(playernum, (void*)decoded_out, decoded_samples * sizeof(float), terminal);
 	}
@@ -7674,7 +7674,7 @@ void NetVoiceUpdate(void)
 			continue;
 		}
 
-		if (cv_voice_selfdeafen.value == 1)
+		if (cv_voice_selfdeafen.value == 1 || g_voice_disabled)
 		{
 			continue;
 		}
