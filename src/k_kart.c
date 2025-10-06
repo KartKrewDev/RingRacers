@@ -14374,13 +14374,12 @@ void K_DappleEmployment(player_t *player)
 {
 	if (player->curshield == KSHIELD_BUBBLE)
 	{
-	const boolean JustWallBonked = ((player->mo->eflags & MFE_JUSTBOUNCEDWALL) != 0); // some shit about signed...
-	const boolean NoMoreBubbleWallHump = ((player->ignoreAirtimeLeniency > 0) && JustWallBonked);
+		const boolean JustWallBonked = !!(player->mo->eflags & MFE_JUSTBOUNCEDWALL); // some shit about signed...
+		const boolean NoMoreBubbleWallHump = (player->ignoreAirtimeLeniency > 0) && JustWallBonked;
 
 		// No more vertical wall humping
-		if (NoMoreBubbleWallHump == true)
-			{			
-				
+		if (NoMoreBubbleWallHump)
+		{
 			K_AddHitLag(player->mo, 8, false);
 			S_StartSound(player->mo, sfx_kc52); // Bubble wallbonk noise
 
@@ -14389,14 +14388,12 @@ void K_DappleEmployment(player_t *player)
 				player->mo->spriteyscale *= 3/2;
 				player->mo->spritexscale *= 2/3;
 			}
-			
-				K_StumblePlayer(player);
-				player->preventfailsafe = TICRATE*3;
-				S_StopSoundByID(player->mo, sfx_s3k9b); // Avoid stumble crunch noise 
-			
-		}
 
-	CONS_Printf("ignoreAirtimeLeniency: %d JustWallBonked: %d\n", (player->ignoreAirtimeLeniency), JustWallBonked);
+			K_StumblePlayer(player);
+			player->preventfailsafe = TICRATE*3;
+			S_StopSoundByID(player->mo, sfx_s3k9b); // Avoid stumble crunch noise 
+		}
+		CONS_Printf("ignoreAirtimeLeniency: %d JustWallBonked: %d\n", (player->ignoreAirtimeLeniency), JustWallBonked);
 	}
 }
 
