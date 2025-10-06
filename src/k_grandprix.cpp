@@ -858,7 +858,12 @@ void K_RetireBots(void)
 	std::stable_sort(humans.begin(), humans.end(), CompareReplacements);
 	std::stable_sort(bots.begin(), bots.end(), CompareReplacements);
 
-	if (G_GametypeHasSpectators() == true && grandprixinfo.gp == false && cv_shuffleloser.value != 0)
+	// If a player spectated mid-race or mid-duel, they will be placed in-game by K_CheckSpectateStatus,
+	// and their position will be set to 0. Since we're only replacing one player as of now, there's no need
+	// to do anything; a player has already been replaced.
+	bool player_already_joined = (!humans.empty() && humans[0]->position == 0);
+
+	if (G_GametypeHasSpectators() == true && grandprixinfo.gp == false && !player_already_joined && cv_shuffleloser.value != 0)
 	{
 		// While joiners and players still exist, insert joiners.
 
