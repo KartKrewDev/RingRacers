@@ -2414,5 +2414,6 @@ void D_TakeMapSnapshots(void)
 		setmodeneeded = old_mode + 1;
 		D_Display(true);
 	}
+	g_takemapthumbnail = TMT_NO;
 }
 
