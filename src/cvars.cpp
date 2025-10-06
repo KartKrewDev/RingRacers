@@ -420,7 +420,11 @@ consvar_t cv_bgaudio = Player("bgaudio", "Nothing").onchange_noinit(BGAudio_OnCh
 	{0, "Nothing"},
 	{1, "Music"},
 	{2, "Sounds"},
+	{4, "Voices"},
 	{3, "Music&Sounds"},
+	{5, "Music&Voices"},
+	{6, "Sounds&Voices"},
+	{7, "MusicSounds&Voices"}
 });
 
 // Pause game upon window losing focus
