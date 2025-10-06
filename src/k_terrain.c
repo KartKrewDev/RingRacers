@@ -606,7 +606,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 			
 			if (G_CompatLevel(0x0011))
 			{
-
+				// Old behavior, no grease
 			}
 			else
 			{
