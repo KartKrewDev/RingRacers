@@ -4202,6 +4202,7 @@ void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencor
 	UINT8 i, levelindex = 0, bonusindex = 0;
 	UINT8 bonusmodulo = max(1, (cup->numlevels+1)/(cup->numbonus+1));
 	UINT16 cupLevelNum;
+	INT32 bonusgt;
 
 	// Levels are added to the queue in the following pattern.
 	// For 5 Race rounds and 2 Bonus rounds, the most common case:
@@ -4243,9 +4244,17 @@ void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencor
 			if (cupLevelNum < nummapheaders)
 			{
 				// In the case of Bonus rounds, we simply skip invalid maps.
+				if ((mapheaderinfo[cupLevelNum]->typeoflevel & TOL_BATTLE) == TOL_BATTLE)
+				{
+					bonusgt = GT_BATTLE;
+				}
+				else
+				{
+					bonusgt = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
+				}
 				G_MapIntoRoundQueue(
 					cupLevelNum,
-					G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel),
+					bonusgt,
 					setencore, // if this isn't correct, Got_Mapcmd will fix it
 					false
 				);
@@ -4313,9 +4322,22 @@ void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencor
 			cupLevelNum = emeraldcup->cachedlevels[CUPCACHE_SPECIAL];
 			if (cupLevelNum < nummapheaders)
 			{
+				// In case of multiple TOLs, prioritize Special, then Versus, then guess.
+				if ((mapheaderinfo[cupLevelNum]->typeoflevel & TOL_SPECIAL) == TOL_SPECIAL)
+				{
+					bonusgt = GT_SPECIAL;
+				}
+				else if ((mapheaderinfo[cupLevelNum]->typeoflevel & TOL_VERSUS) == TOL_VERSUS)
+				{
+					bonusgt = GT_VERSUS;
+				}
+				else
+				{
+					bonusgt = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
+				}
 				G_MapIntoRoundQueue(
 					cupLevelNum,
-					G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel),
+					bonusgt,
 					setencore, // if this isn't correct, Got_Mapcmd will fix it
 					true // Rank-restricted!
 				);
