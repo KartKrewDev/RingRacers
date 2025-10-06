@@ -2858,6 +2858,9 @@ void BGAudio_OnChange(void)
 
 	if (window_notinfocus && !(cv_bgaudio.value & 2))
 		S_StopSounds();
+
+	if (window_notinfocus && !(cv_bgaudio.value & 4))
+		g_voice_disabled = true;
 }
 
 
@@ -2889,7 +2892,7 @@ void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolea
 	{
 		return;
 	}
-	if (cv_voice_selfdeafen.value != 1)
+	if (cv_voice_selfdeafen.value != 1 && !g_voice_disabled)
 	{
 		I_QueueVoiceFrameFromPlayer(playernum, data, len, terminal);
 	}
