@@ -2315,13 +2315,24 @@ static void M_DrawCharSelectCursor(UINT8 num)
 	}
 	else if (p->mdepth > CSSTEP_CHARS)
 	{
-		V_DrawMappedPatch(x, y, 0, W_CachePatchName(selectframesa[setup_animcounter % SELECTLEN], PU_CACHE), colormap);
-		if (selectframesb[(setup_animcounter-1) % SELECTLEN] != NULL)
-			V_DrawMappedPatch(x, y, V_TRANSLUCENT, W_CachePatchName(selectframesb[(setup_animcounter-1) % SELECTLEN], PU_CACHE), colormap);
+		if (cv_reducevfx.value)
+		{
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName(selectframesa[0], PU_CACHE), colormap);
+		}
+		else
+		{
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName(selectframesa[setup_animcounter % SELECTLEN], PU_CACHE), colormap);
+			if (selectframesb[(setup_animcounter-1) % SELECTLEN] != NULL)
+				V_DrawMappedPatch(x, y, V_TRANSLUCENT, W_CachePatchName(selectframesb[(setup_animcounter-1) % SELECTLEN], PU_CACHE), colormap);
+		}
+		
 	}
 	else
 	{
-		V_DrawMappedPatch(x, y, 0, W_CachePatchName(idleframes[setup_animcounter % IDLELEN], PU_CACHE), colormap);
+		if (cv_reducevfx.value)
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName(idleframes[0], PU_CACHE), colormap);
+		else
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName(idleframes[setup_animcounter % IDLELEN], PU_CACHE), colormap);
 	}
 
 	if (p->mdepth < CSSTEP_READY)
