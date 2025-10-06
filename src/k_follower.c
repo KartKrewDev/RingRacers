@@ -477,10 +477,8 @@ void K_HandleFollower(player_t *player)
 
 		if (fl->mode == FOLLOWERMODE_GROUND)
 		{
-			sector_t *sec = R_PointInSubsector(sx, sy)->sector;
-
-			fh = min(fh, P_GetFloorZ(player->follower, sec, sx, sy, NULL));
-			ch = max(ch, P_GetCeilingZ(player->follower, sec, sx, sy, NULL) - ourheight);
+			fh = min(fh, P_FloorzAtPos(sx, sy, player->follower->z, ourheight));
+			ch = max(ch, P_CeilingzAtPos(sx, sy, player->follower->z, ourheight) - ourheight);
 
 			if (P_IsObjectOnGround(player->mo) == false)
 			{
