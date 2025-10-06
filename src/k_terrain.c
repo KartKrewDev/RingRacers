@@ -603,6 +603,15 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 			player->dashpadcooldown = TICRATE/3;
 			player->trickpanel = TRICKSTATE_NONE;
 			player->floorboost = 2;
+			
+			if (G_CompatLevel(0x0011))
+			{
+
+			}
+			else
+			{
+				player->tiregrease = TICRATE/2;
+			}
 
 			S_StartSound(player->mo, sfx_cdfm62);
 		}
