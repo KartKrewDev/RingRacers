@@ -14370,6 +14370,32 @@ boolean K_FastFallBounce(player_t *player)
 	return false;
 }
 
+void K_DappleEmployment(player_t *player)
+{
+	if (player->curshield == KSHIELD_BUBBLE)
+	{
+		const boolean JustWallBonked = !!(player->mo->eflags & MFE_JUSTBOUNCEDWALL); // some shit about signed...
+		const boolean NoMoreBubbleWallHump = (player->ignoreAirtimeLeniency > 0) && JustWallBonked;
+
+		// No more vertical wall humping
+		if (NoMoreBubbleWallHump)
+		{
+			K_AddHitLag(player->mo, 8, false);
+			S_StartSound(player->mo, sfx_kc52); // Bubble wallbonk noise
+
+			if (player->mo->hitlag > 0)
+			{
+				player->mo->spriteyscale *= 3/2;
+				player->mo->spritexscale *= 2/3;
+			}
+
+			K_StumblePlayer(player);
+			player->preventfailsafe = TICRATE*3;
+			S_StopSoundByID(player->mo, sfx_s3k9b); // Avoid stumble crunch noise 
+		}
+	}
+}
+
 static void K_AirFailsafe(player_t *player)
 {
 	const fixed_t maxSpeed = 6*player->mo->scale;

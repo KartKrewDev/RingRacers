@@ -4211,6 +4211,8 @@ static void P_BouncePlayerMove(mobj_t *mo, TryMoveResult_t *result)
 			P_TryMove(mo, mo->x - oldmomx, mo->y - oldmomy, true, NULL);
 		}
 	}
+
+	K_DappleEmployment(mo->player);
 }
 
 //
