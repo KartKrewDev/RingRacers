@@ -115,7 +115,7 @@ struct Shoe : Mobj
 		shoe->dir(0);
 		shoe->fuse = 15 * TICRATE;
 
-		INT32 numLinks = 8;
+		INT32 numLinks = 5;
 		Chain* link = nullptr;
 
 		for (INT32 i = 0; i < numLinks; ++i)
