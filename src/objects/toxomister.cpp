@@ -311,6 +311,7 @@ struct Cloud : Mobj
 		if (leveltime % (TICRATE/3) == 0 && follow()->player->rings > -20) // toxomister ring drain
 		{
 			follow()->player->rings--;
+			K_DefensiveOverdrive(follow()->player);
 			S_StartSound(follow()->player->mo, sfx_antiri);
 		}
 
