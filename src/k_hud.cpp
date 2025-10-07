@@ -7980,8 +7980,16 @@ void K_drawKartHUD(void)
 
 				std::string arrow = (ahead == 1 || ahead == -2) ? "(" : ")";
 
-				// vibes offset
-				row.x(-35).colormap(skincolor).patch(R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap);
+				if (skin != -1)
+				{
+					// vibes offset
+					row.x(-35).colormap(skincolor).patch(R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap);
+				}
+				else
+				{
+					ahead = -1;
+				}
+
 
 				if (pos > 1)
 					row.x(-35).font(Draw::Font::kPing).text(va("%d", pos));

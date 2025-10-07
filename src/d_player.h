@@ -154,6 +154,8 @@ typedef enum
 	PF2_SERVERTEMPMUTE		= 1<<10, // Haven't met gamestochat requirement
 	PF2_SAMEFRAMESTUNG		= 1<<11, // Goofy bullshit for tracking mutual ring sting
 	PF2_UNSTINGABLE			= 1<<12, // Was bumped out of spindash
+	PF2_GIMMESTARTAWARDS	= 1<<13, // Need to apply non-first start awards on a 1 tic delay to prevent port priority
+	PF2_GIMMEFIRSTBLOOD		= 1<<14, // And need to differentiate between First Blood and everything else!
 } pflags2_t;
 
 typedef enum
@@ -1129,7 +1131,7 @@ struct player_t
 	boolean dotrickfx;
 	boolean stingfx;
 	UINT8 bumperinflate;
-	
+
 	boolean mfdfinish; // Did you cross the finish line while just about to explode?
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
