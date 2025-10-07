@@ -14393,7 +14393,6 @@ void K_DappleEmployment(player_t *player)
 			player->preventfailsafe = TICRATE*3;
 			S_StopSoundByID(player->mo, sfx_s3k9b); // Avoid stumble crunch noise 
 		}
-		CONS_Printf("ignoreAirtimeLeniency: %d JustWallBonked: %d\n", (player->ignoreAirtimeLeniency), JustWallBonked);
 	}
 }
 
