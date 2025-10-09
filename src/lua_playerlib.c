@@ -321,6 +321,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"startboost"))
 		lua_pushinteger(L, plr->startboost);
+	else if (fastcmp(field,"neostartboost"))
+		lua_pushinteger(L, plr->neostartboost);
 	else if (fastcmp(field,"dropdashboost"))
 		lua_pushinteger(L, plr->dropdashboost);
 	else if (fastcmp(field,"aciddropdashboost"))
@@ -992,6 +994,8 @@ static int player_set(lua_State *L)
 		plr->gateSound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"startboost"))
 		plr->startboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"neostartboost"))
+		plr->neostartboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"dropdashboost"))
 		plr->dropdashboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aciddropdashboost"))
@@ -1049,7 +1053,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"fakeboost"))
 		plr->fakeBoost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"subsonicleniency"))
-		plr->subsonicleniency = luaL_checkinteger(L, 3);	
+		plr->subsonicleniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireleniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireairleniency"))

@@ -1554,7 +1554,7 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 	if (dest->player != NULL)
 	{
 		// No tethering off of the guy who got the starting bonus :P
-		if (dest->player->startboost > 0)
+		if (dest->player->startboost > 0 || dest->player->neostartboost > 0)
 		{
 			return false;
 		}
@@ -3838,6 +3838,11 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->startboost) // Startup Boost
 	{
 		ADDBOOST(FRACUNIT, 4*FRACUNIT, HANDLESCALING); // + 100% top speed, + 400% acceleration, +50% handling
+	}
+
+	if (player->neostartboost) // Startup Boost
+	{
+		ADDBOOST(FRACUNIT/2, 2*FRACUNIT, HANDLESCALING/3); // + 50% top speed, + 200% acceleration, +no sliptide% handling
 	}
 
 	if (player->dropdashboost) // Drop dash
@@ -10717,6 +10722,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->startboost--;
 	}
+
+	if (player->neostartboost > 0 && onground == true)
+	{
+		player->neostartboost--;
+	}
+
 	if (player->dropdashboost)
 		player->dropdashboost--;
 

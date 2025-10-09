@@ -757,6 +757,7 @@ struct player_t
 	tic_t lastairtime;
 	UINT16 bigwaypointgap;	// timer counts down if finish line distance gap is too big to update waypoint
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
+	UINT8 neostartboost;	// Weaker partial startboost
 	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 	UINT8 aciddropdashboost;	// acid dropdash
 
