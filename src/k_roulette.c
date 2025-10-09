@@ -1750,6 +1750,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 
 	UINT8 debugcount = 0; // For the "simple" odds debugger.
 	UINT32 meanreelpower = totalreelpower/max(added, 1); // Average power for the "moth filter".
+	UINT32 maxreduction = -1 * min(2 * DISTVAR, meanreelpower/2);
 
 	// == PREP FOR ADDING TO THE ROULETTE REEL
 	// Sal's prior work for this is rock-solid.
@@ -1765,7 +1766,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 
 		// If we're far away from interactions, be extra aggressive about tossing attack items.
 		if (filterweakitems && !reject && !K_IsItemSpeed(i))
-			reject = (powers[i] + Easing_Linear(loneliness, DISTVAR, -2 * DISTVAR) < meanreelpower);
+			reject = (powers[i] + Easing_Linear(loneliness, DISTVAR, maxreduction) < meanreelpower);
 
 		// Popcorn Super Ring is always strong enough, we put it there on purpose.
 		if (i == KITEM_SUPERRING && !canfiltersuperring)
@@ -1778,6 +1779,9 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 			UINT16 BASE_X = 280;
 			UINT16 BASE_Y = 5+12*debugcount;
 			INT32 FLAGS = V_SNAPTOTOP|V_SNAPTORIGHT;
+
+			if (reject)
+				FLAGS |= V_TRANSLUCENT;
 			V_DrawRightAlignedThinString(BASE_X - 12, 5, FLAGS, va("TP %d", targetpower/humanscaler));
 			V_DrawRightAlignedThinString(BASE_X - 12, 5+12, FLAGS, va("FB %d / %d", toFront, toBack));
 			V_DrawRightAlignedThinString(BASE_X - 12, 5+24, FLAGS, va("L %d / CF %d", loneliness, crowdingFirst));
