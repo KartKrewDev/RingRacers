@@ -60,7 +60,7 @@ INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers)
 {
 	INT16 points;
 
-	if (position >= numplayers || position == 0)
+	if (position > numplayers || position == 0)
 	{
 		// Invalid position, no points
 		return 0;

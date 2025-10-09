@@ -3988,6 +3988,18 @@ void P_DoTimeOver(player_t *player)
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
 	}
 
+	// actually, lets not do the below, because its a suitable penalty to not be granted the increase from remaining gradingpoints
+
+	// iterate through remaining gradingpoints and update gradingfactor and exp for current position, as if you crossed all of them
+	// const UINT32 numgradingpoints = K_GetNumGradingPoints();
+	// const UINT32 remaininggradingpoints = numgradingpoints - player->gradingpointnum;
+	// for (UINT32 i = 0; i < remaininggradingpoints; i++)
+	// {
+	// 	player->gradingfactor += K_GetGradingFactorAdjustment(player, player->gradingpointnum);
+	// 	player->gradingpointnum++;
+	// 	player->exp = K_GetEXP(player);
+	// }
+	
 	player->pflags |= PF_NOCONTEST;
 	K_UpdatePowerLevelsFinalize(player, false);
 
