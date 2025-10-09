@@ -3893,20 +3893,18 @@ static void K_GetKartBoostPower(player_t *player)
 		fixed_t ringboost_base = FRACUNIT/4;
 		if (player->overdrive)
 			ringboost_base += FRACUNIT/4;
+		if (player->momentboost)
+			ringboost_base += FRACUNIT/3;
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
 		fixed_t rb = FixedDiv(player->ringboost * FRACUNIT, max(FRACUNIT, K_RingDurationBoost(player)));
+
 		fixed_t rp = ((9 - player->kartspeed) + (9 - player->kartweight)) * ((3*FRACUNIT/20)/16);
 		ADDBOOST(
 			ringboost_base + FixedMul(FRACUNIT / 1750, rb) + rp,
 			4*FRACUNIT,
 			Easing_InCubic(min(FRACUNIT, rb / (TICRATE*12)), 0, 2*HANDLESCALING/5)
 		); // + 20% + ???% top speed, + 400% acceleration, +???% handling
-	}
-
-	if (player->momentboost)
-	{
-		ADDBOOST(FRACUNIT/3, FRACUNIT/3, 0);
 	}
 
 	if (player->eggmanexplode) // Ready-to-explode
@@ -10550,7 +10548,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	if (player->momentboost)
+	{
 		player->momentboost--;
+		if (player->ringboost > 3)
+			player->ringboost -= 3;
+	}
+
+	if (player->ringboost == 0)
+		player->momentboost = 0;
 
 	if (!G_CompatLevel(0x0010) && player->superring == 0 && player->ringboxdelay == 0 && player->ringboost < player->lastringboost)
 	{
