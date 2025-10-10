@@ -2325,7 +2325,7 @@ static void M_DrawCharSelectCursor(UINT8 num)
 			if (selectframesb[(setup_animcounter-1) % SELECTLEN] != NULL)
 				V_DrawMappedPatch(x, y, V_TRANSLUCENT, W_CachePatchName(selectframesb[(setup_animcounter-1) % SELECTLEN], PU_CACHE), colormap);
 		}
-		
+
 	}
 	else
 	{
@@ -5670,22 +5670,25 @@ void M_DrawProfileControls(void)
 					help = va("6Bt. (Auto): Tries to guess your 6-button pad's layout.");
 					break;
 				case 4:
-					help = va("6Bt. (A): Saturn buttons, Retro-Bit Wired DInput layout.");
+					help = va("6Bt. (A): Saturn (Retro-Bit Wired DInput) - C/Z = RB/RT");
 					break;
 				case 5:
-					help = va("6Bt. (B): Saturn buttons, Retro-Bit Wireless DInput layout.");
+					help = va("6Bt. (B): Saturn (Retro-Bit Wireless DInput) - C/Z = LB/RB");
 					break;
 				case 6:
-					help = va("6Bt. (C): Saturn buttons, Retro-Bit XInput layout.");
+					help = va("6Bt. (C): Saturn (Retro-Bit XInput) - C/Z = RT/LT");
 					break;
 				case 7:
-					help = va("6Bt. (D): Saturn buttons, arcade/8BitDo layout. (C/Z = RT/RB)");
+					help = va("6Bt. (D): Saturn (arcade / 8BitDo) - C/Z = RT/RB");
 					break;
 				case 8:
-					help = va("6Bt. (E): Saturn buttons, Hori/M30X layout. (LB/LT = LS/RS)");
+					help = va("6Bt. (E): Saturn (Hori/M30X) - C/Z = RT/RB, LB/LT = LS/RS");
 					break;
 				case 9:
-					help = va("6Bt. (F): Saturn buttons, Mayflash layout. (C/Z = RS/LS)");
+					help = va("6Bt. (F): Saturn (Mayflash) - C/Z = RS/LS");
+					break;
+				case 10:
+					help = va("6Bt. (G): Saturn (orig M30) -  C/Z = RB/LB");
 					break;
 			}
 
@@ -6102,7 +6105,7 @@ static char *M_GetGameplayMode(void)
 			return va("Intense");
 		return va("Relaxed");
 	}
-	
+
 	if (franticitems)
 	{
 		if (cv_4thgear.value)
