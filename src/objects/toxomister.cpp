@@ -311,6 +311,7 @@ struct Cloud : Mobj
 		if (leveltime % (TICRATE/3) == 0 && follow()->player->rings > -20) // toxomister ring drain
 		{
 			follow()->player->rings--;
+			K_DefensiveOverdrive(follow()->player);
 			S_StartSound(follow()->player->mo, sfx_antiri);
 		}
 
@@ -321,7 +322,7 @@ struct Cloud : Mobj
 
 		if (fuse < kMaxFuse && (kMaxFuse - fuse) % 20 == 0 && Mobj::valid(target()) && target()->player && follow()->player)
 		{
-			K_SpawnAmps(target()->player, K_PvPAmpReward(3, target()->player, follow()->player), this);
+			K_SpawnAmps(target()->player, K_PvPAmpReward(2, target()->player, follow()->player), this);
 		}
 
 		follow()->player->stunned = fuse; // stunned as long as cloud is here
