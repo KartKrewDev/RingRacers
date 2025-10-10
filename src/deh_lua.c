@@ -314,6 +314,16 @@ static inline int lib_getenum(lua_State *L)
 		if (mathlib) return luaL_error(L, "playerflag '%s' could not be found.\n", word);
 		return 0;
 	}
+	else if (fastncmp("PF2_", word, 4)) {
+		p = word+4;
+		for (i = 0; PLAYERFLAG2_LIST[i]; i++)
+			if (fastcmp(p, PLAYERFLAG2_LIST[i])) {
+				lua_pushinteger(L, ((lua_Integer)1<<i));
+				return 1;
+			}
+		if (mathlib) return luaL_error(L, "playerflag2 '%s' could not be found.\n", word);
+		return 0;
+	}
 	else if (fastncmp("GT_", word, 3)) {
 		p = word;
 		i = 0;

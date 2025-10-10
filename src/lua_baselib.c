@@ -252,6 +252,10 @@ static const struct {
 	{META_FOOTSTEP,     "t_footstep_t"},
 	{META_OVERLAY,      "t_overlay_t"},
 	{META_TERRAIN,      "terrain_t"},
+	
+	{META_POWERUPVARS,	"powerupvars_t"},
+	{META_ICECUBEVARS,	"icecubevars_t"},
+	{META_SKYBOX,		"skybox_t"},
 
 	{NULL,              NULL}
 };

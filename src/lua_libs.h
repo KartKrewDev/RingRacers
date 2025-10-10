@@ -118,6 +118,10 @@ extern lua_State *gL;
 #define META_OVERLAY "T_OVERLAY_T*"
 #define META_TERRAIN "TERRAIN_T*"
 
+#define META_POWERUPVARS "POWERUPVARS_T*"
+#define META_ICECUBEVARS "ICECUBEVARS_T*"
+#define META_SKYBOX "SKYBOX_T*"
+
 boolean luaL_checkboolean(lua_State *L, int narg);
 
 int LUA_EnumLib(lua_State *L);

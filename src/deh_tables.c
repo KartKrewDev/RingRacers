@@ -4215,6 +4215,25 @@ const char *const PLAYERFLAG_LIST[] = {
 	NULL // stop loop here.
 };
 
+const char *const PLAYERFLAG2_LIST[] = {
+	"SELFMUTE",
+	"SELFDEAFEN",
+	"SERVERMUTE",
+	"SERVERDEAFEN",
+	
+	"STRICTFASTFALL", // Fastfall only with C, never with A+X. Profile preference.
+	
+	"ALWAYSDAMAGED", // Ignore invulnerability or clash conditions when evaulating damage (P_DamageMobj). Unset after use!
+	"BUBBLECONTACT", // ACHTUNG VERY BAD HACK - Don't allow Bubble Shield to contact certain objects unless this is a fresh blowup.
+	"SUPERTRANSFERVFX", // Don't respawn the "super transfer available" VFX.
+	"FASTTUMBLEBOUNCE", // Don't lose speed when tumblebouncing.
+	
+	"SERVERTEMPMUTE", // Haven't met gamestochat requirement
+	"SAMEFRAMESTUNG", // Goofy bullshit for tracking mutual ring sting
+	"UNSTINGABLE", // Was bumped out of spindash
+	NULL
+};
+
 const char *const GAMETYPERULE_LIST[] = {
 	"CIRCUIT",
 	"BOTS",
