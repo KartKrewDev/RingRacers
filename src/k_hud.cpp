@@ -4235,7 +4235,7 @@ static boolean K_drawKartLaps(void)
 			K_DrawMarginSticker(fr-1+(flipflag ? 2 : 0), fy+1, 25+bump, V_HUDTRANS|V_SLIDEIN|splitflags, true, flipflag);
 										// WHAT IS THIS?
 										// WHAT ARE YOU FUCKING TALKING ABOUT?
-		
+
 		if (franticitems)
 		{
 			V_DrawMappedPatch(fr, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_exp[1], R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PURPLE, GTC_CACHE));
@@ -5135,7 +5135,7 @@ static void K_drawKartWanted(void)
 
 static void K_drawKartPlayerCheck(void)
 {
-	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	const fixed_t maxdistance = FixedMul(2000 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	UINT8 i;
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
 	fixed_t y = CHEK_Y * FRACUNIT;
@@ -5193,6 +5193,8 @@ static void K_drawKartPlayerCheck(void)
 
 		distance = R_PointToDist2(pPos.x, pPos.y, v.x, v.y);
 
+		colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(checkplayer->mo->color), GTC_CACHE);
+
 		if (distance > maxdistance)
 		{
 			// Too far away
@@ -5212,12 +5214,18 @@ static void K_drawKartPlayerCheck(void)
 		{
 			pnum += 2;
 		}
+		else if ((checkplayer->instaWhipCharge) && !(cv_reducevfx.value))
+		{
+			if (leveltime & 2)
+				R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_WHITE), GTC_CACHE);
+			else
+				R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(SKINCOLOR_BLACK), GTC_CACHE);
+		}
 
 		K_ObjectTracking(&result, &v, true);
 
 		if (result.onScreen == true)
 		{
-			colormap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(checkplayer->mo->color), GTC_CACHE);
 			V_DrawFixedPatch(result.x, y, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN|splitflags, kp_check[pnum], colormap);
 		}
 	}
