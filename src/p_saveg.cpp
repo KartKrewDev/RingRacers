@@ -660,6 +660,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].infinitether);
 
 		WRITEUINT8(save->p, players[i].finalfailsafe);
+		WRITEUINT8(save->p, players[i].freeRingShooterCooldown);
 
 		WRITEUINT8(save->p, players[i].lastsafelap);
 		WRITEUINT8(save->p, players[i].lastsafecheatcheck);
@@ -679,6 +680,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].instaWhipCharge);
 		WRITEUINT8(save->p, players[i].defenseLockout);
+		WRITEUINT8(save->p, players[i].instaWhipChargeLockout);
 		WRITEUINT8(save->p, players[i].oldGuard);
 		WRITEUINT8(save->p, players[i].powerupVFXTimer);
 
@@ -1340,6 +1342,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].infinitether = READUINT16(save->p);
 
 		players[i].finalfailsafe = READUINT8(save->p);
+		players[i].freeRingShooterCooldown = READUINT8(save->p);
 
 		players[i].lastsafelap = READUINT8(save->p);
 		players[i].lastsafecheatcheck = READUINT8(save->p);
@@ -1358,6 +1361,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].instaWhipCharge = READUINT8(save->p);
 		players[i].defenseLockout = READUINT8(save->p);
+		players[i].instaWhipChargeLockout = READUINT8(save->p);
 		players[i].oldGuard = READUINT8(save->p);
 		players[i].powerupVFXTimer = READUINT8(save->p);
 

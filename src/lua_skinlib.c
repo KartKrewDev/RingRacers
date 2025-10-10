@@ -113,8 +113,13 @@ static int skin_get(lua_State *L)
 		lua_pushinteger(L, skin->highresscale);
 		break;
 	case skin_rivals:
-		// This would be pretty cool to push
-		return UNIMPLEMENTED;
+		lua_createtable(L, SKINRIVALS, 0);
+		for (size_t i = 0; i < SKINRIVALS; i++)
+		{
+			lua_pushstring(L, skin->rivals[i]);
+			lua_rawseti(L, -2, 1 + i);
+		}
+		break;
 	case skin_soundsid:
 		LUA_PushUserdata(L, skin->soundsid, META_SOUNDSID);
 		break;
