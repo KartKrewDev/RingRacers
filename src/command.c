@@ -113,6 +113,7 @@ CV_PossibleValue_t descriptiveinput_cons_t[] = {
 	{7, "6Bt. (D)"},
 	{8, "6Bt. (E)"},
 	{9, "6Bt. (F)"},
+	{10, "6Bt. (G)"},
 	{0, NULL}
 };
 
