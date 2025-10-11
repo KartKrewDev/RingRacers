@@ -1562,7 +1562,7 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 	if (dest->player != NULL)
 	{
 		// No tethering off of the guy who got the starting bonus :P
-		if (dest->player->startboost > 0)
+		if (dest->player->startboost > 0 || dest->player->neostartboost > 0)
 		{
 			return false;
 		}
@@ -3855,6 +3855,11 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->startboost) // Startup Boost
 	{
 		ADDBOOST(FRACUNIT, 4*FRACUNIT, HANDLESCALING); // + 100% top speed, + 400% acceleration, +50% handling
+	}
+
+	if (player->neostartboost) // Startup Boost
+	{
+		ADDBOOST(FRACUNIT/2, 2*FRACUNIT, HANDLESCALING/3); // + 50% top speed, + 200% acceleration, +no sliptide% handling
 	}
 
 	if (player->dropdashboost) // Drop dash
@@ -10200,6 +10205,61 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		Music_Stop("position");
 	}
 
+	if (player->pflags2 & PF2_GIMMESTARTAWARDS)
+	{
+		UINT16 maxduration = 125;
+		UINT16 duration = FixedRescale(leveltime - starttime, 0, TICRATE*2, Easing_Linear, maxduration, 0);
+
+		player->aciddropdashboost += duration;
+		S_StartSound(player->mo, sfx_s23c);
+
+		if (duration)
+		{
+			K_SpawnDriftBoostExplosion(player, FixedRescale(duration, 0, maxduration, Easing_Linear, 1, 3));
+			// K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
+		}
+
+		// CONS_Printf("%d %s %d giving start award %d\n", leveltime, player_names[player - players], leveltime - starttime, duration);
+	}
+
+	if (player->pflags2 & PF2_GIMMEFIRSTBLOOD)
+	{
+		if (K_InRaceDuel())
+		{
+			K_SpawnDriftElectricSparks(player, player->skincolor, false);
+			K_SpawnAmps(player, 20, player->mo);
+		}
+		else
+		{
+			S_StartSound(player->mo, sfx_s23c);
+			player->startboost = 125;
+
+			K_SpawnDriftBoostExplosion(player, 4);
+			K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
+			K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 20, player->mo);
+
+			if (g_teamplay)
+			{
+				for (UINT8 j = 0; j < MAXPLAYERS; j++)
+				{
+					if (!playeringame[j] || players[j].spectator || !players[j].mo || P_MobjWasRemoved(players[j].mo))
+						continue;
+					if (!G_SameTeam(player, &players[j]))
+						continue;
+					if (player == &players[j])
+						continue;
+					K_SpawnAmps(&players[j], 10, player->mo);
+				}
+			}
+		}
+
+		// CONS_Printf("%d %s giving first blood\n", leveltime, player_names[player - players]);
+
+		rainbowstartavailable = false;
+	}
+
+	player->pflags2 &= ~(PF2_GIMMESTARTAWARDS|PF2_GIMMEFIRSTBLOOD);
+
 	if (player->transfer)
 	{
 		if (player->fastfall)
@@ -10692,6 +10752,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->startboost--;
 	}
+
+	if (player->neostartboost > 0 && onground == true)
+	{
+		player->neostartboost--;
+	}
+
 	if (player->dropdashboost)
 		player->dropdashboost--;
 

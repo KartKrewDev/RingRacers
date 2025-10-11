@@ -154,6 +154,8 @@ typedef enum
 	PF2_SERVERTEMPMUTE		= 1<<10, // Haven't met gamestochat requirement
 	PF2_SAMEFRAMESTUNG		= 1<<11, // Goofy bullshit for tracking mutual ring sting
 	PF2_UNSTINGABLE			= 1<<12, // Was bumped out of spindash
+	PF2_GIMMESTARTAWARDS	= 1<<13, // Need to apply non-first start awards on a 1 tic delay to prevent port priority
+	PF2_GIMMEFIRSTBLOOD		= 1<<14, // And need to differentiate between First Blood and everything else!
 } pflags2_t;
 
 typedef enum
@@ -755,6 +757,7 @@ struct player_t
 	tic_t lastairtime;
 	UINT16 bigwaypointgap;	// timer counts down if finish line distance gap is too big to update waypoint
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
+	UINT8 neostartboost;	// Weaker partial startboost
 	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 	UINT8 aciddropdashboost;	// acid dropdash
 

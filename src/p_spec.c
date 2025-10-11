@@ -1991,6 +1991,13 @@ static void K_HandleLapIncrement(player_t *player)
 				S_StartSound(player->mo, sfx_s3kb2);
 			}
 
+			player->karthud[khud_splitcolor] = 0;
+			player->karthud[khud_splitposition] = 1;
+			player->karthud[khud_splitskin] = -1;
+			player->karthud[khud_splittime] = (INT32)(starttime - leveltime);
+			player->karthud[khud_splittimer] = 3*TICRATE;
+			player->karthud[khud_splitwin] = -2;
+
 			return;
 		}
 
@@ -2060,37 +2067,34 @@ static void K_HandleLapIncrement(player_t *player)
 				K_UpdateAllPlayerPositions(); // P_DoPlayerExit calls this
 			}
 
-			if (rainbowstartavailable == true && player->mo->hitlag == 0)
+			if (!G_TimeAttackStart() && player->laps == 1 && lapisfresh)
 			{
-				if (K_InRaceDuel())
+				if (rainbowstartavailable)
 				{
-					K_SpawnDriftElectricSparks(player, player->skincolor, false);
-					K_SpawnAmps(player, 20, player->mo);
+					// CONS_Printf("%d: %s gimme first blood\n", leveltime, player_names[player - players]);
+					player->pflags2 |= PF2_GIMMEFIRSTBLOOD;
 				}
 				else
 				{
-					S_StartSound(player->mo, sfx_s23c);
-					player->startboost = 125;
-
-					K_SpawnDriftBoostExplosion(player, 4);
-					K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
-					if (!G_TimeAttackStart())
-						K_SpawnAmps(player, (K_InRaceDuel()) ? 20 : 20, player->mo);
-
-					if (g_teamplay)
-					{
-						for (UINT8 j = 0; i < MAXPLAYERS; i++)
-						{
-							if (!playeringame[j] || players[j].spectator || !players[j].mo || P_MobjWasRemoved(players[j].mo))
-								continue;
-							if (!G_SameTeam(player, &players[j]))
-								continue;
-							if (player == &players[j])
-								continue;
-							K_SpawnAmps(&players[j], 10, player->mo);
-						}
-					}
+					// CONS_Printf("%d: %s gimme start award\n", leveltime, player_names[player - players]);
+					player->pflags2 |= PF2_GIMMESTARTAWARDS;
 				}
+
+				player->karthud[khud_splitcolor] = 0;
+				player->karthud[khud_splitposition] = 1;
+				player->karthud[khud_splitskin] = -1;
+				player->karthud[khud_splittime] = (INT32)(starttime - leveltime);
+				player->karthud[khud_splittimer] = 2*TICRATE;
+				player->karthud[khud_splitwin] = (rainbowstartavailable) ? 2 : 0;
+			}
+
+			if (rainbowstartavailable == true && player->mo->hitlag == 0 && G_TimeAttackStart())
+			{
+				S_StartSound(player->mo, sfx_s23c);
+				player->startboost = 125;
+
+				K_SpawnDriftBoostExplosion(player, 4);
+				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
 
 				rainbowstartavailable = false;
 			}

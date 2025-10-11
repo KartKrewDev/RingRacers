@@ -57,6 +57,8 @@ Make sure this matches the actual number of states
 #define MINCOMBOFLOAT (mapobjectscale*1)
 #define MAXCOMBOTIME (TICRATE*4)
 
+#define STARTBOOST_DURATION (125)
+
 #define TIMEATTACK_START (TICRATE*10)
 
 #define LIGHTNING_CHARGE (TICRATE*2)

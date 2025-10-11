@@ -467,6 +467,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].lastairtime);
 		WRITEUINT16(save->p, players[i].bigwaypointgap);
 		WRITEUINT8(save->p, players[i].startboost);
+		WRITEUINT8(save->p, players[i].neostartboost);
 		WRITEUINT8(save->p, players[i].dropdashboost);
 		WRITEUINT8(save->p, players[i].aciddropdashboost);
 
@@ -1149,6 +1150,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].lastairtime = READUINT32(save->p);
 		players[i].bigwaypointgap = READUINT16(save->p);
 		players[i].startboost = READUINT8(save->p);
+		players[i].neostartboost = READUINT8(save->p);
 		players[i].dropdashboost = READUINT8(save->p);
 		players[i].aciddropdashboost = READUINT8(save->p);
 
