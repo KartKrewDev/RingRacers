@@ -1486,6 +1486,14 @@ static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdi
 			}
 
 			band->color = colors[c];
+
+			if (player->instaWhipCharge && ((leveltime%2) == 0))
+			{
+				band->color = SKINCOLOR_WHITE;
+				P_SetScale(band, band->destscale = (3*band->destscale) / 2);
+			}
+
+
 			band->colorized = true;
 
 			band->fuse = 2;
@@ -14400,7 +14408,7 @@ void K_DappleEmployment(player_t *player)
 
 			K_StumblePlayer(player);
 			player->preventfailsafe = TICRATE*3;
-			S_StopSoundByID(player->mo, sfx_s3k9b); // Avoid stumble crunch noise 
+			S_StopSoundByID(player->mo, sfx_s3k9b); // Avoid stumble crunch noise
 		}
 	}
 }
