@@ -3910,9 +3910,12 @@ static void K_GetKartBoostPower(player_t *player)
 		fixed_t ringboost_base = FRACUNIT/4;
 		if (player->overdrive)
 			ringboost_base += FRACUNIT/4;
+		if (player->momentboost)
+			ringboost_base += FRACUNIT/4;
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
 		fixed_t rb = FixedDiv(player->ringboost * FRACUNIT, max(FRACUNIT, K_RingDurationBoost(player)));
+
 		fixed_t rp = ((9 - player->kartspeed) + (9 - player->kartweight)) * ((3*FRACUNIT/20)/16);
 		ADDBOOST(
 			ringboost_base + FixedMul(FRACUNIT / 1750, rb) + rp,
@@ -10561,6 +10564,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// CONS_Printf("%d - %d\n", player->ringboost, oldringboost - player->ringboost);
 	}
 
+	if (player->momentboost)
+	{
+		player->momentboost--;
+		if (player->ringboost > 3)
+			player->ringboost -= 3;
+	}
+
+	if (player->ringboost == 0)
+		player->momentboost = 0;
+
 	if (!G_CompatLevel(0x0010) && player->superring == 0 && player->ringboxdelay == 0 && player->ringboost < player->lastringboost)
 	{
 		player->lastringboost = player->ringboost;
@@ -10815,7 +10828,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if ((player->baildrop % BAIL_DROPFREQUENCY) == 0)
 		{
-			P_FlingBurst(player, K_MomentumAngle(pmo), MT_FLINGRING, 10*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY);
+			P_FlingBurst(player, K_MomentumAngle(pmo), MT_FLINGRING, 10*TICRATE, FRACUNIT, player->baildrop/BAIL_DROPFREQUENCY, FRACUNIT);
 			S_StartSound(pmo, sfx_gshad);
 		}
 
@@ -15109,6 +15122,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					{
 						player->superring--;
 						dumprate = 2;
+
+						if (!G_CompatLevel(0x0011))
+							player->momentboost += 3;
+
+						// angle_t flingangle = player->mo->angle + ((P_RandomByte(PR_ITEM_RINGS) & 1) ? -ANGLE_90 : ANGLE_90);
+						// P_FlingBurst(player, flingangle, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, player->superring, 4*FRACUNIT);
+
 					}
 					else
 					{

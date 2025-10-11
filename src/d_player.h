@@ -843,6 +843,7 @@ struct player_t
 	UINT8 pickuprings;	// Number of rings being picked up before added to the counter (prevents rings from being deleted forever over 20)
 	UINT8 ringdelay;	// (0 to 3) - 3 tic delay between every ring usage
 	UINT16 ringboost;	// Ring boost timer
+	UINT16 momentboost; // Sigh
 	UINT8 sparkleanim;	// (0 to 19) - Angle offset for ring sparkle animation
 	UINT16 superring;	// You were awarded rings, and have this many of them left to spawn on yourself.
 	UINT16 superringdisplay; // For HUD countup when awarded superring
@@ -1129,7 +1130,7 @@ struct player_t
 	boolean dotrickfx;
 	boolean stingfx;
 	UINT8 bumperinflate;
-	
+
 	boolean mfdfinish; // Did you cross the finish line while just about to explode?
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates

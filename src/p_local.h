@@ -555,7 +555,7 @@ void P_SpecialStageDamage(player_t *player, mobj_t *inflictor, mobj_t *source);
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
 void P_UpdateRemovedOrbital(mobj_t *target, mobj_t *inflictor, mobj_t *source);
 void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
-void P_FlingBurst(player_t *player, angle_t fa, mobjtype_t objType, tic_t objFuse, fixed_t objScale, INT32 i);
+void P_FlingBurst(player_t *player, angle_t fa, mobjtype_t objType, tic_t objFuse, fixed_t objScale, INT32 i, fixed_t dampen);
 void P_PlayerRingBurst(player_t *player, INT32 num_rings); /// \todo better fit in p_user.c
 
 void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck);
