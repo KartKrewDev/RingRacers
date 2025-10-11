@@ -10210,7 +10210,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT16 maxduration = 125;
 		UINT16 duration = FixedRescale(leveltime - starttime, 0, TICRATE*2, Easing_Linear, maxduration, 0);
 
-		player->aciddropdashboost += duration;
+		player->neostartboost += duration;
 		S_StartSound(player->mo, sfx_s23c);
 
 		if (duration)

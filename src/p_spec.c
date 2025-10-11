@@ -2074,7 +2074,7 @@ static void K_HandleLapIncrement(player_t *player)
 					// CONS_Printf("%d: %s gimme first blood\n", leveltime, player_names[player - players]);
 					player->pflags2 |= PF2_GIMMEFIRSTBLOOD;
 				}
-				else
+				else if (!K_InRaceDuel())
 				{
 					// CONS_Printf("%d: %s gimme start award\n", leveltime, player_names[player - players]);
 					player->pflags2 |= PF2_GIMMESTARTAWARDS;
