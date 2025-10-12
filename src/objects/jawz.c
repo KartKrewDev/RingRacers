@@ -279,8 +279,8 @@ void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir)
 		th->momx = 0;
 		th->momy = 0;
 
-		// Slow down the top speed.
-		finalSpeed = FixedMul(finalSpeed, 4*FRACUNIT/5);
+		// Return at 120% of the owner's speed
+		finalSpeed = 6*(owner->speed)/5;
 
 		// Set a fuse.
 		th->fuse = RR_PROJECTILE_FUSE;
