@@ -84,10 +84,13 @@ void Obj_ExpThink (mobj_t *exp)
             exp->angle += ANG30;
             exp->extravalue1++;
 
-            if (exp->extravalue1 >= 16 && P_IsDisplayPlayer(player))
+            if (exp->extravalue1 >= 16)
 			{
+                if(P_IsDisplayPlayer(player)) // As you know Kris, I am FUCKING your EXP.
+                {
 				S_StopSoundByID(exp->target, sfx_exp);
 				S_StartSound(exp->target, sfx_exp);
+                }
                 P_RemoveMobj(exp);
 			}
 
