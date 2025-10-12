@@ -28,7 +28,7 @@
 #define SPB_SLIPTIDEDELTA (ANG1 * 3)
 #define SPB_STEERDELTA (ANGLE_90 - ANG10)
 #define SPB_DEFAULTSPEED (FixedMul(mapobjectscale, K_GetKartSpeedFromStat(9) * 2))
-#define SPB_ACTIVEDIST (1024 * FRACUNIT)
+#define SPB_ACTIVEDIST (2048 * FRACUNIT)
 
 #define SPB_HOTPOTATO (2*TICRATE)
 #define SPB_MAXSWAPS (2)
