@@ -15190,10 +15190,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						dumprate = 2;
 
 						if (!G_CompatLevel(0x0011))
+						{
 							player->momentboost += 3;
-
-						// angle_t flingangle = player->mo->angle + ((P_RandomByte(PR_ITEM_RINGS) & 1) ? -ANGLE_90 : ANGLE_90);
-						// P_FlingBurst(player, flingangle, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, player->superring, 4*FRACUNIT);
+							angle_t flingangle = player->mo->angle + ((P_RandomByte(PR_ITEM_RINGS) & 1) ? -ANGLE_90 : ANGLE_90);
+							P_FlingBurst(player, flingangle, MT_DEBTSPIKE, 0, 3 * FRACUNIT / 2, 20, 4*FRACUNIT);
+							S_StartSound(player->mo, sfx_gshae);
+						}
 
 					}
 					else

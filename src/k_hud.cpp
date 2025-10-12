@@ -4314,6 +4314,20 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 	boolean colorring = false;
 	INT32 ringx = 0, fy = 0;
 
+	UINT16 superringcolor = SKINCOLOR_SAPPHIRE;
+	if (stplyr->momentboost)
+	{
+		if (!cv_reducevfx.value)
+		{
+			if (leveltime % 2)
+				superringcolor = SKINCOLOR_GOLD;
+		}
+		else
+		{
+			superringcolor = SKINCOLOR_GOLD;
+		}
+	}
+
 	rn[0] = ((abs(stplyr->hudrings) / 10) % 10);
 	rn[1] = (abs(stplyr->hudrings) % 10);
 
@@ -4466,7 +4480,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		if (stplyr->superringdisplay && !(stplyr->superringalert % 2))
 		{
 			using srb2::Draw;
-			Draw row = Draw(fr+19+superoffset, fy).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kPing).colorize(SKINCOLOR_SAPPHIRE);
+			Draw row = Draw(fr+19+superoffset, fy).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kPing).colorize(superringcolor);
 			row.text("+{:01}", abs(stplyr->superringdisplay));
 		}
 	}
@@ -4573,7 +4587,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		if (stplyr->superringdisplay && !(stplyr->superringalert % 2))
 		{
 			using srb2::Draw;
-			Draw row = Draw(LAPS_X+23+3+15, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer).colorize(SKINCOLOR_SAPPHIRE);
+			Draw row = Draw(LAPS_X+23+3+15, fy-4).flags(V_HUDTRANS|V_SLIDEIN|splitflags).font(Draw::Font::kThinTimer).colorize(superringcolor);
 			row.text("+{:01}", abs(stplyr->superringdisplay));
 		}
 	}
