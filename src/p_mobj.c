@@ -8008,7 +8008,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		player_t *player = target->player;
 		fixed_t myspeed = (player->speed);
 		boolean In_A_Race = ((gametyperules & GTR_CIRCUIT) && !K_Cooperative() && M_NotFreePlay() && !modeattacking); // If you're in a real race.
-		boolean prorated_sonicboom_alert = (K_PlayerTripwireSpeedThreshold(player) > 2 * K_GetKartSpeed(player, false, false)) ; // If you're being prorated.
+		boolean prorated_sonicboom_alert = (K_PlayerTripwireSpeedThreshold(player) > (9 * K_GetKartSpeed(player, false, false)/4)) ; // If you're being prorated, aka above 225%
 		fixed_t maxspeed = K_PlayerTripwireSpeedThreshold(player); // Centered at this speed.
 		fixed_t minspeed = max(2 * maxspeed / 4, 7 * K_GetKartSpeed(player, false, false) / 5); // Starts appearing at this speed.
 		fixed_t alertspeed = 9 * maxspeed / 10; // When to flash?
