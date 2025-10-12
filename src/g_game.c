@@ -5939,7 +5939,7 @@ void G_SetRetryFlag(void)
 {
 	if (retrying == false && grandprixinfo.gp)
 	{
-		if (!specialstageinfo.valid)
+		if (grandprixinfo.eventmode != GPEVENT_SPECIAL)
 			grandprixinfo.rank.continuesUsed++;
 		grandprixinfo.rank.levels[grandprixinfo.rank.numLevels].continues++;
 	}
