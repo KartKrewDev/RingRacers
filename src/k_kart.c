@@ -3205,7 +3205,7 @@ fixed_t K_PlayerTripwireSpeedThreshold(const player_t *player)
 		*/
 
 		#define REVERSED_SONICBOOM_PRORATION (30000)
-		#define MAX_SONICBOOM_REDUCTION (8*FRACUNIT/10)
+		#define MAX_SONICBOOM_REDUCTION (7*FRACUNIT/9) // Should bring Sonic Boom floor to 175% when far away
 
 		UINT32 dist = K_GetItemRouletteDistance(player, D_NumPlayersInRace());
 
