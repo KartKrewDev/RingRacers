@@ -577,9 +577,8 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 	// If our last map was Special, check for "uncredited" continues to offset the rank bump.
 	fixed_t hiddenpercent = percent;
 	gpRank_level_t *lastgrade = &rankData->levels[rankData->numLevels - 1];
-	UINT32 id = lastgrade->id;
 
-	if (rankData->specialWon && (mapheaderinfo[id-1]->typeoflevel & G_TOLFlag(GT_SPECIAL)))
+	if (rankData->specialWon)
 	{
 		hiddenpercent -= FRACUNIT / RANK_CONTINUE_PENALTY_DIV * lastgrade->continues;
 	}
