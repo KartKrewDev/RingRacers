@@ -23,7 +23,9 @@ enum botvars {
 	botvars_difficulty,
 	botvars_diffincrease,
 	botvars_rival,
+	botvars_foe,
 	botvars_rubberband,
+	botvars_bumpslow,
 	botvars_itemdelay,
 	botvars_itemconfirm,
 	botvars_turnconfirm,
@@ -31,6 +33,9 @@ enum botvars {
 	botvars_respawnconfirm,
 	botvars_roulettepriority,
 	botvars_roulettetimeout,
+	botvars_predictionerror,
+	botvars_recentdeflection,
+	botvars_lastangle
 };
 
 static const char *const botvars_opt[] = {
@@ -39,7 +44,9 @@ static const char *const botvars_opt[] = {
 	"difficulty",
 	"diffincrease",
 	"rival",
+	"foe",
 	"rubberband",
+	"bumpslow",
 	"itemdelay",
 	"itemconfirm",
 	"turnconfirm",
@@ -47,6 +54,9 @@ static const char *const botvars_opt[] = {
 	"respawnconfirm",
 	"roulettepriority",
 	"roulettetimeout",
+	"predictionerror",
+	"recentdeflection",
+	"lastangle",
 	NULL
 };
 
@@ -77,8 +87,14 @@ static int botvars_get(lua_State *L)
 	case botvars_rival:
 		lua_pushboolean(L, botvars->rival);
 		break;
+	case botvars_foe:
+		lua_pushboolean(L, botvars->foe);
+		break;
 	case botvars_rubberband:
 		lua_pushfixed(L, botvars->rubberband);
+		break;
+	case botvars_bumpslow:
+		lua_pushinteger(L, botvars->bumpslow);
 		break;
 	case botvars_itemdelay:
 		lua_pushinteger(L, botvars->itemdelay);
@@ -100,6 +116,15 @@ static int botvars_get(lua_State *L)
 		break;
 	case botvars_roulettetimeout:
 		lua_pushinteger(L, botvars->rouletteTimeout);
+		break;
+	case botvars_predictionerror:
+		lua_pushinteger(L, botvars->predictionError);
+		break;
+	case botvars_recentdeflection:
+		lua_pushinteger(L, botvars->recentDeflection);
+		break;
+	case botvars_lastangle:
+		lua_pushinteger(L, botvars->lastAngle);
 		break;
 	}
 	return 1;
@@ -133,8 +158,14 @@ static int botvars_set(lua_State *L)
 	case botvars_rival:
 		botvars->rival = luaL_checkboolean(L, 3);
 		break;
+	case botvars_foe:
+		botvars->foe = luaL_checkboolean(L, 3);
+		break;
 	case botvars_rubberband:
 		botvars->rubberband = luaL_checkfixed(L, 3);
+		break;
+	case botvars_bumpslow:
+		botvars->bumpslow = luaL_checkinteger(L, 3);
 		break;
 	case botvars_itemdelay:
 		botvars->itemdelay = luaL_checkinteger(L, 3);
@@ -156,6 +187,15 @@ static int botvars_set(lua_State *L)
 		break;
 	case botvars_roulettetimeout:
 		botvars->rouletteTimeout = luaL_checkinteger(L, 3);
+		break;
+	case botvars_predictionerror:
+		botvars->predictionError = luaL_checkangle(L, 3);
+		break;
+	case botvars_recentdeflection:
+		botvars->recentDeflection = luaL_checkangle(L, 3);
+		break;
+	case botvars_lastangle:
+		botvars->lastAngle = luaL_checkangle(L, 3);
 		break;
 	}
 	return 0;

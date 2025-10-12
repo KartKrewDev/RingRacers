@@ -28,6 +28,7 @@ enum itemroulette {
 	itemroulette_itemlist,
 	itemroulette_playing,
 	itemroulette_exiting,
+	itemroulette_preexpdist,
 	itemroulette_dist,
 	itemroulette_basedist,
 	itemroulette_firstdist,
@@ -41,7 +42,8 @@ enum itemroulette {
 	itemroulette_eggman,
 	itemroulette_ringbox,
 	itemroulette_autoroulette,
-	itemroulette_reserved
+	itemroulette_reserved,
+	itemroulette_popcorn
 };
 static const char *const itemroulette_opt[] = {
 	"valid",
@@ -49,6 +51,7 @@ static const char *const itemroulette_opt[] = {
 	"itemlist",
 	"playing",
 	"exiting",
+	"preexpdist",
 	"dist",
 	"basedist",
 	"firstdist",
@@ -63,6 +66,7 @@ static const char *const itemroulette_opt[] = {
 	"ringbox",
 	"autoroulette",
 	"reserved",
+	"popcorn",
 	NULL
 };
 
@@ -90,6 +94,9 @@ static int itemroulette_get(lua_State *L)
 		break;
 	case itemroulette_exiting:
 		lua_pushinteger(L, itemroulette->exiting);
+		break;
+	case itemroulette_preexpdist:
+		lua_pushinteger(L, itemroulette->preexpdist);
 		break;
 	case itemroulette_dist:
 		lua_pushinteger(L, itemroulette->dist);
@@ -133,6 +140,9 @@ static int itemroulette_get(lua_State *L)
 	case itemroulette_reserved:
 		lua_pushinteger(L, itemroulette->reserved);
 		break;
+	case itemroulette_popcorn:
+		lua_pushinteger(L, itemroulette->popcorn);
+		break;
 	}
 
 	return 1;
@@ -171,6 +181,9 @@ static int itemroulette_set(lua_State *L)
 		break;
 	case itemroulette_exiting:
 		itemroulette->exiting = luaL_checkinteger(L, 3);
+		break;
+	case itemroulette_preexpdist:
+		itemroulette->preexpdist = luaL_checkinteger(L, 3);
 		break;
 	case itemroulette_dist:
 		itemroulette->dist = luaL_checkinteger(L, 3);
@@ -213,6 +226,9 @@ static int itemroulette_set(lua_State *L)
 		break;
 	case itemroulette_reserved:
 		itemroulette->reserved = luaL_checkinteger(L, 3);
+		break;
+	case itemroulette_popcorn:
+		itemroulette->popcorn = luaL_checkinteger(L, 3);
 		break;
 	}
 	return 0;
