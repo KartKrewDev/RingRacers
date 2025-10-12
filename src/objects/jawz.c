@@ -75,7 +75,7 @@ static void JawzChase(mobj_t *th, boolean grounded)
 						fixed_t speeddifference = abs(
 							topspeed - min(
 								jawz_chase(th)->player->speed,
-								(K_GetKartSpeed(jawz_chase(th)->player, false, false))/2
+								K_GetKartSpeed(jawz_chase(th)->player, false, false)
 							)
 						);
 
@@ -279,16 +279,8 @@ void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir)
 		th->momx = 0;
 		th->momy = 0;
 
-		// Return at absolutely 120% of the owner's speed if it's any less than that.
-		fixed_t min_backthrowspeed = 6*(K_GetKartSpeed(owner, false, false))/5;
-		if (owner->speed >= min_backthrowspeed)
-			{
-				finalSpeed = 6*(owner->speed)/5;
-			}
-		else
-			{
-				finalSpeed = min_backthrowspeed; 
-			}
+		// Slow down the top speed.
+		finalSpeed = FixedMul(finalSpeed, 4*FRACUNIT/5);
 
 		// Set a fuse.
 		th->fuse = RR_PROJECTILE_FUSE;
