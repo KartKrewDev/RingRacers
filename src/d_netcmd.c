@@ -618,7 +618,23 @@ static boolean AllowedPlayerNameChar(char ch)
 	return true;
 }
 
-boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
+boolean IsPlayerNameUnique(const char *name, INT32 playernum)
+{
+	// Check if a player is currently using the name, case-insensitively.
+	for (INT32 ix = 0; ix < MAXPLAYERS; ix++)
+	{
+		if (ix == playernum) // Don't compare with themself.
+			continue;
+		if (playeringame[ix] == false) // This player is not ingame.
+			continue;
+		if (strcasecmp(name, player_names[ix]) == 0) // Are usernames equal?
+			return false;
+	}
+	
+	return true;
+}
+
+boolean IsPlayerNameGood(char *name)
 {
 	size_t ix, len = strlen(name);
 
@@ -650,36 +666,43 @@ boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 	for (ix = 0; ix < len; ix++)
 		if (!AllowedPlayerNameChar(name[ix]))
 			return false;
+		
+	return true;
+}
 
-	// Check if a player is currently using the name, case-insensitively.
-	for (ix = 0; ix < MAXPLAYERS; ix++)
+boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
+{
+	size_t len = strlen(name);
+	
+	// Check if a player is using a valid name.
+	if (!IsPlayerNameGood(name))
+		return false;
+
+	// Check if another player is currently using the name, case-insensitively.
+	if (!IsPlayerNameUnique(name, playernum)) 
 	{
-		if (ix != (size_t)playernum && playeringame[ix]
-			&& strcasecmp(name, player_names[ix]) == 0)
-		{
-			// We shouldn't kick people out just because
-			// they joined the game with the same name
-			// as someone else -- modify the name instead.
+		// We shouldn't kick people out just because
+		// they joined the game with the same name
+		// as someone else -- modify the name instead.
 
-			// Recursion!
-			// Slowly strip characters off the end of the
-			// name until we no longer have a duplicate.
-			if (len > 1)
-			{
-				name[len-1] = '\0';
-				if (!EnsurePlayerNameIsGood (name, playernum))
-					return false;
-			}
-			else if (len == 1) // Agh!
-			{
-				// Last ditch effort...
-				sprintf(name, "%d", 'A' + M_RandomKey(26));
-				if (!EnsurePlayerNameIsGood (name, playernum))
-					return false;
-			}
-			else
+		// Recursion!
+		// Slowly strip characters off the end of the
+		// name until we no longer have a duplicate.
+		if (len > 1)
+		{
+			name[len-1] = '\0';
+			if (!EnsurePlayerNameIsGood (name, playernum))
 				return false;
 		}
+		else if (len == 1) // Agh!
+		{
+			// Last ditch effort...
+			sprintf(name, "%d", 'A' + M_RandomKey(26));
+			if (!EnsurePlayerNameIsGood (name, playernum))
+				return false;
+		}
+		else
+			return false;
 	}
 
 	return true;

@@ -5990,7 +5990,15 @@ static int lib_kSetNameForBot(lua_State *L)
 	if (!player->bot)
 		return luaL_error(L, "You may only change bot names.");
 
-	K_SetNameForBot(player-players, realname);
+	// Doing this to avoid a discarded const warning:
+	char modifiedname[MAXPLAYERNAME+1] = "";
+	strcpy(modifiedname, realname);
+
+	if (!IsPlayerNameGood(modifiedname))
+		return luaL_error(L, "Invalid bot name - it must be between %d and %d characters of length, "
+			"not start with a space, @ or ~ characters, and it must be composed of valid ASCII characters.", 1, MAXPLAYERNAME);	
+
+	K_SetNameForBot(player-players, modifiedname);
 
 	return 0;
 }
