@@ -117,8 +117,8 @@ void *Picture_PatchConvert(
 {
 	INT16 x, y;
 	UINT8 *img;
-	UINT8 *imgbuf = Z_Malloc(1<<26, PU_STATIC, NULL);
-	UINT8 *imgptr = imgbuf;
+	UINT8 *imgbuf;
+	UINT8 *imgptr;
 	UINT8 *colpointers, *startofspan;
 	size_t size = 0;
 	patch_t *inpatch = NULL;
@@ -159,6 +159,17 @@ void *Picture_PatchConvert(
 			intopoffset = inpatch->topoffset;
 		}
 	}
+
+	// Allocate a staging buffer with the maximum size needed for a patch of the same size as the input.
+
+	// round up to nearest multiple of 254-pixel posts, plus 1 more 254-pixel post for paranoia reasons
+	size_t maxcolumnsize = (2 + (inheight - 1) / 256) * 256;
+	// the patch header, and width columns of the max column size
+	size_t maxoutsize = maxcolumnsize * inwidth + (8 + 4 * inwidth);
+	// so, a 512x512 flat should maximally need 393,760 (384.53 KiB) bytes.
+	// quite a bit smaller than 64 megabytes, and much less annoying to the windows debug allocator!
+	imgbuf = Z_Malloc(maxoutsize, PU_STATIC, NULL);
+	imgptr = imgbuf;
 
 	// Write image size and offset
 	WRITEINT16(imgptr, inwidth);
