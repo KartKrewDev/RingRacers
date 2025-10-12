@@ -27,7 +27,7 @@ menuitem_t OPTIONS_EditProfile[] = {
 	{IT_STRING | IT_CALL, "Controls", "Change the button mappings.",
 		NULL, {.routine = M_ProfileDeviceSelect}, 0, 91},
 
-	{IT_STRING | IT_SUBMENU, "Accessibility", "Acccessibility and quality of life options.",
+	{IT_STRING | IT_SUBMENU, "Accessibility", "Accessibility and quality of life options.",
 		NULL, {.submenu = &OPTIONS_ProfileAccessibilityDef}, 0, 111},
 
 	{IT_STRING | IT_CALL, "Character", NULL, // tooltip set in M_StartEditProfile
