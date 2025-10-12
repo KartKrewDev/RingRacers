@@ -84,7 +84,7 @@ void Obj_ExpThink (mobj_t *exp)
             exp->angle += ANG30;
             exp->extravalue1++;
 
-            if (exp->extravalue1 >= 16)
+            if (exp->extravalue1 >= 16 && P_IsDisplayPlayer(player))
 			{
 				S_StopSoundByID(exp->target, sfx_exp);
 				S_StartSound(exp->target, sfx_exp);
