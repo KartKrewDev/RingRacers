@@ -8016,26 +8016,28 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		fixed_t percentvisible = 0;
 
-		if (myspeed > minspeed)
+		boolean not_respawning = player->respawn.state == RESPAWNST_NONE;
+
+		if (not_respawning && myspeed > minspeed)
 		{
 			percentvisible = min(FRACUNIT, FixedDiv(myspeed - minspeed, maxspeed - minspeed));
 		}
 
-		if (myspeed >= maxspeed || player->tripwireLeniency)
+		if (not_respawning && (myspeed >= maxspeed || player->tripwireLeniency))
 		{
 			player->subsonicleniency++; // Subsonic visual stays for a bit during tripwire leniency
 
-			if(player->subsonicleniency == 1 && player->tripwireLeniency && myspeed >= maxspeed && !S_SoundPlaying(player->mo, sfx_gsha7)) // Don't play during superring too
+			if (player->subsonicleniency == 1 && player->tripwireLeniency && myspeed >= maxspeed && !S_SoundPlaying(player->mo, sfx_gsha7)) // Don't play during superring too
 			{
-			mobj_t *boost = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_SONICBOOM);
-			boost->momx = player->mo->momx/2;
-			boost->momy = player->mo->momy/2;
-			boost->momz = player->mo->momz/2;
-			boost->angle = player->mo->angle + ANGLE_90;
-			boost->scalespeed = boost->scale;
-			boost->destscale = boost->scale*8;
-			//sonicboom->color = SKINCOLOR_WHITE;
-			boost->fuse = 8;
+				mobj_t *boost = P_SpawnMobjFromMobj(player->mo, 0, 0, player->mo->height/2, MT_SONICBOOM);
+				boost->momx = player->mo->momx/2;
+				boost->momy = player->mo->momy/2;
+				boost->momz = player->mo->momz/2;
+				boost->angle = player->mo->angle + ANGLE_90;
+				boost->scalespeed = boost->scale;
+				boost->destscale = boost->scale*8;
+				//sonicboom->color = SKINCOLOR_WHITE;
+				boost->fuse = 8;
 			}
 		}
 		else
@@ -8120,7 +8122,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		// Alright, let's just handle all the sfx down here
 		boolean not_invinc_or_grow = player->invincibilitytimer == 0 && player->growshrinktimer <= 0;
 
-		if (P_IsDisplayPlayer(player) && not_invinc_or_grow)
+		if (P_IsDisplayPlayer(player) && not_invinc_or_grow && not_respawning)
 		{
 			UINT8 MIN_VOLUME = 25;
 			UINT8 MAX_VOLUME = 75;
