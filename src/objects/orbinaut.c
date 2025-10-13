@@ -325,10 +325,9 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir)
 	{
 		th->color = orbinaut_owner(th)->player->skincolor;
 
-		const mobj_t *owner = orbinaut_owner(th);
-		const ffloor_t *rover = P_IsObjectFlipped(owner) ? owner->ceilingrover : owner->floorrover;
+		const boolean ownerwaterrun = K_WaterRun(orbinaut_owner(th));
 
-		if (dir >= 0 && rover && (rover->fofflags & FOF_SWIMMABLE))
+		if (dir >= 0 && ownerwaterrun)
 		{
 			// The owner can run on water, so we should too!
 			orbinaut_flags(th) |= ORBI_WATERSKI;
