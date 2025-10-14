@@ -4500,6 +4500,9 @@ boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
 	if (!K_PlayerUsesBotMovement(attacker) && K_PlayerUsesBotMovement(defender))
 		award /= 2;
 
+	if (award == 0)
+		award = 1;
+
 	return award;
 }
 
