@@ -11789,15 +11789,21 @@ void K_KartResetPlayerColor(player_t *player)
 
 		fullbright = true;
 
+		int invinc_rotation_delay = 2;
+		if (cv_reducevfx.value)
+		{
+			invinc_rotation_delay = 8;
+		}
+
 		if (player->invincibilitytimer > defaultTime)
 		{
-			player->mo->color = K_RainbowColor(leveltime / 2);
+			player->mo->color = K_RainbowColor(leveltime / invinc_rotation_delay);
 			player->mo->colorized = true;
 			skip = true;
 		}
 		else
 		{
-			flicker += (defaultTime - player->invincibilitytimer) / TICRATE / 2;
+			flicker += ((defaultTime - player->invincibilitytimer) / TICRATE / 2) * cv_reducevfx.value ? 4 : 1;
 		}
 
 		if (leveltime % flicker == 0)
@@ -11815,7 +11821,8 @@ void K_KartResetPlayerColor(player_t *player)
 
 	if (player->growshrinktimer) // Ditto, for grow/shrink
 	{
-		if (player->growshrinktimer % 5 == 0)
+
+		if ((!cv_reducevfx.value && player->growshrinktimer % 5 == 0) || (cv_reducevfx.value && player->growshrinktimer % 35 < 12))
 		{
 			player->mo->colorized = true;
 			player->mo->color = (player->growshrinktimer < 0 ? SKINCOLOR_CREAMSICLE : SKINCOLOR_PERIWINKLE);
@@ -11846,13 +11853,18 @@ void K_KartResetPlayerColor(player_t *player)
 	}
 
 	boolean allowflashing = true;
+	int flashingrate = 1;
 	if (demo.playback && cv_reducevfx.value && !R_CanShowSkinInDemo(player->skin))
 	{
 		// messy condition stack for, specifically, disabling flashing effects when viewing a staff ghost replay of a currently hidden character
 		allowflashing = false;
 	}
+	if (cv_reducevfx.value)
+	{
+		flashingrate = 4;
+	}
 
-	if (player->overdrive && (leveltime & 1) && allowflashing)
+	if (player->overdrive && ((leveltime / flashingrate) & 1) && allowflashing)
 	{
 		player->mo->colorized = true;
 		fullbright = true;
@@ -11867,7 +11879,7 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	if (player->ringboost && (leveltime & 1) && allowflashing) // ring boosting
+	if (player->ringboost && ((leveltime / flashingrate) & 1) && allowflashing) // ring boosting
 	{
 		player->mo->colorized = true;
 		fullbright = true;

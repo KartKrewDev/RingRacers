@@ -8202,6 +8202,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			trans = NUMTRANSMAPS - trans;
 
+			int invinc_rotation_delay = 2;
+			if (cv_reducevfx.value)
+			{
+				invinc_rotation_delay = 8;
+			}
+
 			if ((trans >= NUMTRANSMAPS) // not a valid visibility
 				|| (myspeed < (tripspeed - basespeed/2) && (leveltime & 1)) // < 150% flickering
 				|| (mobj->target->player->tripwirePass < TRIPWIRE_BOOST) // Not strong enough to make an aura
@@ -8224,7 +8230,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				{
 					if (mobj->target->player->invincibilitytimer > itemtime+(2*TICRATE))
 					{
-						mobj->color = K_RainbowColor(leveltime / 2);
+						mobj->color = K_RainbowColor(leveltime / invinc_rotation_delay);
 					}
 					else
 					{

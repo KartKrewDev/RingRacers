@@ -6865,7 +6865,13 @@ static void K_drawKartStartCountdown(void)
 			}
 		}
 
-		if ((leveltime % (2*5)) / 5) // blink
+		int flashrate = 5;
+		if (cv_reducevfx.value)
+		{
+			flashrate = 35;
+		}
+
+		if ((leveltime % (2*flashrate)) / flashrate) // blink
 			pnum += 5;
 		if (r_splitscreen) // splitscreen
 			pnum += 10;
