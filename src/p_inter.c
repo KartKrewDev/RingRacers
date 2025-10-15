@@ -3953,7 +3953,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					sfx = sfx_s3k45;
 				}
 				else if (player->hyudorotimer > 0)
-					;
+				{
+					clash = false;
+				}
 				else
 				{
 					invincible = false;
