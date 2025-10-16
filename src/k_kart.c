@@ -11037,12 +11037,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		if (P_IsDisplayPlayer(player))
 		{
-			S_StartSoundAtVolume(NULL, sfx_mbs43, 255);
-			S_StartSoundAtVolume(NULL, sfx_mbs43, 255);
+			S_StartSoundAtVolume(player->mo, sfx_mbs43, 255);
+			S_StartSoundAtVolume(player->mo, sfx_mbs43, 255);
 		}
 		else
 		{
-			S_StartSoundAtVolume(NULL, sfx_mbs43, 127);
+			S_StartSoundAtVolume(player->mo, sfx_mbs43, 127);
 		}
 		player->amppickup--;
 	}
