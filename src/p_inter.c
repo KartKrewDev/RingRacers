@@ -463,9 +463,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 					player->itemtype = special->threshold;
 					if ((UINT16)(player->itemamount) + special->movecount > 255)
-						player->itemamount = 255;
+						K_SetPlayerItemAmount(player, 255);
 					else
-						player->itemamount += special->movecount;
+						K_AdjustPlayerItemAmount(player, special->movecount);
 				}
 			}
 
@@ -1800,16 +1800,17 @@ void P_UpdateRemovedOrbital(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				{
 					if (target->target->hnext && !P_MobjWasRemoved(target->target->hnext))
 						K_KillBananaChain(target->target->hnext, inflictor, source);
-					target->target->player->itemamount = 0;
+
+					K_SetPlayerItemAmount(target->target->player, 0);
 				}
 				else if (target->target->player->itemamount)
-					target->target->player->itemamount--;
+					K_AdjustPlayerItemAmount(target->target->player, -1);
 			}
 			else if ((target->type == MT_ORBINAUT_SHIELD && target->target->player->itemtype == KITEM_ORBINAUT) // orbit items
 				|| (target->type == MT_JAWZ_SHIELD && target->target->player->itemtype == KITEM_JAWZ))
 			{
 				if (target->target->player->itemamount)
-					target->target->player->itemamount--;
+					K_AdjustPlayerItemAmount(target->target->player, -1);
 				if (target->lastlook != 0)
 				{
 					K_RepairOrbitChain(target);
@@ -2206,15 +2207,15 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				if (target->threshold < 1 || target->threshold >= NUMKARTITEMS) // bruh moment prevention
 				{
 					player->itemtype = KITEM_SAD;
-					player->itemamount = 1;
+					K_SetPlayerItemAmount(player, 1);
 				}
 				else
 				{
 					player->itemtype = target->threshold;
 					if (K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE) // never give more than 1 shield
-						player->itemamount = 1;
+						K_SetPlayerItemAmount(player, 1);
 					else
-						player->itemamount = max(1, target->movecount);
+						K_SetPlayerItemAmount(player, max(1, target->movecount));
 				}
 				player->karthud[khud_itemblink] = TICRATE;
 				player->karthud[khud_itemblinkmode] = 0;

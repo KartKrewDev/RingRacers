@@ -2685,7 +2685,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	// SRB2kart
 	p->itemtype = itemtype;
-	p->itemamount = itemamount;
+	K_SetPlayerItemAmount(p, itemamount);
 	p->growshrinktimer = growshrinktimer;
 	p->karmadelay = 0;
 	p->eggmanblame = -1;

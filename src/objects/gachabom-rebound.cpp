@@ -19,6 +19,7 @@
 #include "../r_main.h"
 #include "../tables.h"
 #include "../s_sound.h"
+#include "../k_kart.h"
 
 /* An object may not be visible on the same tic:
    1) that it spawned
@@ -85,7 +86,7 @@ bool award_target(mobj_t* mobj)
 		if (rebound_timer(mobj) < 1)
 		{
 			player->itemtype = KITEM_GACHABOM;
-			player->itemamount++;
+			K_AdjustPlayerItemAmount(player, 1);
 			if (player->roundconditions.gachabom_miser == 1)
 				player->roundconditions.gachabom_miser = 0;
 
