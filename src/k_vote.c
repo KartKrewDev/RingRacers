@@ -1845,7 +1845,7 @@ static void Y_TickVoteStageStrike(void)
 static void Y_TickVoteSelection(void)
 {
 	boolean everyone_voted = true;/* the default condition */
-	INT32 i;
+	INT32 i, j;
 
 	if (vote.tic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
 	{
@@ -1872,7 +1872,6 @@ static void Y_TickVoteSelection(void)
 				if (vote.players[i].sentTimeOutVote == false)
 				{
 					// Move off of striked stages for the timeout vote.
-					INT32 j;
 					for (j = 0; j < VOTE_NUM_LEVELS; j++)
 					{
 						if (g_votes_striked[vote.players[i].selection] == false)
@@ -1944,9 +1943,9 @@ static void Y_TickVoteSelection(void)
 			{
 				// bots vote randomly
 				INT32 rng = M_RandomKey(VOTE_NUM_LEVELS);
-				for (i = 0; i < VOTE_NUM_LEVELS; i++)
+				for (j = 0; j < VOTE_NUM_LEVELS; j++)
 				{
-					if (g_votes_striked[i] == false)
+					if (g_votes_striked[j] == false)
 					{
 						break;
 					}
