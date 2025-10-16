@@ -11828,7 +11828,7 @@ void K_KartResetPlayerColor(player_t *player)
 		}
 		else
 		{
-			flicker += ((defaultTime - player->invincibilitytimer) / TICRATE / 2) * cv_reducevfx.value ? 4 : 1;
+			flicker += ((defaultTime - player->invincibilitytimer) / TICRATE / 2) * (cv_reducevfx.value ? 4 : 1);
 		}
 
 		if (leveltime % flicker == 0)
