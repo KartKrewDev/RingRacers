@@ -72,6 +72,28 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
+UINT8 K_SetPlayerItemAmount(player_t *player, UINT8 amount)
+{
+	player->itemamount = max(min(UINT8_MAX, amount), 0);
+	return player->itemamount;
+}
+
+UINT8 K_SetPlayerBackupItemAmount(player_t *player, UINT8 amount)
+{
+	player->backupitemamount = max(min(UINT8_MAX, amount), 0);
+	return player->backupitemamount;
+}
+
+UINT8 K_AdjustPlayerItemAmount(player_t *player, SINT8 amount)
+{
+	return K_SetPlayerItemAmount(player, player->itemamount + amount);
+}
+
+UINT8 K_AdjustPlayerBackupItemAmount(player_t *player, SINT8 amount)
+{
+	return K_SetPlayerBackupItemAmount(player, player->backupitemamount + amount);
+}
+
 void K_PopBubbleShield(player_t *player)
 {
 	if (player->curshield != KSHIELD_BUBBLE)
@@ -81,7 +103,7 @@ void K_PopBubbleShield(player_t *player)
 
 	player->curshield = KSHIELD_NONE;
 	player->itemtype = 0;
-	player->itemamount = 0;
+	K_SetPlayerItemAmount(player, 0);
 	player->itemflags &= ~(IF_ITEMOUT|IF_EGGMANOUT);
 
 	K_AddHitLag(player->mo, 4, false);
@@ -7701,7 +7723,7 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 
 		if (mineOwner->player->itemamount)
 		{
-			mineOwner->player->itemamount--;
+			K_AdjustPlayerItemAmount(mineOwner->player, -1);
 		}
 
 		if (!mineOwner->player->itemamount)
@@ -8271,7 +8293,7 @@ void K_PopPlayerShield(player_t *player)
 
 	player->curshield = KSHIELD_NONE;
 	player->itemtype = KITEM_NONE;
-	player->itemamount = 0;
+	K_SetPlayerItemAmount(player, 0);
 	K_UnsetItemOut(player);
 }
 
@@ -8519,9 +8541,9 @@ void K_DropHnextList(player_t *player)
 		player->itemflags &= ~IF_EGGMANOUT;
 	}
 	else if ((player->itemflags & IF_ITEMOUT)
-		&& (dropall || (--player->itemamount <= 0)))
+		&& (dropall || (K_AdjustPlayerItemAmount(player, -1) <= 0)))
 	{
-		player->itemamount = 0;
+		K_SetPlayerItemAmount(player, 0);
 		K_UnsetItemOut(player);
 		player->itemtype = KITEM_NONE;
 	}
@@ -8776,7 +8798,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 		}
 
 		if (orbit->target && !P_MobjWasRemoved(orbit->target) && orbit->target->player->itemamount != num)
-			orbit->target->player->itemamount = num;
+			K_SetPlayerItemAmount(orbit->target->player, num);
 	}
 }
 
@@ -8929,7 +8951,7 @@ static void K_MoveHeldObjects(player_t *player)
 		}
 		else if (player->itemflags & IF_ITEMOUT)
 		{
-			player->itemamount = 0;
+			K_SetPlayerItemAmount(player, 0);
 			K_UnsetItemOut(player);
 			player->itemtype = KITEM_NONE;
 		}
@@ -8948,7 +8970,7 @@ static void K_MoveHeldObjects(player_t *player)
 		}
 		else if (player->itemflags & IF_ITEMOUT)
 		{
-			player->itemamount = 0;
+			K_SetPlayerItemAmount(player, 0);
 			K_UnsetItemOut(player);
 			player->itemtype = KITEM_NONE;
 		}
@@ -9174,12 +9196,12 @@ static void K_MoveHeldObjects(player_t *player)
 // If we can move our backup item into main slots, do so.
 static void K_TryMoveBackupItem(player_t *player)
 {
-	if (player->itemtype && player->itemtype == player->backupitemtype)
+	if (player->itemtype && player->itemtype == player->backupitemtype && !(player->itemflags & IF_ITEMOUT))
 	{
-		player->itemamount += player->backupitemamount;
+		K_AdjustPlayerItemAmount(player, player->backupitemamount);
 
 		player->backupitemtype = 0;
-		player->backupitemamount = 0;
+		K_SetPlayerBackupItemAmount(player, 0);
 
 		S_StartSound(player->mo, sfx_mbs54);
 	}
@@ -9187,10 +9209,10 @@ static void K_TryMoveBackupItem(player_t *player)
 	if (player->itemtype == KITEM_NONE && player->backupitemtype && P_CanPickupItem(player, PICKUP_PAPERITEM))
 	{
 		player->itemtype = player->backupitemtype;
-		player->itemamount = player->backupitemamount;
+		K_SetPlayerItemAmount(player, player->backupitemamount);
 
 		player->backupitemtype = 0;
-		player->backupitemamount = 0;
+		K_SetPlayerBackupItemAmount(player, 0);
 
 		S_StartSound(player->mo, sfx_mbs54);
 	}
@@ -10415,7 +10437,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			player->rings = 0;
 			player->itemtype = 0;
-			player->itemamount = 0;
+			K_SetPlayerItemAmount(player, 0);
 			player->itemRoulette.active = false;
 		}
 	}
@@ -10964,7 +10986,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_DeleteHnextList(player);
 		K_DropItems(player);
 
-		player->itemamount = 0;
+		K_SetPlayerItemAmount(player, 0);
 		player->itemtype = 0;
 		player->rocketsneakertimer = 0;
 
@@ -10972,7 +10994,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (player->itemamount)
 		{
 			K_DropPaperItem(player, player->itemtype, player->itemamount);
-			player->itemtype = player->itemamount = 0;
+			player->itemtype = K_SetPlayerItemAmount(player, 0);
 		}
 		*/
 
@@ -11619,7 +11641,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				// activate a mine while you're out of its radius,
 				// the SAME tic it sets your itemamount to 0
 				// ...:dumbestass:
-				player->itemamount--;
+				K_AdjustPlayerItemAmount(player, -1);
 				K_PlayAttackTaunt(player->mo);
 				player->botvars.itemconfirm = 0;
 			}
@@ -13702,11 +13724,11 @@ void K_StripItems(player_t *player)
 	K_DropRocketSneaker(player);
 	K_DropKitchenSink(player);
 	player->itemtype = KITEM_NONE;
-	player->itemamount = 0;
+	K_SetPlayerItemAmount(player, 0);
 	player->itemflags &= ~(IF_ITEMOUT|IF_EGGMANOUT);
 
 	player->backupitemtype = KITEM_NONE;
-	player->backupitemamount = 0;
+	K_SetPlayerBackupItemAmount(player, 0);
 
 	if (player->itemRoulette.eggman == false)
 	{
@@ -15279,7 +15301,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								K_DoSneaker(player, 1);
 								K_PlayBoostTaunt(player->mo);
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								player->botvars.itemconfirm = 0;
 							}
 							break;
@@ -15297,7 +15319,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								//K_DoSneaker(player, 2);
 
 								player->rocketsneakertimer = (itemtime*3);
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_UpdateHnextList(player, true);
 
 								for (moloop = 0; moloop < 2; moloop++)
@@ -15328,7 +15350,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									max(7u * TICRATE + behindScaled, player->invincibilitytimer + 5u*TICRATE));
 								K_PlayPowerGloatSound(player->mo);
 
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								player->botvars.itemconfirm = 0;
 							}
 							break;
@@ -15348,7 +15370,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BANANA_SHIELD);
 									if (!mo)
 									{
-										player->itemamount = moloop;
+										K_SetPlayerItemAmount(player, moloop);
 										break;
 									}
 									mo->flags |= MF_NOCLIPTHING;
@@ -15365,7 +15387,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && (player->itemflags & IF_ITEMOUT)) // Banana x3 thrown
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_ThrowKartItem(player, false, MT_BANANA, -1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								K_UpdateHnextList(player, false);
@@ -15376,7 +15398,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								mobj_t *mo;
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								player->itemflags |= IF_EGGMANOUT;
 								S_StartSound(player->mo, sfx_s254);
 								mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_EGGMANITEM_SHIELD);
@@ -15412,7 +15434,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_ORBINAUT_SHIELD);
 									if (!mo)
 									{
-										player->itemamount = moloop;
+										K_SetPlayerItemAmount(player, moloop);
 										break;
 									}
 									mo->flags |= MF_NOCLIPTHING;
@@ -15431,7 +15453,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && (player->itemflags & IF_ITEMOUT)) // Orbinaut x3 thrown
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_ThrowKartItem(player, true, MT_ORBINAUT, 1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								K_UpdateHnextList(player, false);
@@ -15456,7 +15478,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_JAWZ_SHIELD);
 									if (!mo)
 									{
-										player->itemamount = moloop;
+										K_SetPlayerItemAmount(player, moloop);
 										break;
 									}
 									mo->flags |= MF_NOCLIPTHING;
@@ -15474,7 +15496,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && HOLDING_ITEM && (player->itemflags & IF_ITEMOUT)) // Jawz thrown
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_ThrowKartItem(player, true, MT_JAWZ, 1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								K_UpdateHnextList(player, false);
@@ -15502,7 +15524,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && (player->itemflags & IF_ITEMOUT))
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_ThrowKartItem(player, false, MT_SSMINE, 1, 1, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemflags &= ~IF_ITEMOUT;
@@ -15513,7 +15535,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_LANDMINE:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								if (player->throwdir > 0)
 								{
 									K_ThrowKartItem(player, true, MT_LANDMINE, -1, 0, 0);
@@ -15548,7 +15570,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && (player->itemflags & IF_ITEMOUT))
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								mobj_t *drop = K_ThrowKartItem(player, (player->throwdir > 0), MT_DROPTARGET, -1, 0, 0);
 								P_SetTarget(&drop->tracer, player->mo);
 								K_PlayAttackTaunt(player->mo);
@@ -15646,8 +15668,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 												P_SetObjectMomZ(player->mo, -50*FRACUNIT, true);
 											}
 											*/
-
-											player->itemamount = 0;
+											K_SetPlayerItemAmount(player, 0);
 											player->botvars.itemconfirm = 0;
 											player->ballhogcharge = 0;
 											player->ballhogburst = 0;
@@ -15662,8 +15683,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										if (numhogs > 0) // no tapfire scams
 										{
 											K_SetItemOut(player); // need this to set itemscale
-
-											player->itemamount -= numhogs;
+											K_AdjustPlayerItemAmount(player, -numhogs);
 											K_PlayAttackTaunt(player->mo);
 											K_DoBallhogAttack(player, numhogs);
 
@@ -15693,7 +15713,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_SPB:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_SetItemOut(player);
 								K_ThrowKartItem(player, true, MT_SPB, 1, 0, 0);
 								K_UnsetItemOut(player);
@@ -15733,7 +15753,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 								S_StartSound(player->mo, sfx_kc5a);
 
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								player->botvars.itemconfirm = 0;
 							}
 							break;
@@ -15741,7 +15761,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								K_DoShrink(player);
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_PlayPowerGloatSound(player->mo);
 								player->botvars.itemconfirm = 0;
 							}
@@ -15856,7 +15876,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 									if (player->bubbleblowup > bubbletime*2)
 									{
-										player->itemamount--;
+										K_AdjustPlayerItemAmount(player, -1);
 
 										if (player->throwdir == -1)
 										{
@@ -15962,7 +15982,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										player->flamemeter = 0;
 										player->flamelength = 0;
 										player->itemflags &= ~IF_HOLDREADY;
-										player->itemamount--;
+										K_AdjustPlayerItemAmount(player, -1);
 									}
 								}
 								else
@@ -15996,7 +16016,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_HYUDORO:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								//K_DoHyudoroSteal(player); // yes. yes they do.
 								Obj_HyudoroDeploy(player->mo);
 								K_PlayAttackTaunt(player->mo);
@@ -16009,7 +16029,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								K_PlayBoostTaunt(player->mo);
 								//K_DoPogoSpring(player->mo, 32<<FRACBITS, 2);
 								P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_POGOSPRING);
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								player->botvars.itemconfirm = 0;
 							}
 							break;
@@ -16052,7 +16072,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								// player->strongdriftboost += TICRATE;
 								// player->driftboost += TICRATE;
 								K_AwardPlayerRings(player, 20*player->itemamount, true);
-								player->itemamount = 0;
+								K_SetPlayerItemAmount(player, 0);
 								player->botvars.itemconfirm = 0;
 							}
 							break;
@@ -16077,7 +16097,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && HOLDING_ITEM && (player->itemflags & IF_ITEMOUT)) // Sink thrown
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_ThrowKartItem(player, false, MT_SINK, 1, 2, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemflags &= ~IF_ITEMOUT;
@@ -16088,7 +16108,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_GACHABOM:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_SetItemOut(player); // need this to set itemscale
 								K_ThrowKartItem(player, true, MT_GACHABOM, 0, 0, 0);
 								K_UnsetItemOut(player);
@@ -16126,7 +16146,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									K_UnsetItemOut(player);
 								}
 
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_PlayAttackTaunt(player->mo);
 								K_UpdateHnextList(player, false);
 								player->botvars.itemconfirm = 0;
@@ -16142,7 +16162,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 								K_UnsetItemOut(player);
 
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								K_PlayAttackTaunt(player->mo);
 								player->botvars.itemconfirm = 0;
 							}
@@ -16152,7 +16172,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								&& !player->sadtimer)
 							{
 								player->sadtimer = stealtime;
-								player->itemamount--;
+								K_AdjustPlayerItemAmount(player, -1);
 								player->botvars.itemconfirm = 0;
 							}
 							break;
@@ -17568,20 +17588,20 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 	if (player->itemtype == type && player->itemamount && !(player->itemflags & IF_ITEMOUT))
 	{
 		// We have this item in main slot but not deployed, just add it
-		player->itemamount += amount;
+		K_SetPlayerItemAmount(player, player->itemamount + amount);
 	}
 	else if (player->backupitemamount && player->backupitemtype)
 	{
 		// We already have a backup item, stack it if it can be stacked or discard it
 		if (player->backupitemtype == type)
 		{
-			player->backupitemamount += amount;
+			K_AdjustPlayerBackupItemAmount(player, amount);
 		}
 		else
 		{
 			K_DropPaperItem(player, player->backupitemtype, player->backupitemamount);
 			player->backupitemtype = type;
-			player->backupitemamount = amount;
+			K_SetPlayerBackupItemAmount(player, amount);
 			S_StartSound(player->mo, sfx_kc65);
 		}
 	}
@@ -17589,7 +17609,7 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 	{
 		// We have no backup item, load one up
 		player->backupitemtype = type;
-		player->backupitemamount = amount;
+		K_SetPlayerBackupItemAmount(player, amount);
 	}
 
 	S_StartSound(player->mo, sfx_aple);

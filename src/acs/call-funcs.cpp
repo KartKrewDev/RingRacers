@@ -2409,12 +2409,23 @@ bool CallFunc_MusicStopAll(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 bool CallFunc_MusicRemap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	ACSVM::MapScope *map = thread->scopeMap;
+	ACSVM::String *tuneStr = nullptr;
+	const char *tune = nullptr;
 
 	// 0: str tune - id for the tune to play
 	// 1: str song - lump name for the song to map to
 	// 2: [bool foractivator] - only do this if the activator is a player and is being viewed
 
 	if (argC > 2 && argV[2] && !ACS_ActivatorIsLocal(thread))
+	{
+		return false;
+	}
+	
+	tuneStr = map->getString(argV[0]);
+	tune = tuneStr->str;
+	
+	// Do not allow ACS to remap Stereo Mode tunes.
+	if (strncmp("stere", tune, 5))
 	{
 		return false;
 	}

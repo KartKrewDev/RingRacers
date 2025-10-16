@@ -6090,7 +6090,7 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 			K_StopRoulette(&player->itemRoulette);
 
 			player->itemtype = item;
-			player->itemamount = amt;
+			K_SetPlayerItemAmount(player, amt);
 
 			if (amt == 0)
 			{

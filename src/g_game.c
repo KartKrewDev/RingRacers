@@ -2685,7 +2685,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	// SRB2kart
 	p->itemtype = itemtype;
-	p->itemamount = itemamount;
+	K_SetPlayerItemAmount(p, itemamount);
 	p->growshrinktimer = growshrinktimer;
 	p->karmadelay = 0;
 	p->eggmanblame = -1;
@@ -4064,12 +4064,91 @@ UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolea
 
 void G_AddMapToBuffer(UINT16 map)
 {
+#if 0
+	// DEBUG: make nearly everything but four race levels full justPlayed
+	// to look into what happens when a dedicated runs for seven million years.
+	INT32 justplayedvalue = TOLMaps(gametype) - VOTE_NUM_LEVELS;
+	UINT32 tolflag = G_TOLFlag(gametype);
+
+	// Find all the maps that are ok
+	INT32 i;
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (mapheaderinfo[i] == NULL)
+		{
+			continue;
+		}
+
+		if (mapheaderinfo[i]->lumpnum == LUMPERROR)
+		{
+			continue;
+		}
+
+		if ((mapheaderinfo[i]->typeoflevel & tolflag) == 0)
+		{
+			continue;
+		}
+
+		if (mapheaderinfo[i]->menuflags & LF2_HIDEINMENU)
+		{
+			// Don't include hidden
+			continue;
+		}
+
+		// Only care about restrictions if the host is a listen server.
+		if (!dedicated)
+		{
+			if (!(mapheaderinfo[i]->menuflags & LF2_NOVISITNEEDED)
+			&& !(mapheaderinfo[i]->records.mapvisited & MV_VISITED)
+			&& !(
+				mapheaderinfo[i]->cup
+				&& mapheaderinfo[i]->cup->cachedlevels[0] == i
+			))
+			{
+				// Not visited OR head of cup
+				continue;
+			}
+
+			if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED)
+			&& !(mapheaderinfo[i]->records.mapvisited & MV_BEATEN))
+			{
+				// Not completed
+				continue;
+			}
+		}
+
+		if (M_MapLocked(i + 1) == true)
+		{
+			// We haven't earned this one.
+			continue;
+		}
+
+		mapheaderinfo[i]->justPlayed = justplayedvalue;
+		justplayedvalue -= 1;
+		if (justplayedvalue <= 0)
+			break;
+	}
+#else
+	if (dedicated && D_NumPlayers() == 0)
+		return;
+
+	const size_t upperJustPlayedLimit = TOLMaps(gametype) - VOTE_NUM_LEVELS - 1;
+
 	if (mapheaderinfo[map]->justPlayed == 0) // Started playing a new map.
 	{
 		// Decrement every maps' justPlayed value.
 		INT32 i;
 		for (i = 0; i < nummapheaders; i++)
 		{
+			// If the map's justPlayed value is higher
+			// than what it should be, clamp it.
+			// (Usually a result of SOC files
+			// manipulating which levels are hidden.)
+			if (mapheaderinfo[i]->justPlayed > upperJustPlayedLimit)
+			{
+				mapheaderinfo[i]->justPlayed = upperJustPlayedLimit;
+			}
+			
 			if (mapheaderinfo[i]->justPlayed > 0)
 			{
 				mapheaderinfo[i]->justPlayed--;
@@ -4078,8 +4157,9 @@ void G_AddMapToBuffer(UINT16 map)
 	}
 
 	// Set our map's justPlayed value.
-	mapheaderinfo[map]->justPlayed = TOLMaps(gametype) - VOTE_NUM_LEVELS;
+	mapheaderinfo[map]->justPlayed = upperJustPlayedLimit;
 	mapheaderinfo[map]->anger = 0; // Reset voting anger now that we're playing it
+#endif
 }
 
 //
@@ -5135,6 +5215,9 @@ static void G_DoContinued(void)
 // when something new is added.
 void G_EndGame(void)
 {
+	// Clean up ACS music remaps.
+	Music_TuneReset();
+	
 	// Handle voting
 	if (nextmap == NEXTMAP_VOTING)
 	{
