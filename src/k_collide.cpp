@@ -721,6 +721,11 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		t2->angle += ANGLE_180;
 		if (t2->type == MT_JAWZ)
 			P_SetTarget(&t2->tracer, t2->target); // Back to the source!
+		
+		// Reflected item becomes owned by the DT owner, so it becomes dangerous the the thrower
+		if (t1->target && !P_MobjWasRemoved(t1->target))
+			P_SetTarget(&t2->target, t1->target);
+		
 		t2->threshold = 10;
 	}
 
