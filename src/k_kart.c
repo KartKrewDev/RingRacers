@@ -9171,7 +9171,7 @@ static void K_MoveHeldObjects(player_t *player)
 // If we can move our backup item into main slots, do so.
 static void K_TryMoveBackupItem(player_t *player)
 {
-	if (player->itemtype && player->itemtype == player->backupitemtype)
+	if (player->itemtype && player->itemtype == player->backupitemtype && !(player->itemflags & IF_ITEMOUT))
 	{
 		player->itemamount += player->backupitemamount;
 
