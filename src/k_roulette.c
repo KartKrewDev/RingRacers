@@ -1956,7 +1956,8 @@ void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 	UINT8 itemamount = K_ItemResultToAmount(getitem, &player->itemRoulette);
 	if (cv_kartdebugitem.value != KITEM_NONE && cv_kartdebugitem.value == player->itemtype && cv_kartdebugamount.value > 1)
 		itemamount = cv_kartdebugamount.value;
-	player->itemamount = itemamount;
+
+	K_SetPlayerItemAmount(player, itemamount);
 
 	if (player->itemtype == KITEM_SPB)
 		Obj_SPBEradicateCapsules();

@@ -612,7 +612,7 @@ Obj_GardenTopThrow (player_t *player)
 	}
 
 	if (player->itemamount > 0)
-		player->itemamount--;
+		K_AdjustPlayerItemAmount(player, -1);
 
 	if (player->itemamount <= 0)
 		player->itemtype = KITEM_NONE;
