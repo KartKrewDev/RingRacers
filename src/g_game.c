@@ -5215,6 +5215,9 @@ static void G_DoContinued(void)
 // when something new is added.
 void G_EndGame(void)
 {
+	// Clean up ACS music remaps.
+	Music_TuneReset();
+	
 	// Handle voting
 	if (nextmap == NEXTMAP_VOTING)
 	{

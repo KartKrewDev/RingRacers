@@ -480,6 +480,12 @@ static int lib_mMusicRemap(lua_State *L)
 	{
 		return LUA_ErrNoTune(L, tune_id);
 	}
+	
+	// Do not allow Lua to remap Stereo Mode tunes.
+	if (strncmp("stere", tune_id, 5))
+	{
+		return LUA_ErrStereo(L, tune_id);
+	}
 
 	Music_Remap(tune_id, music_name);
 
