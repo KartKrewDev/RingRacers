@@ -2067,7 +2067,7 @@ static void K_HandleLapIncrement(player_t *player)
 				K_UpdateAllPlayerPositions(); // P_DoPlayerExit calls this
 			}
 
-			if (!G_TimeAttackStart() && player->laps == 1 && lapisfresh)
+			if (!G_TimeAttackStart() && !(gametyperules & GTR_ROLLINGSTART) && player->laps == 1 && lapisfresh)
 			{
 				if (rainbowstartavailable)
 				{
