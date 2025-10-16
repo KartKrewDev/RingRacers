@@ -295,7 +295,9 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			{
 				UINT8 pointgetters = numplayersingame + spectateGriefed;
 
-				if (data.pos[data.numplayers] <= pointgetters)
+				// accept players that nocontest, but not bots
+				if (data.pos[data.numplayers] <= pointgetters &&
+					!((players[i].pflags & PF_NOCONTEST) && players[i].bot))
 				{
 					data.increase[i] = K_CalculateGPRankPoints((&players[i])->exp, data.pos[data.numplayers], pointgetters);
 
