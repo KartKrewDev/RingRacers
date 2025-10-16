@@ -57,12 +57,12 @@ static void M_GonerHandStrain(INT32 ch)
 
 static void M_GonerPhotosensitivity(INT32 ch)
 {
-	if (ch == MA_YES)
-	{
-		CV_StealthSet(&cv_reducevfx, "Yes");
-		CV_StealthSet(&cv_screenshake, "Off");
-		CV_StealthSet(&cv_tilting, "Off");
-	}
+	// if (ch == MA_YES)
+	// {
+	// 	CV_StealthSet(&cv_reducevfx, "Yes");
+	// 	CV_StealthSet(&cv_screenshake, "Off");
+	// 	CV_StealthSet(&cv_tilting, "Off");
+	// }
 
 #ifdef HANDSTRAIN
 	M_StartMessage("Hand strain warning",
@@ -96,9 +96,12 @@ static void M_GonerAccessibilityTick(void)
 		"patterns.""\x80"" Listen to your body, and\n"
 		"stop playing if you feel unwell.\n"
 		"\n"
-		"There is a ""\x88""special mode""\x80"" to reduce some\n"
-		"visual effects. Would you like to turn it on?\n"
-		, &M_GonerPhotosensitivity, MM_YESNO, "Yes, reduce effects", "No thanks");
+		"There is a ""\x88""special mode""\x80""\n"
+		"to reduce some visual effects.\n"
+		"\n"
+		"You can turn it on within the\n"
+		"Profile Setup > Accessibility menu.\n"
+		, &M_GonerPhotosensitivity, MM_NOTHING, NULL, NULL);
 	return;
 }
 
