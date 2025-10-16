@@ -207,6 +207,10 @@ void Music_Tick(void);
 // the music plays again when re-enabled.
 void Music_Flip(void);
 
+// Resets all non-dynamic tunes to default values.
+// Keeps ACS music remapping from playing havoc after a map.
+void Music_TuneReset(void);
+
 
 #ifdef __cplusplus
 } // extern "C"

@@ -9099,6 +9099,8 @@ void P_PostLoadLevel(void)
 	{
 		marathonmode = static_cast<marathonmode_t>(marathonmode & ~MA_INIT);
 	}
+	
+	Music_TuneReset(); // Placed before ACS scripts to allow remaps to occur on level start.
 
 	ACS_RunLevelStartScripts();
 	LUA_HookInt(gamemap, HOOK(MapLoad));
