@@ -8327,6 +8327,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+
+		// This invinc mobj flickers intensely, so don't draw it in reducevfx
+		if (cv_reducevfx.value && (mobj->renderflags & RF_DONTDRAW) == 0)
+		{
+			mobj->renderflags |= RF_DONTDRAW;
+		}
+		if (!cv_reducevfx.value && (mobj->renderflags & RF_DONTDRAW) != 0)
+		{
+			mobj->renderflags ^= RF_DONTDRAW;
+		}
+
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		break;
 	case MT_BRAKEDRIFT:

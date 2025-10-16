@@ -11828,10 +11828,10 @@ void K_KartResetPlayerColor(player_t *player)
 		}
 		else
 		{
-			flicker += ((defaultTime - player->invincibilitytimer) / TICRATE / 2) * (cv_reducevfx.value ? 4 : 1);
+			flicker += (defaultTime - player->invincibilitytimer) / TICRATE / 2;
 		}
 
-		if (leveltime % flicker == 0)
+		if (leveltime % flicker == 0 && !cv_reducevfx.value)
 		{
 			player->mo->color = SKINCOLOR_INVINCFLASH;
 			player->mo->colorized = true;
