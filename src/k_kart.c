@@ -1275,12 +1275,50 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 
 	if (solidMobj->type == MT_WALLSPIKE)
 	{
+		if (bounceMobj->hitlag)
+		{
+			bounceMobj->player->justbumped = bumptime;
+			return false;
+		}
+
+		//CONS_Printf("%sattenuation is %d\n", (leveltime & 1 ? "" : " "), bounceMobj->player->wallSpikeDampen);
+
 		// Always thrust out towards the tip
 		// (...don't try to roll our own bad calculations,
 		// just make this behave like a wallspring...)
 
-		P_DoSpringEx(bounceMobj, mapobjectscale, 0, solidMobj->info->damage,
-			solidMobj->angle, SKINCOLOR_NONE);
+		fixed_t spikeforce = solidMobj->info->damage;
+		fixed_t deflection = 0;
+
+		if (bounceMobj->player && !G_CompatLevel(0x0011))
+		{
+			// Okay no we need to use bad calculations just to
+			// prevent softlocks -- repeated touches attenuate
+			UINT8 atten = bounceMobj->player->wallSpikeDampen;
+
+			deflection = atten * FRACUNIT;
+			if (bounceMobj->angle - solidMobj->angle >= ANGLE_180)
+				deflection = -deflection;
+
+			K_StumblePlayer(bounceMobj->player);
+			bounceMobj->player->tumbleBounces = TUMBLEBOUNCES; // Only one
+
+			atten++;
+			while (atten)
+			{
+				// We want a power relationship - towards zero but not quite reaching it.
+				spikeforce = (2 * spikeforce) / 3;
+				atten--;
+			}
+
+			if (bounceMobj->player->wallSpikeDampen < UINT8_MAX
+			&& bounceMobj->player->justbumped < bumptime-2)
+				bounceMobj->player->wallSpikeDampen++;
+		}
+
+		P_DoSpringEx(bounceMobj, mapobjectscale, 0, spikeforce,
+			solidMobj->angle + R_PointToAngle2(0, 0, spikeforce, deflection),
+			SKINCOLOR_NONE);
 
 		K_PlayerJustBumped(bounceMobj->player);
 
