@@ -6797,6 +6797,14 @@ static void K_SpawnDriftSparks(player_t *player)
 	I_Assert(player->mo != NULL);
 	I_Assert(!P_MobjWasRemoved(player->mo));
 
+	if (player->driftcharge >= dsthree)
+	{
+		if (cv_reducevfx.value || leveltime % 2 == 0)
+		{
+			K_SpawnDriftElectricity(player);
+		}
+	}
+
 	if (leveltime % 2 == 1)
 		return;
 
@@ -6926,11 +6934,6 @@ static void K_SpawnDriftSparks(player_t *player)
 		K_MatchGenericExtraFlagsNoInterp(spark, player->mo);
 		P_SetTarget(&spark->owner, player->mo);
 		spark->renderflags |= RF_REDUCEVFX;
-	}
-
-	if (player->driftcharge >= dsthree)
-	{
-		K_SpawnDriftElectricity(player);
 	}
 }
 
