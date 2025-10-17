@@ -4039,7 +4039,12 @@ static void K_GetKartBoostPower(player_t *player)
 	// This should always remain the last boost stack before tethering
 	if (player->botvars.rubberband > FRACUNIT && K_PlayerUsesBotMovement(player) == true)
 	{
-		ADDBOOST(player->botvars.rubberband - FRACUNIT, 0, 0);
+		fixed_t rubber = player->botvars.rubberband - FRACUNIT;
+
+		if (!G_CompatLevel(0x0011))
+			rubber = FixedRescale(player->botvars.recentDeflection, 0, BOTMAXDEFLECTION, Easing_Linear, rubber, 8*rubber/10);
+
+		ADDBOOST(rubber, 0, 0);
 	}
 
 	if (player->draftpower > 0) // Drafting
