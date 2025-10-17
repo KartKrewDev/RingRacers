@@ -1413,6 +1413,7 @@ boolean G_Responder(event_t *ev)
 		if (HU_Responder(ev))
 		{
 			hu_keystrokes = true;
+			chat_keydown = true;
 			return true; // chat ate the event
 		}
 	}
@@ -1522,6 +1523,7 @@ boolean G_Responder(event_t *ev)
 			return true;
 
 		case ev_keyup:
+			chat_keydown = false; // prevents repeat inputs from inputs made with chat open
 			return false; // always let key up events filter down
 
 		case ev_mouse:

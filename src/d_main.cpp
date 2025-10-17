@@ -343,7 +343,7 @@ void D_ProcessEvents(boolean callresponders)
 	// Update menu CMD
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		M_UpdateMenuCMD(i, false);
+		M_UpdateMenuCMD(i, false, chat_keydown);
 	}
 }
 

@@ -85,6 +85,7 @@ patch_t *frameslash;	// framerate stuff. Used in screen.c
 
 static player_t *plr;
 boolean hu_keystrokes; // :)
+boolean chat_keydown;
 boolean chat_on; // entering a chat message?
 boolean g_voicepushtotalk_on; // holding PTT?
 static char w_chat[HU_MAXMSGLEN + 1];
