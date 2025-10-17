@@ -229,7 +229,7 @@ EggTVData::Replay::Replay(Folder::Cache::ReplayRef& ref) : ref_(&ref)
 		const std::string_view str = info.title;
 		const std::size_t mid = str.find(kDelimiter);
 
-		title_ = Title(str.substr(0, mid), mid == srb2::String::npos ? "" : str.substr(mid + kDelimiter.size()));
+		title_ = Title(str.substr(0, mid), mid == std::string_view::npos ? "" : str.substr(mid + kDelimiter.size()));
 		//title_ = Title("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW", "WWWWWWWWWWWWWWWWWWWWWWWWWWW");
 	}
 
