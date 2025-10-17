@@ -72,24 +72,34 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
-UINT8 K_SetPlayerItemAmount(player_t *player, UINT8 amount)
+UINT8 K_SetPlayerItemAmount(player_t *player, INT32 amount)
 {
-	player->itemamount = max(min(UINT8_MAX, amount), 0);
-	return player->itemamount;
+	if (amount & ~UINT8_MAX)
+	{
+		// having bits outside of valid range means time to cap
+		amount = (amount < 0) ? 0 : UINT8_MAX;
+	}
+
+	return (player->itemamount = amount);
 }
 
-UINT8 K_SetPlayerBackupItemAmount(player_t *player, UINT8 amount)
+UINT8 K_SetPlayerBackupItemAmount(player_t *player, INT32 amount)
 {
-	player->backupitemamount = max(min(UINT8_MAX, amount), 0);
-	return player->backupitemamount;
+	if (amount & ~UINT8_MAX)
+	{
+		// having bits outside of valid range means time to cap
+		amount = (amount < 0) ? 0 : UINT8_MAX;
+	}
+
+	return (player->backupitemamount = amount);
 }
 
-UINT8 K_AdjustPlayerItemAmount(player_t *player, SINT8 amount)
+UINT8 K_AdjustPlayerItemAmount(player_t *player, INT32 amount)
 {
 	return K_SetPlayerItemAmount(player, player->itemamount + amount);
 }
 
-UINT8 K_AdjustPlayerBackupItemAmount(player_t *player, SINT8 amount)
+UINT8 K_AdjustPlayerBackupItemAmount(player_t *player, INT32 amount)
 {
 	return K_SetPlayerBackupItemAmount(player, player->backupitemamount + amount);
 }

@@ -125,10 +125,10 @@ Make sure this matches the actual number of states
 #define AUTORESPAWN_TIME (10*TICRATE)
 #define AUTORESPAWN_THRESHOLD (7*TICRATE)
 
-UINT8 K_SetPlayerItemAmount(player_t *player, UINT8 amount);
-UINT8 K_SetPlayerBackupItemAmount(player_t *player, UINT8 amount);
-UINT8 K_AdjustPlayerItemAmount(player_t *player, SINT8 amount);
-UINT8 K_AdjustPlayerBackupItemAmount(player_t *player, SINT8 amount);
+UINT8 K_SetPlayerItemAmount(player_t *player, INT32 amount);
+UINT8 K_SetPlayerBackupItemAmount(player_t *player, INT32 amount);
+UINT8 K_AdjustPlayerItemAmount(player_t *player, INT32 amount);
+UINT8 K_AdjustPlayerBackupItemAmount(player_t *player, INT32 amount);
 
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
