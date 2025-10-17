@@ -1084,7 +1084,7 @@ void M_SetMenuDelay(UINT8 i)
 	}
 }
 
-void M_UpdateMenuCMD(UINT8 i, boolean bailrequired)
+void M_UpdateMenuCMD(UINT8 i, boolean bailrequired, boolean chat_open)
 {
 	UINT8 mp = max(1, setup_numplayers);
 
@@ -1096,6 +1096,10 @@ void M_UpdateMenuCMD(UINT8 i, boolean bailrequired)
 
 	menucmd[i].buttonsHeld = menucmd[i].buttons;
 	menucmd[i].buttons = 0;
+
+	// Eat inputs made when chat is open
+	if (chat_open)
+		return;
 
 	if (G_PlayerInputDown(i, gc_screenshot,    mp)) { menucmd[i].buttons |= MBT_SCREENSHOT; }
 	if (G_PlayerInputDown(i, gc_startmovie,    mp)) { menucmd[i].buttons |= MBT_STARTMOVIE; }
