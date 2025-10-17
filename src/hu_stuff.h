@@ -124,6 +124,9 @@ typedef enum
 // some functions
 void HU_AddChatText(const char *text, boolean playsound);
 
+// set true when key is pressed while chat is open
+extern boolean chat_keydown;
+
 // set true when entering a chat message
 extern boolean chat_on;
 

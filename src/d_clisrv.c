@@ -2247,7 +2247,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 #ifdef HAVE_THREADS
 			I_lock_mutex(&k_menu_mutex);
 #endif
-			M_UpdateMenuCMD(0, true);
+			M_UpdateMenuCMD(0, true, false);
 
 			if (cl_mode == CL_CONFIRMCONNECT)
 			{

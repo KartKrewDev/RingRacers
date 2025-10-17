@@ -1,3 +1,7 @@
+# Have you already searched the issue tracker for issues similar to yours? 
+
+(Use the search bar on https://gitlab.com/kart-krew-dev/ring-racers/-/issues - duplicate reports make it tough for us to keep track of things.)
+
 # What version of Ring Racers are you playing?
 
 (Replace this text with the version number. You can see this on the title screen at the bottom-left corner.)
