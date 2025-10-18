@@ -6807,6 +6807,14 @@ static void K_SpawnDriftSparks(player_t *player)
 	I_Assert(player->mo != NULL);
 	I_Assert(!P_MobjWasRemoved(player->mo));
 
+	if (player->driftcharge >= dsthree)
+	{
+		if (cv_reducevfx.value || leveltime % 2 == 0)
+		{
+			K_SpawnDriftElectricity(player);
+		}
+	}
+
 	if (leveltime % 2 == 1)
 		return;
 
@@ -6936,11 +6944,6 @@ static void K_SpawnDriftSparks(player_t *player)
 		K_MatchGenericExtraFlagsNoInterp(spark, player->mo);
 		P_SetTarget(&spark->owner, player->mo);
 		spark->renderflags |= RF_REDUCEVFX;
-	}
-
-	if (player->driftcharge >= dsthree)
-	{
-		K_SpawnDriftElectricity(player);
 	}
 }
 
@@ -11838,10 +11841,10 @@ void K_KartResetPlayerColor(player_t *player)
 		}
 		else
 		{
-			flicker += ((defaultTime - player->invincibilitytimer) / TICRATE / 2) * (cv_reducevfx.value ? 4 : 1);
+			flicker += (defaultTime - player->invincibilitytimer) / TICRATE / 2;
 		}
 
-		if (leveltime % flicker == 0)
+		if (leveltime % flicker == 0 && !cv_reducevfx.value)
 		{
 			player->mo->color = SKINCOLOR_INVINCFLASH;
 			player->mo->colorized = true;

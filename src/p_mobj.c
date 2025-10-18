@@ -8208,12 +8208,25 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				invinc_rotation_delay = 8;
 			}
 
-			if ((trans >= NUMTRANSMAPS) // not a valid visibility
-				|| (myspeed < (tripspeed - basespeed/2) && (leveltime & 1)) // < 150% flickering
-				|| (mobj->target->player->tripwirePass < TRIPWIRE_BOOST) // Not strong enough to make an aura
-				|| mobj->target->player->flamedash) // Flameshield dash
+			if ((trans >= NUMTRANSMAPS) || mobj->target->player->flamedash || mobj->target->player->tripwirePass < TRIPWIRE_BOOST)
 			{
+				// never show for flameshield dash, below tripwire minimum or transparency invalid
+				mobj->renderflags &= ~RF_TRANSMASK;
 				mobj->renderflags |= RF_DONTDRAW;
+			}
+			else if (myspeed < (tripspeed - basespeed/2))
+			{
+				mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
+				if (cv_reducevfx.value)
+				{
+					// < 150% make more transparent for reducevfx
+					mobj->renderflags |= RF_TRANS40;
+				}
+				else if (leveltime & 1)
+				{
+					// < 150% flickering normally
+					mobj->renderflags |= RF_DONTDRAW;
+				}
 			}
 			else
 			{
@@ -8327,6 +8340,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+
+		// This invinc mobj flickers intensely, so don't draw it in reducevfx
+		if (cv_reducevfx.value && (mobj->renderflags & RF_DONTDRAW) == 0)
+		{
+			mobj->renderflags |= RF_DONTDRAW;
+		}
+		if (!cv_reducevfx.value && (mobj->renderflags & RF_DONTDRAW) != 0)
+		{
+			mobj->renderflags ^= RF_DONTDRAW;
+		}
+
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		break;
 	case MT_BRAKEDRIFT:
