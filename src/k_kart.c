@@ -4556,7 +4556,7 @@ void K_SpawnAmps(player_t *player, UINT8 amps, mobj_t *impact)
 	INT32 minweight = 1 - 9;
 	INT32 maxweight = 9 - 1;
 
-	UINT16 scaledamps = FixedRescale(weighting, minweight, maxweight, Easing_Linear, amps, amps*2);
+	UINT16 scaledamps = FixedRescale(weighting, minweight, maxweight, Easing_Linear, amps/2, 5*amps/4);
 
 	// Debug print for scaledamps calculation
 	// CONS_Printf("K_SpawnAmps: player=%s, amps=%d, kartspeed=%d, kartweight=%d, itemdistance=%d, itemdistmult=%0.2f, statscaledamps=%d, distscaledamps=%d\n",
