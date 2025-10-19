@@ -1008,7 +1008,7 @@ consvar_t cv_dummyprofilerumble = MenuDummy("dummyprofilerumble", "On").on_off()
 consvar_t cv_dummyscramble = MenuDummy("dummyscramble", "Random").values({{0, "Random"}, {1, "Points"}});
 
 void CV_SPBAttackChanged(void);
-consvar_t cv_dummyspbattack = MenuDummy("dummyspbattack", "Off").on_off().onchange(CV_SPBAttackChanged);
+consvar_t cv_dummyspbattack = MenuDummy("dummyspbattack", "Off").on_off().onchange_noinit(CV_SPBAttackChanged);
 
 consvar_t cv_dummyspectate = MenuDummy("dummyspectate", "Spectator").values({{0, "Spectator"}, {1, "Playing"}});
 

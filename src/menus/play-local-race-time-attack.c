@@ -266,6 +266,23 @@ menu_t PLAY_TAGhostsDef = {
 	NULL
 };
 
+// See also G_UpdateRecordReplays
+const char *M_GetRecordMode(void)
+{
+	if (cv_dummyspbattack.value)
+	{
+		return "spb-";
+	}
+
+	const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
+	if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
+	{
+		return "hivolt-";
+	}
+
+	return "";
+}
+
 void CV_SPBAttackChanged(void);
 void CV_SPBAttackChanged(void)
 {
@@ -275,14 +292,12 @@ void CV_SPBAttackChanged(void)
 	{
 		// see also p_setup.c's P_LoadRecordGhosts
 		char *gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
-		const char *modeprefix = "";
+		const char *modeprefix = M_GetRecordMode();
 		UINT8 active;
 
 		if (!gpath)
 			return;
 
-		if (cv_dummyspbattack.value)
-			modeprefix = "spb-";
 
 		active = false;
 		PLAY_TimeAttack[ta_guest].status = IT_DISABLED;
@@ -458,20 +473,7 @@ void M_ReplayTimeAttack(INT32 choice)
 {
 	menudemo_t menudemo = {0};
 	const char *which = NULL;
-	const char *modeprefix = "";
-
-	if (cv_dummyspbattack.value)
-	{
-		modeprefix = "spb-";
-	}
-	else
-	{
-		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
-		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
-		{
-			modeprefix = "hivolt-";
-		}
-	}
+	const char *modeprefix = M_GetRecordMode();
 
 	switch (choice)
 	{
@@ -528,20 +530,7 @@ static void M_WriteGuestReplay(INT32 ch)
 
 	gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
 
-	const char *modeprefix = "";
-
-	if (cv_dummyspbattack.value)
-	{
-		modeprefix = "spb-";
-	}
-	else
-	{
-		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
-		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
-		{
-			modeprefix = "hivolt-";
-		}
-	}
+	const char *modeprefix = M_GetRecordMode();
 
 	if (TA_GuestReplay_Str != NULL)
 	{
@@ -597,20 +586,7 @@ void M_SetGuestReplay(INT32 choice)
 			break;
 	}
 
-	const char *modeprefix = "";
-
-	if (cv_dummyspbattack.value)
-	{
-		modeprefix = "spb-";
-	}
-	else
-	{
-		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
-		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
-		{
-			modeprefix = "hivolt-";
-		}
-	}
+	const char *modeprefix = M_GetRecordMode();
 
 	if (FIL_FileExists(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%sguest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), modeprefix)))
 	{
@@ -626,7 +602,7 @@ void M_StartTimeAttack(INT32 choice)
 {
 	char *gpath;
 	char nameofdemo[256];
-	const char *modeprefix = "";
+	const char *modeprefix = M_GetRecordMode();
 
 	(void)choice;
 
@@ -648,16 +624,6 @@ void M_StartTimeAttack(INT32 choice)
 		if (gamestate == GS_MENU)
 		{
 			encoremode = true; // guarantees short wipe
-		}
-
-		modeprefix = "spb-";
-	}
-	else
-	{
-		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
-		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
-		{
-			modeprefix = "hivolt-";
 		}
 	}
 
