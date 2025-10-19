@@ -325,7 +325,7 @@ move_to_player (mobj_t *hyu)
 
 	// For first place only: cap hyudoro speed at 50%
 	// target player's kart speed
-	if (target->player && target->player->position == 1)
+	if (target->player && target->player->leaderpenalty)
 	{
 		const fixed_t normalspeed =
 			K_GetKartSpeed(target->player, false, false) / 2;
@@ -582,7 +582,7 @@ hyudoro_patrol_hit_player
 	S_StartSound(toucher, sfx_s3k92);
 
 	/* do not make 1st place invisible */
-	if (player->position != 1)
+	if (player->leaderpenalty == 0)
 	{
 		player->hyudorotimer = hyudorotime;
 	}
@@ -625,7 +625,7 @@ award_immediately (mobj_t *hyu)
 
 	if (player)
 	{
-		if (player->position == 1)
+		if (player->leaderpenalty)
 		{
 			return false;
 		}
@@ -742,7 +742,7 @@ blend_hover_hyudoro (mobj_t *hyu)
 
 	/* 1st place: Hyudoro stack is unusable, so make a visual
 	   indication */
-	if (player->position == 1)
+	if (player->leaderpenalty)
 	{
 		hyu->renderflags |= RF_MODULATE;
 		trail_glow(hyu);

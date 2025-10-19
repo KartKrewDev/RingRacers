@@ -738,6 +738,7 @@ struct player_t
 	UINT8 position;			// Used for Kart positions, mostly for deterministic stuff
 	UINT8 oldposition;		// Used for taunting when you pass someone
 	UINT8 positiondelay;	// Used for position number, so it can grow when passing
+	UINT8 leaderpenalty;	// Used for penalising 1st in a positiondelay-friendly way
 
 	UINT8 teamposition;		// Position, but only against other teams -- not your own.
 	UINT8 teamimportance;	// Opposite of team position x2, with +1 for being in 1st.
