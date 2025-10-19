@@ -3963,7 +3963,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->eggmanexplode) // Ready-to-explode
 	{
-		ADDBOOST(6*FRACUNIT/20, FRACUNIT, 0); // + 30% top speed, + 100% acceleration, +0% handling
+		ADDBOOST(9*FRACUNIT/20, FRACUNIT, 0); // + 45% top speed, + 100% acceleration, +0% handling
 	}
 
 	if (player->vortexBoost) // Holding wavedash vortex (assigned in K_UpdateWavedashIndicator!)
@@ -10983,12 +10983,24 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		P_StartQuakeFromMobj(7, 50 * player->mo->scale, 2048 * player->mo->scale, player->mo);
 		player->bailhitlag = false;
+
+		/*
+		if (player->markedfordeath)
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
+		*/
 	}
 
 	if ((!P_PlayerInPain(player) && player->bailcharge >= 5) || player->bailcharge >= BAIL_MAXCHARGE)
 	{
 		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
 		P_SetTarget(&bail->target, player->mo);
+
+		if (player->itemRoulette.eggman || player->eggmanexplode)
+		{
+			player->markedfordeath = true;
+			player->eggmanexplode = 1;
+			player->rings = -20;
+		}
 
 		if (player->itemRoulette.active)
 		{
