@@ -39,7 +39,7 @@ menuitem_t PAUSE_PlaybackMenu[] =
 	{IT_CALL   | IT_STRING, "Hide Menu",			NULL, "M_PHIDE",	{.routine = M_SelectableClearMenus},	  0, 0},
 
 	{IT_CALL   | IT_STRING, "Restart",				NULL, "M_PRSTRT",	{.routine = M_PlaybackRewind},			 20, 0},
-	{IT_CALL   | IT_STRING, "Rewind 5 seconds",		NULL, "M_PREW",		{.routine = M_PlaybackRewind},			 36, 0},
+	{IT_CALL   | IT_STRING, "Rewind 10 seconds",	NULL, "M_PREW",		{.routine = M_PlaybackRewind},			 36, 0},
 	{IT_CALL   | IT_STRING, "Pause",				NULL, "M_PPAUSE",	{.routine = M_PlaybackPause},			 52, 0},
 	{IT_CALL   | IT_STRING, "Fast-Forward",			NULL, "M_PFFWD",	{.routine = M_PlaybackFastForward},		 68, 0},
 	{IT_CALL   | IT_STRING, "Resume",				NULL, "M_PRESUM",	{.routine = M_PlaybackPause},			 52, 0},
@@ -220,9 +220,9 @@ void M_PlaybackRewind(INT32 choice)
 
 	if (demo.simplerewind)
 	{
-		if (curleveltime > 5*TICRATE)
+		if (curleveltime > 10*TICRATE)
 		{
-			g_fast_forward = curleveltime - (5 * TICRATE);
+			g_fast_forward = curleveltime - (10 * TICRATE);
 			g_fast_forward_clock_stop = INFTICS; //I_GetTime() + 2 * TICRATE; -- maybe?
 		}
 		else
