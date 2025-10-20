@@ -8120,9 +8120,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
 
 		// Alright, let's just handle all the sfx down here
-		boolean not_invinc_or_grow = player->invincibilitytimer == 0 && player->growshrinktimer <= 0;
+		boolean not_perma_tripwireok = player->invincibilitytimer == 0 && player->growshrinktimer <= 0 && player->hyudorotimer == 0;
 
-		if (P_IsDisplayPlayer(player) && not_invinc_or_grow && not_respawning)
+		if (P_IsDisplayPlayer(player) && not_perma_tripwireok && not_respawning)
 		{
 			UINT8 MIN_VOLUME = 25;
 			UINT8 MAX_VOLUME = 75;
