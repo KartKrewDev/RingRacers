@@ -3015,8 +3015,18 @@ static void Got_Mapcmd(const UINT8 **cp, INT32 playernum)
 		CON_LogMessage(M_GetText("Speeding off to level...\n"));
 	}
 
+
 	if (demo.playback && !demo.timing)
 		precache = false;
+
+
+	// Save demo in case map change happened after level finish
+	// (either manually with the map command, or with a redo vote)
+	// Isn't needed for time attack (and would also cause issues, as there
+	// G_RecordDemo (which sets demo.recording to true) is called before this runs)
+	if (demo.recording && modeattacking == ATTACKING_NONE)
+		G_CheckDemoStatus();
+
 
 	demo.willsave = (cv_recordmultiplayerdemos.value == 2);
 	demo.savebutton = 0;
@@ -5718,6 +5728,11 @@ static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 	}
 
 	memcpy(g_voteLevels, tempVoteLevels, sizeof(g_voteLevels));
+
+	// admin can force vote state whenever
+	// so we have to save this replay if it needs to be saved
+	if (demo.recording)
+		G_CheckDemoStatus();
 
 	G_SetGamestate(GS_VOTING);
 	Y_StartVote();

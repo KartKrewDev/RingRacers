@@ -5079,7 +5079,10 @@ void G_AfterIntermission(void)
 		return;
 	}
 	else if (demo.recording && (modeattacking || demo.willsave))
+	{
+		demo.willsave = false;
 		G_SaveDemo();
+	}
 	else if (demo.recording)
 		G_ResetDemoRecording();
 
