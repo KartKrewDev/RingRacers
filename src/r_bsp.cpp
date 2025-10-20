@@ -429,6 +429,13 @@ boolean R_IsDebugLine(seg_t *line)
 	return false;
 }
 
+boolean R_ShouldFlipTripWire(const line_t *ld)
+{
+	// Flip tripwire textures when they are unpegged
+	// so the energy flows downward instead of upward, matching collision behavior
+	return (ld->tripwire && !(ld->flags & ML_MIDPEG));
+}
+
 //
 // R_AddLine
 // Clips the given segment and adds any visible pieces to the line list.

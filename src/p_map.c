@@ -1857,6 +1857,7 @@ boolean P_IsLineTripWire(const line_t *ld)
 	return ld->tripwire;
 }
 
+
 static boolean P_UsingStepUp(mobj_t *thing)
 {
 	if (thing->flags & MF_NOCLIP)

@@ -3375,6 +3375,19 @@ static boolean P_CheckLineSideTripWire(line_t *ld, int p)
 	terrain = K_GetTerrainForTextureNum(sda->midtexture);
 	tripwire = terrain && (terrain->flags & TRF_TRIPWIRE);
 
+	// If we are texture TRIPWIRE and have the ML_MIDTEXINVISWALL, the replace texture with TRIPWLOW
+	if (tripwire && (ld->flags & ML_MIDTEXINVISWALL)) // if we do backwards compat, update this to also swap for older custom maps without the flag
+	{
+		if (sda->midtexture == R_TextureNumForName("TRIPWIRE"))
+		{
+			sda->midtexture = R_TextureNumForName("TRIPWLOW");
+		}
+		else if (sda->midtexture == R_TextureNumForName("4RIPWIRE"))
+		{
+			sda->midtexture = R_TextureNumForName("4RIPWLOW");
+		}
+	}
+
 	if (tripwire)
 	{
 		// copy midtexture to other side

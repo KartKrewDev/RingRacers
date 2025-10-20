@@ -61,6 +61,7 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 	INT32 *ceilinglightlevel, boolean back);
 boolean R_IsEmptyLine(seg_t *line, sector_t *front, sector_t *back);
 boolean R_IsDebugLine(seg_t *line);
+boolean R_ShouldFlipTripWire(const line_t *ld);
 
 INT32 R_GetPlaneLight(sector_t *sector, fixed_t planeheight, boolean underside);
 void R_Prep3DFloors(sector_t *sector);
