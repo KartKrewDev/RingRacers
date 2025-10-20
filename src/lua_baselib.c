@@ -46,6 +46,7 @@
 #include "k_hitlag.h"
 #include "music.h" // music functions necessary for lua integration
 #include "k_terrain.h"
+#include "k_grandprix.h"
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -256,6 +257,12 @@ static const struct {
 	{META_POWERUPVARS,	"powerupvars_t"},
 	{META_ICECUBEVARS,	"icecubevars_t"},
 	{META_SKYBOX,		"skybox_t"},
+	
+	{META_CUP,     					"cupheader_t"},
+	{META_GPRANK,	  	  			"gprank_t"},
+	{META_GPRANKLEVEL,	  			"gprank_level_t"},
+	{META_GPRANKLEVELPERPLAYER,	    "gprank_level_perplayer_t"},
+	{META_ROUNDENTRY,	    		"roundentry_t"},
 
 	{NULL,              NULL}
 };
