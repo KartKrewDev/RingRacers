@@ -5017,7 +5017,6 @@ boolean K_Overdrive(player_t *player)
 
 	player->amps = 0;
 	player->overdriveready = 0;
-	player->overdrivelenient = false;
 
 	return true;
 }
