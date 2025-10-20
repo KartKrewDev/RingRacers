@@ -215,6 +215,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->oldposition);
 	else if (fastcmp(field,"positiondelay"))
 		lua_pushinteger(L, plr->positiondelay);
+	else if (fastcmp(field,"leaderpenalty"))
+		lua_pushinteger(L, plr->leaderpenalty);
 	else if (fastcmp(field,"teamposition"))
 		lua_pushinteger(L, plr->teamposition);
 	else if (fastcmp(field,"teamimportance"))
@@ -990,6 +992,8 @@ static int player_set(lua_State *L)
 		plr->oldposition = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"positiondelay"))
 		plr->positiondelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"leaderpenalty"))
+		plr->leaderpenalty = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"teamposition"))
 		plr->teamposition = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"teamimportance"))

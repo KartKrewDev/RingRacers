@@ -455,6 +455,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].position);
 		WRITEUINT8(save->p, players[i].oldposition);
 		WRITEUINT8(save->p, players[i].positiondelay);
+		WRITEUINT8(save->p, players[i].leaderpenalty);
 		WRITEUINT8(save->p, players[i].teamposition);
 		WRITEUINT8(save->p, players[i].teamimportance);
 		WRITEUINT32(save->p, players[i].distancetofinish);
@@ -1141,6 +1142,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].position = READUINT8(save->p);
 		players[i].oldposition = READUINT8(save->p);
 		players[i].positiondelay = READUINT8(save->p);
+		players[i].leaderpenalty = READUINT8(save->p);
 		players[i].teamposition = READUINT8(save->p);
 		players[i].teamimportance = READUINT8(save->p);
 		players[i].distancetofinish = READUINT32(save->p);

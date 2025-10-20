@@ -13556,7 +13556,7 @@ void K_KartUpdatePosition(player_t *player)
 	{
 		// Ensure these are reset for spectators
 		player->position = 0;
-		player->positiondelay = 0;
+		player->positiondelay = player->leaderpenalty = 0;
 		player->teamposition = 0;
 		player->teamimportance = 0;
 		return;
@@ -13683,33 +13683,48 @@ void K_KartUpdatePosition(player_t *player)
 	}
 
 	/* except in FREE PLAY */
-	if (player->curshield == KSHIELD_TOP &&
-			(gametyperules & GTR_CIRCUIT) &&
+	if ((gametyperules & GTR_CIRCUIT) &&
 			realplayers > 1 &&
 			!specialstageinfo.valid
 			&& !K_Cooperative())
 	{
-		/* grace period so you don't fall off INSTANTLY */
-		if (K_GetItemRouletteDistance(player, 8) < 2000 && player->topinfirst < 2*TICRATE) // "Why 8?" Literally no reason, but since we intend for constant-ish distance we choose a fake fixed playercount.
+		if (position == 1)
 		{
-			player->topinfirst++;
+			// Hyuu and other leader-penalty
+			if (player->leaderpenalty < POS_DELAY_TIME + 4)
+				player->leaderpenalty++;
 		}
-		else
+		else if (player->leaderpenalty != 0)
+			player->leaderpenalty--;
+
+		if (player->curshield == KSHIELD_TOP)
 		{
-			if (position == 1)
+			/* grace period so you don't fall off INSTANTLY */
+			if (K_GetItemRouletteDistance(player, 8) < 2000 && player->topinfirst < 2*TICRATE) // "Why 8?" Literally no reason, but since we intend for constant-ish distance we choose a fake fixed playercount.
 			{
-				Obj_GardenTopThrow(player);
+				player->topinfirst++;
 			}
 			else
 			{
-				if (player->topinfirst && (leveltime%3 == 0))
-					player->topinfirst--;
+				if (position == 1)
+				{
+					Obj_GardenTopThrow(player);
+				}
+				else
+				{
+					if (player->topinfirst && (leveltime%3 == 0))
+						player->topinfirst--;
+				}
 			}
+		}
+		else
+		{
+			player->topinfirst = 0;
 		}
 	}
 	else
 	{
-		player->topinfirst = 0;
+		player->leaderpenalty = player->topinfirst = 0;
 	}
 
 	player->position = position;
