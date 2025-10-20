@@ -7841,23 +7841,10 @@ static void P_LoadRecordGhosts(void)
 {
 	// see also /menus/play-local-race-time-attack.c's M_PrepareTimeAttack
 	char *gpath;
-	const char *modeprefix = "";
+	const char *modeprefix = M_GetRecordMode();
 	INT32 i;
 
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
-
-	if (encoremode)
-	{
-		modeprefix = "-spb";
-	}
-	else
-	{
-		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
-		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
-		{
-			modeprefix = "-hivolt";
-		}
-	}
 
 	enum
 	{
@@ -7883,7 +7870,7 @@ static void P_LoadRecordGhosts(void)
 
 	auto add_ghosts = [gpath](const srb2::String& base, UINT8 bits)
 	{
-		auto load = [base](const char* suffix) { P_TryAddExternalGhost(fmt::format("{}-{}.lmp", base, suffix).c_str()); };
+		auto load = [base](const char* suffix) { P_TryAddExternalGhost(fmt::format("{}{}.lmp", base, suffix).c_str()); };
 
 		if (bits & kTime)
 			load("time-best");
@@ -7901,7 +7888,7 @@ static void P_LoadRecordGhosts(void)
 	if (allGhosts)
 	{
 		for (i = 0; i < numskins; ++i)
-			add_ghosts(fmt::format("{}-{}{}", gpath, skins[i]->name, modeprefix), allGhosts);
+			add_ghosts(fmt::format("{}-{}-{}", gpath, skins[i]->name, modeprefix), allGhosts);
 	}
 
 	if (sameGhosts)
@@ -7909,7 +7896,7 @@ static void P_LoadRecordGhosts(void)
 		INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
 		if (skin < 0 || !R_SkinUsable(-1, skin, false))
 			skin = 0; // use default skin
-		add_ghosts(fmt::format("{}-{}{}", gpath, skins[skin]->name, modeprefix), sameGhosts);
+		add_ghosts(fmt::format("{}-{}-{}", gpath, skins[skin]->name, modeprefix), sameGhosts);
 	}
 
 	// Guest ghost

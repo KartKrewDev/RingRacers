@@ -220,6 +220,7 @@ extern boolean imcontinuing; // Temporary flag while continuing
 #define ATTACKING_LAP	(1<<1)
 #define ATTACKING_SPB	(1<<2)
 extern UINT8 modeattacking;
+const char *M_GetRecordMode(void);
 
 // menu demo things
 extern UINT8  numDemos;

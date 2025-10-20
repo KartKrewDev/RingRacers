@@ -588,6 +588,7 @@ static void G_UpdateRecordReplays(void)
 	char lastdemo[256], bestdemo[256];
 	const char *modeprefix = "";
 
+	// See also M_GetRecordMode
 	if (encoremode)
 	{
 		modeprefix = "spb-";
