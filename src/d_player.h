@@ -769,6 +769,7 @@ struct player_t
 	UINT8 wipeoutslow;		// Timer before you slowdown when getting wiped out
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 noEbrakeMagnet;	// Briefly disable 2.2 responsive ebrake if you're bumped by another player.
+	UINT8 wallSpikeDampen;	// 2.4 wallspikes can softlock in closed quarters... attenuate their violence
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
 	UINT16 stunned;			// Number of tics during which rings cannot be picked up

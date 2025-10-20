@@ -1378,12 +1378,12 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (g_tm.thing->z + g_tm.thing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		if (g_tm.thing->player && g_tm.thing->player && g_tm.thing->player->tumbleBounces > 0)
+		if (g_tm.thing->player && g_tm.thing->player->tumbleBounces)
 		{
-			return BMIT_CONTINUE;
+			if (thing->type == MT_SPIKE || G_CompatLevel(0x0011))
+				return BMIT_CONTINUE;
 		}
-
-		if (!P_IsObjectOnGround(g_tm.thing) && g_tm.thing->momz * P_MobjFlip(g_tm.thing) < 0) // fell into it
+		else if (!P_IsObjectOnGround(g_tm.thing) && g_tm.thing->momz * P_MobjFlip(g_tm.thing) < 0) // fell into it
 		{
 			P_DamageMobj(g_tm.thing, thing, thing, 1, DMG_TUMBLE);
 
@@ -1398,6 +1398,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		{
 			if (
 				thing->type == MT_WALLSPIKE
+				&& G_CompatLevel(0x0011)
 				&& g_tm.thing->health
 				&& g_tm.thing->player
 				&& (g_tm.thing->player->justbumped < bumptime-2)

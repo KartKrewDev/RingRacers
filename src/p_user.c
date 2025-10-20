@@ -4647,6 +4647,11 @@ void P_PlayerThink(player_t *player)
 		player->flashing--;
 	}
 
+	if (!player->flashing && !P_PlayerInPain(player))
+	{
+		player->wallSpikeDampen = 0;
+	}
+
 	if (player->nocontrol && player->nocontrol < UINT16_MAX)
 	{
 		player->nocontrol--;
