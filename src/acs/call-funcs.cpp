@@ -2420,12 +2420,12 @@ bool CallFunc_MusicRemap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 	{
 		return false;
 	}
-	
+
 	tuneStr = map->getString(argV[0]);
 	tune = tuneStr->str;
-	
+
 	// Do not allow ACS to remap Stereo Mode tunes.
-	if (strncmp("stere", tune, 5))
+	if (fasticmp("stere", tune))
 	{
 		return false;
 	}
