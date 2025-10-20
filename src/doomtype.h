@@ -239,6 +239,7 @@ enum {false = 0, true = 1};
 	#endif
 
 	#define ATTRUNUSED __attribute__((unused))
+	#define ATTRUNOPTIMIZE __attribute__((optimize("O0")))
 #elif defined (_MSC_VER)
 	#define ATTRNORETURN __declspec(noreturn)
 	#define ATTRINLINE __forceinline
