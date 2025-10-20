@@ -3997,6 +3997,84 @@ static int lib_kMomentumAngle(lua_State *L)
 	return 1;
 }
 
+static int lib_kPvPAmpReward(lua_State *L)
+{	
+	UINT32 award = luaL_checkinteger(L, 1);
+	player_t *attacker = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+	player_t *defender = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!attacker || !defender)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_PvPAmpReward(award, attacker, defender));
+	return 1;
+}
+
+static int lib_kSpawnAmps(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT8 amps = luaL_checkinteger(L, 2);
+	mobj_t *impact = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!impact)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnAmps(player, amps, impact);
+	return 0;
+}
+
+static int lib_kSpawnEXP(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT8 exp = luaL_checkinteger(L, 2);
+	mobj_t *impact = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!impact)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_SpawnEXP(player, exp, impact);
+	return 0;
+}
+
+static int lib_kAwardPlayerAmps(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT8 amps = luaL_checkinteger(L, 2);
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_AwardPlayerAmps(player, amps);
+	return 0;
+}
+
+static int lib_kOverdrive(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_Overdrive(player));
+	return 1;
+}
+
+static int lib_kDefensiveOverdrive(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushboolean(L, K_DefensiveOverdrive(player));
+	return 1;
+}
+
+
 static int lib_kDoInstashield(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5276,6 +5354,48 @@ static int lib_kPlayerCanUseItem(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetGradingFactorAdjustment(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	UINT32 gradingpoint = luaL_checkinteger(L, 2);
+	INLEVEL
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushfixed(L, K_GetGradingFactorAdjustment(player, gradingpoint));
+	return 1;
+}
+
+static int lib_kGetGradingFactorMinMax(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	boolean max = luaL_checkboolean(L, 2);
+	INLEVEL
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushfixed(L, K_GetGradingFactorMinMax(player, max));
+	return 1;
+}
+
+static int lib_kGetEXP(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INLEVEL
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_GetEXP(player));
+	return 1;
+}
+
+static int lib_kGetNumGradingPoints(lua_State *L)
+{
+	INLEVEL
+	lua_pushinteger(L, K_GetNumGradingPoints());
+	return 1;
+}
+
 static int lib_kEggmanTransfer(lua_State *L)
 {
 	player_t *source = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -5297,6 +5417,31 @@ static int lib_kSetTireGrease(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	K_SetTireGrease(player, tics);
+	return 0;
+}
+
+static int lib_kApplyStun(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	mobj_t *inflictor = NULL;
+	mobj_t *source = NULL;
+	INT32 damage = luaL_optinteger(L, 4, 0);
+	UINT8 damagetype = luaL_optinteger(L, 5, 0);
+	INLEVEL
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	if (!lua_isnil(L, 2) && lua_isuserdata(L, 2)) {
+		inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+		if (!inflictor)
+			return LUA_ErrInvalid(L, "mobj_t");
+	}
+	if (!lua_isnil(L, 3) && lua_isuserdata(L, 3)) {
+		source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+		if (!source)
+			return LUA_ErrInvalid(L, "mobj_t");
+	}
+	K_ApplyStun(player, inflictor, source, damage, damagetype);
 	return 0;
 }
 
@@ -6792,7 +6937,13 @@ static luaL_Reg lib[] = {
 	{"K_MomentumAngleEx",lib_kMomentumAngleEx},
 	{"K_MomentumAngleReal",lib_kMomentumAngleReal},
 	{"K_MomentumAngle",lib_kMomentumAngle},
+	{"K_PvPAmpReward",lib_kPvPAmpReward},
+	{"K_SpawnAmps",lib_kSpawnAmps},
+	{"K_SpawnEXP",lib_kSpawnEXP},
+	{"K_AwardPlayerAmps",lib_kAwardPlayerAmps},
 	{"K_AwardPlayerRings",lib_kAwardPlayerRings},
+	{"K_Overdrive",lib_kOverdrive},
+	{"K_DefensiveOverdrive",lib_kDefensiveOverdrive},
 	{"K_DoInstashield",lib_kDoInstashield},
 	{"K_DoPowerClash",lib_kDoPowerClash},
 	{"K_DoGuardBreak",lib_kDoGuardBreak},
@@ -6901,10 +7052,15 @@ static luaL_Reg lib[] = {
 	{"K_BumperInflate",lib_kBumperInflate},
 	{"K_ThunderDome",lib_kThunderDome},
 	{"K_PlayerCanUseItem",lib_kPlayerCanUseItem},
+	{"K_GetGradingFactorAdjustment",lib_kGetGradingFactorAdjustment},
+	{"K_GetGradingFactorMinMax",lib_kGetGradingFactorMinMax},
+	{"K_GetEXP",lib_kGetEXP},
+	{"K_GetNumGradingPoints",lib_kGetNumGradingPoints},
 	{"K_PlayerGuard",lib_kPlayerGuard},
 	{"K_FastFallBounce",lib_kFastFallBounce},
 	{"K_EggmanTransfer",lib_kEggmanTransfer},
 	{"K_SetTireGrease",lib_kSetTireGrease},
+	{"K_ApplyStun",lib_kApplyStun},
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 
