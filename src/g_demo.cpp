@@ -4212,6 +4212,7 @@ boolean G_CheckDemoStatus(void)
 
 	if (modeattacking || demo.willsave)
 	{
+		demo.willsave = false;
 		if (demobuf.p)
 		{
 			G_SaveDemo();

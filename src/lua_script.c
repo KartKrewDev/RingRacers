@@ -66,6 +66,7 @@ static lua_CFunction liblist[] = {
 	LUA_TerrainLib, // t_splash_t, t_footstep_t, t_overlay_t, terrain_t
 	LUA_RespawnVarsLib, // respawnvars_t
 	LUA_WaypointLib, // waypoint_t
+	LUA_GrandPrixLib, // grandprixinfo, cupheader_t, gprank_t, skinrecord_t, etc.
 	NULL
 };
 

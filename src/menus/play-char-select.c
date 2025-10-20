@@ -1019,7 +1019,10 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 	{
 		if (p->skin >= 0)
 		{
-			p->color = SKINCOLOR_NONE;
+			if (p->color == SKINCOLOR_NONE)
+				p->color = PR_GetProfile(p->profilen)->color;
+			else
+				p->color = SKINCOLOR_NONE;
 			p->rotate = CSROTATETICS;
 			p->hitlag = true;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
@@ -1252,8 +1255,11 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuExtraPressed(num))
 	{
+		UINT16 profile_followercolor = PR_GetProfile(p->profilen)->followercolor;
 		if (p->followercolor == FOLLOWERCOLOR_MATCH)
 			p->followercolor = FOLLOWERCOLOR_OPPOSITE;
+		else if (p->followercolor == FOLLOWERCOLOR_OPPOSITE && profile_followercolor != FOLLOWERCOLOR_OPPOSITE && profile_followercolor != FOLLOWERCOLOR_MATCH)
+			p->followercolor = profile_followercolor;
 		else if (p->followercolor == SKINCOLOR_NONE)
 			p->followercolor = FOLLOWERCOLOR_MATCH;
 		else

@@ -122,6 +122,12 @@ extern lua_State *gL;
 #define META_ICECUBEVARS "ICECUBEVARS_T*"
 #define META_SKYBOX "SKYBOX_T*"
 
+#define META_CUP "CUPHEADER_T*"
+#define META_GPRANK "GPRANK_T*"
+#define META_GPRANKLEVEL "GPRANK_LEVEL_T*"
+#define META_GPRANKLEVELPERPLAYER "GPRANK_LEVEL_PERPLAYER_T*"
+#define META_ROUNDENTRY "ROUNDENTRY_T*"
+
 boolean luaL_checkboolean(lua_State *L, int narg);
 
 int LUA_EnumLib(lua_State *L);
@@ -146,6 +152,7 @@ int LUA_BotVarsLib(lua_State *L);
 int LUA_TerrainLib(lua_State *L);
 int LUA_RespawnVarsLib(lua_State *L);
 int LUA_WaypointLib(lua_State *L);
+int LUA_GrandPrixLib(lua_State *L);
 
 #ifdef __cplusplus
 } // extern "C"
