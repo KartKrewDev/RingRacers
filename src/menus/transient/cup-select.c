@@ -287,6 +287,97 @@ static void M_GPBackup(INT32 choice)
 	M_StartCup(UINT8_MAX);
 }
 
+static boolean M_IsCupQueueable(cupheader_t *cup)
+{
+	levelsearch_t templevelsearch = levellist.levelsearch; // copy levellist so we don't mess with stuff I think
+	UINT16 ShownCount = 0;
+	UINT16 CupCount = 0;
+	UINT32 CheckGametype[2] = {TOL_RACE,TOL_BATTLE};
+	
+	templevelsearch.cup = cup;
+	
+	UINT8 e, i = 0;
+	for (e = 0; e < 2; e++)
+	{
+		templevelsearch.typeoflevel = CheckGametype[e];
+		ShownCount += M_CountLevelsToShowInList(&templevelsearch);
+	}
+	//CONS_Printf(M_GetText("ShownCount: %d\n"), ShownCount);
+	UINT16 checkmap = NEXTMAP_INVALID;
+	for (i = 0; i < CUPCACHE_SPECIAL; i++)
+	{
+		checkmap = templevelsearch.cup->cachedlevels[i];
+		if (checkmap == NEXTMAP_INVALID)
+		{
+			continue;
+		}
+		CupCount++;
+	}
+	//CONS_Printf(M_GetText("CupCount: %d\n"), CupCount);
+	if (ShownCount >= CupCount) // greater than is used to ensure multi-gametype maps don't accidentally cause this to return false.
+		return true;
+	
+	return false;
+}
+
+static void M_CupStartResponse(INT32 ch)
+{
+	if (ch != MA_YES)
+		return;
+
+	if (!(server || (IsPlayerAdmin(consoleplayer))))
+		return;
+	
+	M_LevelConfirmHandler();
+}
+
+static void M_CupQueueResponse(INT32 ch)
+{
+	if (ch != MA_YES)
+		return;
+
+	if (!(server || (IsPlayerAdmin(consoleplayer))))
+		return;
+	
+	cupheader_t *queuedcup = cupgrid.builtgrid[CUPMENU_CURSORID];
+	
+	M_CupQueueHandler(queuedcup);
+	
+	S_StartSound(NULL, sfx_gshe2);
+	
+	while ((menuqueue.size + roundqueue.size) > ROUNDQUEUE_MAX)
+		menuqueue.size--;
+	
+	if (!netgame)
+	{
+		M_StartMessage("Cup Queue",
+			va(M_GetText(
+			"You just queued %s CUP.\n"
+			"\n"
+			"Do you want to start the\n"
+			"cup immediately?\n"
+			), queuedcup->realname
+			), &M_CupStartResponse, MM_YESNO,
+			"Here we go!",
+			"On second thought..."
+		);
+	}
+	else
+	{
+		M_StartMessage("Cup Queue",
+			va(M_GetText(
+			"You just queued %s CUP.\n"
+			"\n"
+			"Do you want to queue it\n"
+			"for everyone?\n"
+			), queuedcup->realname
+			), &M_CupStartResponse, MM_YESNO,
+			"Queue em up!",
+			"Not yet"
+		);
+	}
+}
+
 void M_CupSelectHandler(INT32 choice)
 {
 	const UINT8 pid = 0;
@@ -429,6 +520,63 @@ void M_CupSelectHandler(INT32 choice)
 			S_StartSound(NULL, sfx_s3k63);
 		}
 	}
+	// Queue a cup for match race and netgames. See levelselect.c for most of how this actually works.
+	else if (levellist.canqueue && M_MenuButtonPressed(pid, MBT_Z))
+	{
+		M_SetMenuDelay(pid);
+		
+		if (cupgrid.builtgrid[CUPMENU_CURSORID] == &dummy_lostandfound)
+			S_StartSound(NULL, sfx_gshe7);
+			
+		else if (!M_IsCupQueueable(cupgrid.builtgrid[CUPMENU_CURSORID]))
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+			M_StartMessage("Back to the Grand Prix!", "Can't queue a cup you haven't fully unlocked!", NULL, MM_NOTHING, NULL, NULL);
+		}
+		
+		// Better to avoid any headaches here - pass the buck to the Extra button.
+		else if (roundqueue.size)
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+			M_StartMessage("Queue is not empty!", "Clear the queue before trying to queue a cup!", NULL, MM_NOTHING, NULL, NULL);
+			return;
+		}
+			
+		else
+		{
+			// We're not queueing Battle maps if we're in single-player Match Race.
+			if (!levellist.netgame && (cv_splitplayers.value == 1) && !netgame)
+			{
+				M_StartMessage("Cup Queue",
+					va(M_GetText(
+					"This will queue all Race courses in this cup.\n"
+					"\n"
+					"Any rounds already in the queue will be cleared out.\n"
+					"\n"
+					"Do you want to queue the cup?\n"
+					)), &M_CupQueueResponse, MM_YESNO,
+					"Let's do it!",
+					"Nah.");
+			}
+			else
+			{
+				M_StartMessage("Cup Queue",
+					va(M_GetText(
+					"This will queue the entire cup, including both Race and Battle courses.\n"
+					"\n"
+					"Any rounds already in the queue will be cleared out.\n"
+					"\n"
+					"Do you want to queue the cup?\n"
+					)), &M_CupQueueResponse, MM_YESNO,
+					"Let's do it!",
+					"Nah.");
+			}
+		}
+	}
+	else if (levellist.canqueue && M_MenuExtraPressed(pid))
+	{
+		M_ClearQueueHandler();
+	}
 	else if (M_MenuBackPressed(pid))
 	{
 		M_SetMenuDelay(pid);
@@ -443,4 +591,6 @@ void M_CupSelectHandler(INT32 choice)
 void M_CupSelectTick(void)
 {
 	cupgrid.previewanim++;
+	// Shoving this here for cup queue purposes.
+	M_LevelSelectTick();
 }

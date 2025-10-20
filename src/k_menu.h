@@ -961,6 +961,10 @@ void M_MenuToLevelPreamble(UINT8 ssplayers, boolean nowipe);
 void M_LevelSelected(INT16 add, boolean menuupdate);
 boolean M_LevelSelectCupSwitch(boolean next, boolean skipones);
 
+void M_LevelConfirmHandler(void);
+void M_ClearQueueHandler(void);
+void M_CupQueueHandler(cupheader_t *cup);
+
 // dummy consvars for GP & match race setup
 extern consvar_t cv_dummygpdifficulty;
 extern consvar_t cv_dummykartspeed;

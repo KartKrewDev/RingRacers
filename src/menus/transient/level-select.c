@@ -832,8 +832,10 @@ void M_LevelSelected(INT16 add, boolean menuupdate)
 static void M_MenuQueueStopSend(INT32 ch)
 {
 	(void)ch;
-
+	
 	memset(&menuqueue, 0, sizeof(struct menuqueue));
+	
+	menuqueue.clearing = false;
 }
 
 static void M_MenuQueueSelectedLocal(void)
@@ -901,6 +903,92 @@ static void M_MenuQueueSelectedLocal(void)
 			M_MenuQueueStopSend(MA_NONE);
 
 			M_ClearMenus(true);
+		}
+	}
+}
+
+// Copy-pasted and edited from G_GPCupIntoRoundQueue
+void M_CupQueueHandler(cupheader_t *cup)
+{
+	UINT8 i, levelindex = 0, bonusindex = 0;
+	UINT8 bonusmodulo = max(1, (cup->numlevels+1)/(cup->numbonus+1));
+	UINT16 cupLevelNum;
+	INT32 gtcheck;
+	
+	// We shouldn't get to this point while there's rounds queued, but if we do, get outta there.
+	if (roundqueue.size)
+	{
+		return;
+	}
+	
+	menuqueue.size = 0;
+
+	// Levels are added to the queue in the following pattern.
+	// For 5 Race rounds and 2 Bonus rounds, the most common case:
+	//    race - race - BONUS - race - race - BONUS - race
+	// The system is flexible enough to permit other arrangements.
+	// However, we just want to keep the pacing even & consistent.
+	while (levelindex < cup->numlevels)
+	{
+		memset(menuqueue.entries+menuqueue.size, 0, sizeof(roundentry_t));
+		
+		// Fill like two or three Race maps.
+		for (i = 0; i < bonusmodulo; i++)
+		{
+			cupLevelNum = cup->cachedlevels[levelindex];
+
+			if (cupLevelNum >= nummapheaders)
+			{
+				// Just skip the map if it's invalid.
+				continue;
+			}
+			
+			if ((mapheaderinfo[cupLevelNum]->typeoflevel & TOL_RACE) == TOL_RACE)
+			{
+				gtcheck = GT_RACE;
+			}
+			else
+			{
+				gtcheck = mapheaderinfo[cupLevelNum]->typeoflevel;
+			}
+
+			menuqueue.entries[menuqueue.size].mapnum = cupLevelNum;
+			menuqueue.entries[menuqueue.size].gametype = gtcheck;
+			menuqueue.entries[menuqueue.size].encore = (cv_kartencore.value == 1);
+			
+			menuqueue.size++;
+
+			levelindex++;
+			if (levelindex >= cup->numlevels)
+				break;
+		}
+
+		// Attempt to add an interstitial Battle round.
+		// If we're in singleplayer Match Race, just skip this.
+		if ((levelindex < cup->numlevels
+			&& bonusindex < cup->numbonus) && (levellist.netgame || (cv_splitplayers.value > 1) || netgame))
+		{
+			cupLevelNum = cup->cachedlevels[CUPCACHE_BONUS + bonusindex];
+
+			if (cupLevelNum < nummapheaders)
+			{
+				if ((mapheaderinfo[cupLevelNum]->typeoflevel & TOL_BATTLE) == TOL_BATTLE)
+				{
+					gtcheck = GT_BATTLE;
+				}
+				else
+				{
+					gtcheck = mapheaderinfo[cupLevelNum]->typeoflevel;
+				}
+				// In the case of Bonus rounds, we simply skip invalid maps.
+				menuqueue.entries[menuqueue.size].mapnum = cupLevelNum;
+				menuqueue.entries[menuqueue.size].gametype = gtcheck;
+				menuqueue.entries[menuqueue.size].encore = (cv_kartencore.value == 1);
+				
+				menuqueue.size++;
+			}
+
+			bonusindex++;
 		}
 	}
 }
@@ -1002,6 +1090,40 @@ static void M_MenuQueueResponse(INT32 ch)
 	SendNetXCmd(XD_EXITLEVEL, NULL, 0);
 }
 
+// Ripped out of LevelSelectHandler for use in cup queueing from cupselect.c
+void M_LevelConfirmHandler(void)
+{
+	// Starting immediately OR importing queue
+	
+	while ((menuqueue.size + roundqueue.size) > ROUNDQUEUE_MAX)
+			menuqueue.size--;
+
+	if (!levellist.canqueue || !menuqueue.size)
+	{
+		M_LevelSelected(levellist.cursor, true);
+	}
+	else if (netgame)
+	{
+		menuqueue.anchor = roundqueue.size;
+		menuqueue.sending = 1;
+
+		M_StartMessage("Queueing Rounds",
+			va(M_GetText(
+			"Attempting to send %d Round%s...\n"
+			"\n"
+			"If this is taking longer than you\n"
+			"expect, exit out of this message.\n"
+			), menuqueue.size, (menuqueue.size == 1 ? "" : "s")
+			), &M_MenuQueueStopSend, MM_NOTHING,
+			NULL,
+			"This is taking too long..."
+		);
+	}
+	else
+	{
+		M_MenuQueueSelectedLocal();
+	}
+}
 
 static void M_ClearQueueResponse(INT32 ch)
 {
@@ -1012,18 +1134,56 @@ static void M_ClearQueueResponse(INT32 ch)
 		return;
 
 	S_StartSound(NULL, sfx_slip);
-
-	if (netgame)
+	
+	if (!netgame)
+		memset(&roundqueue, 0, sizeof(struct roundqueue));
+	if (netgame && (roundqueue.size != 0))
 	{
-		if (roundqueue.size)
-		{
-			Handle_MapQueueSend(0, ROUNDQUEUE_CMD_CLEAR, false);
-		}
-		return;
+		menuqueue.clearing = true;
+		Handle_MapQueueSend(0, ROUNDQUEUE_CMD_CLEAR, false);
+		M_StartMessage("Clearing Rounds",
+			va(M_GetText(
+			"Attempting to clear %d Round%s...\n"
+			"\n"
+			"If this is taking longer than you\n"
+			"expect, exit out of this message.\n"
+			), roundqueue.size, (roundqueue.size == 1 ? "" : "s")
+			), &M_MenuQueueStopSend, MM_NOTHING,
+			NULL,
+			"This is taking too long..."
+		);
 	}
-
-	memset(&roundqueue, 0, sizeof(struct roundqueue));
 }
+
+// Ripped out of LevelSelectHandler for use in queue clearing from cupselect.c
+void M_ClearQueueHandler(void)
+{
+	while ((menuqueue.size + roundqueue.size) > ROUNDQUEUE_MAX)
+		menuqueue.size--;
+
+	if (menuqueue.size)
+	{
+		S_StartSound(NULL, sfx_shldls);
+		menuqueue.size--;
+	}
+	else if (roundqueue.size)
+	{
+		M_StartMessage("Queue Clearing",
+			va(M_GetText(
+			"There %s %d Round%s of play queued.\n"
+			"\n"
+			"Do you want to empty the queue?\n"
+			),
+			(roundqueue.size == 1 ? "is" : "are"),
+			roundqueue.size,
+			(roundqueue.size == 1 ? "" : "s")
+			), &M_ClearQueueResponse, MM_YESNO,
+			"Time to start fresh",
+			"Not right now"
+		);
+	}
+}
+
 void M_LevelSelectHandler(INT32 choice)
 {
 	const UINT8 pid = 0;
@@ -1074,38 +1234,9 @@ void M_LevelSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid))
 	{
-		// Starting immediately OR importing queue
-
 		M_SetMenuDelay(pid);
 
-		while ((menuqueue.size + roundqueue.size) > ROUNDQUEUE_MAX)
-			menuqueue.size--;
-
-		if (!levellist.canqueue || !menuqueue.size)
-		{
-			M_LevelSelected(levellist.cursor, true);
-		}
-		else if (netgame)
-		{
-			menuqueue.anchor = roundqueue.size;
-			menuqueue.sending = 1;
-
-			M_StartMessage("Queueing Rounds",
-				va(M_GetText(
-				"Attempting to send %d Round%s...\n"
-				"\n"
-				"If this is taking longer than you\n"
-				"expect, exit out of this message.\n"
-				), menuqueue.size, (menuqueue.size == 1 ? "" : "s")
-				), &M_MenuQueueStopSend, MM_NOTHING,
-				NULL,
-				"This is taking too long..."
-			);
-		}
-		else
-		{
-			M_MenuQueueSelectedLocal();
-		}
+		M_LevelConfirmHandler();
 	}
 	else if (levellist.canqueue && M_MenuButtonPressed(pid, MBT_Z))
 	{
@@ -1138,30 +1269,7 @@ void M_LevelSelectHandler(INT32 choice)
 	}
 	else if (levellist.canqueue && M_MenuExtraPressed(pid))
 	{
-		while ((menuqueue.size + roundqueue.size) > ROUNDQUEUE_MAX)
-			menuqueue.size--;
-
-		if (menuqueue.size)
-		{
-			S_StartSound(NULL, sfx_shldls);
-			menuqueue.size--;
-		}
-		else if (roundqueue.size)
-		{
-			M_StartMessage("Queue Clearing",
-				va(M_GetText(
-				"There %s %d Round%s of play queued.\n"
-				"\n"
-				"Do you want to empty the queue?\n"
-				),
-				(roundqueue.size == 1 ? "is" : "are"),
-				roundqueue.size,
-				(roundqueue.size == 1 ? "" : "s")
-				), &M_ClearQueueResponse, MM_YESNO,
-				"Time to start fresh",
-				"Not right now"
-			);
-		}
+		M_ClearQueueHandler();
 	}
 	else if (M_MenuBackPressed(pid))
 	{
@@ -1176,9 +1284,20 @@ void M_LevelSelectHandler(INT32 choice)
 
 void M_LevelSelectTick(void)
 {
+	if (menuqueue.clearing)
+	{
+		if (roundqueue.size != 0)
+			return;
+		menuqueue.clearing = false;
+		if (!menuqueue.cupqueue)
+			M_StopMessage(MA_NONE);
+		else
+			menuqueue.cupqueue = false;
+	}
+
 	if (!menuqueue.sending)
 		return;
-
+	
 	if ((menuqueue.sending <= menuqueue.size) // Sending
 		&& (roundqueue.size >= menuqueue.anchor)) // Didn't get it wiped
 	{

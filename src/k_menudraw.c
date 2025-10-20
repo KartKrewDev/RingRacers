@@ -3340,6 +3340,21 @@ void M_DrawCupSelect(void)
 	M_DrawCupPreview(y, &templevelsearch);
 
 	M_DrawCupTitle(120 - ty, &templevelsearch);
+	
+	const char *worktext = "Undo";
+	
+	if (menuqueue.size)
+		worktext = "Undo";
+	else if (roundqueue.size)
+		worktext = "Clear Queue";
+	
+	if (levellist.canqueue)
+	{
+		K_DrawGameControl(BASEVIDWIDTH/2, 6-ty, 0, va("%s Queue Cup<white>   %s %s",
+			(templevelsearch.cup && templevelsearch.cup != &dummy_lostandfound && !roundqueue.size) ? "<z_animated>" : "<z_pressed><gray>",
+			(roundqueue.size || menuqueue.size) ? "<c_animated>" : "<c_pressed><gray>",
+		worktext), 1, TINY_FONT, 0);
+	}
 
 	if (templevelsearch.grandprix == false && templevelsearch.cup != NULL)
 	{

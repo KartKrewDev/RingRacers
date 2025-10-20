@@ -81,6 +81,8 @@ extern struct menuqueue
 	UINT8 size;
 	UINT8 sending;
 	UINT8 anchor;
+	boolean clearing;
+	boolean cupqueue;
 	roundentry_t entries[ROUNDQUEUE_MAX];
 } menuqueue;
 
