@@ -130,6 +130,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	lua_itemroulettelib.c
 	lua_respawnvarslib.c
 	lua_waypointslib.c
+	lua_grandprixlib.c
 	lua_profile.cpp
 	k_kart.c
 	k_respawn.c
