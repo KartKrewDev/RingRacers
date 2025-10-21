@@ -88,7 +88,7 @@ struct Shoe : Mobj
 	bool valid() const { return Mobj::valid(follow()) && follow()->valid() && Mobj::valid(chain()); }
 
 	Fixed minDist() const { return 200 * mapobjectscale; }
-	Fixed maxDist() const { return 800 * mapobjectscale; }
+	Fixed maxDist() const { return 500 * mapobjectscale; }
 
 	angle_t followAngle() const { return R_PointToAngle2(x, y, follow()->x, follow()->y); }
 	Fixed followDistance() const { return FixedHypot(x - follow()->x, y - follow()->y); }
@@ -237,7 +237,7 @@ private:
 				}
 			}
 
-			thrust(a, 8 * mapobjectscale);
+			thrust(a, 10 * mapobjectscale);
 
 			Fixed maxSpeed = 32 * mapobjectscale;
 			Fixed speed = FixedHypot(momx, momy);
