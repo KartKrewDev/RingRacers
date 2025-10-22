@@ -11043,7 +11043,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		mobj_t *bail = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, MT_BAIL);
 		P_SetTarget(&bail->target, player->mo);
 
-		if (player->itemRoulette.eggman || player->eggmanexplode)
+		if ((player->itemRoulette.active && player->itemRoulette.eggman) || player->eggmanexplode > 0)
 		{
 			player->markedfordeath = true;
 			player->eggmanexplode = 1;
