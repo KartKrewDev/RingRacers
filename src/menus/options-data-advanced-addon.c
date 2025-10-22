@@ -28,7 +28,7 @@ menuitem_t OPTIONS_DataAdvancedAddon[] =
 	{IT_STRING | IT_CVAR, "Matching", "Set where to check for the text pattern when looking up addons via name.",
 		NULL, {.cvar = &cv_addons_search_type}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Case Sensitivity", "Set whether to consider the case when searching for addons..",
+	{IT_STRING | IT_CVAR, "Case Sensitivity", "Set whether to consider the case when searching for addons.",
 		NULL, {.cvar = &cv_addons_search_case}, 0, 0},
 
 };
