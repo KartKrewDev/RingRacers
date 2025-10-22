@@ -2451,7 +2451,8 @@ bool CallFunc_MusicRemap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 	tune = tuneStr->str;
 
 	// Do not allow ACS to remap Stereo Mode tunes.
-	if (fasticmp("stere", tune))
+	if (strlen(tune) > 5
+	    && toupper(tune[0]) == 'S' && toupper(tune[1]) == 'T' && toupper(tune[2]) == 'E' && toupper(tune[3]) == 'R' && toupper(tune[4]) == 'E')
 	{
 		return false;
 	}
