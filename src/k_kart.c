@@ -15380,6 +15380,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					K_UnsetItemOut(player);
 				}
+				else if (player->bungee)
+				{
+					// michael_jordan.mov
+				}
 				else
 				{
 					switch (player->itemtype)
