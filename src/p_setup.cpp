@@ -3382,6 +3382,10 @@ static boolean P_CheckLineSideTripWire(line_t *ld, int p)
 		{
 			sda->midtexture = R_TextureNumForName("TRIPWLOW");
 		}
+		else if (sda->midtexture == R_TextureNumForName("2RIPWIRE"))
+		{
+			sda->midtexture = R_TextureNumForName("2RIPWLOW");
+		}
 		else if (sda->midtexture == R_TextureNumForName("4RIPWIRE"))
 		{
 			sda->midtexture = R_TextureNumForName("4RIPWLOW");
@@ -9099,7 +9103,7 @@ void P_PostLoadLevel(void)
 	{
 		marathonmode = static_cast<marathonmode_t>(marathonmode & ~MA_INIT);
 	}
-	
+
 	Music_TuneReset(); // Placed before ACS scripts to allow remaps to occur on level start.
 
 	ACS_RunLevelStartScripts();
@@ -9567,8 +9571,8 @@ void Command_Platinums(void)
 			else
 			{
 				CONS_Printf(", %s (+%d:%02d:%02d)", stafftime.second.c_str(),
-					G_TicsToMinutes(stafftime.first - platinumtime, true), 
-					G_TicsToSeconds(stafftime.first - platinumtime), 
+					G_TicsToMinutes(stafftime.first - platinumtime, true),
+					G_TicsToSeconds(stafftime.first - platinumtime),
 					G_TicsToCentiseconds(stafftime.first - platinumtime));
 			}
 
