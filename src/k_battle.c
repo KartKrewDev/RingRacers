@@ -740,8 +740,11 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 				case 0:
 					P_SetMobjState(mo, S_OVERTIME_BULB1);
 
-					if (leveltime & 1)
-						mo->frame += 1;
+					if (!cv_reducevfx.value)
+					{
+						if (leveltime & 1)
+							mo->frame += 1;
+					}
 
 					//P_SetScale(mo, mapobjectscale);
 					zpos += 35 * mo->scale * flip;
@@ -749,10 +752,13 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 				case 1:
 					P_SetMobjState(mo, S_OVERTIME_LASER);
 
-					if (leveltime & 1)
-						mo->frame += 3;
-					else
-						mo->frame += (leveltime / 2) % 3;
+					if (!cv_reducevfx.value)
+					{
+						if (leveltime & 1)
+							mo->frame += 3;
+						else
+							mo->frame += (leveltime / 2) % 3;
+					}
 
 					//P_SetScale(mo, scale);
 					zpos += 346 * mo->scale * flip;
@@ -763,8 +769,11 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 				case 2:
 					P_SetMobjState(mo, S_OVERTIME_BULB2);
 
-					if (leveltime & 1)
-						mo->frame += 1;
+					if (!cv_reducevfx.value)
+					{
+						if (leveltime & 1)
+							mo->frame += 1;
+					}
 
 					//P_SetScale(mo, mapobjectscale);
 					break;
