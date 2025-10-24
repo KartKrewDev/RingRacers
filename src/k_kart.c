@@ -11125,7 +11125,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->preventfailsafe)
 		player->preventfailsafe--;
 
-	if (player->tripwireUnstuck > 150)
+	UINT8 unstuckthreshold = (onground) ? 80 : 40;
+
+	if (player->tripwireUnstuck > unstuckthreshold)
 	{
 		player->tripwireUnstuck = 0;
 		K_DoIngameRespawn(player);
