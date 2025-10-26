@@ -2094,7 +2094,7 @@ static void Y_InitVoteDrawing(void)
 	INT32 i = 0, j = 0;
 
 	vote_draw.ruby_icon = W_CachePatchName("RUBYICON", PU_STATIC);
-	vote_draw.strike_icon = W_CachePatchName("K_NOBLNS", PU_STATIC);
+	vote_draw.strike_icon = W_CachePatchName("VT_LSTRK", PU_STATIC);
 
 	for (i = 0; i < PLANET_FRAMES; i++)
 	{
