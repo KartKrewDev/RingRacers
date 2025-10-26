@@ -10543,9 +10543,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT32 TOO_CLOSE = average + 6500; // Start gaining here, lose if closer
 		UINT32 WAY_TOO_CLOSE = average + 5500; // Lose at max rate here
 
-		if (K_TeamComebackMultiplier(player) > FRACUNIT)
+		fixed_t comeback = K_TeamComebackMultiplier(player);
+
+		if (comeback > FRACUNIT)
 		{
-			fixed_t comeback = K_TeamComebackMultiplier(player);
 			REALLY_FAR = FixedDiv(REALLY_FAR, comeback);
 			TOO_CLOSE = FixedDiv(TOO_CLOSE, comeback);
 			WAY_TOO_CLOSE = FixedDiv(WAY_TOO_CLOSE, comeback);
