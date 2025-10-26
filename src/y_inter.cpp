@@ -162,6 +162,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	boolean completed[MAXPLAYERS];
 	INT32 numplayersingame = 0;
 	boolean getmainplayer = false;
+	UINT32 topscore = 0, btopemeralds = 0;
 
 	// Initialize variables
 	if (rankingsmode > 1)
@@ -189,6 +190,27 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		{
 			data.increase[i] = INT16_MIN;
 			continue;
+		}
+		
+		// for getting the proper maximum value for score-to-EXP conversion
+		if (gametype == GT_BATTLE)
+		{
+			if ((&players[i])->roundscore > topscore)
+			{
+				topscore = (&players[i])->roundscore;
+			}
+			if (K_NumEmeralds(&players[i]) > btopemeralds)
+			{
+				btopemeralds = K_NumEmeralds(&players[i]); // necessary so non-emerald wins can still get max EXP if no one else is holding more emeralds
+			}
+		}
+		
+		if (K_InRaceDuel() == true)
+		{
+			if (((UINT32)(&players[i])->duelscore) > topscore)
+			{
+				topscore = (&players[i])->duelscore;
+			}
 		}
 
 		if (!rankingsmode)
@@ -294,12 +316,33 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			if (powertype == PWRLV_DISABLED)
 			{
 				UINT8 pointgetters = numplayersingame + spectateGriefed;
+				UINT32 scoreconversion = 0;
+				UINT32 pscore = 0;
 
 				// accept players that nocontest, but not bots
 				if (data.pos[data.numplayers] <= pointgetters &&
 					!((players[i].pflags & PF_NOCONTEST) && players[i].bot))
 				{
-					data.increase[i] = K_CalculateGPRankPoints((&players[i])->exp, data.pos[data.numplayers], pointgetters);
+					if (gametype == GT_BATTLE)
+					{
+						pscore = (&players[i])->roundscore + K_NumEmeralds(&players[i]);
+						scoreconversion = FixedRescale(pscore, 0, topscore + btopemeralds, Easing_Linear, EXP_MIN, EXP_MAX);
+						data.increase[i] = K_CalculateGPRankPoints(scoreconversion, data.pos[data.numplayers], pointgetters);
+					}
+					else
+					{
+						// For Duel scoring, convert duelscore into EXP.
+						if (K_InRaceDuel())
+						{
+							pscore = (&players[i])->duelscore;
+							scoreconversion = FixedRescale(pscore, 0, topscore, Easing_Linear, EXP_MIN, EXP_MAX);
+							data.increase[i] = K_CalculateGPRankPoints(scoreconversion, data.pos[data.numplayers], pointgetters);
+						}
+						else
+						{
+							data.increase[i] = K_CalculateGPRankPoints((&players[i])->exp, data.pos[data.numplayers], pointgetters);
+						}
+					}
 
 					if (data.winningteam != TEAM_UNASSIGNED)
 					{
