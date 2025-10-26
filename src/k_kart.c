@@ -10510,12 +10510,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT8 counted = 0;
 		UINT32 firstRaw = 0;
 
+		// We want the average position of the back quarter...
+		UINT32 requiredPosition = ((D_NumPlayersInRace()*3)/4) - 1;
+		// ...except in teamplay, where we want the true average.
+		if (g_teamplay)
+			requiredPosition = 1;
+
 		for (UINT8 i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i] == false || players[i].spectator == true || players[i].exiting)
 				continue;
 
-			if (players[i].position != 1 && players[i].position >= ((D_NumPlayersInRace()*3)/4) - 1) // Not in 1st, but also back quarter of the average (-1 guy, for leeway)
+			if (players[i].position != 1 && players[i].position >= requiredPosition)
 			{
 				counted++;
 				average += K_UndoMapScaling(players[i].distancetofinish);
@@ -10536,6 +10542,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		UINT32 REALLY_FAR = average + 9500; // This far back, get max gain
 		UINT32 TOO_CLOSE = average + 6500; // Start gaining here, lose if closer
 		UINT32 WAY_TOO_CLOSE = average + 5500; // Lose at max rate here
+
+		fixed_t comeback = K_TeamComebackMultiplier(player);
+
+		if (comeback > FRACUNIT)
+		{
+			REALLY_FAR = FixedDiv(REALLY_FAR, comeback);
+			TOO_CLOSE = FixedDiv(TOO_CLOSE, comeback);
+			WAY_TOO_CLOSE = FixedDiv(WAY_TOO_CLOSE, comeback);
+		}
 
 		fixed_t MAX_GAIN_PER_SEC = FRACUNIT/20; // % assist to gain per sec when REALLY_FAR
 		fixed_t MAX_LOSS_PER_SEC = FRACUNIT/5; // % assist to lose per sec when WAY_TOO_CLOSE
