@@ -15,6 +15,7 @@
 #include "../../d_netcmd.h"
 #include "../../i_time.h"
 #include "../../k_menu.h"
+#include "../../hu_stuff.h"
 #include "../../k_grandprix.h" // K_CanChangeRules
 #include "../../m_cond.h"
 #include "../../s_sound.h"
@@ -124,6 +125,9 @@ void M_OpenPauseMenu(void)
 	pausemenu.openoffset.start = I_GetTime();
 	pausemenu.openoffset.dist = 0;
 	pausemenu.closing = false;
+
+	// Fix specific input error regarding closing netgame chat with escape while a controller is connected (only on Windows?)
+	chat_keydown = false;
 
 	itemOn = currentMenu->lastOn = mpause_continue;	// Make sure we select "RESUME GAME" by default
 
