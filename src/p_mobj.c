@@ -8208,6 +8208,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				invinc_rotation_delay = 8;
 			}
 
+			boolean updatecolor = false;
 			if ((trans >= NUMTRANSMAPS) || mobj->target->player->flamedash || mobj->target->player->tripwirePass < TRIPWIRE_BOOST)
 			{
 				// never show for flameshield dash, below tripwire minimum or transparency invalid
@@ -8227,6 +8228,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					// < 150% flickering normally
 					mobj->renderflags |= RF_DONTDRAW;
 				}
+				updatecolor = true;
 			}
 			else
 			{
@@ -8239,6 +8241,24 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 				mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
 
+				updatecolor = true;
+
+				if (blastermode == !(mobj->flags2 & MF2_AMBUSH))
+				{
+					mobj->flags2 ^= MF2_AMBUSH;
+					if (blastermode)
+					{
+						P_SetMobjState(mobj, (mobj->extravalue1) ? S_TRIPWIREBOOST_BLAST_BOTTOM : S_TRIPWIREBOOST_BLAST_TOP);
+					}
+					else
+					{
+						P_SetMobjState(mobj, (mobj->extravalue1) ? S_TRIPWIREBOOST_BOTTOM : S_TRIPWIREBOOST_TOP);
+					}
+				}
+			}
+
+			if (updatecolor)
+			{
 				if (mobj->target->player->invincibilitytimer > 0)
 				{
 					if (mobj->target->player->invincibilitytimer > itemtime+(2*TICRATE))
@@ -8260,19 +8280,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				{
 					mobj->color = SKINCOLOR_NONE;
 					mobj->colorized = false;
-				}
-
-				if (blastermode == !(mobj->flags2 & MF2_AMBUSH))
-				{
-					mobj->flags2 ^= MF2_AMBUSH;
-					if (blastermode)
-					{
-						P_SetMobjState(mobj, (mobj->extravalue1) ? S_TRIPWIREBOOST_BLAST_BOTTOM : S_TRIPWIREBOOST_BLAST_TOP);
-					}
-					else
-					{
-						P_SetMobjState(mobj, (mobj->extravalue1) ? S_TRIPWIREBOOST_BOTTOM : S_TRIPWIREBOOST_TOP);
-					}
 				}
 			}
 		}
