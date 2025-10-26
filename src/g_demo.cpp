@@ -3517,15 +3517,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	}
 
 	// end of player read (the 0xFF marker)
-	// so this is where we are to read our lua variables (if possible!)
-	if (demoflags & DF_LUAVARS)	// again, used for compability, lua shit will be saved to replays regardless of if it's even been loaded
-	{
-		if (!gL) // No Lua state! ...I guess we'll just start one...
-			LUA_ClearState();
-
-		// No modeattacking check, DF_LUAVARS won't be present here.
-		LUA_UnArchive(&demobuf, false);
-	}
+	// see the DF_LUAVARS if later, though.
 
 	splitscreen = 0;
 
@@ -3546,6 +3538,18 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	}
 
 	G_InitNew((demoflags & DF_ENCORE) != 0, gamemap, true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
+
+	// so this is where we are to read our lua variables (if possible!)
+	// we read it here because Lua player variables can have mobj references,
+	// and not having the map loaded causes crashes if that's the case.
+	if (demoflags & DF_LUAVARS)	// again, used for compability, lua shit will be saved to replays regardless of if it's even been loaded
+	{
+		if (!gL) // No Lua state! ...I guess we'll just start one...
+			LUA_ClearState();
+
+		// No modeattacking check, DF_LUAVARS won't be present here.
+		LUA_UnArchive(&demobuf, false);
+	}
 
 	for (i = 0; i < numslots; i++)
 	{
