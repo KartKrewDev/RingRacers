@@ -1330,7 +1330,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 			if (grandprixinfo.gp == true
 				&& grandprixinfo.eventmode != GPEVENT_SPECIAL
-				&& player->bot == false && losing == false)
+				&& player->bot == false && losing == false && player->hudrings > 0)
 			{
 				const UINT8 lifethreshold = 20;
 

@@ -351,13 +351,12 @@ static int cup_get(lua_State *L)
 			lua_pushstring(L, cup->levellist[i]);
 			lua_rawseti(L, -2, 1 + i);
 		}
-		//return UNIMPLEMENTED;
 		break;
 	case cup_cachedlevels:
 		lua_createtable(L, ((cup->numlevels) + (cup->numbonus)), 0);
-		for (size_t i = 0; i < ((cup->numlevels) + (cup->numbonus)); i++)
+		for (size_t i = 0; i < CUPCACHE_MAX; i++)
 		{
-			lua_pushnumber(L, cup->cachedlevels[i]);
+			lua_pushnumber(L, (cup->cachedlevels[i])+1);
 			lua_rawseti(L, -2, 1 + i);
 		}
 		break;
