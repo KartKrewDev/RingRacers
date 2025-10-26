@@ -489,7 +489,8 @@ static int lib_mMusicRemap(lua_State *L)
 	}
 	
 	// Do not allow Lua to remap Stereo Mode tunes.
-	if (strncmp("stere", tune_id, 5))
+	if (strlen(tune_id) > 5
+	    && toupper(tune_id[0]) == 'S' && toupper(tune_id[1]) == 'T' && toupper(tune_id[2]) == 'E' && toupper(tune_id[3]) == 'R' && toupper(tune_id[4]) == 'E')
 	{
 		return LUA_ErrStereo(L, tune_id);
 	}
