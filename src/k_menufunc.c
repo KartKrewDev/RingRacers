@@ -1098,7 +1098,7 @@ void M_UpdateMenuCMD(UINT8 i, boolean bailrequired, boolean chat_open)
 	menucmd[i].buttons = 0;
 
 	// Eat inputs made when chat is open
-	if (chat_open)
+	if (chat_open && pausemenu.closing)
 		return;
 
 	if (G_PlayerInputDown(i, gc_screenshot,    mp)) { menucmd[i].buttons |= MBT_SCREENSHOT; }
