@@ -525,7 +525,7 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		M_SetMenuDelay(pid);
 		
-		if (cupgrid.builtgrid[CUPMENU_CURSORID] == &dummy_lostandfound)
+		if ((cupgrid.builtgrid[CUPMENU_CURSORID] == &dummy_lostandfound) || (cupgrid.builtgrid[CUPMENU_CURSORID] == NULL))
 			S_StartSound(NULL, sfx_gshe7);
 			
 		else if (!M_IsCupQueueable(cupgrid.builtgrid[CUPMENU_CURSORID]))
