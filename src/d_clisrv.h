@@ -231,6 +231,7 @@ struct serverconfig_pak
 
 	UINT8 gametype;
 	UINT8 modifiedgame;
+	boolean dedicated;
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
@@ -465,7 +466,7 @@ struct doomdata_t
 		client3cmd_pak client3pak;          //         264 bytes(?)
 		client4cmd_pak client4pak;          //         324 bytes(?)
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
-		serverconfig_pak servercfg;         //         773 bytes
+		serverconfig_pak servercfg;         //         777 bytes
 		UINT8 textcmd[MAXTEXTCMD+2];        //       66049 bytes (wut??? 64k??? More like 258 bytes...)
 		char filetxpak[sizeof (filetx_pak)];//         139 bytes
 		char fileack[sizeof (fileack_pak)];
@@ -558,6 +559,7 @@ extern boolean server;
 extern boolean serverrunning;
 #define client (!server)
 extern boolean dedicated; // For dedicated server
+extern boolean connectedtodedicated; // Client that is connected to a dedicated server.
 extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;
@@ -670,6 +672,7 @@ void CL_UpdateServerList(void);
 void CL_TimeoutServerList(void);
 // Is there a game running
 boolean Playing(void);
+boolean InADedicatedServer(void);
 
 // Advance client-to-client pubkey verification flow
 void UpdateChallenges(void);

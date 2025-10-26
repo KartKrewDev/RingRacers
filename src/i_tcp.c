@@ -1229,6 +1229,7 @@ boolean I_InitTcpNetwork(void)
 	if (M_CheckParm("-server") || dedicated)
 	{
 		server = true;
+		connectedtodedicated = dedicated;
 
 		// If a number of clients (i.e. nodes) is specified, the server will wait for the clients
 		// to connect before starting.

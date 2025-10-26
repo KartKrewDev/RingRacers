@@ -227,7 +227,7 @@ void K_UpdateMatchRaceBots(void)
 {
 	const UINT16 defaultbotskin = R_BotDefaultSkin();
 	UINT8 difficulty;
-	UINT8 pmax = (dedicated ? MAXPLAYERS-1 : MAXPLAYERS);
+	UINT8 pmax = (InADedicatedServer() ? MAXPLAYERS-1 : MAXPLAYERS);
 	UINT8 numplayers = 0;
 	UINT8 numbots = 0;
 	UINT8 numwaiting = 0;
@@ -343,12 +343,7 @@ void K_UpdateMatchRaceBots(void)
 	if (numbots < wantedbots)
 	{
 		// We require MORE bots!
-		UINT8 newplayernum = 0;
-
-		if (dedicated)
-		{
-			newplayernum = 1;
-		}
+		UINT8 newplayernum = InADedicatedServer() ? 1 : 0;
 
 		// Rearrange usable bot skins list to prevent gaps for randomised selection
 		if (tutorialchallenge == TUTORIALSKIP_INPROGRESS)

@@ -260,6 +260,7 @@ static inline VOID OpenTextConsole(void)
 	HANDLE ci, co;
 	const BOOL tco = M_CheckParm("-console") != 0;
 	dedicated = M_CheckParm("-dedicated") != 0;
+	connectedtodedicated = dedicated;
 	if (!(dedicated || tco))
 		return;
 	FreeConsole();
