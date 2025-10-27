@@ -1275,7 +1275,7 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 
 	if (solidMobj->type == MT_WALLSPIKE)
 	{
-		if (bounceMobj->hitlag)
+		if (bounceMobj->player && bounceMobj->hitlag)
 		{
 			bounceMobj->player->justbumped = bumptime;
 			return false;
