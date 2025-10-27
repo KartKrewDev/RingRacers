@@ -1076,7 +1076,7 @@ static void F_DrawCreditsTitleDrop(void)
 	const struct credits_slide_s *slide = &g_credits_slides[ g_credits.current_slide ];
 
 	V_DrawFixedPatch(
-		0, -BASEVIDHEIGHT * (FRACUNIT / 2),
+		4 * FRACUNIT, -BASEVIDHEIGHT * (FRACUNIT / 2),
 		FRACUNIT, 0,
 		static_cast<patch_t *>(W_CachePatchName(
 			(M_UseAlternateTitleScreen() ? "KTSJUMPR1" : "KTSBUMPR1"),
