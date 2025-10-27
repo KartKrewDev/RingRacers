@@ -208,6 +208,7 @@ extern struct cursongcredit
 	UINT8 trans;
 	fixed_t x;
 	fixed_t old_x;
+	boolean use_credits_offset;
 } cursongcredit;
 
 // For menu, always appears

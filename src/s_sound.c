@@ -2452,6 +2452,7 @@ void S_ShowMusicCredit(void)
 	cursongcredit.anim = 5*TICRATE;
 	cursongcredit.x = cursongcredit.old_x = 0;
 	cursongcredit.trans = NUMTRANSMAPS;
+	cursongcredit.use_credits_offset = (gamestate == GS_CREDITS || (demo.playback && demo.attract == DEMO_ATTRACT_CREDITS));
 }
 
 void S_StopMusicCredit(void)
