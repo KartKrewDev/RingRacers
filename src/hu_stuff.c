@@ -898,6 +898,7 @@ void HU_TickSongCredits(void)
 		cursongcredit.x = cursongcredit.old_x = 0;
 		cursongcredit.anim = 0;
 		cursongcredit.trans = NUMTRANSMAPS;
+		cursongcredit.use_credits_offset = false;
 		return;
 	}
 
@@ -1984,6 +1985,10 @@ void HU_DrawSongCredits(void)
 	fixed_t y;
 
 	if (gamestate == GS_INTERMISSION)
+	{
+		y = (BASEVIDHEIGHT - 13) * FRACUNIT;
+	}
+	else if (cursongcredit.use_credits_offset)
 	{
 		y = (BASEVIDHEIGHT - 13) * FRACUNIT;
 	}
