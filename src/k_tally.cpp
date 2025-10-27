@@ -345,13 +345,10 @@ void level_tally_t::Init(player_t *player)
 			}
 		}
 
-		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT)
+		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT && K_GetNumGradingPoints() > 0) // EXP should be a rule type, but here we are
 		{
-			if (player->exp)
-			{
-				exp = player->exp;
-				totalExp = EXP_TARGET;
-			}
+			exp = static_cast<UINT16>(std::max<fixed_t>(player->exp, 0)); // The scoring calc doesn't subtract anymore, so using 0 is okay and will not wrap
+			totalExp = EXP_TARGET;
 		}
 
 		if (battleprisons)
