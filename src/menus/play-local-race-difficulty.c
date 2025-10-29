@@ -217,7 +217,7 @@ void DummyKartSpeed_OnChange(void)
 			tooltip = "Designed around ""\x82""competition""\x80"". Even playing from behind ""\x82""requires good driving""\x80"".";
 			break;
 		case KARTSPEED_HARD:
-			tooltip = "An ""\x87""extra ""\x80""kick for various challenges. ""\x85""Not designed as a standard""\x80"", but fun in bursts.";
+			tooltip = "An ""\x87""extra ""\x80""kick for various challenges. ""\x85""Not as tightly balanced""\x80"", but fun in bursts.";
 			break;
 	}
 
