@@ -530,7 +530,7 @@ boolean M_ServerBrowserInputs(INT32 ch)
 			{
 				S_StartSound(NULL, sfx_s3k96);
 				M_StartMessage("Some advice...",
-					"Ring Racers was designed for \x82""8 or fewer players""\x80"".\n""\x80""Racing may be ""\x82""more frustrating""\x80"" in large games.\n""\x86""(Comeback tools can only work so hard!)",
+					"Ring Racers was designed for \x82""8 or fewer players""\x80"".\n""\x80""Racing may be ""\x82""more frustrating""\x80"" in large games.\n""\x86""(Some servers allow more spectators than players.)",
 				M_ServerBrowserConfirm, MM_YESNO, "Bring on the imbalance...!", "Never mind!");
 			}
 			else
