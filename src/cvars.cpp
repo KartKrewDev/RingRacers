@@ -752,7 +752,8 @@ void LiveStudioAudience_OnChange(void);
 	consvar_t cv_livestudioaudience = UnsavedNetVar("livestudioaudience", "Off").on_off().onchange(LiveStudioAudience_OnChange);
 #endif
 
-consvar_t cv_maxplayers = NetVar("maxplayers", "8").min_max(1, MAXPLAYERS);
+void Maxplayers_OnChange(void);
+consvar_t cv_maxplayers = NetVar("maxplayers", "8").min_max(1, MAXPLAYERS).onchange_noinit(Maxplayers_OnChange);
 
 consvar_t cv_shuffleloser = NetVar("shuffleloser", "On").on_off();
 
