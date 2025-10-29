@@ -203,3 +203,23 @@ void Dummygpdifficulty_OnChange(void)
 
 	PLAY_RaceDifficulty[drace_gpdifficulty].tooltip = tooltip;
 }
+void DummyKartSpeed_OnChange(void);
+void DummyKartSpeed_OnChange(void)
+{
+	const char *tooltip = NULL;
+
+	switch (cv_dummykartspeed.value)
+	{
+		case KARTSPEED_EASY:
+			tooltip = "Boosts are reduced for ""\x83""casual play""\x80""! The ""\x83""main event""\x80"" when ""\x83""inviting friends""\x80"" over!";
+			break;
+		case KARTSPEED_NORMAL:
+			tooltip = "Designed around ""\x82""competition""\x80"". Even playing from behind ""\x82""requires good driving""\x80"".";
+			break;
+		case KARTSPEED_HARD:
+			tooltip = "An ""\x87""extra ""\x80""kick for various challenges. ""\x85""Not designed as a standard""\x80"", but fun in bursts.";
+			break;
+	}
+
+	PLAY_RaceDifficulty[drace_mrkartspeed].tooltip = tooltip;
+}
