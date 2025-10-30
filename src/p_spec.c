@@ -2069,23 +2069,30 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (!G_TimeAttackStart() && !(gametyperules & GTR_ROLLINGSTART) && player->laps == 1 && lapisfresh)
 			{
+				boolean setupsplits = false;
+
 				if (rainbowstartavailable)
 				{
 					// CONS_Printf("%d: %s gimme first blood\n", leveltime, player_names[player - players]);
 					player->pflags2 |= PF2_GIMMEFIRSTBLOOD;
+					setupsplits = true;
 				}
-				else if (!K_InRaceDuel())
+				else if (!K_InRaceDuel() && M_NotFreePlay())
 				{
 					// CONS_Printf("%d: %s gimme start award\n", leveltime, player_names[player - players]);
 					player->pflags2 |= PF2_GIMMESTARTAWARDS;
+					setupsplits = true;
 				}
 
-				player->karthud[khud_splitcolor] = 0;
-				player->karthud[khud_splitposition] = 1;
-				player->karthud[khud_splitskin] = -1;
-				player->karthud[khud_splittime] = (INT32)(starttime - leveltime);
-				player->karthud[khud_splittimer] = 2*TICRATE;
-				player->karthud[khud_splitwin] = (rainbowstartavailable) ? 2 : 0;
+				if (setupsplits)
+				{
+					player->karthud[khud_splitcolor] = 0;
+					player->karthud[khud_splitposition] = 1;
+					player->karthud[khud_splitskin] = -1;
+					player->karthud[khud_splittime] = (INT32)(starttime - leveltime);
+					player->karthud[khud_splittimer] = 2*TICRATE;
+					player->karthud[khud_splitwin] = (rainbowstartavailable) ? 2 : 0;
+				}
 			}
 
 			if (rainbowstartavailable == true && player->mo->hitlag == 0 && G_TimeAttackStart())
