@@ -560,7 +560,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 		case PWRLV_RACE:
 			if (cv_kartspeed.value == -1 || cv_kartencore.value == -1)
 			{
-				UINT8 speed = KARTSPEED_NORMAL;
+				UINT8 speed = KARTSPEED_EASY;
 				boolean encore = false;
 				INT16 avg = 0, min = 0;
 				UINT8 i, t = 1;
@@ -601,10 +601,10 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 					else if (avg >= 4000) // Getting into it, likely experienced but just building power
 						t = 2;
 
-					else if (avg < 2000 || (avg <= 2500 && min < 600)) // Baby Room, mandatory first impressions; or if mostly new & 1 guy is really coping
+					else if (avg < 3300 || (avg <= 4000 && min < 2000)) // Casual group, mandatory first impressions; or if mostly new & 1 guy is really coping
 						t = 0;
 
-					else if (avg >= 2000) // Transition point
+					else if (avg >= 3300) // Transition point
 						t = 1;
 
 
@@ -617,23 +617,23 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 						encore = true;
 						break;
 					case 5:
-						speed = KARTSPEED_HARD;
-						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
-						break;
-					case 4:
 						speed = P_RandomChance(PR_RULESCRAMBLE, (7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
 						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
 						break;
-					case 3:
+					case 4:
 						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
 						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>2);
 						break;
-					case 2:
+					case 3:
 						speed = KARTSPEED_NORMAL;
 						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>3);
 						break;
+					case 2:
+						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_NORMAL : KARTSPEED_EASY;
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>5);
+						break;
 					case 1: default:
-						speed = KARTSPEED_NORMAL;
+						speed = KARTSPEED_EASY;
 						encore = false;
 						break;
 					case 0:

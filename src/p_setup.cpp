@@ -7743,7 +7743,7 @@ static void P_InitLevelSettings(void)
 		if (multi_speed)
 		{
 			if (cv_kartspeed.value == KARTSPEED_AUTO)
-				gamespeed = ((speedscramble == -1) ? KARTSPEED_NORMAL : (UINT8)speedscramble);
+				gamespeed = ((speedscramble == -1) ? KARTSPEED_EASY : (UINT8)speedscramble);
 			else
 				gamespeed = (UINT8)cv_kartspeed.value;
 		}
