@@ -630,7 +630,7 @@ boolean IsPlayerNameUnique(const char *name, INT32 playernum)
 		if (strcasecmp(name, player_names[ix]) == 0) // Are usernames equal?
 			return false;
 	}
-	
+
 	return true;
 }
 
@@ -666,20 +666,20 @@ boolean IsPlayerNameGood(char *name)
 	for (ix = 0; ix < len; ix++)
 		if (!AllowedPlayerNameChar(name[ix]))
 			return false;
-		
+
 	return true;
 }
 
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 {
 	size_t len = strlen(name);
-	
+
 	// Check if a player is using a valid name.
 	if (!IsPlayerNameGood(name))
 		return false;
 
 	// Check if another player is currently using the name, case-insensitively.
-	if (!IsPlayerNameUnique(name, playernum)) 
+	if (!IsPlayerNameUnique(name, playernum))
 	{
 		// We shouldn't kick people out just because
 		// they joined the game with the same name
@@ -7629,6 +7629,34 @@ void LiveStudioAudience_OnChange(void);
 void LiveStudioAudience_OnChange(void)
 {
 	livestudioaudience_timer = 90;
+}
+
+static boolean maxplayers_warned = false;
+
+static void M_MaxplayersSelect(INT32 choice)
+{
+	if (choice == MA_YES)
+	{
+		maxplayers_warned = true;
+		return;
+	}
+
+	CV_StealthSetValue(&cv_maxplayers, 8);
+}
+
+void Maxplayers_OnChange(void);
+void Maxplayers_OnChange(void)
+{
+	if (cv_maxplayers.value <= 8 || maxplayers_warned)
+		return;
+
+	if (currentMenu == &PLAY_RaceDifficultyDef || currentMenu == &OPTIONS_ServerDef)
+	{
+		S_StartSound(NULL, sfx_s3k96);
+		M_StartMessage("Some advice...",
+			"Ring Racers was designed for \x82""8 or fewer players""\x80"".\n""\x80""Racing may be ""\x82""more frustrating""\x80"" in large games.\n""\x86""(Comeback tools can only work so hard!)",
+		M_MaxplayersSelect, MM_YESNO, "Bring on the imbalance...!", "Never mind!");
+	}
 }
 
 void Got_DiscordInfo(const UINT8 **p, INT32 playernum)
