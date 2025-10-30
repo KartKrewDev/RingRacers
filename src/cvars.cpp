@@ -972,7 +972,8 @@ consvar_t cv_dummyip = MenuDummy("dummyip", "");
 consvar_t cv_dummyipselect = MenuDummy("dummyipselect", "0").min_max(0, 2);
 
 extern CV_PossibleValue_t dummykartspeed_cons_t[];
-consvar_t cv_dummykartspeed = MenuDummy("dummykartspeed", "Gear 2").values(dummykartspeed_cons_t);
+void DummyKartSpeed_OnChange(void);
+consvar_t cv_dummykartspeed = MenuDummy("dummykartspeed", "Gear 2").values(dummykartspeed_cons_t).onchange(DummyKartSpeed_OnChange);
 
 consvar_t cv_dummymatchbots = MenuDummy("dummymatchbots", "Off").values({
 	{0, "Off"},
