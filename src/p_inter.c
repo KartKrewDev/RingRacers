@@ -1636,9 +1636,6 @@ boolean P_CheckRacers(void)
 
 	boolean eliminateLast = (!K_CanChangeRules(true) || (cv_karteliminatelast.value != 0));
 
-	if (grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY)
-		eliminateLast = false;
-
 	boolean allHumansDone = true;
 	//boolean allBotsDone = true;
 
@@ -1701,11 +1698,13 @@ boolean P_CheckRacers(void)
 #ifndef DEVELOP
 		else if (grandprixinfo.gp == true)
 		{
-			// Always do this in GP
 			eliminateLast = true;
 		}
 #endif
 	}
+
+	if (grandprixinfo.gp && grandprixinfo.gamespeed == KARTSPEED_EASY)
+		eliminateLast = false;
 
 	if (eliminateLast == true && (numExiting >= numPlaying-1))
 	{
@@ -1768,6 +1767,9 @@ boolean P_CheckRacers(void)
 			racecountdown = countdown + 1;
 		}
 	}
+
+	if (grandprixinfo.gp && !G_GametypeUsesLives()) // Relaxed
+		racecountdown = 0;
 
 	// We're still playing, but no one else is,
 	// so we need to reset spectator griefing.
