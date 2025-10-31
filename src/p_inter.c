@@ -1769,6 +1769,9 @@ boolean P_CheckRacers(void)
 		}
 	}
 
+	if (grandprixinfo.gp && !G_GametypeUsesLives()) // Relaxed
+		racecountdown = 0;
+
 	// We're still playing, but no one else is,
 	// so we need to reset spectator griefing.
 	if (numPlaying <= 1)

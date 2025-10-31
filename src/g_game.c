@@ -2319,7 +2319,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 bigwaypointgap;
 
 	INT16 duelscore;
-	
+
 	boolean mfdfinish;
 
 	roundconditions_t roundconditions;
@@ -2415,7 +2415,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	totalring = players[player].totalring;
 	xtralife = players[player].xtralife;
-	
+
 	mfdfinish = players[player].mfdfinish;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE|PF_ANALOGSTICK|PF_AUTORING));
@@ -2687,7 +2687,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->xtralife = xtralife;
 
 	p->finalized = finalized;
-	
+
 	p->mfdfinish = mfdfinish;
 
 	// SRB2kart
@@ -4155,7 +4155,7 @@ void G_AddMapToBuffer(UINT16 map)
 			{
 				mapheaderinfo[i]->justPlayed = upperJustPlayedLimit;
 			}
-			
+
 			if (mapheaderinfo[i]->justPlayed > 0)
 			{
 				mapheaderinfo[i]->justPlayed--;
@@ -4894,14 +4894,14 @@ static void G_DoCompleted(void)
 			}
 		}
 
-		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting && (!retrying || grandprixinfo.gamespeed == KARTSPEED_EASY))
+		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting && (!retrying || !G_GametypeUsesLives()))
 		{
 			if (player->bot == true)
 			{
 				// Bots are going to get harder... :)
 				K_IncreaseBotDifficulty(player);
 			}
-			else if (K_IsPlayerLosing(player) == false)
+			else if (K_IsPlayerLosing(player) == false || !G_GametypeUsesLives())
 			{
 				// Increase your total rings
 				INT32 ringtotal = player->hudrings;
@@ -5227,7 +5227,7 @@ void G_EndGame(void)
 {
 	// Clean up ACS music remaps.
 	Music_TuneReset();
-	
+
 	// Handle voting
 	if (nextmap == NEXTMAP_VOTING)
 	{
