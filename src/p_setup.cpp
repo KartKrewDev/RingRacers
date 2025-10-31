@@ -8491,6 +8491,9 @@ void P_FreeLevelState(void)
 	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
 	Patch_FreeTag(PU_PATCH_ROTATED);
 	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+
+	R_InitMobjInterpolators();
+	R_InitializeLevelInterpolators();
 }
 
 /** Loads a level from a lump or external wad.
