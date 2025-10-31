@@ -721,11 +721,11 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		t2->angle += ANGLE_180;
 		if (t2->type == MT_JAWZ)
 			P_SetTarget(&t2->tracer, t2->target); // Back to the source!
-		
+
 		// Reflected item becomes owned by the DT owner, so it becomes dangerous the the thrower
 		if (t1->target && !P_MobjWasRemoved(t1->target))
 			P_SetTarget(&t2->target, t1->target);
-		
+
 		t2->threshold = 10;
 	}
 
@@ -1039,7 +1039,10 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			}
 
 			// if you're here, you're getting hit
-			P_DamageMobj(victim, shield, attacker, 1, DMG_WHUMBLE);
+			boolean hit = P_DamageMobj(victim, shield, attacker, 1, DMG_WHUMBLE);
+
+			if (!hit)
+				return false;
 
 			K_DropPowerUps(victimPlayer);
 
@@ -1107,9 +1110,11 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			}
 			else
 			{
-				P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
-				K_AddHitLag(attacker, attackerHitlag, false);
-				shield->hitlag = attacker->hitlag;
+				if (P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL))
+				{
+					K_AddHitLag(attacker, attackerHitlag, false);
+					shield->hitlag = attacker->hitlag;
+				}
 				return true;
 			}
 		}
