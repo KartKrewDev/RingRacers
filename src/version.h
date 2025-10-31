@@ -7,4 +7,4 @@
 #define MODVERSION 12
 
 // Define this as a prerelease version suffix
-//#define BETAVERSION "RC9"
+#define BETAVERSION "RC9"
