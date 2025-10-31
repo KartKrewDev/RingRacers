@@ -8508,8 +8508,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
-	INT32 i, ranspecialwipe = 0;
+	INT32 i;
 	virtlump_t *encoreLump = NULL;
+
+	boolean fade_shortcircuit = false;
 
 	levelloading = true;
 	g_reloadinggamestate = reloadinggamestate;
@@ -8634,12 +8636,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 #undef WAIT
 
-	// Special stage & record attack retry fade to white
-	// This is handled BEFORE sounds are stopped.
-	if (G_IsModeAttackRetrying() && !demo.playback && (gametyperules & GTR_BOSS) == 0)
+	if (demo.attract
+	|| (G_IsModeAttackRetrying() && !demo.playback && (gametyperules & GTR_BOSS) == 0))
 	{
-		ranspecialwipe = 2;
-		//wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
+		fade_shortcircuit = true;
 	}
 
 	// Make sure all sounds are stopped before Z_FreeTags.
@@ -8650,8 +8650,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	if (rendermode != render_none)
 		V_ReloadPalette(); // Set the level palette
 
-	// Let's fade to white here
-	// But only if we didn't do the encore startup wipe
+	// Music set-up
 	if (demo.attract || demo.simplerewind)
 	{
 		// Leave the music alone! We're already playing what we want!
@@ -8661,17 +8660,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 	else if (!reloadinggamestate)
 	{
-		int wipetype = wipe_level_toblack;
-
-		// TODO: What is this?? This does nothing because P_LoadLevelMusic is gonna halt music, anyway.
-#if 0
-		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
-		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
-		if (gamestate == GS_LEVEL)
-			S_FadeMusic(0, FixedMul(
-				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
-#endif
-
 		if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
@@ -8679,7 +8667,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		else if (gamestate == GS_LEVEL)
 		{
-			if (ranspecialwipe == 2)
+			if (fade_shortcircuit)
 			{
 				pausedelay = -3; // preticker plus one
 			}
@@ -8693,6 +8681,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				P_LoadLevelMusic();
 			}
 		}
+	}
+
+	// Let's fade to black or white here
+	// But only if we didn't do the encore startup wipe
+	if (!reloadinggamestate && !demo.simplerewind)
+	{
+		int wipetype = wipe_level_toblack;
+		sfxenum_t fadesound = sfx_None;
 
 		// Default
 		levelfadecol = 31;
@@ -8704,24 +8700,21 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		else if (K_PodiumHasEmerald())
 		{
 			// Special Stage out
-			if (ranspecialwipe != 2)
-				S_StartSound(NULL, sfx_s3k6a);
+			fadesound = sfx_s3k6a;
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
 		else if (gametyperules & GTR_SPECIALSTART)
 		{
 			// Special Stage in
-			if (ranspecialwipe != 2)
-				S_StartSound(NULL, sfx_s3kaf);
+			fadesound = sfx_s3kaf;
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
 		else if (skipstats == 1 && (gametyperules & GTR_BOSS) == 0)
 		{
 			// MapWarp
-			if (ranspecialwipe != 2)
-				S_StartSound(NULL, sfx_s3k73);
+			fadesound = sfx_s3k73;
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
@@ -8740,6 +8733,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		else
 		{
+			if (!fade_shortcircuit)
+				S_StartSound(NULL, fadesound);
+
 			if (rendermode != render_none)
 			{
 				F_WipeStartScreen();
@@ -9019,7 +9015,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		G_StartTitleCard();
 
 		// Can the title card actually run, though?
-		if (WipeStageTitle && ranspecialwipe != 2 && fromnetsave == false)
+		if (WipeStageTitle && !fade_shortcircuit && fromnetsave == false)
 		{
 			G_PreLevelTitleCard();
 		}

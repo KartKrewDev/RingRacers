@@ -176,7 +176,7 @@ void Music_Init(void)
 		Tune& tune = g_tunes.insert("credits");
 
 		tune.priority = 101;
-		tune.song = ""; // Music_TuneReset
+		tune.song = ""; // F_NewCreditsMusic
 		tune.credit = true;
 	}
 
@@ -540,6 +540,5 @@ void Music_TuneReset(void)
 	Music_Remap("wait", "WAIT2J");
 	Music_Remap("title", "_title");
 	Music_Remap("credits_silence", "");
-	Music_Remap("credits", "_creds");
 	Music_Remap("lawyer", "lawyer");
 }
