@@ -307,7 +307,7 @@ private:
 					}},
 				};
 			}
-				
+
 			return {
 				{ // Near
 					{8, 2, {kp_capsuletarget_near[0]}}, // 1P
@@ -501,7 +501,7 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 		}
 
 		boolean offroadwarning = K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash && stplyr->curshield != KSHIELD_TOP
-			&& stplyr->boostpower < FRACUNIT && stplyr->speed < 2*K_GetKartSpeed(stplyr, false, false)/3;
+			&& stplyr->boostpower < FRACUNIT && stplyr->rings <= 0 && stplyr->speed < K_GetKartSpeed(stplyr, false, false)/2;
 
 		boolean hitwarning = stplyr->flashing && stplyr->rings <= 0 && stplyr->speed < K_GetKartSpeed(stplyr, false, false)/2
 			&& P_IsObjectOnGround(mobj) && !P_PlayerInPain(stplyr);
