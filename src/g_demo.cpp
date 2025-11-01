@@ -183,10 +183,11 @@ demoghost *ghosts = NULL;
 // - 0x0010 -- RR 2.4 rc1   (staff ghosts part 3 - skinlimit raise. don't say we never did anythin for 'ya)
 // - 0x0011 -- RR 2.4 rc2   (K_FlipFromObject oversight)
 // - 0x0012 -- RR 2.4 rc6	(Waterskii regression from 2.3)
-// - 0x0013 -- RR 2.4 final (No behavior changes. just used as a game version indicator for the TA folks to parse)
+// - 0x0013 -- RR 2.4 rc9   (No behavior changes)
+// - 0x0014 -- RR 2.4 final (No behavior changes. just used as a game version indicator for the TA folks to parse)
 
 #define MINDEMOVERSION 0x000E
-#define DEMOVERSION 0x0013
+#define DEMOVERSION 0x0014
 
 boolean G_CompatLevel(UINT16 level)
 {
