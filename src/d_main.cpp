@@ -115,14 +115,13 @@ extern "C" consvar_t cv_lua_profile, cv_menuframeskip;
 #define ASSET_HASH_TEXTURES_ORIGINALZONES_PK3	"f15f974dbd17c9ce1b60bf31cf12d246"
 #define ASSET_HASH_CHARS_PK3					"5c8c34c5623acf984e3f654da4509126"
 #define ASSET_HASH_FOLLOWERS_PK3				"4b61428e5f2ec806de398de8a5fba5f0"
-#define ASSET_HASH_MAPS_PK3						"5dabba64c503e9ef1e25ca9ee41d0d76"
+#define ASSET_HASH_MAPS_PK3						"44f2763d81a1b62fe06fe2eb88b63ade"
 #define ASSET_HASH_UNLOCKS_PK3					"a4de35ba9f83829ced44dfc1316ba33e"
-#define ASSET_HASH_STAFFGHOSTS_PK3				"4248d1fb6eb14c6b359f739c118249cc"
+#define ASSET_HASH_STAFFGHOSTS_PK3				"54078aba0e42bfee54640a94c295dd65"
 #define ASSET_HASH_SHADERS_PK3					"bc0b47744d457956db2ee9ea00f59eff"
 #ifdef USE_PATCH_FILE
 #define ASSET_HASH_PATCH_PK3					"00000000000000000000000000000000"
 #endif
-
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
