@@ -463,7 +463,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		stepamt -= dist;
 
 		fixed_t oldx = player->mo->x;
-		fixed_t oldy = player->mo->y = dest.y;
+		fixed_t oldy = player->mo->y;
 
 		// We've reached the destination point,
 		P_UnsetThingPosition(player->mo);
