@@ -11060,7 +11060,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if ((player->itemRoulette.active && player->itemRoulette.eggman) || player->eggmanexplode > 0)
 		{
-			player->markedfordeath = true;
 			player->eggmanexplode = 1;
 			player->rings = -20;
 		}
@@ -11087,7 +11086,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		*/
 
 		K_AddHitLag(player->mo, TICRATE/4, false);
-		player->bailhitlag = true; // set for a one time quake effect as soon as hitlag ends
+		player->bailhitlag = true; // set to trigger the rest of the effect after hitlag
 
 		if (P_PlayerInPain(player))
 		{
