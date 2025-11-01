@@ -12402,7 +12402,7 @@ static boolean K_SetPlayerNextWaypoint(player_t *player)
 --------------------------------------------------*/
 static void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
-	if ((player != NULL) && (player->mo != NULL))
+	if ((player != NULL) && (player->mo != NULL) && (player->mo->health > 0))
 	{
 		waypoint_t *finishline   = K_GetFinishLineWaypoint();
 
