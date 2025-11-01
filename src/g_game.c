@@ -2337,6 +2337,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	tic_t splits[MAXRACESPLITS];
 
+	UINT8 amps;
+
 	INT32 i;
 
 	// This needs to be first, to permit it to wipe extra information
@@ -2503,6 +2505,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		cangrabitems = 0;
 
 		memset(&splits, 0, sizeof(splits));
+
+		amps = 0;
 	}
 	else
 	{
@@ -2565,6 +2569,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		duelscore = players[player].duelscore;
 		memcpy(&splits, &players[player].splits, sizeof(splits));
+
+		amps = players[player].amps;
 	}
 
 	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
@@ -2714,6 +2720,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->spectatorReentry = spectatorReentry;
 	p->griefValue = griefValue;
 	p->griefStrikes = griefStrikes;
+
+	p->amps = amps;
 
 	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
