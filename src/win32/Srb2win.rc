@@ -97,7 +97,7 @@ BEGIN
             VALUE "FileDescription", "Dr. Robotnik's Ring Racers\0"
             VALUE "FileVersion", "2.4"
             VALUE "InternalName", "ringracers\0"
-            VALUE "LegalCopyright", "Copyright 2018-2024 Kart Krew Dev\0"
+            VALUE "LegalCopyright", "Copyright 2018-2025 Kart Krew Dev\0"
             VALUE "LegalTrademarks", "Dr. Robotnik and related characters are trademarks of Sega.\0"
             VALUE "OriginalFilename", "ringracers.exe\0"
             VALUE "PrivateBuild", "\0"
