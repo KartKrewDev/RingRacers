@@ -8225,8 +8225,8 @@ static void K_ThrowLandMine(player_t *player)
 
 	P_SetTarget(&landMine->target, player->mo);
 
-	P_SetScale(landMine, player->mo->scale);
-	landMine->destscale = player->mo->destscale;
+	P_SetScale(landMine, (landMine->destscale = K_ItemScaleForPlayer(player)));
+	//CONS_Printf("landMine->scale is %f, player scale is %f\n", ((double)landMine->destscale)/mapobjectscale, ((double)player->mo->destscale)/mapobjectscale);
 
 	landMine->angle = player->mo->angle;
 
@@ -15644,6 +15644,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								K_AdjustPlayerItemAmount(player, -1);
+								K_SetItemOut(player); // need this to set itemscale
 								if (player->throwdir > 0)
 								{
 									K_ThrowKartItem(player, true, MT_LANDMINE, -1, 0, 0);
@@ -15652,6 +15653,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								{
 									K_ThrowLandMine(player);
 								}
+								K_UnsetItemOut(player);
 								K_PlayAttackTaunt(player->mo);
 								player->botvars.itemconfirm = 0;
 							}
