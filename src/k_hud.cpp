@@ -7999,8 +7999,6 @@ void K_drawKartHUD(void)
 
 				split = std::abs(split);
 
-				UINT8 *skincolor = R_GetTranslationColormap(skin, static_cast<skincolornum_t>(color), GTC_CACHE);
-
 				UINT8 textcolor = SKINCOLOR_WHITE;
 				switch (ahead)
 				{
@@ -8026,6 +8024,8 @@ void K_drawKartHUD(void)
 
 				if (skin != -1)
 				{
+					UINT8 *skincolor = R_GetTranslationColormap(skin, static_cast<skincolornum_t>(color), GTC_CACHE);
+
 					// vibes offset
 					row.x(-35).colormap(skincolor).patch(R_CanShowSkinInDemo(skin) ? faceprefix[skin][FACE_MINIMAP] : kp_unknownminimap);
 				}
