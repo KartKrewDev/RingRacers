@@ -1638,6 +1638,7 @@ sfxenum_t S_AddSoundFx(const char *name, boolean singular, INT32 flags, boolean 
 	if (i < NUMSFX)
 	{
 		strncpy(freeslotnames[i-sfx_freeslot0], name, 6);
+		freeslotnames[i - sfx_freeslot0][6] = '\0'; // to avoid a crash with a lot of loaded characters
 		S_sfx[i].singularity = singular;
 		S_sfx[i].priority = 60;
 		S_sfx[i].pitch = flags;
