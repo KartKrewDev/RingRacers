@@ -7865,7 +7865,7 @@ void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags)
 {
 	char buf[2 + HU_MAXMSGLEN + 1];
 	size_t numwords, ix;
-	char *msg = &buf[3];
+	char *msg = &buf[2];
 	const size_t msgspace = sizeof buf - 2;
 
 	numwords = COM_Argc() - usedargs;
