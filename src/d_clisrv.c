@@ -2732,7 +2732,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 
 	K_CheckBumpers();
 	P_CheckRacers();
-	
+
 	// Reset map headers' justPlayed and anger records
 	// when there are no players in a dedicated server.
 	// Otherwise maps get angry at newly-joined players
@@ -7863,10 +7863,9 @@ void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message)
 
 void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags)
 {
-	char buf[2 + HU_MAXMSGLEN + 1];
+	char msg[HU_MAXMSGLEN + 1];
 	size_t numwords, ix;
-	char *msg = &buf[2];
-	const size_t msgspace = sizeof buf - 2;
+	const size_t msgspace = sizeof msg;
 
 	numwords = COM_Argc() - usedargs;
 	I_Assert(numwords > 0);
