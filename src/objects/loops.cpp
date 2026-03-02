@@ -60,7 +60,7 @@ set_shiftxy
 		(R_PointToAngle2(0, 0, dx, dy) - a->angle);
 
 	const fixed_t adj = FixedMul(
-			abs(FCOS(AbsAngle(th - ANGLE_90))),
+			FCOS(AbsAngle(th - ANGLE_90)),
 			FixedHypot(dx, dy)) / 2;
 
 	vector2_t *xy = &player->loop.shift;
