@@ -494,12 +494,12 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 			{
 				const char *temp = trimname-1;
 				while (temp >= filename+5 && *temp != PATHSEP[0])
-                    temp--;
+					temp--;
 
-                if (((trimname-1) - temp) == 8
-                    && temp >= filename+5
-                    && (!strncmp(temp-5, PATHSEP"Temp", 5)
-                    || !strncmp(temp-4, PATHSEP"tmp", 4)))
+				if (((trimname-1) - temp) == 8
+					&& temp >= filename+5
+					&& (!strncmp(temp-5, PATHSEP"Temp", 5)
+					|| !strncmp(temp-4, PATHSEP"tmp", 4)))
 				{
 					filename = wadfiles[
 						((wadnamelump & ~UINT16_MAX) >> 16)
