@@ -135,41 +135,39 @@ typedef INT32 mobjflag_t;
 #define MF_NOHITLAGFORME    ((INT32)(1U<<31)) // Disable hitlag for this object
 // no more free slots, gotta get rid of more crusty base SRB2 flags
 
-typedef enum
-{
-	MF2_AXIS           = 1,     // It's a NiGHTS axis! (For faster checking)
-	// free: 1<<1
-	MF2_DONTRESPAWN    = 1<<2,  // Don't respawn this object!
-	// free: 1<<3
-	MF2_AUTOMATIC      = 1<<4,  // Thrown ring has automatic properties
-	MF2_RAILRING       = 1<<5,  // Thrown ring has rail properties
-	MF2_BOUNCERING     = 1<<6,  // Thrown ring has bounce properties
-	MF2_EXPLOSION      = 1<<7,  // Thrown ring has explosive properties
-	MF2_SCATTER        = 1<<8,  // Thrown ring has scatter properties
-	MF2_BEYONDTHEGRAVE = 1<<9,  // Source of this missile has died and has since respawned.
-	MF2_SLIDEPUSH      = 1<<10, // MF_PUSHABLE that pushes continuously.
-	MF2_CLASSICPUSH    = 1<<11, // Drops straight down when object has negative momz.
-	MF2_INVERTAIMABLE  = 1<<12, // Flips whether it's targetable by A_LookForEnemies (enemies no, decoys yes)
-	MF2_INFLOAT        = 1<<13, // Floating to a height for a move, don't auto float to target's height.
-	MF2_DEBRIS         = 1<<14, // Splash ring from explosion ring
-	MF2_NIGHTSPULL     = 1<<15, // Attracted from a paraloop
-	MF2_JUSTATTACKED   = 1<<16, // can be pushed by other moving mobjs
-	MF2_FIRING         = 1<<17, // turret fire
-	MF2_SUPERFIRE      = 1<<18, // Firing something with Super Sonic-stopping properties. Or, if mobj has MF_MISSILE, this is the actual fire from it.
-	MF2_ALREADYHIT     = 1<<19, // This object was already damaged THIS tic, resets even during hitlag
-	MF2_STRONGBOX      = 1<<20, // Flag used for "strong" random monitors.
-	MF2_OBJECTFLIP     = 1<<21, // Flag for objects that always have flipped gravity.
-	MF2_SKULLFLY       = 1<<22, // Special handling: skull in flight.
-	MF2_FRET           = 1<<23, // Flashing from a previous hit
-	MF2_BOSSNOTRAP     = 1<<24, // No Egg Trap after boss
-	MF2_BOSSFLEE       = 1<<25, // Boss is fleeing!
-	MF2_BOSSDEAD       = 1<<26, // Boss is dead! (Not necessarily fleeing, if a fleeing point doesn't exist.)
-	MF2_AMBUSH         = 1<<27, // Alternate behaviour typically set by MTF_AMBUSH
-	MF2_LINKDRAW       = 1<<28, // Draw vissprite of mobj immediately before/after tracer's vissprite (dependent on dispoffset and position)
-	MF2_SHIELD         = 1<<29, // Thinker calls P_AddShield/P_ShieldLook (must be partnered with MF_SCENERY to use)
-	MF2_SPLAT          = 1<<30, // Renders as a splat
-	// free: to and including 1<<31
-} mobjflag2_t;
+typedef INT32 mobjflag2_t;
+#define MF2_AXIS           (1)     // It's a NiGHTS axis! (For faster checking)
+// free: 1<<1
+#define MF2_DONTRESPAWN    (1<<2)  // Don't respawn this object!
+// free: 1<<3
+#define MF2_AUTOMATIC      (1<<4)  // Thrown ring has automatic properties
+#define MF2_RAILRING       (1<<5)  // Thrown ring has rail properties
+#define MF2_BOUNCERING     (1<<6)  // Thrown ring has bounce properties
+#define MF2_EXPLOSION      (1<<7)  // Thrown ring has explosive properties
+#define MF2_SCATTER        (1<<8)  // Thrown ring has scatter properties
+#define MF2_BEYONDTHEGRAVE (1<<9)  // Source of this missile has died and has since respawned.
+#define MF2_SLIDEPUSH      (1<<10) // MF_PUSHABLE that pushes continuously.
+#define MF2_CLASSICPUSH    (1<<11) // Drops straight down when object has negative momz.
+#define MF2_INVERTAIMABLE  (1<<12) // Flips whether it's targetable by A_LookForEnemies (enemies no, decoys yes)
+#define MF2_INFLOAT        (1<<13) // Floating to a height for a move, don't auto float to target's height.
+#define MF2_DEBRIS         (1<<14) // Splash ring from explosion ring
+#define MF2_NIGHTSPULL     (1<<15) // Attracted from a paraloop
+#define MF2_JUSTATTACKED   (1<<16) // can be pushed by other moving mobjs
+#define MF2_FIRING         (1<<17) // turret fire
+#define MF2_SUPERFIRE      (1<<18) // Firing something with Super Sonic-stopping properties. Or, if mobj has MF_MISSILE, this is the actual fire from it.
+#define MF2_ALREADYHIT     (1<<19) // This object was already damaged THIS tic, resets even during hitlag
+#define MF2_STRONGBOX      (1<<20) // Flag used for "strong" random monitors.
+#define MF2_OBJECTFLIP     (1<<21) // Flag for objects that always have flipped gravity.
+#define MF2_SKULLFLY       (1<<22) // Special handling: skull in flight.
+#define MF2_FRET           (1<<23) // Flashing from a previous hit
+#define MF2_BOSSNOTRAP     (1<<24) // No Egg Trap after boss
+#define MF2_BOSSFLEE       (1<<25) // Boss is fleeing!
+#define MF2_BOSSDEAD       (1<<26) // Boss is dead! (Not necessarily fleeing, if a fleeing point doesn't exist.)
+#define MF2_AMBUSH         (1<<27) // Alternate behaviour typically set by MTF_AMBUSH
+#define MF2_LINKDRAW       (1<<28) // Draw vissprite of mobj immediately before/after tracer's vissprite (dependent on dispoffset and position)
+#define MF2_SHIELD         (1<<29) // Thinker calls P_AddShield/P_ShieldLook (must be partnered with MF_SCENERY to use)
+#define MF2_SPLAT          (1<<30) // Renders as a splat
+// free: to and including 1<<31
 
 typedef enum
 {
