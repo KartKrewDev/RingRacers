@@ -119,44 +119,43 @@ struct degenmobj_t
 // heightsec. Allows for multiple fake planes.
 /** Flags describing 3Dfloor behavior and appearance.
   */
-typedef enum
-{
-	FOF_EXISTS            = 0x1,        ///< Always set, to check for validity.
-	FOF_BLOCKPLAYER       = 0x2,        ///< Solid to player, but nothing else
-	FOF_BLOCKOTHERS       = 0x4,        ///< Solid to everything but player
-	FOF_SOLID             = 0x6,        ///< Clips things.
-	FOF_RENDERSIDES       = 0x8,        ///< Renders the sides.
-	FOF_RENDERPLANES      = 0x10,       ///< Renders the floor/ceiling.
-	FOF_RENDERALL         = 0x18,       ///< Renders everything.
-	FOF_SWIMMABLE         = 0x20,       ///< Is a water block.
-	FOF_NOSHADE           = 0x40,       ///< Messes with the lighting?
-	FOF_CUTSOLIDS         = 0x80,       ///< Cuts out hidden solid pixels.
-	FOF_CUTEXTRA          = 0x100,      ///< Cuts out hidden translucent pixels.
-	FOF_CUTLEVEL          = 0x180,      ///< Cuts out all hidden pixels.
-	FOF_CUTSPRITES        = 0x200,      ///< Final step in making 3D water.
-	FOF_BOTHPLANES        = 0x400,      ///< Render inside and outside planes.
-	FOF_EXTRA             = 0x800,      ///< Gets cut by ::FOF_CUTEXTRA.
-	FOF_TRANSLUCENT       = 0x1000,     ///< See through!
-	FOF_FOG               = 0x2000,     ///< Fog "brush."
-	FOF_INVERTPLANES      = 0x4000,     ///< Only render inside planes.
-	FOF_ALLSIDES          = 0x8000,     ///< Render inside and outside sides.
-	FOF_INVERTSIDES       = 0x10000,    ///< Only render inside sides.
-	FOF_DOUBLESHADOW      = 0x20000,    ///< Make two lightlist entries to reset light?
-	FOF_FLOATBOB          = 0x40000,    ///< Floats on water and bobs if you step on it.
-	FOF_NORETURN          = 0x80000,    ///< Used with ::FOF_CRUMBLE. Will not return to its original position after falling.
-	FOF_CRUMBLE           = 0x100000,   ///< Falls 2 seconds after being stepped on, and randomly brings all touching crumbling 3dfloors down with it, providing their master sectors share the same tag (allows crumble platforms above or below, to also exist).
-	FOF_GOOWATER          = 0x200000,   ///< Used with ::FOF_SWIMMABLE. Makes thick bouncey goop.
-	FOF_MARIO             = 0x400000,   ///< Acts like a question block when hit from underneath. Goodie spawned at top is determined by master sector.
-	FOF_BUSTUP            = 0x800000,   ///< You can spin through/punch this block and it will crumble!
-	FOF_QUICKSAND         = 0x1000000,  ///< Quicksand!
-	FOF_PLATFORM          = 0x2000000,  ///< You can jump up through this to the top.
-	FOF_REVERSEPLATFORM   = 0x4000000,  ///< A fall-through floor in normal gravity, a platform in reverse gravity.
-	FOF_INTANGIBLEFLATS   = 0x6000000,  ///< Both flats are intangible, but the sides are still solid.
-	FOF_RIPPLE            = 0x8000000,  ///< Ripple the flats
-	FOF_COLORMAPONLY      = 0x10000000, ///< Only copy the colormap, not the lightlevel
-	FOF_BOUNCY            = 0x20000000, ///< Bounces players
-	FOF_SPLAT             = 0x40000000, ///< Use splat flat renderer (treat cyan pixels as invisible)
-} ffloortype_e;
+typedef int ffloortype_e;
+
+#define FOF_EXISTS            (0x1)        ///< Always set, to check for validity.
+#define FOF_BLOCKPLAYER       (0x2)        ///< Solid to player, but nothing else
+#define FOF_BLOCKOTHERS       (0x4)        ///< Solid to everything but player
+#define FOF_SOLID             (0x6)        ///< Clips things.
+#define FOF_RENDERSIDES       (0x8)        ///< Renders the sides.
+#define FOF_RENDERPLANES      (0x10)       ///< Renders the floor/ceiling.
+#define FOF_RENDERALL         (0x18)       ///< Renders everything.
+#define FOF_SWIMMABLE         (0x20)       ///< Is a water block.
+#define FOF_NOSHADE           (0x40)       ///< Messes with the lighting?
+#define FOF_CUTSOLIDS         (0x80)       ///< Cuts out hidden solid pixels.
+#define FOF_CUTEXTRA          (0x100)      ///< Cuts out hidden translucent pixels.
+#define FOF_CUTLEVEL          (0x180)      ///< Cuts out all hidden pixels.
+#define FOF_CUTSPRITES        (0x200)      ///< Final step in making 3D water.
+#define FOF_BOTHPLANES        (0x400)      ///< Render inside and outside planes.
+#define FOF_EXTRA             (0x800)      ///< Gets cut by ::FOF_CUTEXTRA.
+#define FOF_TRANSLUCENT       (0x1000)     ///< See through!
+#define FOF_FOG               (0x2000)     ///< Fog "brush."
+#define FOF_INVERTPLANES      (0x4000)     ///< Only render inside planes.
+#define FOF_ALLSIDES          (0x8000)     ///< Render inside and outside sides.
+#define FOF_INVERTSIDES       (0x10000)    ///< Only render inside sides.
+#define FOF_DOUBLESHADOW      (0x20000)    ///< Make two lightlist entries to reset light?
+#define FOF_FLOATBOB          (0x40000)    ///< Floats on water and bobs if you step on it.
+#define FOF_NORETURN          (0x80000)    ///< Used with ::FOF_CRUMBLE. Will not return to its original position after falling.
+#define FOF_CRUMBLE           (0x100000)   ///< Falls 2 seconds after being stepped on, and randomly brings all touching crumbling 3dfloors down with it, providing their master sectors share the same tag (allows crumble platforms above or below, to also exist).
+#define FOF_GOOWATER          (0x200000)   ///< Used with ::FOF_SWIMMABLE. Makes thick bouncey goop.
+#define FOF_MARIO             (0x400000)   ///< Acts like a question block when hit from underneath. Goodie spawned at top is determined by master sector.
+#define FOF_BUSTUP            (0x800000)   ///< You can spin through/punch this block and it will crumble!
+#define FOF_QUICKSAND         (0x1000000)  ///< Quicksand!
+#define FOF_PLATFORM          (0x2000000)  ///< You can jump up through this to the top.
+#define FOF_REVERSEPLATFORM   (0x4000000)  ///< A fall-through floor in normal gravity, a platform in reverse gravity.
+#define FOF_INTANGIBLEFLATS   (0x6000000)  ///< Both flats are intangible, but the sides are still solid.
+#define FOF_RIPPLE            (0x8000000)  ///< Ripple the flats
+#define FOF_COLORMAPONLY      (0x10000000) ///< Only copy the colormap, not the lightlevel
+#define FOF_BOUNCY            (0x20000000) ///< Bounces players
+#define FOF_SPLAT             (0x40000000) ///< Use splat flat renderer (treat cyan pixels as invisible)
 
 typedef enum
 {
