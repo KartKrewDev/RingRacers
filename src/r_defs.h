@@ -340,33 +340,32 @@ struct botcontroller_t
 	angle_t forceAngle;
 };
 
-typedef enum
-{
-	// flipspecial - planes with effect
-	MSF_FLIPSPECIAL_FLOOR       =  1,
-	MSF_FLIPSPECIAL_CEILING     =  1<<1,
-	MSF_FLIPSPECIAL_BOTH        =  (MSF_FLIPSPECIAL_FLOOR|MSF_FLIPSPECIAL_CEILING),
-	// triggerspecial - conditions under which plane touch causes effect
-	MSF_TRIGGERSPECIAL_TOUCH    =  1<<2,
-	MSF_TRIGGERSPECIAL_HEADBUMP =  1<<3,
-	// triggerline - conditions for linedef executor triggering
-	MSF_TRIGGERLINE_PLANE       =  1<<4, // require plane touch
-	MSF_TRIGGERLINE_MOBJ        =  1<<5, // allow non-pushable mobjs to trigger
-	// invertprecip - inverts presence of precipitation
-	MSF_INVERTPRECIP            =  1<<6,
-	MSF_GRAVITYFLIP             =  1<<7,
-	MSF_HEATWAVE                =  1<<8,
-	MSF_NOCLIPCAMERA            =  1<<9,
-	// water ripple
-	MSF_RIPPLE_FLOOR            =  1<<10,
-	MSF_RIPPLE_CEILING          =  1<<11,
-	// invert encore color remap status
-	MSF_INVERTENCORE            =  1<<12,
-	// turn off directional lighting
-	MSF_FLATLIGHTING            =  1<<13,
-	// force it on (even if it was disabled)
-	MSF_DIRECTIONLIGHTING       =  1<<14,
-} sectorflags_t;
+typedef int sectorflags_t;
+
+// flipspecial - planes with effect
+#define MSF_FLIPSPECIAL_FLOOR       (1)
+#define MSF_FLIPSPECIAL_CEILING     (1<<1)
+#define MSF_FLIPSPECIAL_BOTH        ((MSF_FLIPSPECIAL_FLOOR)|(MSF_FLIPSPECIAL_CEILING))
+// triggerspecial - conditions under which plane touch causes effect
+#define MSF_TRIGGERSPECIAL_TOUCH    (1<<2)
+#define MSF_TRIGGERSPECIAL_HEADBUMP (1<<3)
+// triggerline - conditions for linedef executor triggering
+#define MSF_TRIGGERLINE_PLANE       (1<<4) // require plane touch
+#define MSF_TRIGGERLINE_MOBJ        (1<<5) // allow non-pushable mobjs to trigger
+// invertprecip - inverts presence of precipitation
+#define MSF_INVERTPRECIP            (1<<6)
+#define MSF_GRAVITYFLIP             (1<<7)
+#define MSF_HEATWAVE                (1<<8)
+#define MSF_NOCLIPCAMERA            (1<<9)
+// water ripple
+#define MSF_RIPPLE_FLOOR            (1<<10)
+#define MSF_RIPPLE_CEILING          (1<<11)
+// invert encore color remap status
+#define MSF_INVERTENCORE            (1<<12)
+// turn off directional lighting
+#define MSF_FLATLIGHTING            (1<<13)
+// force it on (even if it was disabled)
+#define MSF_DIRECTIONLIGHTING       (1<<14)
 
 typedef enum
 {

@@ -1764,31 +1764,31 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 	else if (fastcmp(param, "colormapprotected") && fastcmp("true", val))
 		sectors[i].colormap_protected = true;
 	else if (fastcmp(param, "flipspecial_nofloor") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags & ~MSF_FLIPSPECIAL_FLOOR);
+		sectors[i].flags &= ~MSF_FLIPSPECIAL_FLOOR;
 	else if (fastcmp(param, "flipspecial_ceiling") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_FLIPSPECIAL_CEILING);
+		sectors[i].flags |= MSF_FLIPSPECIAL_CEILING;
 	else if (fastcmp(param, "triggerspecial_touch") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_TRIGGERSPECIAL_TOUCH);
+		sectors[i].flags |= MSF_TRIGGERSPECIAL_TOUCH;
 	else if (fastcmp(param, "triggerspecial_headbump") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_TRIGGERSPECIAL_HEADBUMP);
+		sectors[i].flags |= MSF_TRIGGERSPECIAL_HEADBUMP;
 	else if (fastcmp(param, "invertprecip") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_INVERTPRECIP);
+		sectors[i].flags |= MSF_INVERTPRECIP;
 	else if (fastcmp(param, "gravityflip") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_GRAVITYFLIP);
+		sectors[i].flags |= MSF_GRAVITYFLIP;
 	else if (fastcmp(param, "heatwave") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_HEATWAVE);
+		sectors[i].flags |= MSF_HEATWAVE;
 	else if (fastcmp(param, "noclipcamera") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_NOCLIPCAMERA);
+		sectors[i].flags |= MSF_NOCLIPCAMERA;
 	else if (fastcmp(param, "ripple_floor") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_RIPPLE_FLOOR);
+		sectors[i].flags |= MSF_RIPPLE_FLOOR;
 	else if (fastcmp(param, "ripple_ceiling") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_RIPPLE_CEILING);
+		sectors[i].flags |= MSF_RIPPLE_CEILING;
 	else if (fastcmp(param, "invertencore") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_INVERTENCORE);
+		sectors[i].flags |= MSF_INVERTENCORE;
 	else if (fastcmp(param, "flatlighting") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_FLATLIGHTING);
+		sectors[i].flags |= MSF_FLATLIGHTING;
 	else if (fastcmp(param, "forcedirectionallighting") && fastcmp("true", val))
-		sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_DIRECTIONLIGHTING);
+		sectors[i].flags |= MSF_DIRECTIONLIGHTING;
 	else if (fastcmp(param, "nostepup") && fastcmp("true", val))
 		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_NOSTEPUP);
 	else if (fastcmp(param, "doublestepup") && fastcmp("true", val))
@@ -4867,24 +4867,24 @@ static void P_ConvertBinaryLinedefTypes(void)
 			{
 				if (lines[i].flags & ML_NOCLIMB)
 				{
-					sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags & ~MSF_FLIPSPECIAL_FLOOR);
-					sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags | MSF_FLIPSPECIAL_CEILING);
+					sectors[s].flags &= ~MSF_FLIPSPECIAL_FLOOR;
+					sectors[s].flags |= MSF_FLIPSPECIAL_CEILING;
 				}
 				else if (lines[i].flags & ML_MIDSOLID)
-					sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags | MSF_FLIPSPECIAL_BOTH);
+					sectors[s].flags |= MSF_FLIPSPECIAL_BOTH;
 
 				if (lines[i].flags & ML_MIDPEG)
-					sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags | MSF_TRIGGERSPECIAL_TOUCH);
+					sectors[s].flags |= MSF_TRIGGERSPECIAL_TOUCH;
 				if (lines[i].flags & ML_NOSKEW)
-					sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags | MSF_TRIGGERSPECIAL_HEADBUMP);
+					sectors[s].flags |= MSF_TRIGGERSPECIAL_HEADBUMP;
 
 				if (lines[i].flags & ML_SKEWTD)
-					sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags | MSF_INVERTPRECIP);
+					sectors[s].flags |= MSF_INVERTPRECIP;
 
 				if (lines[i].flags & ML_DONTPEGTOP)
-					sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags | MSF_RIPPLE_FLOOR);
+					sectors[s].flags |= MSF_RIPPLE_FLOOR;
 				if (lines[i].flags & ML_DONTPEGBOTTOM)
-					sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags | MSF_RIPPLE_CEILING);
+					sectors[s].flags |= MSF_RIPPLE_CEILING;
 			}
 
 			if (GETSECSPECIAL(lines[i].frontsector->special, 4) != 12)
@@ -4906,7 +4906,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			INT32 s;
 
 			TAG_ITER_SECTORS(tag, s)
-				sectors[s].flags = static_cast<sectorflags_t>(sectors[s].flags | MSF_HEATWAVE);
+				sectors[s].flags |= MSF_HEATWAVE;
 
 			break;
 		}
@@ -6619,34 +6619,34 @@ static void P_ConvertBinarySectorTypes(void)
 		{
 			case 1: //Trigger linedef executor (pushable objects)
 				sectors[i].triggertag = tag;
-				sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_TRIGGERLINE_PLANE);
+				sectors[i].flags |= MSF_TRIGGERLINE_PLANE;
 				sectors[i].triggerer = TO_MOBJ;
 				break;
 			case 2: //Trigger linedef executor (Anywhere in sector, all players)
 				sectors[i].triggertag = tag;
-				sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags & ~MSF_TRIGGERLINE_PLANE);
+				sectors[i].flags &= ~MSF_TRIGGERLINE_PLANE;
 				sectors[i].triggerer = TO_ALLPLAYERS;
 				break;
 			case 3: //Trigger linedef executor (Floor touch, all players)
 				sectors[i].triggertag = tag;
-				sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_TRIGGERLINE_PLANE);
+				sectors[i].flags |= MSF_TRIGGERLINE_PLANE;
 				sectors[i].triggerer = TO_ALLPLAYERS;
 				break;
 			case 4: //Trigger linedef executor (Anywhere in sector)
 				sectors[i].triggertag = tag;
-				sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags & ~MSF_TRIGGERLINE_PLANE);
+				sectors[i].flags &= ~MSF_TRIGGERLINE_PLANE;
 				sectors[i].triggerer = TO_PLAYER;
 				break;
 			case 5: //Trigger linedef executor (Floor touch)
 				sectors[i].triggertag = tag;
-				sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_TRIGGERLINE_PLANE);
+				sectors[i].flags |= MSF_TRIGGERLINE_PLANE;
 				sectors[i].triggerer = TO_PLAYER;
 				break;
 			case 8: //Check for linedef executor on FOFs
-				sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_TRIGGERLINE_MOBJ);
+				sectors[i].flags |= MSF_TRIGGERLINE_MOBJ;
 				break;
 			case 15: //Invert Encore
-				sectors[i].flags = static_cast<sectorflags_t>(sectors[i].flags | MSF_INVERTENCORE);
+				sectors[i].flags |= MSF_INVERTENCORE;
 				break;
 			default:
 				break;
