@@ -536,25 +536,23 @@ extern boolean devparm; // development mode (-debug)
 // m_cheat.c
 extern UINT32 cht_debug;
 
-typedef enum
-{
-	DBG_NONE			= 0x00000000,
-	DBG_BASIC			= 0x00000001,
-	DBG_DETAILED		= 0x00000002,
-	DBG_PLAYER			= 0x00000004,
-	DBG_RENDER			= 0x00000008,
-	DBG_MUSIC			= 0x00000010,
-	DBG_PWRLV			= 0x00000020,
-	DBG_POLYOBJ			= 0x00000040,
-	DBG_GAMELOGIC		= 0x00000080,
-	DBG_NETPLAY			= 0x00000100,
-	DBG_MEMORY			= 0x00000200,
-	DBG_SETUP			= 0x00000400,
-	DBG_LUA				= 0x00000800,
-	DBG_RNG				= 0x00001000,
-	DBG_DEMO			= 0x00002000,
-	DBG_TEAMS			= 0x00004000,
-} debugFlags_t;
+typedef INT32 debugFlags_t;
+#define DBG_NONE			(0x00000000)
+#define DBG_BASIC			(0x00000001)
+#define DBG_DETAILED		(0x00000002)
+#define DBG_PLAYER			(0x00000004)
+#define DBG_RENDER			(0x00000008)
+#define DBG_MUSIC			(0x00000010)
+#define DBG_PWRLV			(0x00000020)
+#define DBG_POLYOBJ			(0x00000040)
+#define DBG_GAMELOGIC		(0x00000080)
+#define DBG_NETPLAY			(0x00000100)
+#define DBG_MEMORY			(0x00000200)
+#define DBG_SETUP			(0x00000400)
+#define DBG_LUA				(0x00000800)
+#define DBG_RNG				(0x00001000)
+#define DBG_DEMO			(0x00002000)
+#define DBG_TEAMS			(0x00004000)
 
 struct debugFlagNames_s
 {
