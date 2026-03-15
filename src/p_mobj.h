@@ -231,13 +231,12 @@ typedef enum
 //
 // PRECIPITATION flags ?! ?! ?!
 //
-typedef enum {
-	PCF_THUNK		= 1,		// Ran the thinker this tic.
-	PCF_SPLASH		= 1<<1,		// Splashed on the ground, return to the ceiling after the animation's over
-	PCF_INVISIBLE	= 1<<2,		// Don't draw.
-	PCF_PIT			= 1<<3,		// Above pit.
-	PCF_FLIP		= 1<<4,		// Spawning from floor, moving upwards.
-} precipflag_t;
+typedef INT32 precipflag_t;
+#define PCF_THUNK		(1)		// Ran the thinker this tic.
+#define PCF_SPLASH		(1<<1)		// Splashed on the ground, return to the ceiling after the animation's over
+#define PCF_INVISIBLE	(1<<2)		// Don't draw.
+#define PCF_PIT			(1<<3)		// Above pit.
+#define PCF_FLIP		(1<<4)		// Spawning from floor, moving upwards.
 
 // Map Object definition.
 struct mobj_t
