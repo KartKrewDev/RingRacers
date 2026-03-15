@@ -25,31 +25,29 @@ extern "C" {
 #define MAXPREDICTTICS 30
 
 // Button/action code definitions.
-typedef enum
-{
-	BT_ACCELERATE	  = 1,		// Accelerate
-	BT_DRIFT		  = 1<<2,	// Drift (direction is cmd->turning)
-	BT_BRAKE		  = 1<<3,	// Brake
-	BT_ATTACK		  = 1<<4,	// Use Item
-	BT_LOOKBACK		  = 1<<5,	// Look Backward
-	BT_BAIL			  = 1<<6,	// Bail
-	BT_VOTE			  = 1<<7,	// Vote
-	BT_SPINDASH       = 1<<8,   // Spindash
+typedef INT32 buttoncode_t;
+#define BT_ACCELERATE	  (1)		// Accelerate
+#define BT_DRIFT		  (1<<2)	// Drift (direction is cmd->turning)
+#define BT_BRAKE		  (1<<3)	// Brake
+#define BT_ATTACK		  (1<<4)	// Use Item
+#define BT_LOOKBACK		  (1<<5)	// Look Backward
+#define BT_BAIL			  (1<<6)	// Bail
+#define BT_VOTE			  (1<<7)	// Vote
+#define BT_SPINDASH       (1<<8)   // Spindash
 
-	BT_EBRAKEMASK		= (BT_ACCELERATE|BT_BRAKE),
-	BT_SPINDASHMASK 	= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT),
-	BT_RESPAWNMASK		= (BT_EBRAKEMASK|BT_BAIL),
+#define BT_EBRAKEMASK		((BT_ACCELERATE)|(BT_BRAKE))
+#define BT_SPINDASHMASK 	((BT_ACCELERATE)|(BT_BRAKE)|(BT_DRIFT))
+#define BT_RESPAWNMASK		((BT_EBRAKEMASK)|(BT_BAIL))
 
-	// free: 1<<9 to 1<<12
+// free: 1<<9 to 1<<12
 
-	// Lua garbage, replace with freeslottable buttons some day
-	BT_LUAA			= 1<<13,
-	BT_LUA1			= 1<<13,
-	BT_LUAB			= 1<<14,
-	BT_LUA2			= 1<<14,
-	BT_LUAC			= 1<<15,
-	BT_LUA3			= 1<<15,
-} buttoncode_t;
+// Lua garbage, replace with freeslottable buttons some day
+#define BT_LUAA			(1<<13)
+#define BT_LUA1			(1<<13)
+#define BT_LUAB			(1<<14)
+#define BT_LUA2			(1<<14)
+#define BT_LUAC			(1<<15)
+#define BT_LUA3			(1<<15)
 
 // The data sampled per tick (single player)
 // and transmitted to other peers (multiplayer).
