@@ -69,13 +69,11 @@ typedef enum
 	PST_REBORN
 } playerstate_t;
 
-typedef enum
-{
-	IF_USERINGS		= 1,	// Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
-	IF_ITEMOUT		= 1<<1,	// Are you holding an item out?
-	IF_EGGMANOUT	= 1<<2,	// Eggman mark held, separate from IF_ITEMOUT so it doesn't stop you from getting items
-	IF_HOLDREADY	= 1<<3,	// Hold button-style item is ready to activate
-} itemflags_t;
+typedef INT32 itemflags_t;
+#define IF_USERINGS		(1)	// Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
+#define IF_ITEMOUT		(1<<1)	// Are you holding an item out?
+#define IF_EGGMANOUT	(1<<2)	// Eggman mark held, separate from IF_ITEMOUT so it doesn't stop you from getting items
+#define IF_HOLDREADY	(1<<3)	// Hold button-style item is ready to activate
 
 //
 // Player internal flags
