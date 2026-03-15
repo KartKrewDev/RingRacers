@@ -383,47 +383,45 @@ typedef int sectorspecialflags_t;
 #define SSF_ZOOMTUBESTART (1<<15)
 #define SSF_ZOOMTUBEEND (1<<16)
 
-typedef enum
-{
-	// Mask to get trigger type.
-	SECSPAC_TRIGGERMASK			= 0x0000000F,
+typedef int sectoractionflags_t;
+// Mask to get trigger type.
+#define SECSPAC_TRIGGERMASK			(0x0000000F)
 
-	// Special action is activated once.
-	SECSPAC_ONCESPECIAL			= 0x00000000,
+// Special action is activated once.
+#define SECSPAC_ONCESPECIAL			(0x00000000)
 
-	// Special action is repeatable.
-	SECSPAC_REPEATSPECIAL		= 0x00000001,
+// Special action is repeatable.
+#define SECSPAC_REPEATSPECIAL		(0x00000001)
 
-	// Special action is activated continously.
-	SECSPAC_CONTINUOUSSPECIAL	= 0x00000002,
+// Special action is activated continously.
+#define SECSPAC_CONTINUOUSSPECIAL	(0x00000002)
 
-	// When a player enters this sector.
-	SECSPAC_ENTER				= 0x00000010,
+// When a player enters this sector.
+#define SECSPAC_ENTER				(0x00000010)
 
-	// When a player touches the floor of this sector.
-	SECSPAC_FLOOR				= 0x00000020,
+// When a player touches the floor of this sector.
+#define SECSPAC_FLOOR				(0x00000020)
 
-	// When a player touches the ceiling of this sector.
-	SECSPAC_CEILING				= 0x00000040,
+// When a player touches the ceiling of this sector.
+#define SECSPAC_CEILING				(0x00000040)
 
-	// When an enemy enters this sector.
-	SECSPAC_ENTERMONSTER		= 0x00000080,
+// When an enemy enters this sector.
+#define SECSPAC_ENTERMONSTER		(0x00000080)
 
-	// When an enemy touches the floor of this sector.
-	SECSPAC_FLOORMONSTER		= 0x00000100,
+// When an enemy touches the floor of this sector.
+#define SECSPAC_FLOORMONSTER		(0x00000100)
 
-	// When an enemy touches the ceiling of this sector.
-	SECSPAC_CEILINGMONSTER		= 0x00000200,
+// When an enemy touches the ceiling of this sector.
+#define SECSPAC_CEILINGMONSTER		(0x00000200)
 
-	// When a projectile enters this sector.
-	SECSPAC_ENTERMISSILE		= 0x00000400,
+// When a projectile enters this sector.
+#define SECSPAC_ENTERMISSILE		(0x00000400)
 
-	// When a projectile touches the floor of this sector.
-	SECSPAC_FLOORMISSILE		= 0x00000800,
+// When a projectile touches the floor of this sector.
+#define SECSPAC_FLOORMISSILE		(0x00000800)
 
-	// When a projectile touches the ceiling of this sector.
-	SECSPAC_CEILINGMISSILE		= 0x00001000,
-} sectoractionflags_t;
+// When a projectile touches the ceiling of this sector.
+#define SECSPAC_CEILINGMISSILE		(0x00001000)
 
 typedef enum
 {

@@ -1065,7 +1065,7 @@ static void P_LoadSectors(UINT8 *data)
 		ss->action = 0;
 		memset(ss->args, 0, NUM_SCRIPT_ARGS*sizeof(*ss->args));
 		memset(ss->stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*ss->stringargs));
-		ss->activation = static_cast<sectoractionflags_t>(0);
+		ss->activation = 0;
 
 		P_InitializeSector(ss);
 	}
@@ -1842,27 +1842,27 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].args[argnum] = atol(val);
 	}
 	else if (fastcmp(param, "repeatspecial") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | ((sectors[i].activation & ~SECSPAC_TRIGGERMASK) | SECSPAC_REPEATSPECIAL));
+		sectors[i].activation |= ((sectors[i].activation & ~SECSPAC_TRIGGERMASK) | SECSPAC_REPEATSPECIAL);
 	else if (fastcmp(param, "continuousspecial") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | ((sectors[i].activation & ~SECSPAC_TRIGGERMASK) | SECSPAC_CONTINUOUSSPECIAL));
+		sectors[i].activation |= ((sectors[i].activation & ~SECSPAC_TRIGGERMASK) | SECSPAC_CONTINUOUSSPECIAL);
 	else if (fastcmp(param, "playerenter") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_ENTER);
+		sectors[i].activation |= SECSPAC_ENTER;
 	else if (fastcmp(param, "playerfloor") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_FLOOR);
+		sectors[i].activation |= SECSPAC_FLOOR;
 	else if (fastcmp(param, "playerceiling") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_CEILING);
+		sectors[i].activation |= SECSPAC_CEILING;
 	else if (fastcmp(param, "monsterenter") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_ENTERMONSTER);
+		sectors[i].activation |= SECSPAC_ENTERMONSTER;
 	else if (fastcmp(param, "monsterfloor") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_FLOORMONSTER);
+		sectors[i].activation |= SECSPAC_FLOORMONSTER;
 	else if (fastcmp(param, "monsterceiling") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_CEILINGMONSTER);
+		sectors[i].activation |= SECSPAC_CEILINGMONSTER;
 	else if (fastcmp(param, "missileenter") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_ENTERMISSILE);
+		sectors[i].activation |= SECSPAC_ENTERMISSILE;
 	else if (fastcmp(param, "missilefloor") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_FLOORMISSILE);
+		sectors[i].activation |= SECSPAC_FLOORMISSILE;
 	else if (fastcmp(param, "missileceiling") && fastcmp("true", val))
-		sectors[i].activation = static_cast<sectoractionflags_t>(sectors[i].activation | SECSPAC_CEILINGMISSILE);
+		sectors[i].activation |= SECSPAC_CEILINGMISSILE;
 	else
 		ParseUserProperty(&sectors[i].user, param, val);
 }
@@ -3215,7 +3215,7 @@ static void P_LoadTextmap(void)
 		sc->action = 0;
 		memset(sc->args, 0, NUM_SCRIPT_ARGS*sizeof(*sc->args));
 		memset(sc->stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*sc->stringargs));
-		sc->activation = static_cast<sectoractionflags_t>(0);
+		sc->activation = 0;
 
 		K_UserPropertiesClear(&sc->user);
 
