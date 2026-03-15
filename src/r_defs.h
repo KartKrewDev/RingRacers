@@ -157,13 +157,12 @@ typedef int ffloortype_e;
 #define FOF_BOUNCY            (0x20000000) ///< Bounces players
 #define FOF_SPLAT             (0x40000000) ///< Use splat flat renderer (treat cyan pixels as invisible)
 
+typedef int ffloorbustflags_e;
 
-typedef enum
-{
-	FB_PUSHABLES   = 0x1, // Bustable by pushables
-	FB_EXECUTOR    = 0x2, // Trigger linedef executor
-	FB_ONLYBOTTOM  = 0x4, // Only bustable from below
-} ffloorbustflags_e;
+#define FB_PUSHABLES   (0x1) // Bustable by pushables
+#define FB_EXECUTOR    (0x2) // Trigger linedef executor
+#define FB_ONLYBOTTOM  (0x4) // Only bustable from below
+
 typedef int oldffloortype_e;
 
 #define FF_OLD_EXISTS            (0x1)
