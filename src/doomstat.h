@@ -64,13 +64,11 @@ extern UINT8 gamecomplete;
 #define CUPMENU_ROWS 2
 
 // Extra abilities/settings for skins (combinable stuff)
-typedef enum
-{
-	MA_RUNNING     = 1,    // In action
-	MA_INIT        = 1<<1, // Initialisation
-	MA_NOCUTSCENES = 1<<2, // No cutscenes
-	MA_INGAME      = 1<<3  // Timer ignores loads
-} marathonmode_t;
+typedef INT32 marathonmode_t;
+#define MA_RUNNING     (1)    // In action
+#define MA_INIT        (1<<1) // Initialisation
+#define MA_NOCUTSCENES (1<<2) // No cutscenes
+#define MA_INGAME      (1<<3)  // Timer ignores loads
 
 extern marathonmode_t marathonmode;
 extern tic_t marathontime;

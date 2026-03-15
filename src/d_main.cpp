@@ -1233,7 +1233,7 @@ void D_ClearState(void)
 	// In case someone exits out at the same time they start a time attack run,
 	// reset modeattacking
 	modeattacking = ATTACKING_NONE;
-	marathonmode = static_cast<marathonmode_t>(0);
+	marathonmode = 0;
 
 	// Reset GP and roundqueue
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));

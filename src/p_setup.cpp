@@ -8997,7 +8997,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		if (marathonmode & MA_INGAME)
 		{
-			marathonmode = static_cast<marathonmode_t>(marathonmode | MA_INIT);
+			marathonmode |= MA_INIT;
 		}
 	}
 	else
@@ -9100,7 +9100,7 @@ void P_PostLoadLevel(void)
 
 	if (marathonmode & MA_INGAME)
 	{
-		marathonmode = static_cast<marathonmode_t>(marathonmode & ~MA_INIT);
+		marathonmode &= ~MA_INIT;
 	}
 
 	Music_TuneReset(); // Placed before ACS scripts to allow remaps to occur on level start.
