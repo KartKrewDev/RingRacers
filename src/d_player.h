@@ -114,26 +114,21 @@ typedef INT32 pflags_t;
 #define PF_VOID				(1<<30) // Removed from reality! When leaving hitlag, reenable visibility+collision and kill speed.
 #define PF_NOFASTFALL		((INT32)(1U<<31)) // Has already done ebrake/fastfall behavior for this input. Fastfalling needs a new input to prevent unwanted bounces on unexpected airtime.
 
-typedef enum
-{
-	PF2_SELFMUTE 			= 1<<1,
-	PF2_SELFDEAFEN 			= 1<<2,
-	PF2_SERVERMUTE 			= 1<<3,
-	PF2_SERVERDEAFEN 		= 1<<4,
-
-	PF2_STRICTFASTFALL 		= 1<<5, // Fastfall only with C, never with A+X. Profile preference.
-
-	PF2_ALWAYSDAMAGED		= 1<<6, // Ignore invulnerability or clash conditions when evaulating damage (P_DamageMobj). Unset after use!
-	PF2_BUBBLECONTACT		= 1<<7, // ACHTUNG VERY BAD HACK - Don't allow Bubble Shield to contact certain objects unless this is a fresh blowup.
-	PF2_SUPERTRANSFERVFX	= 1<<8, // Don't respawn the "super transfer available" VFX.
-	PF2_FASTTUMBLEBOUNCE	= 1<<9, // Don't lose speed when tumblebouncing.
-
-	PF2_SERVERTEMPMUTE		= 1<<10, // Haven't met gamestochat requirement
-	PF2_SAMEFRAMESTUNG		= 1<<11, // Goofy bullshit for tracking mutual ring sting
-	PF2_UNSTINGABLE			= 1<<12, // Was bumped out of spindash
-	PF2_GIMMESTARTAWARDS	= 1<<13, // Need to apply non-first start awards on a 1 tic delay to prevent port priority
-	PF2_GIMMEFIRSTBLOOD		= 1<<14, // And need to differentiate between First Blood and everything else!
-} pflags2_t;
+typedef INT32 pflags2_t;
+#define PF2_SELFMUTE 			(1<<1)
+#define PF2_SELFDEAFEN 			(1<<2)
+#define PF2_SERVERMUTE 			(1<<3)
+#define PF2_SERVERDEAFEN 		(1<<4)
+#define PF2_STRICTFASTFALL 		(1<<5) // Fastfall only with C, never with A+X. Profile preference.
+#define PF2_ALWAYSDAMAGED		(1<<6) // Ignore invulnerability or clash conditions when evaulating damage (P_DamageMobj). Unset after use!
+#define PF2_BUBBLECONTACT		(1<<7) // ACHTUNG VERY BAD HACK - Don't allow Bubble Shield to contact certain objects unless this is a fresh blowup.
+#define PF2_SUPERTRANSFERVFX	(1<<8) // Don't respawn the "super transfer available" VFX.
+#define PF2_FASTTUMBLEBOUNCE	(1<<9) // Don't lose speed when tumblebouncing.
+#define PF2_SERVERTEMPMUTE		(1<<10) // Haven't met gamestochat requirement
+#define PF2_SAMEFRAMESTUNG		(1<<11) // Goofy bullshit for tracking mutual ring sting
+#define PF2_UNSTINGABLE			(1<<12) // Was bumped out of spindash
+#define PF2_GIMMESTARTAWARDS	(1<<13) // Need to apply non-first start awards on a 1 tic delay to prevent port priority
+#define PF2_GIMMEFIRSTBLOOD		(1<<14) // And need to differentiate between First Blood and everything else!
 
 typedef enum
 {
