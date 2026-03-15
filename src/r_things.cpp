@@ -1008,7 +1008,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 			vis->scale = FixedMul(vis->scale, this_scale);
 			vis->scalestep = FixedMul(vis->scalestep, this_scale);
 			vis->xiscale = FixedDiv(vis->xiscale,this_scale);
-			vis->cut = static_cast<spritecut_e>(vis->cut | SC_ISSCALED);
+			vis->cut |= SC_ISSCALED;
 		}
 		dc.texturemid = FixedDiv(dc.texturemid,this_scale);
 	}
@@ -1246,9 +1246,9 @@ static void R_SplitSprite(vissprite_t *sprite)
 		// adjust the heights.
 		newsprite = static_cast<vissprite_t*>(M_Memcpy(R_NewVisSprite(), sprite, sizeof (vissprite_t)));
 
-		newsprite->cut = static_cast<spritecut_e>(newsprite->cut | (sprite->cut & SC_FLAGMASK));
+		newsprite->cut |= sprite->cut & SC_FLAGMASK;
 
-		sprite->cut = static_cast<spritecut_e>(sprite->cut | SC_BOTTOM);
+		sprite->cut |= SC_BOTTOM;
 		sprite->gz = testheight;
 
 		newsprite->gzt = sprite->gz;
@@ -1258,7 +1258,7 @@ static void R_SplitSprite(vissprite_t *sprite)
 
 		newsprite->szt -= 8;
 
-		newsprite->cut = static_cast<spritecut_e>(newsprite->cut | SC_TOP);
+		newsprite->cut |= SC_TOP;
 		if (!(sector->lightlist[i].caster->fofflags & FOF_NOSHADE))
 		{
 			lightnum = (*sector->lightlist[i].lightlevel >> LIGHTSEGSHIFT);
@@ -1521,7 +1521,7 @@ static void R_ProjectDropShadow(
 	shadow->sector = vis->sector;
 	shadow->szt = (INT16)((centeryfrac - FixedMul(shadow->gzt - viewz, yscale))>>FRACBITS);
 	shadow->sz = (INT16)((centeryfrac - FixedMul(shadow->gz - viewz, yscale))>>FRACBITS);
-	shadow->cut = static_cast<spritecut_e>(SC_ISSCALED|SC_SHADOW); //check this
+	shadow->cut = SC_ISSCALED|SC_SHADOW; //check this
 
 	shadow->startfrac = 0;
 	//shadow->xiscale = 0x7ffffff0 / (shadow->xscale/2);
@@ -1966,7 +1966,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (rotsprite != NULL)
 		{
 			patch = rotsprite;
-			cut = static_cast<spritecut_e>(cut | SC_ISROTATED);
+			cut |= SC_ISROTATED;
 
 			spr_width = rotsprite->width << FRACBITS;
 			spr_height = rotsprite->height << FRACBITS;
@@ -2214,7 +2214,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			fixed_t jitters = HITLAGJITTERS;
 			if (R_UsingFrameInterpolation() && !paused)
 				jitters += (rendertimefrac / HITLAGDIV);
-			
+
 			fixed_t mul = thing->hitlag * jitters;
 
 			if (leveltime & 1)
@@ -2247,7 +2247,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			dispoffset *= -1; // if it's physically behind, make sure it's ordered behind (if dispoffset > 0)
 
 		sortscale = linkscale; // now make sure it's linked
-		cut = static_cast<spritecut_e>(cut | SC_LINKDRAW);
+		cut |= SC_LINKDRAW;
 	}
 	else if (splat)
 	{
@@ -2336,7 +2336,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			gzt = (isflipped ? (interp.z + thing->height) : interp.z) + patch->height * spriteyscale / 2;
 			gz = gzt - patch->height * spriteyscale;
 
-			cut = static_cast<spritecut_e>(cut | SC_SHEAR);
+			cut |= SC_SHEAR;
 		}
 	}
 
@@ -2567,11 +2567,11 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->transmap = R_GetBlendTable(blendmode, trans);
 
 	if (R_ThingIsSemiBright(oldthing))
-		vis->cut = static_cast<spritecut_e>(vis->cut | SC_SEMIBRIGHT);
+		vis->cut |= SC_SEMIBRIGHT;
 	else if (R_ThingIsFullBright(oldthing))
-		vis->cut = static_cast<spritecut_e>(vis->cut | SC_FULLBRIGHT);
+		vis->cut |= SC_FULLBRIGHT;
 	else if (R_ThingIsFullDark(oldthing))
-		vis->cut = static_cast<spritecut_e>(vis->cut | SC_FULLDARK);
+		vis->cut |= SC_FULLDARK;
 
 	//
 	// determine the colormap (lightlevel & special effects)
@@ -2600,9 +2600,9 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 
 	if (vflip)
-		vis->cut = static_cast<spritecut_e>(vis->cut | SC_VFLIP);
+		vis->cut |= SC_VFLIP;
 	if (splat)
-		vis->cut = static_cast<spritecut_e>(vis->cut | SC_SPLAT); // I like ya cut g
+		vis->cut |= SC_SPLAT; // I like ya cut g
 
 	vis->patch = patch;
 	vis->bright = R_CacheSpriteBrightMap(sprinfo, frame);
@@ -3685,7 +3685,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 
 	if (xclip == x)
 	{
-		spr->cut = static_cast<spritecut_e>(spr->cut | SC_CULL); // completely skip this sprite going forward
+		spr->cut |= SC_CULL; // completely skip this sprite going forward
 	}
 	else if (portal)
 	{

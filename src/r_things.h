@@ -132,31 +132,29 @@ void R_DrawMasked(maskcount_t* masks, INT32 nummasks);
 #define VISSPRITESPERCHUNK (1 << VISSPRITECHUNKBITS)
 #define VISSPRITEINDEXMASK (VISSPRITESPERCHUNK - 1)
 
-typedef enum
-{
-	// actual cuts
-	SC_NONE       = 0,
-	SC_TOP        = 1,
-	SC_BOTTOM     = 1<<1,
-	// other flags
-	SC_PRECIP     = 1<<2,
-	SC_LINKDRAW   = 1<<3,
-	SC_FULLBRIGHT = 1<<4,
-	SC_FULLDARK   = 1<<5,
-	SC_VFLIP      = 1<<6,
-	SC_ISSCALED   = 1<<7,
-	SC_ISROTATED  = 1<<8,
-	SC_SHADOW     = 1<<9,
-	SC_SHEAR      = 1<<10,
-	SC_SPLAT      = 1<<11,
-	// srb2kart
-	SC_SEMIBRIGHT = 1<<12,
-	SC_BBOX       = 1<<13,
-	SC_CULL       = 1<<14,
-	// masks
-	SC_CUTMASK    = SC_TOP|SC_BOTTOM,
-	SC_FLAGMASK   = ~SC_CUTMASK
-} spritecut_e;
+typedef INT32 spritecut_e;
+// actual cuts
+#define SC_NONE          (0)
+#define SC_TOP           (1)
+#define SC_BOTTOM        (1<<1)
+// other flags
+#define SC_PRECIP        (1<<2)
+#define SC_LINKDRAW      (1<<3)
+#define SC_FULLBRIGHT    (1<<4)
+#define SC_FULLDARK      (1<<5)
+#define SC_VFLIP         (1<<6)
+#define SC_ISSCALED      (1<<7)
+#define SC_ISROTATED     (1<<8)
+#define SC_SHADOW        (1<<9)
+#define SC_SHEAR         (1<<10)
+#define SC_SPLAT         (1<<11)
+// srb2kart
+#define SC_SEMIBRIGHT    (1<<12)
+#define SC_BBOX          (1<<13)
+#define SC_CULL          (1<<14)
+// masks
+#define SC_CUTMASK       (SC_TOP|SC_BOTTOM)
+#define SC_FLAGMASK      (~SC_CUTMASK)
 
 // A vissprite_t is a thing that will be drawn during a refresh,
 // i.e. a sprite object that is partly visible.
