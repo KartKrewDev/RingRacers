@@ -66,16 +66,14 @@ extern consvar_t cv_voice_concurrentattenuation_max;
 extern float g_local_voice_last_peak;
 extern boolean g_local_voice_detected;
 
-typedef enum
-{
-	SF_TOTALLYSINGLE =  1, // Only play one of these sounds at a time...GLOBALLY
-	SF_NOMULTIPLESOUND =  2, // Like SF_NOINTERRUPT, but doesnt care what the origin is
-	SF_OUTSIDESOUND  =  4, // Volume is adjusted depending on how far away you are from 'outside'
-	SF_X4AWAYSOUND   =  8, // Hear it from 4x the distance away
-	SF_X8AWAYSOUND   = 16, // Hear it from 8x the distance away
-	SF_NOINTERRUPT   = 32, // Only play this sound if it isn't already playing on the origin
-	SF_X2AWAYSOUND   = 64, // Hear it from 2x the distance away
-} soundflags_t;
+typedef int soundflags_t;
+#define SF_TOTALLYSINGLE (1) // Only play one of these sounds at a time...GLOBALLY
+#define SF_NOMULTIPLESOUND (2) // Like SF_NOINTERRUPT, but doesnt care what the origin is
+#define SF_OUTSIDESOUND  (4) // Volume is adjusted depending on how far away you are from 'outside'
+#define SF_X4AWAYSOUND   (8) // Hear it from 4x the distance away
+#define SF_X8AWAYSOUND   (16) // Hear it from 8x the distance away
+#define SF_NOINTERRUPT   (32) // Only play this sound if it isn't already playing on the origin
+#define SF_X2AWAYSOUND   (64) // Hear it from 2x the distance away
 
 struct listener_t {
 	fixed_t x, y, z;
