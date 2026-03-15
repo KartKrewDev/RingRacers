@@ -78,60 +78,41 @@ typedef INT32 itemflags_t;
 //
 // Player internal flags
 //
-typedef enum
-{
-	PF_GODMODE			= 1<<0, // Immortal. No lightsnake from pits either
-
-	PF_UPDATEMYRESPAWN	= 1<<1, // Scripted sequences / fastfall can set this to force a respawn waypoint update
-
-	PF_AUTOROULETTE		= 1<<2, // Accessibility: Non-deterministic item box, no manual stop.
-
-	// Look back VFX has been spawned
-	// TODO: Is there a better way to track this?
-	PF_GAINAX			= 1<<3,
-
-	PF_KICKSTARTACCEL	= 1<<4, // Accessibility feature: Is accelerate in kickstart mode?
-
-	PF_POINTME			= 1<<5, // An object is calling for my attention (via Obj_PointPlayersToMobj). Unset every frame!
-
-	PF_CASTSHADOW		= 1<<6, // Something is casting a shadow on the player
-
-	PF_WANTSTOJOIN		= 1<<7, // Spectator that wants to join
-
-	PF_STASIS			= 1<<8, // Player is not allowed to move
-	PF_FAULT			= 1<<9, // F A U L T
-	PF_ELIMINATED		= 1<<10, // Battle-style elimination, no extra penalty
-	PF_NOCONTEST 		= 1<<11, // Did not finish (last place explosion)
-	PF_LOSTLIFE			= 1<<12, // Do not lose life more than once
-
-	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
-
-	PF_ANALOGSTICK		= 1<<14, // This player is using an analog joystick
-	PF_TRUSTWAYPOINTS	= 1<<15, // Do not activate lap cheat prevention next time finish line distance is updated
-	PF_FREEZEWAYPOINTS	= 1<<16, // Skip the next waypoint/finish line distance update
-
-	PF_AUTORING			= 1<<17, // Accessibility: Non-deterministic item box, no manual stop.
-
-	PF_DRIFTINPUT		= 1<<18, // Drifting!
-	PF_GETSPARKS		= 1<<19, // Can get sparks
-	PF_DRIFTEND			= 1<<20, // Drift has ended, used to adjust character angle after drift
-	PF_BRAKEDRIFT		= 1<<21, // Helper for brake-drift spark spawning
-
-	PF_AIRFAILSAFE		= 1<<22, // Whenever or not try the air boost
-	PF_TRICKDELAY		= 1<<23, // Prevent tricks until control stick is neutral
-
-	PF_TUMBLELASTBOUNCE	= 1<<24, // One more time for the funny
-	PF_TUMBLESOUND		= 1<<25, // Don't play more than once
-
-	PF_HITFINISHLINE	= 1<<26, // Already hit the finish line this tic
-	PF_WRONGWAY			= 1<<27, // Moving the wrong way with respect to waypoints?
-
-	PF_SHRINKME			= 1<<28, // "Shrink me" cheat preference
-	PF_SHRINKACTIVE		= 1<<29, // "Shrink me" cheat is in effect. (Can't be disabled mid-race)
-
-	PF_VOID				= 1<<30, // Removed from reality! When leaving hitlag, reenable visibility+collision and kill speed.
-	PF_NOFASTFALL		= (INT32)(1U<<31), // Has already done ebrake/fastfall behavior for this input. Fastfalling needs a new input to prevent unwanted bounces on unexpected airtime.
-} pflags_t;
+typedef INT32 pflags_t;
+#define PF_GODMODE			(1<<0) // Immortal. No lightsnake from pits either
+#define PF_UPDATEMYRESPAWN	(1<<1) // Scripted sequences / fastfall can set this to force a respawn waypoint update
+#define PF_AUTOROULETTE		(1<<2) // Accessibility: Non-deterministic item box, no manual stop.
+// Look back VFX has been spawned
+// TODO: Is there a better way to track this?
+#define PF_GAINAX			(1<<3)
+#define PF_KICKSTARTACCEL	(1<<4) // Accessibility feature: Is accelerate in kickstart mode?
+#define PF_POINTME			(1<<5) // An object is calling for my attention (via Obj_PointPlayersToMobj). Unset every frame!
+#define PF_CASTSHADOW		(1<<6) // Something is casting a shadow on the player
+#define PF_WANTSTOJOIN		(1<<7) // Spectator that wants to join
+#define PF_STASIS			(1<<8) // Player is not allowed to move
+#define PF_FAULT			(1<<9) // F A U L T
+#define PF_ELIMINATED		(1<<10) // Battle-style elimination, no extra penalty
+#define PF_NOCONTEST 		(1<<11) // Did not finish (last place explosion)
+#define PF_LOSTLIFE			(1<<12) // Do not lose life more than once
+#define PF_RINGLOCK			(1<<13) // Prevent picking up rings while SPB is locked on
+#define PF_ANALOGSTICK		(1<<14) // This player is using an analog joystick
+#define PF_TRUSTWAYPOINTS	(1<<15) // Do not activate lap cheat prevention next time finish line distance is updated
+#define PF_FREEZEWAYPOINTS	(1<<16) // Skip the next waypoint/finish line distance update
+#define PF_AUTORING			(1<<17) // Accessibility: Non-deterministic item box, no manual stop.
+#define PF_DRIFTINPUT		(1<<18) // Drifting!
+#define PF_GETSPARKS		(1<<19) // Can get sparks
+#define PF_DRIFTEND			(1<<20) // Drift has ended, used to adjust character angle after drift
+#define PF_BRAKEDRIFT		(1<<21) // Helper for brake-drift spark spawning
+#define PF_AIRFAILSAFE		(1<<22) // Whenever or not try the air boost
+#define PF_TRICKDELAY		(1<<23) // Prevent tricks until control stick is neutral
+#define PF_TUMBLELASTBOUNCE	(1<<24) // One more time for the funny
+#define PF_TUMBLESOUND		(1<<25) // Don't play more than once
+#define PF_HITFINISHLINE	(1<<26) // Already hit the finish line this tic
+#define PF_WRONGWAY			(1<<27) // Moving the wrong way with respect to waypoints?
+#define PF_SHRINKME			(1<<28) // "Shrink me" cheat preference
+#define PF_SHRINKACTIVE		(1<<29) // "Shrink me" cheat is in effect. (Can't be disabled mid-race)
+#define PF_VOID				(1<<30) // Removed from reality! When leaving hitlag, reenable visibility+collision and kill speed.
+#define PF_NOFASTFALL		((INT32)(1U<<31)) // Has already done ebrake/fastfall behavior for this input. Fastfalling needs a new input to prevent unwanted bounces on unexpected airtime.
 
 typedef enum
 {
