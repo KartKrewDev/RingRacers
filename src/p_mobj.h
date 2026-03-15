@@ -100,76 +100,40 @@ extern "C" {
 //
 // Misc. mobj flags
 //
-typedef enum
-{
-	// Call P_TouchSpecialThing when touched.
-	MF_SPECIAL          = 1,
-	// Blocks.
-	MF_SOLID            = 1<<1,
-	// Can be hit.
-	MF_SHOOTABLE        = 1<<2,
-	// Don't use the sector links (invisible but touchable).
-	MF_NOSECTOR         = 1<<3,
-	// Don't use the blocklinks (inert but displayable)
-	MF_NOBLOCKMAP       = 1<<4,
-	// Thin, paper-like collision bound (for visual equivalent, see FF_PAPERSPRITE)
-	MF_PAPERCOLLISION   = 1<<5,
-	// You can push this object. It can activate switches and things by pushing it on top.
-	MF_PUSHABLE         = 1<<6,
-	// Object is a boss.
-	MF_BOSS             = 1<<7,
-	// On level spawning (initial position), hang from ceiling instead of stand on floor.
-	MF_SPAWNCEILING     = 1<<8,
-	// Don't apply gravity (every tic); object will float, keeping current height
-	//  or changing it actively.
-	MF_NOGRAVITY        = 1<<9,
-	// This object is visible from a greater distance than normal objects.
-	MF_DRAWFROMFARAWAY  = 1<<10,
-	// Slide this object when it hits a wall.
-	MF_SLIDEME          = 1<<11,
-	// Don't collide with walls or solid objects. Two MF_NOCLIP objects can't touch each other at all!
-	MF_NOCLIP           = 1<<12,
-	// Allow moves to any height, no gravity. For active floaters.
-	MF_FLOAT            = 1<<13,
-	// Change pitch/roll when touching slopes.
-	MF_SLOPE            = 1<<14,
-	// Don't hit same species, explode on block.
-	// Player missiles as well as fireballs of various kinds.
-	MF_MISSILE          = 1<<15,
-	// Item is a spring.
-	MF_SPRING           = 1<<16,
-	// Object is elemental. If it is punted, it will evaporate.
-	MF_ELEMENTAL        = 1<<17,
-	// Don't run the thinker for this object.
-	MF_NOTHINK          = 1<<18,
-	// Don't adjust z if below or above floorz/ceilingz
-	MF_NOCLIPHEIGHT     = 1<<19,
-	// This mobj is an enemy!
-	MF_ENEMY            = 1<<20,
-	// Scenery (uses scenery thinker).
-	MF_SCENERY          = 1<<21,
-	// Painful (shit hurts).
-	MF_PAIN             = 1<<22,
-	// Object cannot be punted by invincible players. (Default CAN be punted, if it deals damage or is solid.)
-	MF_DONTPUNT         = 1<<23,
-	// Object uses terrain effects. (Overlays, footsteps, etc)
-	MF_APPLYTERRAIN     = 1<<24,
-	// for chase camera, don't be blocked by things (partial clipping)
-	MF_NOCLIPTHING      = 1<<25,
-	// Missile bounces like a grenade.
-	MF_GRENADEBOUNCE    = 1<<26,
-	// Run the action thinker on spawn.
-	MF_RUNSPAWNFUNC     = 1<<27,
-	// Don't remap in Encore mode. (Not a drawflag so that it's settable by mobjinfo.)
-	MF_DONTENCOREMAP    = 1<<28,
-	// Hitbox extends just as far below as above.
-	MF_PICKUPFROMBELOW  = 1<<29,
-	// Disable momentum-based squash and stretch.
-	MF_NOSQUISH         = 1<<30,
-	// Disable hitlag for this object
-	MF_NOHITLAGFORME    = (INT32)(1U<<31),
-	// no more free slots, gotta get rid of more crusty base SRB2 flags
-} mobjflag_t;
+typedef INT32 mobjflag_t;
+#define MF_SPECIAL          (1) // Call P_TouchSpecialThing when touched.
+#define MF_SOLID            (1<<1) // Blocks.
+#define MF_SHOOTABLE        (1<<2) // Can be hit.
+#define MF_NOSECTOR         (1<<3) // Don't use the sector links (invisible but touchable).
+#define MF_NOBLOCKMAP       (1<<4) // Don't use the blocklinks (inert but displayable)
+#define MF_PAPERCOLLISION   (1<<5) // Thin, paper-like collision bound (for visual equivalent, see FF_PAPERSPRITE)
+#define MF_PUSHABLE         (1<<6) // You can push this object. It can activate switches and things by pushing it on top.
+#define MF_BOSS             (1<<7) // Object is a boss.
+#define MF_SPAWNCEILING     (1<<8) // On level spawning (initial position), hang from ceiling instead of stand on floor.
+#define MF_NOGRAVITY        (1<<9) // Don't apply gravity (every tic); object will float, keeping current height
+#define MF_DRAWFROMFARAWAY  (1<<10) // This object is visible from a greater distance than normal objects.
+#define MF_SLIDEME          (1<<11) // Slide this object when it hits a wall.
+#define MF_NOCLIP           (1<<12) // Don't collide with walls or solid objects. Two MF_NOCLIP objects can't touch each other at all!
+#define MF_FLOAT            (1<<13) // Allow moves to any height, no gravity. For active floaters.
+#define MF_SLOPE            (1<<14) // Change pitch/roll when touching slopes.
+#define MF_MISSILE          (1<<15) // Don't hit same species, explode on block.
+#define MF_SPRING           (1<<16) // Item is a spring.
+#define MF_ELEMENTAL        (1<<17) // Object is elemental. If it is punted, it will evaporate.
+#define MF_NOTHINK          (1<<18) // Don't run the thinker for this object.
+#define MF_NOCLIPHEIGHT     (1<<19) // Don't adjust z if below or above floorz/ceilingz
+#define MF_ENEMY            (1<<20) // This mobj is an enemy!
+#define MF_SCENERY          (1<<21) // Scenery (uses scenery thinker).
+#define MF_PAIN             (1<<22) // Painful (shit hurts).
+#define MF_DONTPUNT         (1<<23) // Object cannot be punted by invincible players. (Default CAN be punted, if it deals damage or is solid.)
+#define MF_APPLYTERRAIN     (1<<24) // Object uses terrain effects. (Overlays, footsteps, etc)
+#define MF_NOCLIPTHING      (1<<25) // for chase camera, don't be blocked by things (partial clipping)
+#define MF_GRENADEBOUNCE    (1<<26) // Missile bounces like a grenade.
+#define MF_RUNSPAWNFUNC     (1<<27) // Run the action thinker on spawn.
+#define MF_DONTENCOREMAP    (1<<28) // Don't remap in Encore mode. (Not a drawflag so that it's settable by mobjinfo.)
+#define MF_PICKUPFROMBELOW  (1<<29) // Hitbox extends just as far below as above.
+#define MF_NOSQUISH         (1<<30) // Disable momentum-based squash and stretch.
+#define MF_NOHITLAGFORME    ((INT32)(1U<<31)) // Disable hitlag for this object
+// no more free slots, gotta get rid of more crusty base SRB2 flags
 
 typedef enum
 {
