@@ -123,27 +123,25 @@ void VS_Print(vsbuf_t *buf, const char *data); // strcats onto the sizebuf
 
 // flags for console vars
 
-typedef enum
-{
-	CV_SAVE = 1,   // save to config when quit game
-	CV_CALL = 2,   // call function on change
-	CV_NETVAR = 4, // send it when change (see logboris.txt at 12-4-2000)
-	CV_NOINIT = 8, // dont call function when var is registered (1st set)
-	CV_FLOAT = 16, // the value is fixed 16 : 16, where unit is FRACUNIT
+typedef INT32 cvflags_t;
+#define CV_SAVE (1)   // save to config when quit game
+#define CV_CALL (2)   // call function on change
+#define CV_NETVAR (4) // send it when change (see logboris.txt at 12-4-2000)
+#define CV_NOINIT (8) // dont call function when var is registered (1st set)
+#define CV_FLOAT (16) // the value is fixed 16 : 16, where unit is FRACUNIT
 	               // (allow user to enter 0.45 for ex)
 	               // WARNING: currently only supports set with CV_Set()
-	CV_NOTINNET = 32,    // some varaiable can't be changed in network but is not netvar (ex: splitscreen)
-	CV_MODIFIED = 64,    // this bit is set when cvar is modified
-	CV_SHOWMODIF = 128,  // say something when modified
-	CV_SHOWMODIFONETIME = 256, // same but will be reset to 0 when modified, set in toggle
-	CV_NOSHOWHELP = 512, // Cannot be accessed by the console, but it still exists in the cvar list
-	CV_HIDDEN = 1024, // variable is not part of the cvar list so cannot be accessed by the console
+#define CV_NOTINNET (32)    // some varaiable can't be changed in network but is not netvar (ex: splitscreen)
+#define CV_MODIFIED (64)    // this bit is set when cvar is modified
+#define CV_SHOWMODIF (128)  // say something when modified
+#define CV_SHOWMODIFONETIME (256) // same but will be reset to 0 when modified, set in toggle
+#define CV_NOSHOWHELP (512) // Cannot be accessed by the console, but it still exists in the cvar list
+#define CV_HIDDEN (1024) // variable is not part of the cvar list so cannot be accessed by the console
 	                 // can only be set when we have the pointer to it
 	                 // used on menus
-	CV_CHEAT = 2048, // Don't let this be used in multiplayer unless cheats are on.
-	CV_NOLUA = 4096,/* don't let this be called from Lua */
-	CV_ADDEDBYLUA = 8192,
-} cvflags_t;
+#define CV_CHEAT (2048) // Don't let this be used in multiplayer unless cheats are on.
+#define CV_NOLUA (4096)/* don't let this be called from Lua */
+#define CV_ADDEDBYLUA (8192)
 
 struct CV_PossibleValue_t
 {
