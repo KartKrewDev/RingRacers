@@ -720,18 +720,15 @@ typedef INT32 GameTypeRules;
 #define gametyperules (gametypes[gametype]->rules)
 
 // TypeOfLevel things
-enum TypeOfLevel
-{
-	// Gametypes
-	TOL_RACE	 = 0x0001, ///< Race
-	TOL_BATTLE	 = 0x0002, ///< Battle
-	TOL_SPECIAL	 = 0x0004, ///< Special Stage (variant of race, but forbidden)
-	TOL_VERSUS	 = 0x0008, ///< Versus (variant of battle, but forbidden)
-	TOL_TUTORIAL = 0x0010, ///< Tutorial (variant of race, but forbidden)
+typedef INT32 TypeOfLevel;
+#define TOL_RACE	 (0x0001) ///< Race
+#define TOL_BATTLE	 (0x0002) ///< Battle
+#define TOL_SPECIAL	 (0x0004) ///< Special Stage (variant of race, but forbidden)
+#define TOL_VERSUS	 (0x0008) ///< Versus (variant of battle, but forbidden)
+#define TOL_TUTORIAL (0x0010) ///< Tutorial (variant of race, but forbidden)
 
-	// Modifiers
-	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD
-};
+// Modifiers
+#define TOL_TV		(0x0100) ///< Midnight Channel specific: draw TV like overlay on HUD
 // Make sure to update TYPEOFLEVEL too
 
 #define MAXTOL             (1<<31)
