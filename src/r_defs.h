@@ -367,26 +367,24 @@ typedef int sectorflags_t;
 // force it on (even if it was disabled)
 #define MSF_DIRECTIONLIGHTING       (1<<14)
 
-typedef enum
-{
-	SSF_NOSTEPUP = 1,
-	SSF_DOUBLESTEPUP = 1<<1,
-	SSF_NOSTEPDOWN = 1<<2,
-	SSF_WINDCURRENT = 1<<3,
-	SSF_CONVEYOR = 1<<4,
-	// free: 1<<5,
-	SSF_CHEATCHECKACTIVATOR = 1<<6,
-	SSF_EXIT = 1<<7,
-	SSF_DELETEITEMS = 1<<8,
-	// free: 1<<9,
-	// free: 1<<10,
-	// free: 1<<11,
-	SSF_FAN = 1<<12,
-	// free: 1<<13,
-	// free: 1<<14,
-	SSF_ZOOMTUBESTART = 1<<15,
-	SSF_ZOOMTUBEEND = 1<<16,
-} sectorspecialflags_t;
+typedef int sectorspecialflags_t;
+#define SSF_NOSTEPUP (1)
+#define SSF_DOUBLESTEPUP (1<<1)
+#define SSF_NOSTEPDOWN (1<<2)
+#define SSF_WINDCURRENT (1<<3)
+#define SSF_CONVEYOR (1<<4)
+// free: 1<<5,
+#define SSF_CHEATCHECKACTIVATOR (1<<6)
+#define SSF_EXIT (1<<7)
+#define SSF_DELETEITEMS (1<<8)
+// free: 1<<9,
+// free: 1<<10,
+// free: 1<<11,
+#define SSF_FAN (1<<12)
+// free: 1<<13,
+// free: 1<<14,
+#define SSF_ZOOMTUBESTART (1<<15)
+#define SSF_ZOOMTUBEEND (1<<16)
 
 typedef enum
 {

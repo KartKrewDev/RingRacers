@@ -1055,7 +1055,7 @@ static void P_LoadSectors(UINT8 *data)
 		ss->gravity = FRACUNIT;
 
 		ss->flags = MSF_FLIPSPECIAL_FLOOR;
-		ss->specialflags = static_cast<sectorspecialflags_t>(0);
+		ss->specialflags = 0;
 		ss->damagetype = SD_NONE;
 		ss->triggertag = 0;
 		ss->triggerer = TO_PLAYER;
@@ -1790,23 +1790,23 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 	else if (fastcmp(param, "forcedirectionallighting") && fastcmp("true", val))
 		sectors[i].flags |= MSF_DIRECTIONLIGHTING;
 	else if (fastcmp(param, "nostepup") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_NOSTEPUP);
+		sectors[i].specialflags |= SSF_NOSTEPUP;
 	else if (fastcmp(param, "doublestepup") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_DOUBLESTEPUP);
+		sectors[i].specialflags |= SSF_DOUBLESTEPUP;
 	else if (fastcmp(param, "nostepdown") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_NOSTEPDOWN);
+		sectors[i].specialflags |= SSF_NOSTEPDOWN;
 	else if ((fastcmp(param, "cheatcheckactivator") || fastcmp(param, "starpostactivator")) && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_CHEATCHECKACTIVATOR);
+		sectors[i].specialflags |= SSF_CHEATCHECKACTIVATOR;
 	else if (fastcmp(param, "exit") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_EXIT);
+		sectors[i].specialflags |= SSF_EXIT;
 	else if (fastcmp(param, "deleteitems") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_DELETEITEMS);
+		sectors[i].specialflags |= SSF_DELETEITEMS;
 	else if (fastcmp(param, "fan") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_FAN);
+		sectors[i].specialflags |= SSF_FAN;
 	else if (fastcmp(param, "zoomtubestart") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_ZOOMTUBESTART);
+		sectors[i].specialflags |= SSF_ZOOMTUBESTART;
 	else if (fastcmp(param, "zoomtubeend") && fastcmp("true", val))
-		sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_ZOOMTUBEEND);
+		sectors[i].specialflags |= SSF_ZOOMTUBEEND;
 	else if (fastcmp(param, "friction"))
 		sectors[i].friction = FLOAT_TO_FIXED(atof(val));
 	else if (fastcmp(param, "gravity"))
@@ -3205,7 +3205,7 @@ static void P_LoadTextmap(void)
 		sc->gravity = FRACUNIT;
 
 		sc->flags = MSF_FLIPSPECIAL_FLOOR;
-		sc->specialflags = static_cast<sectorspecialflags_t>(0);
+		sc->specialflags = 0;
 		sc->damagetype = SD_NONE;
 		sc->triggertag = 0;
 		sc->triggerer = TO_PLAYER;
@@ -6603,13 +6603,13 @@ static void P_ConvertBinarySectorTypes(void)
 				sectors[i].damagetype = SD_STUMBLE;
 				break;
 			case 12: //Wall sector
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_NOSTEPUP);
+				sectors[i].specialflags |= SSF_NOSTEPUP;
 				break;
 			case 13: //Ramp sector
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_DOUBLESTEPUP);
+				sectors[i].specialflags |= SSF_DOUBLESTEPUP;
 				break;
 			case 14: //Non-ramp sector
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_NOSTEPDOWN);
+				sectors[i].specialflags |= SSF_NOSTEPDOWN;
 				break;
 			default:
 				break;
@@ -6668,25 +6668,25 @@ static void P_ConvertBinarySectorTypes(void)
 		switch(GETSECSPECIAL(sectors[i].special, 4))
 		{
 			case 1: //Cheat Check activator
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_CHEATCHECKACTIVATOR);
+				sectors[i].specialflags |= SSF_CHEATCHECKACTIVATOR;
 				break;
 			case 2: //Exit
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_EXIT);
+				sectors[i].specialflags |= SSF_EXIT;
 				break;
 			case 5: //Fan sector
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_FAN);
+				sectors[i].specialflags |= SSF_FAN;
 				break;
 			case 6: //Sneaker panel
 				CONS_Alert(CONS_WARNING, "Sneaker Panel special is deprecated. Use the TERRAIN effect!\n");
 				break;
 			case 7: //Destroy items
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_DELETEITEMS);
+				sectors[i].specialflags |= SSF_DELETEITEMS;
 				break;
 			case 8: //Zoom tube start
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_ZOOMTUBESTART);
+				sectors[i].specialflags |= SSF_ZOOMTUBESTART;
 				break;
 			case 9: //Zoom tube end
-				sectors[i].specialflags = static_cast<sectorspecialflags_t>(sectors[i].specialflags | SSF_ZOOMTUBEEND);
+				sectors[i].specialflags |= SSF_ZOOMTUBEEND;
 				break;
 			default:
 				break;
