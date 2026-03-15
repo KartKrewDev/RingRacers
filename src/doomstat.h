@@ -674,47 +674,44 @@ extern INT16 numgametypes;
 extern INT16 gametype, g_lastgametype;
 
 // Gametype rules
-enum GameTypeRules
-{
-	// Race rules
-	GTR_CIRCUIT				= 1,		// Enables the finish line, laps, and the waypoint system.
-	GTR_BOTS				= 1<<1,		// Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
+typedef INT32 GameTypeRules;
+#define GTR_CIRCUIT				(1)		// Enables the finish line, laps, and the waypoint system.
+#define GTR_BOTS				(1<<1)		// Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
 
-	// Battle gametype rules
-	GTR_BUMPERS				= 1<<2,		// Enables the bumper health system
-	GTR_SPHERES				= 1<<3,		// Replaces rings with blue spheres
-	GTR_CLOSERPLAYERS		= 1<<4,		// Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
+// Battle gametype rules
+#define GTR_BUMPERS				(1<<2)		// Enables the bumper health system
+#define GTR_SPHERES				(1<<3)		// Replaces rings with blue spheres
+#define GTR_CLOSERPLAYERS		(1<<4)		// Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
 
-	GTR_BATTLESTARTS		= 1<<5,		// Use Battle Mode start positions.
-	GTR_PAPERITEMS			= 1<<6,		// Replaces item boxes with paper item spawners
-	GTR_POWERSTONES			= 1<<7,		// Battle Emerald collectables.
-	GTR_KARMA				= 1<<8,		// Enables the Karma system if you're out of bumpers
-	// 1<<9 - UNUSED
+#define GTR_BATTLESTARTS		(1<<5)		// Use Battle Mode start positions.
+#define GTR_PAPERITEMS			(1<<6)		// Replaces item boxes with paper item spawners
+#define GTR_POWERSTONES			(1<<7)		// Battle Emerald collectables.
+#define GTR_KARMA				(1<<8)		// Enables the Karma system if you're out of bumpers
+// 1<<9 - UNUSED
 
-	// Bonus gametype rules
-	GTR_CHECKPOINTS			= 1<<10,	// Player respawns at specific checkpoints
-	GTR_PRISONS				= 1<<11,	// Can enter Prison Break mode
-	GTR_CATCHER				= 1<<12,	// UFO Catcher (only works with GTR_CIRCUIT)
-	GTR_ROLLINGSTART		= 1<<13,	// Rolling start (only works with GTR_CIRCUIT)
-	GTR_SPECIALSTART		= 1<<14,	// White fade instant start
-	GTR_BOSS				= 1<<15,	// Boss intro and spawning
+// Bonus gametype rules
+#define GTR_CHECKPOINTS			(1<<10)	// Player respawns at specific checkpoints
+#define GTR_PRISONS				(1<<11)	// Can enter Prison Break mode
+#define GTR_CATCHER				(1<<12)	// UFO Catcher (only works with GTR_CIRCUIT)
+#define GTR_ROLLINGSTART		(1<<13)	// Rolling start (only works with GTR_CIRCUIT)
+#define GTR_SPECIALSTART		(1<<14)	// White fade instant start
+#define GTR_BOSS				(1<<15)	// Boss intro and spawning
 
-	// General purpose rules
-	GTR_POINTLIMIT			= 1<<16,	// Reaching point limit ends the round
-	GTR_TIMELIMIT			= 1<<17,	// Reaching time limit ends the round
-	GTR_OVERTIME			= 1<<18,	// Allow overtime behavior
-	GTR_ENCORE				= 1<<19,	// Alternate Encore mirroring, scripting, and texture remapping
+// General purpose rules
+#define GTR_POINTLIMIT			(1<<16)	// Reaching point limit ends the round
+#define GTR_TIMELIMIT			(1<<17)	// Reaching time limit ends the round
+#define GTR_OVERTIME			(1<<18)	// Allow overtime behavior
+#define GTR_ENCORE				(1<<19)	// Alternate Encore mirroring, scripting, and texture remapping
 
-	GTR_TEAMS				= 1<<20,	// Teams are forced on
-	GTR_NOTEAMS				= 1<<21,	// Teams are forced off
-	GTR_TEAMSTARTS			= 1<<22,	// Use team-based start positions
+#define GTR_TEAMS				(1<<20)	// Teams are forced on
+#define GTR_NOTEAMS				(1<<21)	// Teams are forced off
+#define GTR_TEAMSTARTS			(1<<22)	// Use team-based start positions
 
-	GTR_NOMP				= 1<<23,	// No multiplayer
-	GTR_NOCUPSELECT			= 1<<24,	// Your maps are not selected via cup.
-	GTR_NOPOSITION			= 1<<25,	// No POSITION
+#define GTR_NOMP				(1<<23)	// No multiplayer
+#define GTR_NOCUPSELECT			(1<<24)	// Your maps are not selected via cup.
+#define GTR_NOPOSITION			(1<<25)	// No POSITION
 
-	// free: to and including 1<<31
-};
+// free: to and including 1<<31
 // Remember to update GAMETYPERULE_LIST in deh_soc.c
 
 #define GTR_FORBIDMP (GTR_NOMP|GTR_CATCHER|GTR_BOSS)
