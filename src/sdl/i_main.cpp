@@ -310,3 +310,12 @@ void operator delete(void* ptr) noexcept
 	TracyFree(ptr);
 	free(ptr);
 }
+
+// Enable high performance graphics on multi-gpu laptops, since we can't pick devices in WGL
+#ifdef _WIN32
+extern "C"
+{
+__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+__declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000001;
+}
+#endif
