@@ -30,7 +30,7 @@ target_sources(SRB2SDL2 PRIVATE
 	console.c
 	cvars.cpp
 	font.c
-	hu_stuff.c
+	hu_stuff.cpp
 	i_time.c
 	i_video_common.cpp
 	y_inter.cpp
