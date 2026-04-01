@@ -114,12 +114,10 @@ extern char english_shiftxform[];
 #define CHAT_MUTE (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer))) // this still allows to open the chat but not to type. That's used for scrolling and whatnot.
 #define OLD_MUTE (OLDCHAT && cv_mute.value && !(server || IsPlayerAdmin(consoleplayer))) // this is used to prevent oldchat from opening when muted.
 
-typedef enum
-{
-	HU_SHOUT		= 1,		// Shout message
-	HU_CSAY			= 1<<1,		// Middle-of-screen server message
-	HU_PRIVNOTICE	= 1<<2,		// Special server sayto, we don't want to see it as the sender.
-} sayflags_t;
+typedef INT32 sayflags_t;
+#define HU_SHOUT		(1)			// Shout message
+#define HU_CSAY			(1<<1)		// Middle-of-screen server message
+#define HU_PRIVNOTICE	(1<<2)		// Special server sayto, we don't want to see it as the sender.
 
 // some functions
 void HU_AddChatText(const char *text, boolean playsound);
