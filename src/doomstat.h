@@ -96,12 +96,10 @@ typedef enum
 	MAXPRECIP
 } preciptype_t;
 
-typedef enum
-{
-	PRECIPFX_THUNDER = 1,
-	PRECIPFX_LIGHTNING = 1<<1,
-	PRECIPFX_WATERPARTICLES = 1<<2
-} precipeffect_t;
+typedef INT32 precipeffect_t;
+#define PRECIPFX_THUNDER (1)
+#define PRECIPFX_LIGHTNING (1<<1)
+#define PRECIPFX_WATERPARTICLES (1<<2)
 
 struct precipprops_t
 {
