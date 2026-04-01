@@ -245,24 +245,18 @@ typedef enum
 	KSM__MAX,
 } kartslotmachine_t;
 
-typedef enum
-{
-	KSPIN_THRUST    = (1<<0),
-	KSPIN_IFRAMES   = (1<<1),
-	KSPIN_AIRTIMER  = (1<<2),
+typedef INT32 kartspinoutflags_t;
+#define KSPIN_THRUST    (1<<0)
+#define KSPIN_IFRAMES   (1<<1)
+#define KSPIN_AIRTIMER  (1<<2)
 
-	KSPIN_TYPEBIT   = (1<<3),
-	KSPIN_TYPEMASK  = ~( KSPIN_TYPEBIT - 1 ),
+#define KSPIN_TYPEBIT   (1<<3)
+#define KSPIN_TYPEMASK  (~( KSPIN_TYPEBIT - 1 ))
 
-#define KSPIN_TYPE( type ) ( KSPIN_TYPEBIT << type )
-
-	KSPIN_SPINOUT   = KSPIN_TYPE(0)|KSPIN_IFRAMES|KSPIN_THRUST,
-	KSPIN_WIPEOUT   = KSPIN_TYPE(1)|KSPIN_IFRAMES,
-	KSPIN_STUNG     = KSPIN_TYPE(2),
-	KSPIN_EXPLOSION = KSPIN_TYPE(3)|KSPIN_IFRAMES|KSPIN_AIRTIMER,
-
-#undef KSPIN_TYPE
-} kartspinoutflags_t;
+#define KSPIN_SPINOUT   (( KSPIN_TYPEBIT << 0 )|KSPIN_IFRAMES|KSPIN_THRUST)
+#define KSPIN_WIPEOUT   (( KSPIN_TYPEBIT << 1 )|KSPIN_IFRAMES)
+#define KSPIN_STUNG     (( KSPIN_TYPEBIT << 2 ))
+#define KSPIN_EXPLOSION (( KSPIN_TYPEBIT << 3 )|KSPIN_IFRAMES|KSPIN_AIRTIMER)
 
 typedef enum
 {
