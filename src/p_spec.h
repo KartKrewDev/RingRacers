@@ -30,56 +30,42 @@ void P_InitSkyboxPoint(mobj_t *mobj, mapthing_t *mthing);
 // Amount (dx, dy) vector linedef is shifted right to get scroll amount
 #define SCROLL_SHIFT 5
 
-typedef enum
-{
-	TMM_DOUBLESIZE      = 1,
-	TMM_SILENT          = 1<<1,
-	TMM_ALLOWYAWCONTROL = 1<<2,
-	TMM_SWING           = 1<<3,
-	TMM_MACELINKS       = 1<<4,
-	TMM_CENTERLINK      = 1<<5,
-	TMM_CLIP            = 1<<6,
-	TMM_ALWAYSTHINK     = 1<<7,
-} textmapmaceflags_t;
+typedef int textmapmaceflags_t;
+#define TMM_DOUBLESIZE      (1)
+#define TMM_SILENT          (1<<1)
+#define TMM_ALLOWYAWCONTROL (1<<2)
+#define TMM_SWING           (1<<3)
+#define TMM_MACELINKS       (1<<4)
+#define TMM_CENTERLINK      (1<<5)
+#define TMM_CLIP            (1<<6)
+#define TMM_ALWAYSTHINK     (1<<7)
 
-typedef enum
-{
-	TMDA_BOTTOMOFFSET = 1,
-	TMDA_BOTTOM       = 1<<1,
-	TMDA_MIDDLE       = 1<<2,
-	TMDA_TOP          = 1<<3,
-} textmapdronealignment_t;
+typedef int textmapdronealignment_t;
+#define TMDA_BOTTOMOFFSET (1)
+#define TMDA_BOTTOM       (1<<1)
+#define TMDA_MIDDLE       (1<<2)
+#define TMDA_TOP          (1<<3)
 
-typedef enum
-{
-	TMSF_RETRACTED  = 1,
-	TMSF_INTANGIBLE = 1<<1,
-} textmapspikeflags_t;
+typedef int textmapspikeflags_t;
+#define TMSF_RETRACTED  (1)
+#define TMSF_INTANGIBLE (1<<1)
 
-typedef enum
-{
-	TMFF_AIMLESS    = 1,
-	TMFF_STATIONARY = 1<<1,
-	TMFF_HOP        = 1<<2,
-} textmapflickyflags_t;
+typedef int textmapflickyflags_t;
+#define TMFF_AIMLESS    (1)
+#define TMFF_STATIONARY (1<<1)
+#define TMFF_HOP        (1<<2)
 
-typedef enum
-{
-	TMFH_NOFLAME = 1,
-	TMFH_CORONA  = 1<<1,
-} textmapflameholderflags_t;
+typedef int textmapflameholderflags_t;
+#define TMFH_NOFLAME (1)
+#define TMFH_CORONA  (1<<1)
 
-typedef enum
-{
-	TMDS_NOGRAVITY   = 1,
-	TMDS_ROTATEEXTRA = 1<<1,
-} textmapdiagonalspringflags_t;
+typedef int textmapdiagonalspringflags_t;
+#define TMDS_NOGRAVITY   (1)
+#define TMDS_ROTATEEXTRA (1<<1)
 
-typedef enum
-{
-	TMF_INVISIBLE       = 1,
-	TMF_NODISTANCECHECK = 1<<1,
-} textmapfanflags_t;
+typedef int textmapfanflags_t;
+#define TMF_INVISIBLE       (1)
+#define TMF_NODISTANCECHECK (1<<1)
 
 typedef enum
 {
@@ -88,11 +74,9 @@ typedef enum
 	TMGD_LEFT  = 2,
 } textmapguarddirection_t;
 
-typedef enum
-{
-	TMNI_BONUSONLY = 1,
-	TMNI_REVEAL    = 1<<1,
-} textmapnightsitem_t;
+typedef int textmapnightsitem_t;
+#define TMNI_BONUSONLY (1)
+#define TMNI_REVEAL    (1<<1)
 
 typedef enum
 {
@@ -116,51 +100,37 @@ typedef enum
 	TMMR_STRONG = 2,
 } textmapmonitorrespawn_t;
 
-typedef enum
-{
-	TMF_GRAYSCALE = 1,
-	TMF_SKIPINTRO = 1<<1,
-} textmapfangflags_t;
+typedef int textmapfangflags_t;
+#define TMF_GRAYSCALE (1)
+#define TMF_SKIPINTRO (1<<1)
 
-typedef enum
-{
-	TMB_NODEATHFLING = 1,
-	TMB_BARRIER      = 1<<1,
-} textmapbrakflags_t;
+typedef int textmapbrakflags_t;
+#define TMB_NODEATHFLING (1)
+#define TMB_BARRIER      (1<<1)
 
-typedef enum
-{
-	TMWPF_DISABLED   		= 1,
-	TMWPF_SHORTCUT   		= 1<<1,
-	TMWPF_NORESPAWN  		= 1<<2,
-	TMWPF_FINISHLINE 		= 1<<3,
-	TMWPF_BLOCKLIGHTSNAKE 	= 1<<4
-} textmapwaypointflags_t;
+typedef int textmapwaypointflags_t;
+#define TMWPF_DISABLED   		(1)
+#define TMWPF_SHORTCUT   		(1<<1)
+#define TMWPF_NORESPAWN  		(1<<2)
+#define TMWPF_FINISHLINE 		(1<<3)
+#define TMWPF_BLOCKLIGHTSNAKE 	(1<<4)
 
-typedef enum
-{
-	TMAUDIM_FLOAT = 1,
-	TMAUDIM_BORED = 1<<1,
-} textmapaudiencemovementflags_t;
+typedef int textmapaudiencemovementflags_t;
+#define TMAUDIM_FLOAT (1)
+#define TMAUDIM_BORED (1<<1)
 
-typedef enum
-{
-	TMBCF_BACKANDFORTH = 1,
-	TMBCF_REVERSE      = 1<<1,
-} textmapbattlecapsuleflags_t;
+typedef int textmapbattlecapsuleflags_t;
+#define TMBCF_BACKANDFORTH (1)
+#define TMBCF_REVERSE      (1<<1)
 
-typedef enum
-{
-	//TMICF_UNUSED = 1,
-	TMICF_INVERTSIZE       = 1<<1,
-} textmapitemcapsuleflags_t;
+typedef int textmapitemcapsuleflags_t;
+#define TMICF_UNUSED		(1)
+#define TMICF_INVERTSIZE	(1<<1)
 
-typedef enum
-{
-	TMICM_DEFAULT = 0, // Time Attack only has rings, multiplayer has everything
-	TMICM_MULTIPLAYER = 1,
-	TMICM_TIMEATTACK = 1<<1,
-} textmapitemcapsulemodes_t;
+typedef int textmapitemcapsulemodes_t;
+#define TMICM_DEFAULT (0) // Time Attack only has rings, multiplayer has everything
+#define TMICM_MULTIPLAYER (1)
+#define TMICM_TIMEATTACK (1<<1)
 
 typedef enum
 {
@@ -168,76 +138,58 @@ typedef enum
 	TMMA_FLIP = 2,
 } textmapmayarrow_t;
 
-typedef enum
-{
-	TMEF_SKIPTALLY    = 1,
-	TMEF_EMERALDCHECK = 1<<1,
-} textmapexitflags_t;
+typedef int textmapexitflags_t;
+#define TMEF_SKIPTALLY    (1)
+#define TMEF_EMERALDCHECK (1<<1)
 
-typedef enum
-{
-	TMSP_NOTELEPORT = 1,
-	TMSP_FORCESPIN  = 1<<1,
-} textmapspeedpadflags_t;
+typedef int textmapspeedpadflags_t;
+#define TMSP_NOTELEPORT (1)
+#define TMSP_FORCESPIN  (1<<1)
 
 //FOF flags
-typedef enum
-{
-	TMFA_NOPLANES    = 1,
-	TMFA_NOSIDES     = 1<<1,
-	TMFA_INSIDES     = 1<<2,
-	TMFA_ONLYINSIDES = 1<<3,
-	TMFA_NOSHADE     = 1<<4,
-	TMFA_SPLAT       = 1<<5,
-} textmapfofappearance_t;
+typedef int textmapfofappearance_t;
+#define TMFA_NOPLANES    (1)
+#define TMFA_NOSIDES     (1<<1)
+#define TMFA_INSIDES     (1<<2)
+#define TMFA_ONLYINSIDES (1<<3)
+#define TMFA_NOSHADE     (1<<4)
+#define TMFA_SPLAT       (1<<5)
 
-typedef enum
-{
-	TMFT_INTANGIBLETOP    = 1,
-	TMFT_INTANGIBLEBOTTOM = 1<<1,
-	TMFT_DONTBLOCKPLAYER  = 1<<2,
-	TMFT_VISIBLEFROMINSIDE = (TMFT_INTANGIBLETOP|TMFT_INTANGIBLEBOTTOM|TMFT_DONTBLOCKPLAYER),
-	TMFT_DONTBLOCKOTHERS  = 1<<3,
-	TMFT_INTANGIBLE       = (TMFT_DONTBLOCKPLAYER|TMFT_DONTBLOCKOTHERS),
-} textmapfoftangibility_t;
+typedef int textmapfoftangibility_t;
+#define TMFT_INTANGIBLETOP    (1)
+#define TMFT_INTANGIBLEBOTTOM (1<<1)
+#define TMFT_DONTBLOCKPLAYER  (1<<2)
+#define TMFT_VISIBLEFROMINSIDE (TMFT_INTANGIBLETOP|TMFT_INTANGIBLEBOTTOM|TMFT_DONTBLOCKPLAYER)
+#define TMFT_DONTBLOCKOTHERS  (1<<3)
+#define TMFT_INTANGIBLE       (TMFT_DONTBLOCKPLAYER|TMFT_DONTBLOCKOTHERS)
 
-typedef enum
-{
-	TMFW_NOSIDES      = 1,
-	TMFW_DOUBLESHADOW = 1<<1,
-	TMFW_COLORMAPONLY = 1<<2,
-	TMFW_NORIPPLE     = 1<<3,
-	TMFW_GOOWATER     = 1<<4,
-	TMFW_SPLAT        = 1<<5,
-} textmapfofwater_t;
+typedef int textmapfofwater_t;
+#define TMFW_NOSIDES      (1)
+#define TMFW_DOUBLESHADOW (1<<1)
+#define TMFW_COLORMAPONLY (1<<2)
+#define TMFW_NORIPPLE     (1<<3)
+#define TMFW_GOOWATER     (1<<4)
+#define TMFW_SPLAT        (1<<5)
 
-typedef enum
-{
-	TMFB_REVERSE  = 1,
-	TMFB_SPINDASH = 1<<1,
-	TMFB_DYNAMIC  = 1<<2,
-} textmapfofbobbing_t;
+typedef int textmapfofbobbing_t;
+#define TMFB_REVERSE  (1)
+#define TMFB_SPINDASH (1<<1)
+#define TMFB_DYNAMIC  (1<<2)
 
-typedef enum
-{
-	TMFC_NOSHADE     = 1,
-	TMFC_NORETURN    = 1<<1,
-	TMFC_AIRBOB      = 1<<2,
-	TMFC_FLOATBOB    = 1<<3,
-	TMFC_SPLAT       = 1<<4,
-} textmapfofcrumbling_t;
+typedef int textmapfofcrumbling_t;
+#define TMFC_NOSHADE     (1)
+#define TMFC_NORETURN    (1<<1)
+#define TMFC_AIRBOB      (1<<2)
+#define TMFC_FLOATBOB    (1<<3)
+#define TMFC_SPLAT       (1<<4)
 
-typedef enum
-{
-	TMFR_REVERSE  = 1,
-	TMFR_SPINDASH = 1<<1,
-} textmapfofrising_t;
+typedef int textmapfofrising_t;
+#define TMFR_REVERSE  (1)
+#define TMFR_SPINDASH (1<<1)
 
-typedef enum
-{
-	TMFM_BRICK     = 1,
-	TMFM_INVISIBLE = 1<<1,
-} textmapfofmario_t;
+typedef int textmapfofmario_t;
+#define TMFM_BRICK     (1)
+#define TMFM_INVISIBLE (1<<1)
 
 typedef enum
 {
@@ -247,19 +199,15 @@ typedef enum
 	TMFB_STRONG,
 } textmapfofbusttype_t;
 
-typedef enum
-{
-	TMFB_PUSHABLES   = 1,
-	TMFB_EXECUTOR    = 1<<1,
-	TMFB_ONLYBOTTOM  = 1<<2,
-	TMFB_SPLAT       = 1<<3,
-} textmapfofbustflags_t;
+typedef int textmapfofbustflags_t;
+#define TMFB_PUSHABLES   (1)
+#define TMFB_EXECUTOR    (1<<1)
+#define TMFB_ONLYBOTTOM  (1<<2)
+#define TMFB_SPLAT       (1<<3)
 
-typedef enum
-{
-	TMFL_NOBOSSES = 1,
-	TMFL_SPLAT    = 1<<1,
-} textmapfoflaserflags_t;
+typedef int textmapfoflaserflags_t;
+#define TMFL_NOBOSSES (1)
+#define TMFL_SPLAT    (1<<1)
 
 typedef enum
 {
@@ -314,11 +262,9 @@ typedef enum
 	TMN_FROMNIGHTS   = 2,
 } textmapnighterizeoptions_t;
 
-typedef enum
-{
-	TMN_BONUSLAPS       = 1,
-	TMN_LEVELCOMPLETION = 1<<2,
-} textmapnightserizeflags_t;
+typedef int textmapnightserizeflags_t;
+#define TMN_BONUSLAPS       (1)
+#define TMN_LEVELCOMPLETION (1<<2)
 
 typedef enum
 {
@@ -334,11 +280,9 @@ typedef enum
 	TMS_ALWAYS      = 2,
 } textmapspherescheck_t;
 
-typedef enum
-{
-	TMI_BONUSLAPS = 1,
-	TMI_ENTER     = 1<<2,
-} textmapideyacaptureflags_t;
+typedef int textmapideyacaptureflags_t;
+#define TMI_BONUSLAPS (1)
+#define TMI_ENTER     (1<<2)
 
 typedef enum
 {
@@ -354,24 +298,20 @@ typedef enum
 	TMT_REPLACEFIRST = 2,
 } textmaptagoptions_t;
 
-typedef enum
-{
-	TMT_SILENT       = 1,
-	TMT_KEEPANGLE    = 1<<1,
-	TMT_KEEPMOMENTUM = 1<<2,
-	TMT_RELATIVE     = 1<<3,
-} textmapteleportflags_t;
+typedef int textmapteleportflags_t;
+#define TMT_SILENT       (1)
+#define TMT_KEEPANGLE    (1<<1)
+#define TMT_KEEPMOMENTUM (1<<2)
+#define TMT_RELATIVE     (1<<3)
 
-typedef enum
-{
-	TMM_ALLPLAYERS = 1,
-	TMM_OFFSET = 1<<1,
-	TMM_FADE = 1<<2,
-	TMM_NORELOAD = 1<<3,
-	TMM_FORCERESET = 1<<4,
-	TMM_NOLOOP = 1<<5,
-	TMM_NOCREDIT = 1<<6,
-} textmapmusicflags_t;
+typedef int textmapmusicflags_t;
+#define TMM_ALLPLAYERS (1)
+#define TMM_OFFSET (1<<1)
+#define TMM_FADE (1<<2)
+#define TMM_NORELOAD (1<<3)
+#define TMM_FORCERESET (1<<4)
+#define TMM_NOLOOP (1<<5)
+#define TMM_NOCREDIT (1<<6)
 
 typedef enum
 {
@@ -395,51 +335,39 @@ typedef enum
 	TML_CEILING = 2,
 } textmaplightareas_t;
 
-typedef enum
-{
-	TMLC_NOSECTOR  = 1,
-	TMLC_NOFLOOR   = 1<<1,
-	TMLC_NOCEILING = 1<<2,
-} textmaplightcopyflags_t;
+typedef int textmaplightcopyflags_t;
+#define TMLC_NOSECTOR  (1)
+#define TMLC_NOFLOOR   (1<<1)
+#define TMLC_NOCEILING (1<<2)
 
-typedef enum
-{
-	TMF_RELATIVE = 1,
-	TMF_OVERRIDE = 1<<1,
-	TMF_TICBASED = 1<<2,
-} textmapfadeflags_t;
+typedef int textmapfadeflags_t;
+#define TMF_RELATIVE (1)
+#define TMF_OVERRIDE (1<<1)
+#define TMF_TICBASED (1<<2)
 
-typedef enum
-{
-	TMB_USETARGET = 1,
-	TMB_SYNC      = 1<<1,
-} textmapblinkinglightflags_t;
+typedef int textmapblinkinglightflags_t;
+#define TMB_USETARGET (1)
+#define TMB_SYNC      (1<<1)
 
-typedef enum
-{
-	TMFR_NORETURN  = 1,
-	TMFR_CHECKFLAG = 1<<1,
-} textmapfofrespawnflags_t;
+typedef int textmapfofrespawnflags_t;
+#define TMFR_NORETURN  (1)
+#define TMFR_CHECKFLAG (1<<1)
 
-typedef enum
-{
-	TMST_RELATIVE          = 1,
-	TMST_DONTDOTRANSLUCENT = 1<<1,
-} textmapsettranslucencyflags_t;
+typedef int textmapsettranslucencyflags_t;
+#define TMST_RELATIVE          (1)
+#define TMST_DONTDOTRANSLUCENT (1<<1)
 
-typedef enum
-{
-	TMFT_RELATIVE          = 1,
-	TMFT_OVERRIDE          = 1<<1,
-	TMFT_TICBASED          = 1<<2,
-	TMFT_IGNORECOLLISION   = 1<<3,
-	TMFT_GHOSTFADE         = 1<<4,
-	TMFT_DONTDOTRANSLUCENT = 1<<5,
-	TMFT_DONTDOEXISTS      = 1<<6,
-	TMFT_DONTDOLIGHTING    = 1<<7,
-	TMFT_DONTDOCOLORMAP    = 1<<8,
-	TMFT_USEEXACTALPHA     = 1<<9,
-} textmapfadetranslucencyflags_t;
+typedef int textmapfadetranslucencyflags_t;
+#define TMFT_RELATIVE          (1)
+#define TMFT_OVERRIDE          (1<<1)
+#define TMFT_TICBASED          (1<<2)
+#define TMFT_IGNORECOLLISION   (1<<3)
+#define TMFT_GHOSTFADE         (1<<4)
+#define TMFT_DONTDOTRANSLUCENT (1<<5)
+#define TMFT_DONTDOEXISTS      (1<<6)
+#define TMFT_DONTDOLIGHTING    (1<<7)
+#define TMFT_DONTDOCOLORMAP    (1<<8)
+#define TMFT_USEEXACTALPHA     (1<<9)
 
 typedef enum
 {
@@ -448,16 +376,14 @@ typedef enum
 	TMS_BOTH        = 2,
 } textmapskybox_t;
 
-typedef enum
-{
-	TMP_CLOSE          = 1,
-	TMP_RUNPOSTEXEC    = 1<<1,
-	TMP_CALLBYNAME     = 1<<2,
-	TMP_KEEPCONTROLS   = 1<<3,
-	TMP_KEEPREALTIME   = 1<<4,
-	//TMP_ALLPLAYERS     = 1<<5,
-	//TMP_FREEZETHINKERS = 1<<6,
-} textmappromptflags_t;
+typedef int textmappromptflags_t;
+#define TMP_CLOSE          (1)
+#define TMP_RUNPOSTEXEC    (1<<1)
+#define TMP_CALLBYNAME     (1<<2)
+#define TMP_KEEPCONTROLS   (1<<3)
+#define TMP_KEEPREALTIME   (1<<4)
+// #define TMP_ALLPLAYERS     (1<<5)
+// #define TMP_FREEZETHINKERS (1<<6)
 
 typedef enum
 {
@@ -489,18 +415,14 @@ typedef enum
 	TMST_NONEXCLUSIVE = 4,
 } textmapscrolltype_t;
 
-typedef enum
-{
-	TMPF_SLIDE = 1,
-	TMPF_NONEXCLUSIVE = 1<<1,
-} textmappusherflags_t;
+typedef int textmappusherflags_t;
+#define TMPF_SLIDE (1)
+#define TMPF_NONEXCLUSIVE (1<<1)
 
-typedef enum
-{
-	TMPP_NOZFADE      = 1,
-	TMPP_PUSHZ        = 1<<1,
-	TMPP_NONEXCLUSIVE = 1<<2,
-} textmappointpushflags_t;
+typedef int textmappointpushflags_t;
+#define TMPP_NOZFADE      (1)
+#define TMPP_PUSHZ        (1<<1)
+#define TMPP_NONEXCLUSIVE (1<<2)
 
 typedef enum
 {
@@ -511,23 +433,17 @@ typedef enum
 	TMB_MODULATE        = 4,
 } textmapblendmodes_t;
 
-typedef enum
-{
-	TMCFF_FLIP = 1,
-} textmapcrossfinishflags_t;
+typedef int textmapcrossfinishflags_t;
+#define TMCFF_FLIP (1)
 
-typedef enum
-{
-	TMCRF_FRONTONLY = 1,
-} textmapcrossrespawnflags_t;
+typedef int textmapcrossrespawnflags_t;
+#define TMCRF_FRONTONLY (1)
 
-typedef enum
-{
-	TMBOT_NORUBBERBAND = 1,
-	TMBOT_NOCONTROL    = 1<<1,
-	TMBOT_FORCEDIR     = 1<<2,
-	TMBOT_FASTFALL     = 1<<3,
-} textmapbotcontroller_t;
+typedef int textmapbotcontroller_t;
+#define TMBOT_NORUBBERBAND (1)
+#define TMBOT_NOCONTROL    (1<<1)
+#define TMBOT_FORCEDIR     (1<<2)
+#define TMBOT_FASTFALL     (1<<3)
 
 typedef enum
 {

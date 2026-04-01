@@ -31,13 +31,11 @@ typedef enum
 	TMSP_BACKCEILING,
 } textmapslopeplane_t;
 
-typedef enum
-{
-	TMSC_FRONTTOBACKFLOOR   = 1,
-	TMSC_BACKTOFRONTFLOOR   = 1<<1,
-	TMSC_FRONTTOBACKCEILING = 1<<2,
-	TMSC_BACKTOFRONTCEILING = 1<<3,
-} textmapslopecopy_t;
+typedef INT32 textmapslopecopy_t;
+#define TMSC_FRONTTOBACKFLOOR   (1)
+#define TMSC_BACKTOFRONTFLOOR   (1<<1)
+#define TMSC_FRONTTOBACKCEILING (1<<2)
+#define TMSC_BACKTOFRONTCEILING (1<<3)
 
 typedef enum
 {
@@ -46,26 +44,20 @@ typedef enum
 	TMS_BACK,
 } textmapside_t;
 
-typedef enum
-{
-	TMSL_NOPHYSICS = 1,
-	TMSL_DYNAMIC   = 1<<1,
-	TMSL_COPY      = 1<<2,
-} textmapslopeflags_t;
+typedef INT32 textmapslopeflags_t;
+#define TMSL_NOPHYSICS (1)
+#define TMSL_DYNAMIC   (1<<1)
+#define TMSL_COPY      (1<<2)
 
-typedef enum
-{
-	TMSA_FLOOR   = 1,
-	TMSA_CEILING = 1<<1,
-} textmapslopeanchor_t;
+typedef INT32 textmapslopeanchor_t;
+#define TMSA_FLOOR   (1)
+#define TMSA_CEILING (1<<1)
 
-typedef enum
-{
-	TMSAF_NOPHYSICS = 1,
-	TMSAF_DYNAMIC   = 1<<1,
-	TMSAF_BACKSIDE  = 1<<2,
-	TMSAF_MIRROR    = 1<<3,
-} textmapslopeanchorflags_t;
+typedef INT32 textmapslopeanchorflags_t;
+#define TMSAF_NOPHYSICS (1)
+#define TMSAF_DYNAMIC   (1<<1)
+#define TMSAF_BACKSIDE  (1<<2)
+#define TMSAF_MIRROR    (1<<3)
 
 void P_LinkSlopeThinkers (void);
 

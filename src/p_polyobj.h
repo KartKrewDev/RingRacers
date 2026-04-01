@@ -55,17 +55,15 @@ typedef enum
 	POF_SPLAT             = 0x2000,    ///< Use splat flat renderer (treat cyan pixels as invisible).
 } polyobjflags_e;
 
-typedef enum
-{
-	TMPF_NOINSIDES       = 1,
-	TMPF_INTANGIBLE      = 1<<1,
-	TMPF_PUSHABLESTOP    = 1<<2,
-	TMPF_INVISIBLEPLANES = 1<<3,
-	TMPF_EXECUTOR        = 1<<4,
-	TMPF_CRUSH           = 1<<5,
-	TMPF_SPLAT           = 1<<6,
-	//TMPF_DONTCLIPPLANES  = 1<<7,
-} textmappolyobjectflags_t;
+typedef INT32 textmappolyobjectflags_t;
+#define TMPF_NOINSIDES       (1)
+#define TMPF_INTANGIBLE      (1<<1)
+#define TMPF_PUSHABLESTOP    (1<<2)
+#define TMPF_INVISIBLEPLANES (1<<3)
+#define TMPF_EXECUTOR        (1<<4)
+#define TMPF_CRUSH           (1<<5)
+#define TMPF_SPLAT           (1<<6)
+// #define TMPF_DONTCLIPPLANES  (1<<7)
 
 //
 // Polyobject Structure
@@ -252,13 +250,11 @@ struct polyfade_t
 // Line Activation Data Structures
 //
 
-typedef enum
-{
-	TMPR_DONTROTATEOTHERS = 1,
-	TMPR_ROTATEPLAYERS    = 1<<1,
-	TMPR_CONTINUOUS       = 1<<2,
-	TMPR_OVERRIDE         = 1<<3,
-} textmappolyrotate_t;
+typedef INT32 textmappolyrotate_t;
+#define TMPR_DONTROTATEOTHERS (1)
+#define TMPR_ROTATEPLAYERS    (1<<1)
+#define TMPR_CONTINUOUS       (1<<2)
+#define TMPR_OVERRIDE         (1<<3)
 
 typedef enum
 {
@@ -340,14 +336,12 @@ struct polyflagdata_t
 	fixed_t momx;
 };
 
-typedef enum
-{
-	TMPF_RELATIVE        = 1,
-	TMPF_OVERRIDE        = 1<<1,
-	TMPF_TICBASED        = 1<<2,
-	TMPF_IGNORECOLLISION = 1<<3,
-	TMPF_GHOSTFADE       = 1<<4,
-} textmappolyfade_t;
+typedef INT32 textmappolyfade_t;
+#define TMPF_RELATIVE        (1)
+#define TMPF_OVERRIDE        (1<<1)
+#define TMPF_TICBASED        (1<<2)
+#define TMPF_IGNORECOLLISION (1<<3)
+#define TMPF_GHOSTFADE       (1<<4)
 
 struct polyfadedata_t
 {

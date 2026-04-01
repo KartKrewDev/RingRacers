@@ -76,23 +76,21 @@ boolean R_CheckDefaultColormap(extracolormap_t *extra_colormap, boolean checkrgb
 boolean R_CheckEqualColormaps(extracolormap_t *exc_a, extracolormap_t *exc_b, boolean checkrgba, boolean checkfadergba, boolean checkparams);
 extracolormap_t *R_GetColormapFromList(extracolormap_t *extra_colormap);
 
-typedef enum
-{
-	TMCF_RELATIVE     = 1,
-	TMCF_SUBLIGHTR    = 1<<1,
-	TMCF_SUBLIGHTG    = 1<<2,
-	TMCF_SUBLIGHTB    = 1<<3,
-	TMCF_SUBLIGHTA    = 1<<4,
-	TMCF_SUBFADER     = 1<<5,
-	TMCF_SUBFADEG     = 1<<6,
-	TMCF_SUBFADEB     = 1<<7,
-	TMCF_SUBFADEA     = 1<<8,
-	TMCF_SUBFADESTART = 1<<9,
-	TMCF_SUBFADEEND   = 1<<10,
-	TMCF_IGNOREFLAGS  = 1<<11,
-	TMCF_FROMBLACK    = 1<<12,
-	TMCF_OVERRIDE     = 1<<13,
-} textmapcolormapflags_t;
+typedef int textmapcolormapflags_t;
+#define TMCF_RELATIVE     (1)
+#define TMCF_SUBLIGHTR    (1<<1)
+#define TMCF_SUBLIGHTG    (1<<2)
+#define TMCF_SUBLIGHTB    (1<<3)
+#define TMCF_SUBLIGHTA    (1<<4)
+#define TMCF_SUBFADER     (1<<5)
+#define TMCF_SUBFADEG     (1<<6)
+#define TMCF_SUBFADEB     (1<<7)
+#define TMCF_SUBFADEA     (1<<8)
+#define TMCF_SUBFADESTART (1<<9)
+#define TMCF_SUBFADEEND   (1<<10)
+#define TMCF_IGNOREFLAGS  (1<<11)
+#define TMCF_FROMBLACK    (1<<12)
+#define TMCF_OVERRIDE     (1<<13)
 
 lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap);
 extracolormap_t * R_CreateColormapFromLinedef(char *p1, char *p2, char *p3);
