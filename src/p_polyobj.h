@@ -254,11 +254,9 @@ typedef INT32 textmappolyrotate_t;
 #define TMPR_CONTINUOUS       (1<<2)
 #define TMPR_OVERRIDE         (1<<3)
 
-typedef enum
-{
-	PTF_PLAYERS = 1,    // Turn players with movement
-	PTF_OTHERS = 1<<1, // Turn other mobjs with movement
-} polyturnflags_e;
+typedef INT32 polyturnflags_e;
+#define PTF_PLAYERS (1)    // Turn players with movement
+#define PTF_OTHERS (1<<1) // Turn other mobjs with movement
 
 struct polyrotdata_t
 {
