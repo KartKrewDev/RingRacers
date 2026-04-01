@@ -34,26 +34,24 @@ extern "C" {
 
 #define POLYOBJ_START_LINE    20
 
-typedef enum
-{
-	POF_CLIPLINES         = 0x1,       ///< Test against lines for collision
-	POF_CLIPPLANES        = 0x2,       ///< Test against tops and bottoms for collision
-	POF_SOLID             = 0x3,       ///< Clips things.
-	POF_TESTHEIGHT        = 0x4,       ///< Test line collision with heights
-	POF_RENDERSIDES       = 0x8,       ///< Renders the sides.
-	POF_RENDERTOP         = 0x10,      ///< Renders the top.
-	POF_RENDERBOTTOM      = 0x20,      ///< Renders the bottom.
-	POF_RENDERPLANES      = 0x30,      ///< Renders top and bottom.
-	POF_RENDERALL         = 0x38,      ///< Renders everything.
-	POF_INVERT            = 0x40,      ///< Inverts collision (like a cage).
-	POF_INVERTPLANES      = 0x80,      ///< Render inside planes.
-	POF_INVERTPLANESONLY  = 0x100,     ///< Only render inside planes.
-	POF_PUSHABLESTOP      = 0x200,     ///< Pushables will stop movement.
-	POF_LDEXEC            = 0x400,     ///< This PO triggers a linedef executor.
-	POF_ONESIDE           = 0x800,     ///< Only use the first side of the linedef.
-	POF_NOSPECIALS        = 0x1000,    ///< Don't apply sector specials.
-	POF_SPLAT             = 0x2000,    ///< Use splat flat renderer (treat cyan pixels as invisible).
-} polyobjflags_e;
+typedef INT32 polyobjflags_e;
+#define POF_CLIPLINES         (0x1)       ///< Test against lines for collision
+#define POF_CLIPPLANES        (0x2)       ///< Test against tops and bottoms for collision
+#define POF_SOLID             (0x3)       ///< Clips things.
+#define POF_TESTHEIGHT        (0x4)       ///< Test line collision with heights
+#define POF_RENDERSIDES       (0x8)       ///< Renders the sides.
+#define POF_RENDERTOP         (0x10)      ///< Renders the top.
+#define POF_RENDERBOTTOM      (0x20)      ///< Renders the bottom.
+#define POF_RENDERPLANES      (0x30)      ///< Renders top and bottom.
+#define POF_RENDERALL         (0x38)      ///< Renders everything.
+#define POF_INVERT            (0x40)      ///< Inverts collision (like a cage).
+#define POF_INVERTPLANES      (0x80)      ///< Render inside planes.
+#define POF_INVERTPLANESONLY  (0x100)     ///< Only render inside planes.
+#define POF_PUSHABLESTOP      (0x200)     ///< Pushables will stop movement.
+#define POF_LDEXEC            (0x400)     ///< This PO triggers a linedef executor.
+#define POF_ONESIDE           (0x800)     ///< Only use the first side of the linedef.
+#define POF_NOSPECIALS        (0x1000)    ///< Don't apply sector specials.
+#define POF_SPLAT             (0x2000)    ///< Use splat flat renderer (treat cyan pixels as invisible).
 
 typedef INT32 textmappolyobjectflags_t;
 #define TMPF_NOINSIDES       (1)
