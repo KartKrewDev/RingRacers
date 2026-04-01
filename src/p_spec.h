@@ -911,12 +911,10 @@ struct eachtime_t
 	boolean triggerOnExit;
 };
 
-typedef enum
-{
-	RF_REVERSE  = 1,    //Lower when stood on
-	RF_SPINDASH = 1<<1, //Require spindash to move
-	RF_DYNAMIC  = 1<<2, //Dynamically sinking platform
-} raiseflag_t;
+typedef int raiseflag_t;
+#define RF_REVERSE  (1)    //Lower when stood on
+#define RF_SPINDASH (1<<1) //Require spindash to move
+#define RF_DYNAMIC  (1<<2) //Dynamically sinking platform
 
 struct raise_t
 {
