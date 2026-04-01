@@ -246,10 +246,8 @@ typedef int EPolyFlags;
 #define PF_WireFrame        (0x00200000)   // Draws vertices as lines instead of triangles
 
 
-enum ESurfFlags
-{
-	SF_DYNLIGHT         = 0x00000001,
-};
+typedef int ESurfFlags;
+#define SF_DYNLIGHT         (0x00000001)
 
 enum ETextureFlags
 {
