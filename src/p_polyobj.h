@@ -276,11 +276,9 @@ struct polymovedata_t
 	UINT8 overRide;     // if true, will override any action on the object
 };
 
-typedef enum
-{
-	PWF_REVERSE = 1,    // Move through waypoints in reverse order
-	PWF_LOOP    = 1<<1, // Loop movement (used with PWR_WRAP or PWR_COMEBACK)
-} polywaypointflags_e;
+typedef INT32 polywaypointflags_e;
+#define PWF_REVERSE (1)    // Move through waypoints in reverse order
+#define PWF_LOOP    (1<<1) // Loop movement (used with PWR_WRAP or PWR_COMEBACK)
 
 struct polywaypointdata_t
 {
