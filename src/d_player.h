@@ -430,18 +430,16 @@ struct botvars_t
 
 // player_t struct for round-specific condition tracking
 
-typedef enum
-{
-	UFOD_GENERIC	= 1,
-	UFOD_BOOST		= 1<<1,
-	UFOD_WHIP		= 1<<2,
-	UFOD_BANANA		= 1<<3,
-	UFOD_ORBINAUT	= 1<<4,
-	UFOD_JAWZ		= 1<<5,
-	UFOD_SPB		= 1<<6,
-	UFOD_GACHABOM	= 1<<7,
-	// free up to and including 1<<31
-} targetdamaging_t;
+typedef INT32 targetdamaging_t;
+#define UFOD_GENERIC	(1)
+#define UFOD_BOOST		(1<<1)
+#define UFOD_WHIP		(1<<2)
+#define UFOD_BANANA		(1<<3)
+#define UFOD_ORBINAUT	(1<<4)
+#define UFOD_JAWZ		(1<<5)
+#define UFOD_SPB		(1<<6)
+#define UFOD_GACHABOM	(1<<7)
+// free up to and including 1<<31
 
 struct roundconditions_t
 {
