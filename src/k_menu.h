@@ -694,21 +694,19 @@ void M_DrawMenuMessage(void);
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2
 
-typedef enum
-{
-	MBT_A = 1,
-	MBT_B = 1<<1,
-	MBT_C = 1<<2,
-	MBT_X = 1<<3,
-	MBT_Y = 1<<4,
-	MBT_Z = 1<<5,
-	MBT_L = 1<<6,
-	MBT_R = 1<<7,
-	MBT_START = 1<<8,
-	MBT_SCREENSHOT = 1<<9,
-	MBT_STARTMOVIE = 1<<10,
-	MBT_STARTLOSSLESS = 1<<11,
-} menuButtonCode_t;
+typedef INT32 menuButtonCode_t;
+#define MBT_A (1)
+#define MBT_B (1<<1)
+#define MBT_C (1<<2)
+#define MBT_X (1<<3)
+#define MBT_Y (1<<4)
+#define MBT_Z (1<<5)
+#define MBT_L (1<<6)
+#define MBT_R (1<<7)
+#define MBT_START (1<<8)
+#define MBT_SCREENSHOT (1<<9)
+#define MBT_STARTMOVIE (1<<10)
+#define MBT_STARTLOSSLESS (1<<11)
 
 struct menucmd_t
 {
