@@ -811,12 +811,10 @@ struct elevator_t
 	fixed_t ceilingwasheight; // Height the ceiling WAS at
 };
 
-typedef enum
-{
-	CF_RETURN   = 1,    // Return after crumbling
-	CF_FLOATBOB = 1<<1, // Float on water
-	CF_REVERSE  = 1<<2, // Reverse gravity
-} crumbleflag_t;
+typedef int crumbleflag_t;
+#define CF_RETURN   (1)    // Return after crumbling
+#define CF_FLOATBOB (1<<1) // Float on water
+#define CF_REVERSE  (1<<2) // Reverse gravity
 
 struct crumble_t
 {
