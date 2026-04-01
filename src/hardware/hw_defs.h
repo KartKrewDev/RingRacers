@@ -249,15 +249,13 @@ typedef int EPolyFlags;
 typedef int ESurfFlags;
 #define SF_DYNLIGHT         (0x00000001)
 
-enum ETextureFlags
-{
-	TF_WRAPX       = 0x00000001,        // wrap around X
-	TF_WRAPY       = 0x00000002,        // wrap around Y
-	TF_WRAPXY      = TF_WRAPY|TF_WRAPX, // very common so use alias is more easy
-	TF_CHROMAKEYED = 0x00000010,
-	TF_TRANSPARENT = 0x00000040,        // texture with some alpha == 0
-	TF_BRIGHTMAP   = 0x00000080,
-};
+typedef int ETextureFlags;
+#define TF_WRAPX       (0x00000001)        // wrap around X
+#define TF_WRAPY       (0x00000002)        // wrap around Y
+#define TF_WRAPXY      (TF_WRAPY|TF_WRAPX) // very common so use alias is more easy
+#define TF_CHROMAKEYED (0x00000010)
+#define TF_TRANSPARENT (0x00000040)        // texture with some alpha == 0
+#define TF_BRIGHTMAP   (0x00000080)
 
 struct FTextureInfo
 {
