@@ -5451,7 +5451,6 @@ void HWR_ClearSkyDome(void)
 	sky->loops = NULL;
 	sky->data = NULL;
 
-	sky->vbo = 0;
 	sky->rows = sky->columns = 0;
 	sky->loopcount = 0;
 
