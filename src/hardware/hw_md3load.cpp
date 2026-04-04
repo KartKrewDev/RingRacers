@@ -188,7 +188,7 @@ model_t *MD3_LoadModel(const char *fileName, int ztag, boolean useFloat)
 	fseek(f, 0, SEEK_SET);
 
 	// read in file
-	buffer = malloc(fileLen);
+	buffer = (char *)malloc(fileLen);
 	fileReadLen = fread(buffer, fileLen, 1, f);
 	fclose(f);
 

@@ -1474,7 +1474,7 @@ consvar_t cv_voice_allowservervoice = NetVar("voice_allowservervoice", "Off")
 	consvar_t cv_glshaders = OpenGL("gr_shaders", "On").values(glshaders_cons_t);
 
 	extern CV_PossibleValue_t glanisotropicmode_cons_t[];
-	void CV_glanisotropic_OnChange(void);
+	extern "C" void CV_glanisotropic_OnChange(void);
 	consvar_t cv_glanisotropicmode = OpenGL("gr_anisotropicmode", "1").values(glanisotropicmode_cons_t).onchange(CV_glanisotropic_OnChange);
 
 	consvar_t cv_glbatching = OpenGL("gr_batching", "On").on_off().dont_save();
@@ -1487,7 +1487,7 @@ consvar_t cv_voice_allowservervoice = NetVar("voice_allowservervoice", "Off")
 #endif
 
 	extern CV_PossibleValue_t glfiltermode_cons_t[];
-	void CV_glfiltermode_OnChange(void);
+	extern "C" void CV_glfiltermode_OnChange(void);
 	consvar_t cv_glfiltermode = OpenGL("gr_filtermode", "Nearest").values(glfiltermode_cons_t).onchange(CV_glfiltermode_OnChange);
 
 #ifdef BAD_MODEL_OPTIONS

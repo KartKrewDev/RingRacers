@@ -50,11 +50,11 @@ void HWR_StartBatching(void)
 	// init arrays if that has not been done yet
 	if (!finalVertexArray)
 	{
-		finalVertexArray = malloc(finalVertexArrayAllocSize * sizeof(FOutVector));
-		finalVertexIndexArray = malloc(finalVertexArrayAllocSize * 3 * sizeof(UINT32));
-		polygonArray = malloc(polygonArrayAllocSize * sizeof(PolygonArrayEntry));
-		polygonIndexArray = malloc(polygonArrayAllocSize * sizeof(UINT32));
-		unsortedVertexArray = malloc(unsortedVertexArrayAllocSize * sizeof(FOutVector));
+		finalVertexArray = (FOutVector *)malloc(finalVertexArrayAllocSize * sizeof(FOutVector));
+		finalVertexIndexArray = (UINT32 *)malloc(finalVertexArrayAllocSize * 3 * sizeof(UINT32));
+		polygonArray = (PolygonArrayEntry *)malloc(polygonArrayAllocSize * sizeof(PolygonArrayEntry));
+		polygonIndexArray = (UINT32 *)malloc(polygonArrayAllocSize * sizeof(UINT32));
+		unsortedVertexArray = (FOutVector *)malloc(unsortedVertexArrayAllocSize * sizeof(FOutVector));
 	}
 
 	currently_batching = true;
@@ -104,13 +104,13 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 			PolygonArrayEntry* new_array;
 			// ran out of space, make new array double the size
 			polygonArrayAllocSize *= 2;
-			new_array = malloc(polygonArrayAllocSize * sizeof(PolygonArrayEntry));
+			new_array = (PolygonArrayEntry *)malloc(polygonArrayAllocSize * sizeof(PolygonArrayEntry));
 			memcpy(new_array, polygonArray, polygonArraySize * sizeof(PolygonArrayEntry));
 			free(polygonArray);
 			polygonArray = new_array;
 			// also need to redo the index array, dont need to copy it though
 			free(polygonIndexArray);
-			polygonIndexArray = malloc(polygonArrayAllocSize * sizeof(UINT32));
+			polygonIndexArray = (UINT32 *)malloc(polygonArrayAllocSize * sizeof(UINT32));
 		}
 
 		while (unsortedVertexArraySize + (int)iNumPts > unsortedVertexArrayAllocSize)
@@ -118,7 +118,7 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 			FOutVector* new_array;
 			// need more space for vertices in unsortedVertexArray
 			unsortedVertexArrayAllocSize *= 2;
-			new_array = malloc(unsortedVertexArrayAllocSize * sizeof(FOutVector));
+			new_array = (FOutVector *)malloc(unsortedVertexArrayAllocSize * sizeof(FOutVector));
 			memcpy(new_array, unsortedVertexArray, unsortedVertexArraySize * sizeof(FOutVector));
 			free(unsortedVertexArray);
 			unsortedVertexArray = new_array;
@@ -368,13 +368,13 @@ void HWR_RenderBatches(void)
 			FOutVector* new_array;
 			unsigned int* new_index_array;
 			finalVertexArrayAllocSize *= 2;
-			new_array = malloc(finalVertexArrayAllocSize * sizeof(FOutVector));
+			new_array = (FOutVector *)malloc(finalVertexArrayAllocSize * sizeof(FOutVector));
 			memcpy(new_array, finalVertexArray, finalVertexWritePos * sizeof(FOutVector));
 			free(finalVertexArray);
 			finalVertexArray = new_array;
 			// also increase size of index array, 3x of vertex array since
 			// going from fans to triangles increases vertex count to 3x
-			new_index_array = malloc(finalVertexArrayAllocSize * 3 * sizeof(UINT32));
+			new_index_array = (UINT32 *)malloc(finalVertexArrayAllocSize * 3 * sizeof(UINT32));
 			memcpy(new_index_array, finalVertexIndexArray, finalIndexWritePos * sizeof(UINT32));
 			free(finalVertexIndexArray);
 			finalVertexIndexArray = new_index_array;

@@ -11,6 +11,7 @@
 /// \file hw_main.c
 /// \brief hardware renderer, using the standard HardWareRender driver DLL for SRB2
 
+#include <algorithm>
 #include <math.h>
 
 #include "../doomstat.h"
@@ -226,7 +227,7 @@ void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32
 			);
 
 			// Less change in contrast in dark sectors
-			extralight = FixedMul(extralight, min(max(0, *lightlevel), 255) * FRACUNIT / 255);
+			extralight = FixedMul(extralight, std::min(std::max(0, *lightlevel), 255) * FRACUNIT / 255);
 
 			if (papersprite)
 			{
@@ -241,7 +242,7 @@ void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32
 
 				// Less change in contrast at further distances, to counteract DOOM diminished light
 				fixed_t n = FixedDiv(FixedMul(xscale, LIGHTRESOLUTIONFIX), ((MAXLIGHTSCALE-1) << LIGHTSCALESHIFT));
-				extralight = FixedMul(extralight, min(n, FRACUNIT));
+				extralight = FixedMul(extralight, std::min(n, FRACUNIT));
 
 				// Contrast is stronger for normal sprites, stronger than wall lighting is at the same distance
 				*lightlevel += FixedFloor((extralight * 2) + (FRACUNIT / 2)) / FRACUNIT;
@@ -290,8 +291,8 @@ void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *col
 		fade_alpha = (float)(sqrt(255-light_level) * 12) / 255.0f;
 
 		// Clamp the alpha values
-		tint_alpha = min(max(tint_alpha, 0.0f), 1.0f);
-		fade_alpha = min(max(fade_alpha, 0.0f), 1.0f);
+		tint_alpha = std::min(std::max(tint_alpha, 0.0f), 1.0f);
+		fade_alpha = std::min(std::max(fade_alpha, 0.0f), 1.0f);
 
 		red = (tint_color.s.red * tint_alpha) + (red * (1.0f - tint_alpha));
 		green = (tint_color.s.green * tint_alpha) + (green * (1.0f - tint_alpha));
@@ -307,7 +308,7 @@ void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *col
 	}
 
 	// Clamp the light level, since it can sometimes go out of the 0-255 range from animations
-	light_level = min(max(light_level, 0), 255);
+	light_level = std::min(std::max(light_level, 0), 255);
 
 	Surface->PolyColor.rgba = poly_color.rgba;
 	Surface->TintColor.rgba = tint_color.rgba;
@@ -737,7 +738,7 @@ FBITFIELD HWR_GetBlendModeFlag(INT32 ast)
 
 UINT8 HWR_GetTranstableAlpha(INT32 transtablenum)
 {
-	transtablenum = max(min(transtablenum, tr_trans90), 0);
+	transtablenum = std::max(std::min(transtablenum, (INT32)tr_trans90), 0);
 
 	switch (transtablenum)
 	{
@@ -1332,20 +1333,20 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			}
 			else
             {
-				popentop = min(worldtop, worldhigh);
-				popenbottom = max(worldbottom, worldlow);
+				popentop = std::min(worldtop, worldhigh);
+				popenbottom = std::max(worldbottom, worldlow);
 			}
 
 			if (gl_linedef->flags & ML_NOSKEW)
 			{
 				if (gl_linedef->flags & ML_MIDPEG)
 				{
-					polybottom = max(front->floorheight, back->floorheight) + gl_sidedef->rowoffset;
+					polybottom = std::max(front->floorheight, back->floorheight) + gl_sidedef->rowoffset;
 					polytop = polybottom + textureheight[gl_midtexture]*repeats;
 				}
 				else
 				{
-					polytop = min(front->ceilingheight, back->ceilingheight) + gl_sidedef->rowoffset;
+					polytop = std::min(front->ceilingheight, back->ceilingheight) + gl_sidedef->rowoffset;
 					polybottom = polytop - textureheight[gl_midtexture]*repeats;
 				}
 			}
@@ -1374,8 +1375,8 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				highcut = popentop;
 			}
 
-			h = min(highcut, polytop);
-			l = max(polybottom, lowcut);
+			h = std::min(highcut, polytop);
+			l = std::max(polybottom, lowcut);
 
 			{
 				// PEGGING
@@ -1434,8 +1435,8 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 						: worldlowslope-worldlow;
 
 				// Texture stuff
-				h = min(highcut, polytop);
-				l = max(polybottom, lowcut);
+				h = std::min(highcut, polytop);
+				l = std::max(polybottom, lowcut);
 
 				{
 					// PEGGING
@@ -1443,7 +1444,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 						texturevpeg = textureheight[gl_sidedef->midtexture]*repeats - h + polybottom;
 					else
 						texturevpeg = polytop - h;
-					
+
 					// Apply tripwire flipping for slope correction as well
 					if (R_ShouldFlipTripWire(gl_linedef))
 					{
@@ -1643,10 +1644,10 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 		INT32 texnum, basetexnum;
 		line_t * newline = NULL; // Multi-Property FOF
 
-		lowcut = max(worldbottom, worldlow);
-		highcut = min(worldtop, worldhigh);
-		lowcutslope = max(worldbottomslope, worldlowslope);
-		highcutslope = min(worldtopslope, worldhighslope);
+		lowcut = std::max(worldbottom, worldlow);
+		highcut = std::min(worldtop, worldhigh);
+		lowcutslope = std::max(worldbottomslope, worldlowslope);
+		highcutslope = std::min(worldtopslope, worldhighslope);
 
 		if (gl_backsector->ffloors)
 		{
@@ -1793,7 +1794,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 						if (rover->alpha < 256 || rover->blend)
 						{
 							blendmode = HWR_GetBlendModeFlag(rover->blend);
-							Surf.PolyColor.s.alpha = max(0, min(rover->alpha, 255));
+							Surf.PolyColor.s.alpha = std::max(0, std::min(rover->alpha, 255));
 						}
 					}
 
@@ -1922,7 +1923,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 						if (rover->alpha < 256 || rover->blend)
 						{
 							blendmode = HWR_GetBlendModeFlag(rover->blend);
-							Surf.PolyColor.s.alpha = max(0, min(rover->alpha, 255));
+							Surf.PolyColor.s.alpha = std::max(0, std::min(rover->alpha, 255));
 						}
 					}
 
@@ -2168,9 +2169,9 @@ static boolean HWR_CheckBBox(fixed_t *bspcoord)
 static inline void HWR_AddPolyObjectSegs(void)
 {
 	size_t i, j;
-	seg_t *gl_fakeline = Z_Calloc(sizeof(seg_t), PU_STATIC, NULL);
-	polyvertex_t *pv1 = Z_Calloc(sizeof(polyvertex_t), PU_STATIC, NULL);
-	polyvertex_t *pv2 = Z_Calloc(sizeof(polyvertex_t), PU_STATIC, NULL);
+	seg_t *gl_fakeline = (seg_t *)Z_Calloc(sizeof(seg_t), PU_STATIC, NULL);
+	polyvertex_t *pv1 = (polyvertex_t *)Z_Calloc(sizeof(polyvertex_t), PU_STATIC, NULL);
+	polyvertex_t *pv2 = (polyvertex_t *)Z_Calloc(sizeof(polyvertex_t), PU_STATIC, NULL);
 
 	// Sort through all the polyobjects
 	for (i = 0; i < numpolys; ++i)
@@ -2551,12 +2552,12 @@ static void HWR_Subsector(size_t num)
 
 		light = R_GetPlaneLight(gl_frontsector, locFloorHeight, false);
 		if (gl_frontsector->floorlightsec == -1 && !gl_frontsector->floorlightabsolute)
-			floorlightlevel = max(0, min(255, *gl_frontsector->lightlist[light].lightlevel + gl_frontsector->floorlightlevel));
+			floorlightlevel = std::max(0, std::min(255, *gl_frontsector->lightlist[light].lightlevel + gl_frontsector->floorlightlevel));
 		floorcolormap = *gl_frontsector->lightlist[light].extra_colormap;
 
 		light = R_GetPlaneLight(gl_frontsector, locCeilingHeight, false);
 		if (gl_frontsector->ceilinglightsec == -1 && !gl_frontsector->ceilinglightabsolute)
-			ceilinglightlevel = max(0, min(255, *gl_frontsector->lightlist[light].lightlevel + gl_frontsector->ceilinglightlevel));
+			ceilinglightlevel = std::max(0, std::min(255, *gl_frontsector->lightlist[light].lightlevel + gl_frontsector->ceilinglightlevel));
 		ceilingcolormap = *gl_frontsector->lightlist[light].extra_colormap;
 	}
 
@@ -2667,7 +2668,7 @@ static void HWR_Subsector(size_t num)
 										   false,
 					                       *rover->bottomheight,
 					                       *gl_frontsector->lightlist[light].lightlevel,
-										   max(0, min(rover->alpha, 255)), rover->master->frontsector, blendmode,
+										   std::max(0, std::min(rover->alpha, 255)), rover->master->frontsector, blendmode,
 					                       false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
@@ -2715,7 +2716,7 @@ static void HWR_Subsector(size_t num)
 											true,
 					                        *rover->topheight,
 					                        *gl_frontsector->lightlist[light].lightlevel,
-											max(0, min(rover->alpha, 255)), rover->master->frontsector, blendmode,
+											std::max(0, std::min(rover->alpha, 255)), rover->master->frontsector, blendmode,
 					                        false, *gl_frontsector->lightlist[light].extra_colormap);
 				}
 				else
@@ -4390,14 +4391,14 @@ static void HWR_CreateDrawNodes(void)
 	// Dump EVERYTHING into a huge drawnode list. Then we'll sort it!
 	// Could this be optimized into _AddTransparentWall/_AddTransparentPlane?
 	// Hell yes! But sort algorithm must be modified to use a linked list.
-	sortnode = Z_Calloc((sizeof(planeinfo_t)*numplanes)
+	sortnode = (gl_drawnode_t *)Z_Calloc((sizeof(planeinfo_t)*numplanes)
 					+ (sizeof(polyplaneinfo_t)*numpolyplanes)
 					+ (sizeof(wallinfo_t)*numwalls)
 					,PU_STATIC, NULL);
 	// todo:
 	// However, in reality we shouldn't be re-copying and shifting all this information
 	// that is already lying around. This should all be in some sort of linked list or lists.
-	sortindex = Z_Calloc(sizeof(size_t) * (numplanes + numpolyplanes + numwalls), PU_STATIC, NULL);
+	sortindex = (size_t *)Z_Calloc(sizeof(size_t) * (numplanes + numpolyplanes + numwalls), PU_STATIC, NULL);
 
 	ps_hw_nodesorttime = I_GetPreciseTime();
 
@@ -4740,7 +4741,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		fixed_t jitters = HITLAGJITTERS;
 		if (R_UsingFrameInterpolation() && !paused)
 			jitters += (rendertimefrac / HITLAGDIV);
-			
+
 		fixed_t mul = thing->hitlag * jitters;
 
 		if (leveltime & 1)
@@ -5175,16 +5176,16 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	// Hide not-yet-unlocked characters in replays from other people
 	if (skinnum >= 0 && !R_CanShowSkinInDemo(skinnum))
 	{
-		vis->colormap = R_GetTranslationColormap(TC_BLINK, thing->color, GTC_CACHE);
+		vis->colormap = R_GetTranslationColormap(TC_BLINK, (skincolornum_t)thing->color, GTC_CACHE);
 	}
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	else if (R_ThingIsFlashing(vis->mobj))
 	{
-		vis->colormap = R_GetTranslationColormap(TC_HITLAG, 0, GTC_CACHE);
+		vis->colormap = R_GetTranslationColormap(TC_HITLAG, (skincolornum_t)0, GTC_CACHE);
 	}
 	else if (thing->color)
 	{
-		vis->colormap = R_GetTranslationColormap(thing->colorized ? TC_RAINBOW : skinnum, thing->color, GTC_CACHE);
+		vis->colormap = R_GetTranslationColormap(thing->colorized ? TC_RAINBOW : skinnum, (skincolornum_t)thing->color, GTC_CACHE);
 	}
 	else
 	{
@@ -5484,11 +5485,11 @@ void HWR_BuildSkyDome(void)
 	sky->vertex_count = 2 * sky->rows * (sky->columns * 2 + 2) + sky->columns * 2;
 
 	if (!sky->loops)
-		sky->loops = malloc((sky->rows * 2 + 2) * sizeof(sky->loops[0]));
+		sky->loops = (gl_skyloopdef_t *)malloc((sky->rows * 2 + 2) * sizeof(sky->loops[0]));
 
 	// create vertex array
 	if (!sky->data)
-		sky->data = malloc(sky->vertex_count * sizeof(sky->data[0]));
+		sky->data = (gl_skyvertex_t *)malloc(sky->vertex_count * sizeof(sky->data[0]));
 
 	sky->texture = texturetranslation[skytexture];
 	sky->width = texture->width;
@@ -5620,7 +5621,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 
 		dimensionmultiply = ((float)textures[texturetranslation[skytexture]]->width/256.0f);
 
-		v[0].s = v[3].s = (-1.0f * angle) / ((ANGLE_90-1)*dimensionmultiply); // left
+		v[0].s = v[3].s = (-1.0f * angle) / ((ANGLE_90-1.0f)*dimensionmultiply); // left
 		v[2].s = v[1].s = v[0].s + (1.0f/dimensionmultiply); // right (or left + 1.0f)
 		// use +angle and -1.0f above instead if you wanted old backwards behavior
 
@@ -5782,10 +5783,10 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 //
 static void HWR_SetShaderState(void)
 {
-	hwdshaderoption_t state = cv_glshaders.value;
+	hwdshaderoption_t state = (hwdshaderoption_t)cv_glshaders.value;
 
 	if (!cv_glallowshaders.value)
-		state = (cv_glshaders.value == HWD_SHADEROPTION_ON ? HWD_SHADEROPTION_NOCUSTOM : cv_glshaders.value);
+		state = (hwdshaderoption_t)(cv_glshaders.value == HWD_SHADEROPTION_ON ? HWD_SHADEROPTION_NOCUSTOM : cv_glshaders.value);
 
 	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (INT32)state);
 	HWD.pfnSetShader(SHADER_DEFAULT);
@@ -6067,14 +6068,14 @@ CV_PossibleValue_t glfiltermode_cons_t[]= {{HWD_SET_TEXTUREFILTER_POINTSAMPLED, 
 
 CV_PossibleValue_t glanisotropicmode_cons_t[] = {{1, "MIN"}, {16, "MAX"}, {0, NULL}};
 
-void CV_glfiltermode_OnChange(void);
+extern "C" void CV_glfiltermode_OnChange(void);
 void CV_glfiltermode_OnChange(void)
 {
 	if (rendermode == render_opengl)
 		HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_glfiltermode.value);
 }
 
-void CV_glanisotropic_OnChange(void);
+extern "C" void CV_glanisotropic_OnChange(void);
 void CV_glanisotropic_OnChange(void)
 {
 	if (rendermode == render_opengl)
@@ -6466,10 +6467,10 @@ void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3)
 	if (lump == INT16_MAX)
 		return;
 
-	shaderdef = W_CacheLumpNumPwad(wadnum, lump, PU_CACHE);
+	shaderdef = (char *)W_CacheLumpNumPwad(wadnum, lump, PU_CACHE);
 	size = W_LumpLengthPwad(wadnum, lump);
 
-	line = Z_Malloc(size+1, PU_STATIC, NULL);
+	line = (char *)Z_Malloc(size+1, PU_STATIC, NULL);
 	M_Memcpy(line, shaderdef, size);
 	line[size] = '\0';
 
@@ -6530,14 +6531,14 @@ skip_lump:
 
 					if (PK3)
 					{
-						shader_lumpname = Z_Malloc(strlen(value) + 12, PU_STATIC, NULL);
+						shader_lumpname = (char *)Z_Malloc(strlen(value) + 12, PU_STATIC, NULL);
 						strcpy(shader_lumpname, "Shaders/sh_");
 						strcat(shader_lumpname, value);
 						shader_lumpnum = W_CheckNumForFullNamePK3(shader_lumpname, wadnum, 0);
 					}
 					else
 					{
-						shader_lumpname = Z_Malloc(strlen(value) + 4, PU_STATIC, NULL);
+						shader_lumpname = (char *)Z_Malloc(strlen(value) + 4, PU_STATIC, NULL);
 						strcpy(shader_lumpname, "SH_");
 						strcat(shader_lumpname, value);
 						shader_lumpnum = W_CheckNumForNamePwad(shader_lumpname, wadnum, 0);
@@ -6551,7 +6552,7 @@ skip_lump:
 					}
 
 					shader_size = W_LumpLengthPwad(wadnum, shader_lumpnum);
-					shader_source = Z_Malloc(shader_size, PU_STATIC, NULL);
+					shader_source = (char *)Z_Malloc(shader_size, PU_STATIC, NULL);
 					W_ReadLumpPwad(wadnum, shader_lumpnum, shader_source);
 
 					HWD.pfnLoadCustomShader(shaderxlat[i].id, shader_source, shader_size, (shadertype == 2));

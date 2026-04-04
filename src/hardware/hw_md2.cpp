@@ -15,6 +15,7 @@
 #ifdef __GNUC__
 #include <unistd.h>
 #endif
+#include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,11 +101,11 @@ static void md2_freeModel (model_t *model)
 static model_t *md2_readModel(const char *filename)
 {
 	//Filename checking fixed ~Monster Iestyn and Golden
-	if (FIL_FileExists(va("%s"PATHSEP"%s", srb2home, filename)))
-		return LoadModel(va("%s"PATHSEP"%s", srb2home, filename), PU_STATIC);
+	if (FIL_FileExists(va("%s" PATHSEP "%s", srb2home, filename)))
+		return LoadModel(va("%s" PATHSEP "%s", srb2home, filename), PU_STATIC);
 
-	if (FIL_FileExists(va("%s"PATHSEP"%s", srb2path, filename)))
-		return LoadModel(va("%s"PATHSEP"%s", srb2path, filename), PU_STATIC);
+	if (FIL_FileExists(va("%s" PATHSEP "%s", srb2path, filename)))
+		return LoadModel(va("%s" PATHSEP "%s", srb2path, filename), PU_STATIC);
 
 	return NULL;
 }
@@ -168,18 +169,18 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 #endif
 	volatile png_FILE_p png_FILE;
 	//Filename checking fixed ~Monster Iestyn and Golden
-	char *pngfilename = va("%s"PATHSEP"models"PATHSEP"%s", srb2home, filename);
+	char *pngfilename = va("%s" PATHSEP "models" PATHSEP "%s", srb2home, filename);
 
 	FIL_ForceExtension(pngfilename, ".png");
 	png_FILE = fopen(pngfilename, "rb");
 	if (!png_FILE)
 	{
-		pngfilename = va("%s"PATHSEP"models"PATHSEP"%s", srb2path, filename);
+		pngfilename = va("%s" PATHSEP "models" PATHSEP "%s", srb2path, filename);
 		FIL_ForceExtension(pngfilename, ".png");
 		png_FILE = fopen(pngfilename, "rb");
 		//CONS_Debug(DBG_RENDER, "M_SavePNG: Error on opening %s for loading\n", filename);
 		if (!png_FILE)
-			return 0;
+			return (GLTextureFormat_t)0;
 	}
 
 	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL,
@@ -188,7 +189,7 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 	{
 		CONS_Debug(DBG_RENDER, "PNG_Load: Error on initialize libpng\n");
 		fclose(png_FILE);
-		return 0;
+		return (GLTextureFormat_t)0;
 	}
 
 	png_info_ptr = png_create_info_struct(png_ptr);
@@ -197,7 +198,7 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 		CONS_Debug(DBG_RENDER, "PNG_Load: Error on allocate for libpng\n");
 		png_destroy_read_struct(&png_ptr, NULL, NULL);
 		fclose(png_FILE);
-		return 0;
+		return (GLTextureFormat_t)0;
 	}
 
 #ifdef USE_FAR_KEYWORD
@@ -210,7 +211,7 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 		png_destroy_read_struct(&png_ptr, &png_info_ptr, NULL);
 		fclose(png_FILE);
 		Z_Free(grpatch->mipmap->data);
-		return 0;
+		return (GLTextureFormat_t)0;
 	}
 #ifdef USE_FAR_KEYWORD
 	png_memcpy(png_jmpbuf(png_ptr), jmpbuf, sizeof jmp_buf);
@@ -250,8 +251,8 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 
 	{
 		png_uint_32 i, pitch = png_get_rowbytes(png_ptr, png_info_ptr);
-		png_bytep PNG_image = Z_Malloc(pitch*height, PU_HWRMODELTEXTURE, &grpatch->mipmap->data);
-		png_bytepp row_pointers = png_malloc(png_ptr, height * sizeof (png_bytep));
+		png_bytep PNG_image = (png_bytep)Z_Malloc(pitch*height, PU_HWRMODELTEXTURE, &grpatch->mipmap->data);
+		png_bytepp row_pointers = (png_bytepp)png_malloc(png_ptr, height * sizeof (png_bytep));
 		for (i = 0; i < height; i++)
 			row_pointers[i] = PNG_image + i*pitch;
 		png_read_image(png_ptr, row_pointers);
@@ -301,42 +302,42 @@ static GLTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
 	INT32 ch, rep;
 	FILE *file;
 	//Filename checking fixed ~Monster Iestyn and Golden
-	char *pcxfilename = va("%s"PATHSEP"models"PATHSEP"%s", srb2home, filename);
+	char *pcxfilename = va("%s" PATHSEP "models" PATHSEP "%s", srb2home, filename);
 
 	FIL_ForceExtension(pcxfilename, ".pcx");
 	file = fopen(pcxfilename, "rb");
 	if (!file)
 	{
-		pcxfilename = va("%s"PATHSEP"models"PATHSEP"%s", srb2path, filename);
+		pcxfilename = va("%s" PATHSEP "models" PATHSEP "%s", srb2path, filename);
 		FIL_ForceExtension(pcxfilename, ".pcx");
 		file = fopen(pcxfilename, "rb");
 		if (!file)
-			return 0;
+			return (GLTextureFormat_t)0;
 	}
 
 	if (fread(&header, sizeof (PcxHeader), 1, file) != 1)
 	{
 		fclose(file);
-		return 0;
+		return (GLTextureFormat_t)0;
 	}
 
 	if (header.bitsPerPixel != 8)
 	{
 		fclose(file);
-		return 0;
+		return (GLTextureFormat_t)0;
 	}
 
 	fseek(file, -PALSIZE, SEEK_END);
 
 	pw = *w = header.xmax - header.xmin + 1;
 	ph = *h = header.ymax - header.ymin + 1;
-	image = Z_Malloc(pw*ph*4, PU_HWRMODELTEXTURE, &grpatch->mipmap->data);
+	image = (RGBA_t *)Z_Malloc(pw*ph*4, PU_HWRMODELTEXTURE, &grpatch->mipmap->data);
 
 	if (fread(palette, sizeof (UINT8), PALSIZE, file) != PALSIZE)
 	{
 		Z_Free(image);
 		fclose(file);
-		return 0;
+		return (GLTextureFormat_t)0;
 	}
 	fseek(file, sizeof (PcxHeader), SEEK_SET);
 
@@ -378,7 +379,7 @@ static void md2_loadTexture(md2_t *model)
 
 	if (model->grpatch)
 	{
-		patch = model->grpatch;
+		patch = (patch_t*)(model->grpatch);
 		grPatch = (GLPatch_t *)(patch->hardware);
 		if (grPatch)
 			Z_Free(grPatch->mipmap->data);
@@ -418,7 +419,7 @@ static void md2_loadTexture(md2_t *model)
 		grPatch->mipmap->height = (UINT16)h;
 
 		// Lactozilla: Apply colour cube
-		image = grPatch->mipmap->data;
+		image = (RGBA_t*)(grPatch->mipmap->data);
 		size = w*h;
 		while (size--)
 		{
@@ -437,14 +438,14 @@ static void md2_loadBlendTexture(md2_t *model)
 {
 	patch_t *patch;
 	GLPatch_t *grPatch = NULL;
-	char *filename = Z_Malloc(strlen(model->filename)+7, PU_STATIC, NULL);
+	char *filename = (char *)Z_Malloc(strlen(model->filename)+7, PU_STATIC, NULL);
 
 	strcpy(filename, model->filename);
 	FIL_ForceExtension(filename, "_blend.png");
 
 	if (model->blendgrpatch)
 	{
-		patch = model->blendgrpatch;
+		patch = (patch_t*)(model->blendgrpatch);
 		grPatch = (GLPatch_t *)(patch->hardware);
 		if (grPatch)
 			Z_Free(grPatch->mipmap->data);
@@ -495,10 +496,10 @@ void HWR_InitModels(void)
 	size_t i;
 	INT32 s;
 	FILE *f;
-	char name[26], filename[32];
+	char name[24], filename[32];
 	// name[24] is used to check for names in the models.dat file that match with sprites or player skins
-	// sprite names are always 4 characters long, and names is for player skins can be up to 19 characters long
-	// PLAYERMODELPREFIX is 6 characters long
+	// sprite names are always 4 characters long, and names is for player skins can be up to 16+1 characters long
+	// PLAYERMODELPREFIX is 6 characters long - 24 fits in (16 + 6) + 1
 	float scale, offset;
 	size_t prefixlen;
 
@@ -528,11 +529,11 @@ void HWR_InitModels(void)
 
 	// read the models.dat file
 	//Filename checking fixed ~Monster Iestyn and Golden
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "models.dat"), "rt");
+	f = fopen(va("%s" PATHSEP "%s", srb2home, "models.dat"), "rt");
 
 	if (!f)
 	{
-		f = fopen(va("%s"PATHSEP"%s", srb2path, "models.dat"), "rt");
+		f = fopen(va("%s" PATHSEP "%s", srb2path, "models.dat"), "rt");
 		if (!f)
 		{
 			CONS_Printf("%s %s\n", M_GetText("Error while loading models.dat:"), strerror(errno));
@@ -544,7 +545,7 @@ void HWR_InitModels(void)
 	// length of the player model prefix
 	prefixlen = strlen(PLAYERMODELPREFIX);
 
-	while (fscanf(f, "%25s %31s %f %f", name, filename, &scale, &offset) == 4)
+	while (fscanf(f, "%23s %31s %f %f", name, filename, &scale, &offset) == 4)
 	{
 		char *skinname = name;
 		size_t len = strlen(name);
@@ -609,11 +610,11 @@ void HWR_AddPlayerModel(INT32 skin) // For skins that were added after startup
 
 	// read the models.dat file
 	//Filename checking fixed ~Monster Iestyn and Golden
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "models.dat"), "rt");
+	f = fopen(va("%s" PATHSEP "%s", srb2home, "models.dat"), "rt");
 
 	if (!f)
 	{
-		f = fopen(va("%s"PATHSEP"%s", srb2path, "models.dat"), "rt");
+		f = fopen(va("%s" PATHSEP "%s", srb2path, "models.dat"), "rt");
 		if (!f)
 		{
 			CONS_Printf("%s %s\n", M_GetText("Error while loading models.dat:"), strerror(errno));
@@ -626,7 +627,7 @@ void HWR_AddPlayerModel(INT32 skin) // For skins that were added after startup
 	prefixlen = strlen(PLAYERMODELPREFIX);
 
 	// Check for any models that match the names of player skins!
-	while (fscanf(f, "%25s %31s %f %f", name, filename, &scale, &offset) == 4)
+	while (fscanf(f, "%23s %31s %f %f", name, filename, &scale, &offset) == 4)
 	{
 		char *skinname = name;
 		size_t len = strlen(name);
@@ -655,8 +656,8 @@ void HWR_AddSpriteModel(size_t spritenum) // For sprites that were added after s
 {
 	FILE *f;
 	// name[24] is used to check for names in the models.dat file that match with sprites or player skins
-	// sprite names are always 4 characters long, and names is for player skins can be up to 19 characters long
-	// PLAYERMODELPREFIX is 6 characters long
+	// sprite names are always 4 characters long, and names is for player skins can be up to 16+1 characters long
+	// PLAYERMODELPREFIX is 6 characters long - 24 fits in (16 + 6) + 1
 	char name[24], filename[32];
 	float scale, offset;
 
@@ -668,11 +669,11 @@ void HWR_AddSpriteModel(size_t spritenum) // For sprites that were added after s
 
 	// Read the models.dat file
 	//Filename checking fixed ~Monster Iestyn and Golden
-	f = fopen(va("%s"PATHSEP"%s", srb2home, "models.dat"), "rt");
+	f = fopen(va("%s" PATHSEP" %s", srb2home, "models.dat"), "rt");
 
 	if (!f)
 	{
-		f = fopen(va("%s"PATHSEP"%s", srb2path, "models.dat"), "rt");
+		f = fopen(va("%s" PATHSEP" %s", srb2path, "models.dat"), "rt");
 		if (!f)
 		{
 			CONS_Printf("%s %s\n", M_GetText("Error while loading models.dat:"), strerror(errno));
@@ -682,7 +683,7 @@ void HWR_AddSpriteModel(size_t spritenum) // For sprites that were added after s
 	}
 
 	// Check for any models that match the names of sprite names!
-	while (fscanf(f, "%25s %31s %f %f", name, filename, &scale, &offset) == 4)
+	while (fscanf(f, "%23s %31s %f %f", name, filename, &scale, &offset) == 4)
 	{
 		// length of the sprite name
 		size_t len = strlen(name);
@@ -713,8 +714,8 @@ spritemodelfound:
 
 static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMipmap_t *grMipmap, INT32 skinnum, skincolornum_t color)
 {
-	GLPatch_t *hwrPatch = gpatch->hardware;
-	GLPatch_t *hwrBlendPatch = blendgpatch->hardware;
+	GLPatch_t *hwrPatch = (GLPatch_t*)(gpatch->hardware);
+	GLPatch_t *hwrBlendPatch = (GLPatch_t*)(blendgpatch->hardware);
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
@@ -747,11 +748,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		grMipmap->data = NULL;
 	}
 
-	cur = Z_Malloc(size*4, PU_HWRMODELTEXTURE, &grMipmap->data);
+	cur = (RGBA_t *)Z_Malloc(size*4, PU_HWRMODELTEXTURE, &grMipmap->data);
 	memset(cur, 0x00, size*4);
 
-	image = hwrPatch->mipmap->data;
-	blendimage = hwrBlendPatch->mipmap->data;
+	image = (RGBA_t*)(hwrPatch->mipmap->data);
+	blendimage = (RGBA_t*)(hwrBlendPatch->mipmap->data);
 
 	// TC_METALSONIC includes an actual skincolor translation, on top of its flashing.
 	if (skinnum == TC_METALSONIC)
@@ -1068,15 +1069,15 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 					}
 
 					tempcolor = (brightness * blendcolor.s.red) / colorbright;
-					tempcolor = min(255, tempcolor);
+					tempcolor = std::min<UINT32>(255, tempcolor);
 					cur->s.red = (UINT8)tempcolor;
 
 					tempcolor = (brightness * blendcolor.s.green) / colorbright;
-					tempcolor = min(255, tempcolor);
+					tempcolor = std::min<UINT32>(255, tempcolor);
 					cur->s.green = (UINT8)tempcolor;
 
 					tempcolor = (brightness * blendcolor.s.blue) / colorbright;
-					tempcolor = min(255, tempcolor);
+					tempcolor = std::min<UINT32>(255, tempcolor);
 					cur->s.blue = (UINT8)tempcolor;
 					cur->s.alpha = image->s.alpha;
 				}
@@ -1086,15 +1087,15 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 					INT32 tempcolor;
 
 					tempcolor = ((image->s.red * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.red * blendimage->s.alpha) / 255);
-					tempcolor = min(255, tempcolor);
+					tempcolor = std::min(255, tempcolor);
 					cur->s.red = (UINT8)tempcolor;
 
 					tempcolor = ((image->s.green * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.green * blendimage->s.alpha) / 255);
-					tempcolor = min(255, tempcolor);
+					tempcolor = std::min(255, tempcolor);
 					cur->s.green = (UINT8)tempcolor;
 
 					tempcolor = ((image->s.blue * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.blue * blendimage->s.alpha) / 255);
-					tempcolor = min(255, tempcolor);
+					tempcolor = std::min(255, tempcolor);
 					cur->s.blue = (UINT8)tempcolor;
 					cur->s.alpha = image->s.alpha;
 				}
@@ -1129,7 +1130,7 @@ skippixel:
 static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 skinnum, const UINT8 *colormap, skincolornum_t color)
 {
 	// mostly copied from HWR_GetMappedPatch, hence the similarities and comment
-	GLPatch_t *grPatch = patch->hardware;
+	GLPatch_t *grPatch = (GLPatch_t*)(patch->hardware);
 	GLPatch_t *grBlendPatch = NULL;
 	GLMipmap_t *grMipmap, *newMipmap;
 
@@ -1140,7 +1141,7 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 		return;
 	}
 
-	if ((blendpatch && (grBlendPatch = blendpatch->hardware) && grBlendPatch->mipmap->format)
+	if ((blendpatch && (grBlendPatch = (GLPatch_t*)blendpatch->hardware) && grBlendPatch->mipmap->format)
 		&& (patch->width != blendpatch->width || patch->height != blendpatch->height))
 	{
 		// Blend image exists, but it's bad.
@@ -1179,12 +1180,12 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 	//              (it have a liste of mipmap)
 	//    this malloc is cleared in HWR_FreeColormapCache
 	//    (...) unfortunately z_malloc fragment alot the memory :(so malloc is better
-	newMipmap = calloc(1, sizeof (*newMipmap));
+	newMipmap = (GLMipmap_t *)calloc(1, sizeof (*newMipmap));
 	if (newMipmap == NULL)
 		I_Error("%s: Out of memory", "HWR_GetBlendedTexture");
 	grMipmap->nextcolormap = newMipmap;
 
-	newMipmap->colormap = Z_Calloc(sizeof(*newMipmap->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
+	newMipmap->colormap = (GLColormap_t*) Z_Calloc(sizeof(*newMipmap->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
 	newMipmap->colormap->source = colormap;
 	M_Memcpy(newMipmap->colormap->data, colormap, 256 * sizeof(UINT8));
 
@@ -1297,7 +1298,7 @@ static void adjustTextureCoords(model_t *model, patch_t *patch)
 		// if originaluvs points to uvs, we need to allocate new memory for adjusted uvs
 		// the old uvs are kept around for use in possible readjustments
 		if (mesh->uvs == mesh->originaluvs)
-			mesh->uvs = Z_Malloc(numVertices * 2 * sizeof(float), PU_STATIC, NULL);
+			mesh->uvs = (float *)Z_Malloc(numVertices * 2 * sizeof(float), PU_STATIC, NULL);
 
 		uvWritePtr = mesh->uvs;
 
@@ -1465,7 +1466,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 		// texture loading before model init, so it knows if sprite graphics are used, which
 		// means that texture coordinates have to be adjusted
-		gpatch = md2->grpatch;
+		gpatch = (patch_t*)(md2->grpatch);
 		if (gpatch)
 			hwrPatch = ((GLPatch_t *)gpatch->hardware);
 
@@ -1474,12 +1475,12 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			md2_loadTexture(md2);
 
 		// Load it again, because it isn't being loaded into gpatch after md2_loadtexture...
-		gpatch = md2->grpatch;
+		gpatch = (patch_t*)(md2->grpatch);
 		if (gpatch)
 			hwrPatch = ((GLPatch_t *)gpatch->hardware);
 
 		// Load blend texture
-		blendgpatch = md2->blendgrpatch;
+		blendgpatch = (patch_t*)(md2->blendgrpatch);
 		if (blendgpatch)
 			hwrBlendPatch = ((GLPatch_t *)blendgpatch->hardware);
 
@@ -1489,7 +1490,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			md2_loadBlendTexture(md2);
 
 		// Load it again, because it isn't being loaded into blendgpatch after md2_loadblendtexture...
-		blendgpatch = md2->blendgrpatch;
+		blendgpatch = (patch_t*)(md2->blendgrpatch);
 		if (blendgpatch)
 			hwrBlendPatch = ((GLPatch_t *)blendgpatch->hardware);
 
@@ -1573,7 +1574,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		frame = (spr->mobj->frame & FF_FRAMEMASK);
 		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY && md2->model->spr2frames)
 		{
-			spr2 = HWR_GetModelSprite2(md2, spr->mobj->skin, spr->mobj->sprite2, spr->mobj->player);
+			spr2 = HWR_GetModelSprite2(md2, (skin_t*)spr->mobj->skin, spr->mobj->sprite2, spr->mobj->player);
 			mod = md2->model->spr2frames[spr2].numframes;
 #ifndef DONTHIDEDIFFANIMLENGTH // by default, different anim length is masked by the mod
 			if (mod > (INT32)((skin_t *)spr->mobj->skin)->sprites[spr2].numframes)
@@ -1610,7 +1611,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 					&& (spr->mobj->frame & FF_ANIMATE
 					|| (spr->mobj->state->nextstate != S_NULL
 					&& states[spr->mobj->state->nextstate].sprite == SPR_PLAY
-					&& ((P_GetSkinSprite2(spr->mobj->skin, (states[spr->mobj->state->nextstate].frame) & FF_FRAMEMASK, spr->mobj->player) == spr->mobj->sprite2)))))
+					&& ((P_GetSkinSprite2((skin_t*)spr->mobj->skin, (states[spr->mobj->state->nextstate].frame) & FF_FRAMEMASK, spr->mobj->player) == spr->mobj->sprite2)))))
 				{
 					nextFrame = (spr->mobj->frame & FF_FRAMEMASK) + 1;
 					if (nextFrame >= mod)
@@ -1780,7 +1781,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				// x offset
 				xx = FIXED_TO_FLOAT(FixedMul(FixedMul(
 											FixedMul(xoffs,spr->mobj->spritexscale),
-											hflipmul), 
+											hflipmul),
 											FINECOSINE(pitchR >> ANGLETOFINESHIFT)
 											));
 				xy = FIXED_TO_FLOAT(FixedMul(FixedMul(
@@ -1792,7 +1793,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				// y offset
 				yx = FIXED_TO_FLOAT(FixedMul(FixedMul(
 											FixedMul(yoffs,spr->mobj->spritexscale),
-											hflipmul), 
+											hflipmul),
 											FINECOSINE(rollR >> ANGLETOFINESHIFT)
 											));
 

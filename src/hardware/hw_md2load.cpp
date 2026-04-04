@@ -320,7 +320,7 @@ model_t *MD2_LoadModel(const char *fileName, int ztag, boolean useFloat)
 	fseek(f, 0, SEEK_SET);
 
 	// read in file
-	buffer = malloc(fileLen);
+	buffer = (char *)malloc(fileLen);
 	if (fread(buffer, fileLen, 1, f)) { } // squash ignored fread error
 	fclose(f);
 

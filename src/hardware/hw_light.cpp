@@ -1233,7 +1233,7 @@ static void HWR_SetLight(void)
 	if (!lightmappatch.mipmap->downloaded && !lightmappatch.mipmap->data)
 	{
 
-		UINT16 *Data = Z_Malloc(129*128*sizeof (UINT16), PU_HWRCACHE, &lightmappatch.mipmap->data);
+		UINT16 *Data = (UINT16 *)Z_Malloc(129*128*sizeof (UINT16), PU_HWRCACHE, &lightmappatch.mipmap->data);
 
 		for (i = 0; i < 128; i++)
 		{
@@ -1285,7 +1285,7 @@ static inline void HWR_BuildWallLightmaps(FVector *p1, FVector *p2, int lighnum,
 	(void)lighnum;
 	(void)p1;
 	(void)p2;
-	lp = malloc(sizeof (*lp));
+	lp = (lightmap_t *)malloc(sizeof (*lp));
 	lp->next = line->lightmaps;
 	line->lightmaps = lp;
 

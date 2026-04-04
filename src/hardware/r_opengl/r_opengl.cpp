@@ -20,6 +20,7 @@
 #include <unistd.h>
 #endif
 
+#include <algorithm>
 #include <stdarg.h>
 #include <math.h>
 #include "r_opengl.h"
@@ -1107,7 +1108,7 @@ EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, boole
 #define COPYSHADER(source) { \
 	if (shader->source) \
 		free(shader->source); \
-	shader->source = malloc(size+1); \
+	shader->source = (char *)malloc(size+1); \
 	strncpy(shader->source, code, size); \
 	shader->source[size] = 0; \
 	}
@@ -1516,8 +1517,8 @@ EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
 	// GL_DBG_Printf ("ReadRect()\n");
 	if (dst_stride == width*3)
 	{
-		GLubyte*top = (GLvoid*)dst_data, *bottom = top + dst_stride * (height - 1);
-		GLubyte *row = malloc(dst_stride);
+		GLubyte*top = (GLubyte*)dst_data, *bottom = top + dst_stride * (height - 1);
+		GLubyte *row = (GLubyte *)malloc(dst_stride);
 		if (!row) return;
 		pglPixelStorei(GL_PACK_ALIGNMENT, 1);
 		pglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, dst_data);
@@ -1535,7 +1536,7 @@ EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
 	else
 	{
 		INT32 j;
-		GLubyte *image = malloc(width*height*3*sizeof (*image));
+		GLubyte *image = (GLubyte *)malloc(width*height*3*sizeof (*image));
 		if (!image) return;
 		pglPixelStorei(GL_PACK_ALIGNMENT, 1);
 		pglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
@@ -1870,7 +1871,7 @@ static void AllocTextureBuffer(GLMipmap_t *pTexInfo)
 	size_t size = pTexInfo->width * pTexInfo->height;
 	if (size > textureBufferSize)
 	{
-		textureBuffer = realloc(textureBuffer, size * sizeof(RGBA_t));
+		textureBuffer = (RGBA_t *)realloc(textureBuffer, size * sizeof(RGBA_t));
 		if (textureBuffer == NULL)
 			I_Error("AllocTextureBuffer: out of memory allocating %s bytes", sizeu1(size * sizeof(RGBA_t)));
 		textureBufferSize = size;
@@ -2112,7 +2113,7 @@ EXPORT void HWRAPI(SetTexture) (GLMipmap_t *pTexInfo)
 	}
 	else
 	{
-		FTextureInfo *newTex = calloc(1, sizeof (*newTex));
+		FTextureInfo *newTex = (FTextureInfo *)calloc(1, sizeof (*newTex));
 
 		UpdateTexture(pTexInfo);
 
@@ -2334,7 +2335,7 @@ static void Shader_CompileError(const char *message, GLuint program, INT32 shade
 
 	if (logLength)
 	{
-		infoLog = malloc(logLength);
+		infoLog = (GLchar *)malloc(logLength);
 		pglGetShaderInfoLog(program, logLength, NULL, infoLog);
 	}
 
@@ -2635,7 +2636,7 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 			break;
 
 		case HWD_SET_TEXTUREANISOTROPICMODE:
-			anisotropic_filter = min(Value,maximumAnisotropy);
+			anisotropic_filter = std::min(Value,maximumAnisotropy);
 			if (maximumAnisotropy)
 				Flush(); //??? if we want to change filter mode by texture, remove this
 			break;
@@ -2666,8 +2667,8 @@ static void AllocLerpBuffer(size_t size)
 		free(normBuffer);
 
 	lerpBufferSize = size;
-	vertBuffer = malloc(lerpBufferSize);
-	normBuffer = malloc(lerpBufferSize);
+	vertBuffer = (float *)malloc(lerpBufferSize);
+	normBuffer = (float *)malloc(lerpBufferSize);
 }
 
 // Static temporary buffer for doing frame interpolation
@@ -2684,8 +2685,8 @@ static void AllocLerpTinyBuffer(size_t size)
 		free(normTinyBuffer);
 
 	lerpTinyBufferSize = size;
-	vertTinyBuffer = malloc(lerpTinyBufferSize);
-	normTinyBuffer = malloc(lerpTinyBufferSize / 2);
+	vertTinyBuffer = (short *)malloc(lerpTinyBufferSize);
+	normTinyBuffer = (char *)malloc(lerpTinyBufferSize / 2);
 }
 
 #ifndef GL_STATIC_DRAW

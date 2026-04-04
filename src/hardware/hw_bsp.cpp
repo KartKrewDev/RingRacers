@@ -88,7 +88,7 @@ void HWR_InitPolyPool(void)
 		POLYPOOLSIZE = atoi(myargv[pnum+1])*1024; // (in kb)
 
 	CONS_Debug(DBG_RENDER, "HWR_InitPolyPool(): allocating %d bytes\n", POLYPOOLSIZE);
-	gl_polypool = malloc(POLYPOOLSIZE);
+	gl_polypool = (UINT8 *)malloc(POLYPOOLSIZE);
 	if (!gl_polypool)
 		I_Error("HWR_InitPolyPool(): couldn't malloc polypool\n");
 	HWR_ClearPolys();
@@ -109,7 +109,7 @@ static poly_t *HWR_AllocPoly(INT32 numpts)
 	poly_t *p;
 	size_t size = sizeof (poly_t) + sizeof (polyvertex_t) * numpts;
 #ifdef ZPLANALLOC
-	p = Z_Malloc(size, PU_HWRPLANE, NULL);
+	p = (poly_t *)Z_Malloc(size, PU_HWRPLANE, NULL);
 #else
 #ifdef PARANOIA
 	if (!gl_polypool)
@@ -135,7 +135,7 @@ static polyvertex_t *HWR_AllocVertex(void)
 	polyvertex_t *p;
 	size_t size = sizeof (polyvertex_t);
 #ifdef ZPLANALLOC
-	p = Z_Malloc(size, PU_HWRPLANE, NULL);
+	p = (polyvertex_t *)Z_Malloc(size, PU_HWRPLANE, NULL);
 #else
 	if (gl_ppfree < size)
 		I_Error("HWR_AllocVertex(): no more memory %u bytes left, %u bytes needed\n\n%s\n",
@@ -715,8 +715,8 @@ void HWR_FreeExtraSubsectors(void)
 //#define MOVEVERTEX
 static boolean PointInSeg(polyvertex_t *a,polyvertex_t *v1,polyvertex_t *v2)
 {
-	register float ax,ay,bx,by,cx,cy,d,norm;
-	register polyvertex_t *p;
+	float ax,ay,bx,by,cx,cy,d,norm;
+	polyvertex_t *p;
 
 	// check bbox of the seg first
 	if (v1->x > v2->x)
@@ -985,7 +985,7 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	HWR_FreeExtraSubsectors();
 	// allocate extra data for each subsector present in map
 	totsubsectors = numsubsectors + NEWSUBSECTORS;
-	extrasubsectors = calloc(totsubsectors, sizeof (*extrasubsectors));
+	extrasubsectors = (extrasubsector_t *)calloc(totsubsectors, sizeof (*extrasubsectors));
 	if (extrasubsectors == NULL)
 		I_Error("couldn't malloc extrasubsectors totsubsectors %s\n", sizeu1(totsubsectors));
 
