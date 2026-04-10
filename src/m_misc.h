@@ -60,7 +60,6 @@ extern consvar_t cv_zlib_memorya, cv_zlib_levela, cv_zlib_strategya, cv_zlib_win
 extern consvar_t cv_apng_delay, cv_apng_downscale;
 
 void M_StartMovie(moviemode_t mode);
-void M_LegacySaveFrame(void);
 void M_StopMovie(void);
 
 // the file where game vars and settings are saved
@@ -108,9 +107,6 @@ boolean M_SavePNG(const char *filename, const void *data, int width, int height,
 
 extern boolean takescreenshot;
 void M_ScreenShot(void);
-#ifdef HWRENDER
-void M_DoLegacyGLScreenShot(void);
-#endif
 void M_ScreenshotTicker(void);
 
 void M_MinimapGenerate(void);

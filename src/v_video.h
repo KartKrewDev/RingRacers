@@ -442,6 +442,8 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
  */
 void VID_DisplaySoftwareScreen(void);
 
+void VID_DisplayRHIPostimg(void);
+
 char *V_ParseText(const char *rawText); // Launder srb2::draw::TextElement.parse() through C code!
 
 

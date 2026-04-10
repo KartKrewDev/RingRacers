@@ -1304,12 +1304,7 @@ void G_PreLevelTitleCard(void)
 		I_FinishUpdate(); 	// page flip or blit buffer
 		NetKeepAlive();		// Prevent timeouts
 
-#ifdef HWRENDER
-		if (moviemode && rendermode == render_opengl)
-			M_LegacySaveFrame();
-		else
-#endif
-		if (moviemode && rendermode == render_soft)
+		if (moviemode && rendermode != render_none)
 			I_CaptureVideoFrame();
 
 		while (!((nowtime = I_GetTime()) - lasttime))

@@ -107,6 +107,7 @@ void *hwSym(const char *funcName,void *handle)
 
 	GETFUNC(SetShaderInfo);
 	GETFUNC(LoadCustomShader);
+	GETFUNC(ResetRenderState);
 
 #else //HWRENDER
 	if (0 == strcmp("FinishUpdate", funcName))

@@ -1024,7 +1024,7 @@ void Gl2Rhi::apply_framebuffer(const RenderPassBeginInfo& info, bool allow_clear
 
 		SRB2_ASSERT(texture_slab_.is_valid(info.color_attachment));
 		auto& texture = texture_slab_[info.color_attachment];
-		SRB2_ASSERT(texture.desc.format == TextureFormat::kRGBA);
+		SRB2_ASSERT(texture.desc.format == TextureFormat::kRGBA || texture.desc.format == TextureFormat::kRGB);
 		gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture, 0);
 		GL_ASSERT;
 
@@ -1431,6 +1431,13 @@ void Gl2Rhi::set_rasterizer_state(const RasterizerStateDesc& desc)
 		gl_->Disable(GL_SCISSOR_TEST);
 	}
 	gl_->Scissor(desc.scissor.x, desc.scissor.y, desc.scissor.w, desc.scissor.h);
+	GL_ASSERT;
+
+	// We never use fixed func alpha test, but Legacy GL does, so it has to be turned off.
+	// Note that Core profile and GLES 2+ don't have this at all.
+	gl_->Disable(GL_ALPHA_TEST);
+	GL_ASSERT;
+	gl_->AlphaFunc(GL_ALWAYS, 0);
 	GL_ASSERT;
 }
 

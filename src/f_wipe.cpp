@@ -35,10 +35,6 @@
 #include "g_game.h"
 #include "st_stuff.h"
 
-#ifdef HWRENDER
-#include "hardware/hw_main.h"
-#endif
-
 #if NUMSCREENS < 5
 #define NOWIPE // do not enable wipe image post processing for ARM, SH and MIPS CPUs
 #endif
@@ -356,14 +352,6 @@ static void refresh_wipe_screen_texture(rhi::Rhi& rhi, rhi::Handle<rhi::Texture>
 void F_WipeStartScreen(void)
 {
 #ifndef NOWIPE
-#ifdef HWRENDER
-	if(rendermode == render_opengl)
-	{
-		HWR_StartScreenWipe();
-		return;
-	}
-#endif
-
 	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
 
 	if (!rhi)
@@ -392,14 +380,6 @@ void F_WipeStartScreen(void)
 void F_WipeEndScreen(void)
 {
 #ifndef NOWIPE
-#ifdef HWRENDER
-	if(rendermode == render_opengl)
-	{
-		HWR_EndScreenWipe();
-		return;
-	}
-#endif
-
 	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
 
 	if (!rhi)
@@ -501,12 +481,6 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 		}
 		lastwipetic = nowtime;
 
-#ifdef HWRENDER
-		if (rendermode == render_opengl)
-			HWR_DoWipe(wipetype, wipeframe-1); // send in the wipe type and wipeframe because we need to cache the graphic
-		else
-#endif
-
 		if (rendermode != render_none) //this allows F_RunWipe to be called in dedicated servers
 		{
 			// F_DoWipe(fmask, fcolor, reverse);
@@ -563,11 +537,6 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 
 		I_FinishUpdate(); // page flip or blit buffer
 
-#ifdef HWRENDER
-		if (moviemode && rendermode == render_opengl)
-			M_LegacySaveFrame();
-		else
-#endif
 		if (moviemode && rendermode == render_soft)
 			I_CaptureVideoFrame();
 

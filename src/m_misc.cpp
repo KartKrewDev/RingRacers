@@ -1415,97 +1415,6 @@ void M_StartMovie(moviemode_t mode)
 
 static void M_SaveFrame_AVRecorder(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
 
-void M_LegacySaveFrame(void)
-{
-#if NUMSCREENS > 2
-	// TODO: until HWR2 replaces legacy OpenGL renderer, this
-	//       function still needs to called for OpenGL.
-#ifdef HWRENDER
-	if (rendermode != render_opengl)
-#endif
-	{
-		return;
-	}
-
-	// paranoia: should be unnecessary without singletics
-	static tic_t oldtic = 0;
-
-#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
-	if (moviemode == MM_AVRECORDER)
-	{
-		if (M_AVRecorder_IsExpired())
-		{
-			M_StopMovie();
-			return;
-		}
-	}
-#endif
-
-	// skip interpolated frames for other modes
-	if (oldtic == I_GetTime())
-		return;
-	else
-		oldtic = I_GetTime();
-
-	switch (moviemode)
-	{
-		case MM_SCREENSHOT:
-			takescreenshot = true;
-			return;
-		case MM_GIF:
-			GIF_frame();
-			return;
-		case MM_APNG:
-#ifdef USE_APNG
-			{
-				UINT8 *linear = NULL;
-				if (!apng_FILE) // should not happen!!
-				{
-					moviemode = MM_OFF;
-					return;
-				}
-
-				if (rendermode == render_soft)
-				{
-					// munge planar buffer to linear
-					linear = screens[2];
-					I_ReadScreen(linear);
-				}
-#ifdef HWRENDER
-				else
-					linear = HWR_GetScreenshot();
-#endif
-				M_PNGFrame(apng_ptr, apng_info_ptr, (png_bytep)linear);
-#ifdef HWRENDER
-				if (rendermode == render_opengl && linear)
-					free(linear);
-#endif
-
-				if (apng_frames == PNG_UINT_31_MAX)
-				{
-					CONS_Alert(CONS_NOTICE, M_GetText("Max movie size reached\n"));
-					M_StopMovie();
-				}
-			}
-#else
-			moviemode = MM_OFF;
-#endif
-			return;
-		case MM_AVRECORDER:
-#if defined(SRB2_CONFIG_ENABLE_WEBM_MOVIES) && defined(HWRENDER)
-			{
-				UINT8 *linear = HWR_GetScreenshot();
-				M_SaveFrame_AVRecorder(vid.width, vid.height, tcb::as_bytes(tcb::span(linear, 3 * vid.width * vid.height)));
-				free(linear);
-			}
-#endif
-			return;
-		default:
-			return;
-	}
-#endif
-}
-
 static void M_SaveFrame_GIF(uint32_t width, uint32_t height, tcb::span<const std::byte> data)
 {
 	if (moviemode != MM_GIF)
@@ -1799,12 +1708,6 @@ static boolean WritePCXfile(const char *filename, const UINT8 *data, int width, 
 void M_ScreenShot(void)
 {
 	takescreenshot = true;
-}
-
-void M_DoLegacyGLScreenShot(void)
-{
-	const std::byte* fake_data = nullptr;
-	M_DoScreenShot(vid.width, vid.height, tcb::span(fake_data, vid.width * vid.height));
 }
 
 /** Takes a screenshot.

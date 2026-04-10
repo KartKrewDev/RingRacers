@@ -570,13 +570,20 @@ static bool D_Display(bool world)
 							memset(screens[0], 32+(timeinmap&15), vid.width * vid.height * vid.bpp);
 						}
 					}
-
-					if (r_splitscreen == 2)
-					{
-						// Draw over the fourth screen so you don't have to stare at a HOM :V
-						V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
-					}
 				}
+
+				if (r_splitscreen == 2)
+				{
+					// Draw over the fourth screen so you don't have to stare at a HOM :V
+					V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
+				}
+
+#ifdef HWRENDER
+				if (rendermode == render_opengl)
+				{
+					VID_BeginLegacyGLRenderPass();
+				}
+#endif
 
 				for (i = 0; i <= r_splitscreen; i++)
 				{
@@ -641,6 +648,13 @@ static bool D_Display(bool world)
 					}
 				}
 
+#ifdef HWRENDER
+				if (rendermode == render_opengl)
+				{
+					VID_EndLegacyGLRenderPass();
+				}
+#endif
+
 				ps_rendercalltime = I_GetPreciseTime() - ps_rendercalltime;
 				R_RestoreLevelInterpolators();
 			}
@@ -686,6 +700,10 @@ static bool D_Display(bool world)
 			if (rendermode == render_soft)
 			{
 				VID_DisplaySoftwareScreen();
+			}
+			if (rendermode != render_none)
+			{
+				VID_DisplayRHIPostimg();
 			}
 
 			if (lastdraw)
@@ -1069,15 +1087,7 @@ void D_SRB2Loop(void)
 			ranwipe = D_Display(world);
 		}
 
-#ifdef HWRENDER
-		// Only take screenshots after drawing.
-		if (moviemode && rendermode == render_opengl)
-			M_LegacySaveFrame();
-		if (rendermode == render_opengl && takescreenshot)
-			M_DoLegacyGLScreenShot();
-#endif
-
-		if ((moviemode || takescreenshot) && rendermode == render_soft)
+		if ((moviemode || takescreenshot) && rendermode != render_none)
 			I_CaptureVideoFrame();
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)

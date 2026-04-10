@@ -19,6 +19,7 @@ namespace srb2::hwr2
 class UpscaleBackbuffer
 {
 	rhi::Handle<rhi::Texture> color_;
+	rhi::Handle<rhi::Renderbuffer> depth_;
 
 public:
 	UpscaleBackbuffer();

@@ -8571,9 +8571,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			I_UpdateTime(); \
 		} \
 		lastwipetic = nowtime; \
-		if (moviemode && rendermode == render_opengl) \
-			M_LegacySaveFrame(); \
-		else if (moviemode && rendermode == render_soft) \
+		if (moviemode && rendermode != render_none) \
 			I_CaptureVideoFrame(); \
 		NetKeepAlive(); \
 	} \
@@ -8768,9 +8766,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 					}
 
 					lastwipetic = nowtime;
-					if (moviemode && rendermode == render_opengl)
-						M_LegacySaveFrame();
-					else if (moviemode && rendermode == render_soft)
+					if (moviemode && rendermode != render_none)
 						I_CaptureVideoFrame();
 					NetKeepAlive();
 				}

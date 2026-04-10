@@ -5993,6 +5993,8 @@ static void HWR_RollTransform(FTransform *tr, angle_t roll)
 
 void HWR_RenderPlayerView(void)
 {
+	HWD.pfnResetRenderState();
+
 	player_t * player = &players[displayplayers[viewssnum]];
 
 	const boolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on

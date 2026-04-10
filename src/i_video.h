@@ -170,6 +170,9 @@ UINT32 I_GetRefreshRate(void);
 
 void I_CaptureVideoFrame(void);
 
+void VID_BeginLegacyGLRenderPass(void);
+void VID_EndLegacyGLRenderPass(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

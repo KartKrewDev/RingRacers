@@ -1532,6 +1532,8 @@ EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
 			bottom -= dst_stride;
 		}
 		free(row);
+		pglPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		pglPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else
 	{
@@ -1553,6 +1555,8 @@ EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
 			}
 		}
 		free(image);
+		pglPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		pglPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 }
 
@@ -1609,8 +1613,6 @@ EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask,
 	SetBlend(DepthMask ? PF_Occlude | CurrentPolyFlags : CurrentPolyFlags&~PF_Occlude);
 
 	pglClear(ClearMask);
-	pglEnableClientState(GL_VERTEX_ARRAY); // We always use this one
-	pglEnableClientState(GL_TEXTURE_COORD_ARRAY); // And mostly this one, too
 }
 
 
@@ -1866,6 +1868,11 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags)
 	CurrentPolyFlags = PolyFlags;
 }
 
+EXPORT void HWRAPI(ResetRenderState) (void)
+{
+	SetStates();
+}
+
 static void AllocTextureBuffer(GLMipmap_t *pTexInfo)
 {
 	size_t size = pTexInfo->width * pTexInfo->height;
@@ -2082,6 +2089,8 @@ EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *pTexInfo)
 	if (maximumAnisotropy)
 		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropic_filter);
 
+	pglPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	pglPixelStorei(GL_PACK_ALIGNMENT, 4);
 	pglActiveTexture(GL_TEXTURE0);
 }
 

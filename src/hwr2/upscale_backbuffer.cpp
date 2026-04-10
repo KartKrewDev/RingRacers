@@ -47,17 +47,29 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi)
 		}
 
 		TextureDesc color_tex {};
-		color_tex.format = TextureFormat::kRGBA;
+		color_tex.format = TextureFormat::kRGB;
 		color_tex.width = vid_width;
 		color_tex.height = vid_height;
 		color_tex.u_wrap = TextureWrapMode::kClamp;
 		color_tex.v_wrap = TextureWrapMode::kClamp;
 		color_ = rhi.create_texture(color_tex);
+
+		if (depth_)
+		{
+			rhi.destroy_renderbuffer(depth_);
+			depth_ = kNullHandle;
+		}
+
+		RenderbufferDesc rb_desc {};
+		rb_desc.width = vid_width;
+		rb_desc.height = vid_height;
+		depth_ = rhi.create_renderbuffer(rb_desc);
 	}
 
 	RenderPassBeginInfo begin_info {};
 	begin_info.clear_color = {0, 0, 0, 1};
 	begin_info.color_attachment = color_;
+	begin_info.depth_stencil_attachment = depth_;
 	begin_info.color_load_op = rhi::AttachmentLoadOp::kLoad;
 	begin_info.color_store_op = rhi::AttachmentStoreOp::kStore;
 	begin_info.depth_load_op = rhi::AttachmentLoadOp::kLoad;

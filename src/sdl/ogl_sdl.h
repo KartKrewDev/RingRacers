@@ -30,9 +30,12 @@ boolean OglSdlSurface(INT32 w, INT32 h);
 void OglSdlFinishUpdate(boolean vidwait);
 
 extern SDL_GLContext sdlglcontext;
-extern SDL_GLContext g_legacy_gl_context;
 extern Uint16      realwidth;
 extern Uint16      realheight;
+
+#ifdef HWRENDER
+boolean LoadGL(void);
+#endif
 
 #ifdef _CREATE_DLL_
 EXPORT void HWRAPI( OglSdlSetPalette ) (RGBA_t *palette);

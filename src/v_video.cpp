@@ -440,15 +440,14 @@ void V_SetPalette(INT32 palettenum)
 		}
 	}
 
+#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+	if (rendermode != render_none)
+		I_SetPalette(&pLocalPalette[palettenum*256]);
+#endif
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
 		HWR_SetPalette(&pLocalPalette[palettenum*256]);
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	else
 #endif
-#endif
-	if (rendermode != render_none)
-		I_SetPalette(&pLocalPalette[palettenum*256]);
 }
 
 void V_SetPaletteLump(const char *pal)
@@ -798,14 +797,6 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	if (rendermode == render_none)
 		return;
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_DrawStretchyFixedPatch(patch, x, y, pscale, vscale, scrn, colormap);
-		return;
-	}
-#endif
-
 	if ((blendmode = ((scrn & V_BLENDMASK) >> V_BLENDSHIFT)))
 		blendmode++; // realign to constants
 	if ((alphalevel = V_GetAlphaLevel(scrn)) >= 10)
@@ -1016,14 +1007,6 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	if (rendermode == render_none)
 		return;
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_DrawFill(x, y, w, h, c);
-		return;
-	}
-#endif
-
 	UINT32 alphalevel;
 	if ((alphalevel = V_GetAlphaLevel(c)) >= 10)
 		return;
@@ -1139,15 +1122,6 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	if (rendermode == render_none)
 		return;
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		UINT32 hwcolor = V_GetHWConsBackColor();
-		HWR_DrawConsoleFill(x, y, w, h, c, hwcolor);	// we still use the regular color stuff but only for flags. actual draw color is "hwcolor" for this.
-		return;
-	}
-#endif
-
 	if ((alphalevel = V_GetAlphaLevel(c)) >= 10)
 		return;
 
@@ -1209,14 +1183,6 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c)
 
 	if (rendermode == render_none)
 		return;
-
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_DrawDiag(x, y, wh, c);
-		return;
-	}
-#endif
 
 	if (!(c & V_NOSCALESTART))
 	{
@@ -1291,15 +1257,6 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 {
 	if (rendermode == render_none)
 		return;
-
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		// ughhhhh please can someone else do this? thanks ~toast 25/7/19 in 38 degrees centigrade w/o AC
-		HWR_DrawFadeFill(x, y, w, h, c, color, strength); // toast two days later - left above comment in 'cause it's funny
-		return;
-	}
-#endif
 
 	if (!(c & V_NOSCALESTART))
 	{
@@ -1380,13 +1337,6 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 	size_t size;
 	size_t lflatsize;
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_DrawFlatFill(x, y, w, h, flatnum);
-		return;
-	}
-#endif
 	size = W_LumpLength(flatnum);
 
 	switch (size)
@@ -1521,14 +1471,6 @@ void V_DrawVhsEffect(boolean rewind)
 //
 void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 {
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_FadeScreenMenuBack(color, strength);
-		return;
-	}
-#endif
-
 	float r;
 	float g;
 	float b;
@@ -1638,13 +1580,6 @@ void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 void V_DrawFadeConsBack(INT32 plines)
 {
 	UINT32 hwcolor = V_GetHWConsBackColor();
-#ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode == render_opengl)
-	{
-		HWR_DrawConsoleBack(hwcolor, plines);
-		return;
-	}
-#endif
 
 	float r = ((hwcolor & 0xFF000000) >> 24) / 255.f;
 	float g = ((hwcolor & 0xFF0000) >> 16) / 255.f;
@@ -1663,14 +1598,6 @@ void V_DrawFadeConsBack(INT32 plines)
 //
 void V_EncoreInvertScreen(void)
 {
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_EncoreInvertScreen();
-		return;
-	}
-#endif
-
 	g_2d.begin_quad()
 		.blend(hwr2::BlendMode::kInvertDest)
 		.color(1, 1, 1, 1)
@@ -1697,14 +1624,6 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color)
 		color = cons_backcolor.value;
 
 	UINT32 hwcolor = V_GetHWConsBackColor();
-
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_DrawTutorialBack(hwcolor, boxheight);
-		return;
-	}
-#endif
 
 	float r = ((color & 0xFF000000) >> 24) / 255.f;
 	float g = ((color & 0xFF0000) >> 16) / 255.f;
@@ -3771,13 +3690,17 @@ void VID_DisplaySoftwareScreen()
 {
 	ZoneScoped;
 
-	// TODO implement
-	// upload framebuffer, bind pipeline, draw
 	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
 	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
 
 	// Misnomer; this just uploads the screen to the software indexed screen texture
 	hw_state->software_screen_renderer->draw(*rhi);
+}
+
+void VID_DisplayRHIPostimg(void)
+{
+	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
+	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
 
 	const int screens = std::clamp(r_splitscreen + 1, 1, MAXSPLITSCREENPLAYERS);
 	hw_state->blit_postimg_screens->set_num_screens(screens);
@@ -3791,43 +3714,91 @@ void VID_DisplaySoftwareScreen()
 		if (screens > 2)
 		{
 			uv_size = glm::vec2(.5f, .5f);
-			switch (i)
+			if (rendermode == render_opengl)
 			{
-			case 0:
-				uv_offset = glm::vec2(0.f, 0.f);
-				break;
-			case 1:
-				uv_offset = glm::vec2(.5f, 0.f);
-				break;
-			case 2:
-				uv_offset = glm::vec2(0.f, .5f);
-				break;
-			case 3:
-				uv_offset = glm::vec2(.5f, .5f);
-				break;
+				switch (i)
+				{
+				case 0:
+					uv_offset = glm::vec2(0.f, .5f);
+					break;
+				case 1:
+					uv_offset = glm::vec2(.5f, .5f);
+					break;
+				case 2:
+					uv_offset = glm::vec2(0.f, 0.f);
+					break;
+				case 3:
+					uv_offset = glm::vec2(.5f, 0.f);
+					break;
+				}
+			}
+			else
+			{
+				switch (i)
+				{
+				case 0:
+					uv_offset = glm::vec2(0.f, 0.f);
+					break;
+				case 1:
+					uv_offset = glm::vec2(.5f, 0.f);
+					break;
+				case 2:
+					uv_offset = glm::vec2(0.f, .5f);
+					break;
+				case 3:
+					uv_offset = glm::vec2(.5f, .5f);
+					break;
+				}
 			}
 		}
 		else if (screens > 1)
 		{
 			uv_size = glm::vec2(1.f, .5f);
-			if (i == 1)
+			if (rendermode == render_opengl)
 			{
-				uv_offset = glm::vec2(0.f, .5f);
+				uv_offset = glm::vec2(0.f, i == 0 ? .5f : 0.f);
 			}
+			else
+			{
+				if (i == 1)
+				{
+					uv_offset = glm::vec2(0.f, .5f);
+				}
+			}
+		}
+
+		rhi::Handle<rhi::Texture> source;
+		bool indexed;
+		bool vflip;
+		bool mirror;
+		if (rendermode == render_soft)
+		{
+			source = hw_state->software_screen_renderer->screen();
+			indexed = true;
+			vflip = postimgtype[i] == postimg_flip;
+			mirror = postimgtype[i] == postimg_mirror;
+		}
+		else
+		{
+			source = hw_state->legacygl_backbuffer->color();
+			indexed = false;
+			// Legacy GL handles these on its own.
+			vflip = true;
+			mirror = false;
 		}
 
 		hw_state->blit_postimg_screens->set_screen(
 			i,
 			{
-				hw_state->software_screen_renderer->screen(),
-				true,
+				source,
+				indexed,
 				uv_offset,
 				uv_size,
 				{
 					postimgtype[i] == postimg_water && !cv_reducevfx.value,
 					postimgtype[i] == postimg_heat && !cv_reducevfx.value,
-					postimgtype[i] == postimg_flip,
-					postimgtype[i] == postimg_mirror
+					vflip,
+					mirror
 				}
 			}
 		);

@@ -66,7 +66,6 @@ PFNglGetString pglGetString;
 INT32 oglflags = 0;
 void *GLUhandle = NULL;
 SDL_GLContext sdlglcontext = 0;
-SDL_GLContext g_legacy_gl_context = 0;
 
 void *GetGLFunc(const char *proc)
 {

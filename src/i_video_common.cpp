@@ -87,6 +87,7 @@ static void reset_hardware_state(Rhi* rhi)
 	g_hw_state.crtsharp_blit_rect = std::make_unique<BlitRectPass>(BlitRectPass::BlitMode::kCrtSharp);
 	g_hw_state.screen_capture = std::make_unique<ScreenshotPass>();
 	g_hw_state.backbuffer = std::make_unique<UpscaleBackbuffer>();
+	g_hw_state.legacygl_backbuffer = std::make_unique<UpscaleBackbuffer>();
 	g_hw_state.imgui_renderer = std::make_unique<ImguiRenderer>();
 	g_hw_state.wipe_frames = {};
 
@@ -215,13 +216,6 @@ void I_StartDisplayUpdate(void)
 		return;
 	}
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		return;
-	}
-#endif
-
 	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
 
 	if (rhi == nullptr)
@@ -251,15 +245,6 @@ void I_FinishUpdate(void)
 		FrameMark;
 		return;
 	}
-
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		finish_legacy_ogl_update();
-		FrameMark;
-		return;
-	}
-#endif
 
 	temp_legacy_finishupdate_draws();
 
@@ -337,4 +322,41 @@ void I_FinishUpdate(void)
 
 	// Immediately prepare to begin drawing the next frame
 	I_StartDisplayUpdate();
+}
+
+void VID_BeginLegacyGLRenderPass(void)
+{
+	if (rendermode == render_none)
+	{
+		return;
+	}
+
+	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
+
+	if (rhi == nullptr)
+	{
+		// ???
+		return;
+	}
+
+	g_hw_state.twodee_renderer->flush(*rhi, g_2d);
+	g_hw_state.legacygl_backbuffer->begin_pass(*rhi);
+}
+
+void VID_EndLegacyGLRenderPass(void)
+{
+	if (rendermode == render_none)
+	{
+		return;
+	}
+
+	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
+
+	if (rhi == nullptr)
+	{
+		// ???
+		return;
+	}
+
+	rhi->pop_render_pass();
 }
