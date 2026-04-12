@@ -1469,11 +1469,11 @@ consvar_t cv_voice_allowservervoice = NetVar("voice_allowservervoice", "Off")
 #ifdef HWRENDER
 	consvar_t cv_fovchange = OpenGL("gr_fovchange", "Off").on_off();
 
-	extern CV_PossibleValue_t glshaders_cons_t[];
+	extern "C" CV_PossibleValue_t glshaders_cons_t[];
 	consvar_t cv_glallowshaders = OpenGL("gr_allowclientshaders", "On").on_off().network().dont_save();
 	consvar_t cv_glshaders = OpenGL("gr_shaders", "On").values(glshaders_cons_t);
 
-	extern CV_PossibleValue_t glanisotropicmode_cons_t[];
+	extern "C" CV_PossibleValue_t glanisotropicmode_cons_t[];
 	extern "C" void CV_glanisotropic_OnChange(void);
 	consvar_t cv_glanisotropicmode = OpenGL("gr_anisotropicmode", "1").values(glanisotropicmode_cons_t).onchange(CV_glanisotropic_OnChange);
 
@@ -1486,7 +1486,7 @@ consvar_t cv_voice_allowservervoice = NetVar("voice_allowservervoice", "Off")
 		consvar_t cv_glstaticlighting  = OpenGL("gr_staticlighting", "On").on_off();
 #endif
 
-	extern CV_PossibleValue_t glfiltermode_cons_t[];
+	extern "C" CV_PossibleValue_t glfiltermode_cons_t[];
 	extern "C" void CV_glfiltermode_OnChange(void);
 	consvar_t cv_glfiltermode = OpenGL("gr_filtermode", "Nearest").values(glfiltermode_cons_t).onchange(CV_glfiltermode_OnChange);
 

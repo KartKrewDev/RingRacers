@@ -6057,8 +6057,10 @@ void HWR_LoadLevel(void)
 //                                                         3D ENGINE COMMANDS
 // ==========================================================================
 
+extern "C" CV_PossibleValue_t glshaders_cons_t[];
 CV_PossibleValue_t glshaders_cons_t[] = {{HWD_SHADEROPTION_OFF, "Off"}, {HWD_SHADEROPTION_ON, "On"}, {HWD_SHADEROPTION_NOCUSTOM, "Ignore custom shaders"}, {0, NULL}};
 
+extern "C" CV_PossibleValue_t glfiltermode_cons_t[];
 CV_PossibleValue_t glfiltermode_cons_t[]= {{HWD_SET_TEXTUREFILTER_POINTSAMPLED, "Nearest"},
 	{HWD_SET_TEXTUREFILTER_BILINEAR, "Bilinear"}, {HWD_SET_TEXTUREFILTER_TRILINEAR, "Trilinear"},
 	{HWD_SET_TEXTUREFILTER_MIXED1, "Linear_Nearest"},
@@ -6066,6 +6068,7 @@ CV_PossibleValue_t glfiltermode_cons_t[]= {{HWD_SET_TEXTUREFILTER_POINTSAMPLED, 
 	{HWD_SET_TEXTUREFILTER_MIXED3, "Nearest_Mipmap"},
 	{0, NULL}};
 
+extern "C" CV_PossibleValue_t glanisotropicmode_cons_t[];
 CV_PossibleValue_t glanisotropicmode_cons_t[] = {{1, "MIN"}, {16, "MAX"}, {0, NULL}};
 
 extern "C" void CV_glfiltermode_OnChange(void);
@@ -6082,11 +6085,12 @@ void CV_glanisotropic_OnChange(void)
 		HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_glanisotropicmode.value);
 }
 
+extern "C" struct CVarList *cvlist_opengl;
+
 //added by Hurdler: console varibale that are saved
 void HWR_AddCommands(void)
 {
 	{
-		extern struct CVarList *cvlist_opengl;
 		CV_RegisterList(cvlist_opengl);
 	}
 }
