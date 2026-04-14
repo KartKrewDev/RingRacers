@@ -39,11 +39,7 @@ extern boolean con_startup;
 // when modifying the below, you must also adjust d_main and console.c
 typedef enum
 {
-	LOADED_ZINIT = 1,
-	LOADED_ISTARTUPTIMER,
-	LOADED_IWAD,
-	LOADED_ISTARTUPGRAPHICS,
-	LOADED_HUINIT,
+	LOADED_HUINIT = 1,
 	LOADED_PWAD,
 	LOADED_CONFIG,
 	LOADED_INITTEXTUREDATA,

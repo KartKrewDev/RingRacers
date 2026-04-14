@@ -1614,6 +1614,11 @@ void I_StartupGraphics(void)
 	SDL_RaiseWindow(window);
 
 	graphics_started = true;
+
+#ifdef __APPLE__
+	// Must pump events once after creating window before window will actually appear.
+	SDL_PumpEvents();
+#endif
 }
 
 void VID_StartupOpenGL(void)

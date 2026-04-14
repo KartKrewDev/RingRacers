@@ -1914,10 +1914,6 @@ void CON_Drawer(void)
 
 static const char *CON_LoadingStrings[LOADED_ALLDONE+1] =
 {
-	"Init zone memory...", //LOADED_ZINIT
-	"Init game timing...", //LOADED_ISTARTUPTIMER
-	"Loading main assets...", //LOADED_IWAD
-	"Init graphics subsystem...", //LOADED_ISTARTUPGRAPHICS
 	"Cache fonts...", //LOADED_HUINIT
 	"Loading add-ons...", //LOADED_PWAD
 	"Load settings...", //LOADED_CONFIG
@@ -1937,21 +1933,11 @@ static const char *CON_LoadingStrings[LOADED_ALLDONE+1] =
 //
 void CON_SetLoadingProgress(con_loadprogress_t newStep)
 {
-	const con_loadprogress_t expectedStep = con_startup_loadprogress + 1;
-
-	if (newStep != expectedStep)
-	{
-		I_Error("Something is wrong with the loading bar! (got %d, expected %d)\n", newStep, expectedStep);
-		return;
-	}
-
 	con_startup_loadprogress = newStep;
 
 	if (con_startup_loadprogress <= LOADED_ALLDONE)
 		CONS_Printf("LOADING UPDATE - %s\n", CON_LoadingStrings[con_startup_loadprogress]);
 
-	if (con_startup_loadprogress < LOADED_ISTARTUPGRAPHICS) // rendering not possible?
-		return;
 	CON_DrawLoadBar(); // here we display the console text
 	I_OsPolling();
 	I_UpdateNoBlit();
