@@ -199,6 +199,8 @@ static void (*music_fade_callback)();
 
 static SDL_AudioDeviceID g_device_id;
 static SDL_AudioDeviceID g_input_device_id;
+static SDL_mutex* microphone_mutex = nullptr;
+static SDL_Thread* microphone_thread = nullptr;
 
 void* I_GetSfx(sfxinfo_t* sfx)
 {
@@ -363,6 +365,8 @@ void initialize_sound()
 		}
 	}
 
+	microphone_mutex = SDL_CreateMutex();
+
 	sound_started = true;
 }
 
@@ -381,11 +385,13 @@ void I_ShutdownSound(void)
 		SDL_CloseAudioDevice(g_device_id);
 		g_device_id = 0;
 	}
+	SDL_LockMutex(microphone_mutex);
 	if (g_input_device_id)
 	{
 		SDL_CloseAudioDevice(g_input_device_id);
 		g_input_device_id = 0;
 	}
+	SDL_UnlockMutex(microphone_mutex);
 
 	master_gain = nullptr;
 	master = nullptr;
@@ -1001,66 +1007,90 @@ void I_UpdateAudioRecorder(void)
 
 boolean I_SoundInputIsEnabled(void)
 {
-	return g_input_device_id != 0;
+	SDL_LockMutex(microphone_mutex);
+	boolean ret = g_input_device_id != 0;
+	SDL_UnlockMutex(microphone_mutex);
+	return ret;
+}
+
+static int microphone_opener(void* data)
+{
+	SDL_AudioSpec input_desired {};
+	input_desired.format = AUDIO_F32SYS;
+	input_desired.channels = 1;
+	input_desired.samples = 1024;
+	input_desired.freq = 48000;
+	SDL_AudioSpec input_obtained {};
+	SDL_AudioDeviceID device_id = SDL_OpenAudioDevice(nullptr, SDL_TRUE, &input_desired, &input_obtained, 0);
+	if (!device_id)
+	{
+		// CONS_Alert(CONS_WARNING, "Failed to open input audio device: %s\n", SDL_GetError());
+		return 0;
+	}
+	if (input_obtained.freq != 48000 || input_obtained.format != AUDIO_F32SYS || input_obtained.channels != 1)
+	{
+		// CONS_Alert(CONS_WARNING, "Input audio device has unexpected unusable format: %s\n", SDL_GetError());
+		return 0;
+	}
+	SDL_PauseAudioDevice(device_id, SDL_FALSE);
+	SDL_LockMutex(microphone_mutex);
+	g_input_device_id = device_id;
+	SDL_UnlockMutex(microphone_mutex);
+	return 0;
 }
 
 boolean I_SoundInputSetEnabled(boolean enabled)
 {
+	SDL_LockMutex(microphone_mutex);
+
 	if (g_input_device_id == 0 && enabled)
 	{
 		if (!sound_started || SDL_GetNumAudioDevices(true) == 0)
 		{
+			SDL_UnlockMutex(microphone_mutex);
 			return false;
 		}
 
-		SDL_AudioSpec input_desired {};
-		input_desired.format = AUDIO_F32SYS;
-		input_desired.channels = 1;
-		input_desired.samples = 1024;
-		input_desired.freq = 48000;
-		SDL_AudioSpec input_obtained {};
-		g_input_device_id = SDL_OpenAudioDevice(nullptr, SDL_TRUE, &input_desired, &input_obtained, 0);
-		if (!g_input_device_id)
-		{
-			CONS_Alert(CONS_WARNING, "Failed to open input audio device: %s\n", SDL_GetError());
-			return false;
-		}
-		if (input_obtained.freq != 48000 || input_obtained.format != AUDIO_F32SYS || input_obtained.channels != 1)
-		{
-			CONS_Alert(CONS_WARNING, "Input audio device has unexpected unusable format: %s\n", SDL_GetError());
-			return false;
-		}
-		SDL_PauseAudioDevice(g_input_device_id, SDL_FALSE);
+		SDL_CreateThread(microphone_opener, "Microphone Opener", nullptr);
 	}
 	else if (g_input_device_id != 0 && !enabled)
 	{
+		microphone_thread = nullptr;
 		SDL_PauseAudioDevice(g_input_device_id, SDL_TRUE);
 		SDL_ClearQueuedAudio(g_input_device_id);
 		SDL_CloseAudioDevice(g_input_device_id);
 		g_input_device_id = 0;
 	}
 
+	SDL_UnlockMutex(microphone_mutex);
+
 	return enabled;
 }
 
 UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
 {
+	SDL_LockMutex(microphone_mutex);
 	if (!g_input_device_id)
 	{
+		SDL_UnlockMutex(microphone_mutex);
 		return 0;
 	}
 
 	UINT32 ret = SDL_DequeueAudio(g_input_device_id, data, len);
+	SDL_UnlockMutex(microphone_mutex);
 	return ret;
 }
 
 UINT32 I_SoundInputRemainingSamples(void)
 {
+	SDL_LockMutex(microphone_mutex);
 	if (!g_input_device_id)
 	{
+		SDL_UnlockMutex(microphone_mutex);
 		return 0;
 	}
 	UINT32 avail = SDL_GetQueuedAudioSize(g_input_device_id);
+	SDL_UnlockMutex(microphone_mutex);
 	return avail / sizeof(float);
 }
 
