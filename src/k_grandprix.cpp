@@ -762,15 +762,10 @@ static boolean CompareJoiners(player_t *a, player_t *b)
 
 static boolean CompareReplacements(player_t *a, player_t *b)
 {
-	// if both players participated in the race
-	// otherwise, don't try to push non-participant to the back
-	if (a->position != 0 && b->position != 0)
+	if ((a->pflags & PF_NOCONTEST) != (b->pflags & PF_NOCONTEST))
 	{
-		if ((a->pflags & PF_NOCONTEST) != (b->pflags & PF_NOCONTEST))
-		{
-			// Push NO CONTEST to the back.
-			return ((a->pflags & PF_NOCONTEST) == 0);
-		}
+		// Push NO CONTEST to the back.
+		return ((a->pflags & PF_NOCONTEST) == 0);
 	}
 
 	if (a->position != b->position)
@@ -863,10 +858,22 @@ void K_RetireBots(void)
 	std::stable_sort(humans.begin(), humans.end(), CompareReplacements);
 	std::stable_sort(bots.begin(), bots.end(), CompareReplacements);
 
+	bool player_already_joined = false;
+
 	// If a player spectated mid-race or mid-duel, they will be placed in-game by K_CheckSpectateStatus,
 	// and their position will be set to 0. Since we're only replacing one player as of now, there's no need
 	// to do anything; a player has already been replaced.
-	bool player_already_joined = (!humans.empty() && humans[0]->position == 0);
+	if (!humans.empty())
+	{
+		for (auto &human : humans)
+		{
+			if (human->position == 0)
+			{
+				player_already_joined = true;
+				break;
+			}
+		}
+	}
 
 	if (G_GametypeHasSpectators() == true && grandprixinfo.gp == false && !player_already_joined && cv_shuffleloser.value != 0)
 	{
