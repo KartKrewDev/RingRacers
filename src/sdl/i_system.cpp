@@ -2376,7 +2376,15 @@ static const char *locateWad(void)
 
 	I_OutputMsg("RINGRACERSWADDIR");
 	// does RINGRACERSWADDIR exist?
-	if (((envstr = I_GetEnv("RINGRACERSWADDIR")) != NULL) && isWadPathOk(envstr))
+
+#ifdef DEVELOP
+	if ((envstr = I_GetEnv("DEVELOPRRWADDIR")) == NULL)
+#endif
+	{
+		envstr = I_GetEnv("RINGRACERSWADDIR");
+	}
+
+	if ((envstr != NULL) && isWadPathOk(envstr))
 		return envstr;
 
 #ifndef NOCWD
