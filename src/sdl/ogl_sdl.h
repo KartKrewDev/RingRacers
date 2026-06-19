@@ -15,7 +15,7 @@
 #ifndef __SDL_OGL_SDL_H__
 #define __SDL_OGL_SDL_H__
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "../v_video.h"
 

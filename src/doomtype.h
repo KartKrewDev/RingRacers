@@ -50,7 +50,6 @@ extern "C" {
 #define SINT8 int8_t
 
 #ifdef __APPLE_CC__
-#define DIRECTFULLSCREEN 1
 #define DEBUG_LOG
 #define NOIPX
 #endif
@@ -138,10 +137,14 @@ typedef int32_t boolean;
 
 #ifndef __cplusplus
 #ifndef _WIN32
+#ifndef false // SDL3 workaround
 enum {false = 0, true = 1};
+#endif
 #else
+#ifndef false // SDL3 workaround
 #define false FALSE
 #define true TRUE
+#endif
 #endif
 #endif
 

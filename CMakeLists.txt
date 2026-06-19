@@ -94,7 +94,7 @@ endif()
 
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
-find_package(SDL2 CONFIG REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Opus REQUIRED)
 if(WIN32 AND NOT MINGW)

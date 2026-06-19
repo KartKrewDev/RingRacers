@@ -1,4 +1,4 @@
-# Declare SDL2 interface sources
+# Declare SDL3 interface sources
 
 target_sources(SRB2SDL2 PRIVATE
 	new_sound.cpp
@@ -14,11 +14,6 @@ target_sources(SRB2SDL2 PRIVATE
 	endtxt.c
 	hwsym_sdl.c
 )
-
-if(${SRB2_USEASM})
-	set_source_files_properties(${SRB2_ASM_SOURCES} PROPERTIES LANGUAGE C)
-	set_source_files_properties(${SRB2_ASM_SOURCES} PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
-endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES Windows)
 	target_sources(SRB2SDL2 PRIVATE
@@ -60,23 +55,11 @@ endif()
 
 target_link_libraries(SRB2SDL2
 	PRIVATE
-	$<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+	$<IF:$<TARGET_EXISTS:SDL3::SDL3>,SDL3::SDL3,SDL3::SDL3-static>
 )
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES Linux)
 	target_link_libraries(SRB2SDL2 PRIVATE m rt)
-endif()
-
-if(${SRB2_USEASM})
-	if(${SRB2_CONFIG_YASM})
-		set(ASM_ASSEMBLER_TEMP ${CMAKE_ASM_YASM_COMPILER})
-		set(ASM_ASSEMBLER_OBJFORMAT ${CMAKE_ASM_YASM_OBJECT_FORMAT})
-		set_source_files_properties(${SRB2_NASM_SOURCES} LANGUAGE ASM_YASM)
-	else()
-		set(ASM_ASSEMBLER_TEMP ${CMAKE_ASM_NASM_COMPILER})
-		set(ASM_ASSEMBLER_OBJFORMAT ${CMAKE_ASM_NASM_OBJECT_FORMAT})
-		set_source_files_properties(${SRB2_NASM_SOURCES} LANGUAGE ASM_NASM)
-	endif()
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES Windows)
@@ -88,8 +71,7 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES Windows)
 	# )
 endif()
 
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MIXER -DSOUND=SOUND_MIXER)
-target_compile_definitions(SRB2SDL2 PRIVATE -DDIRECTFULLSCREEN -DHAVE_SDL)
+target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_SDL -DHAVE_SDL3)
 
 #### Installation ####
 if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
@@ -131,5 +113,3 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
 		)"
 	)
 endif()
-
-set(SRB2_SDL2_AVAILABLE YES PARENT_SCOPE)

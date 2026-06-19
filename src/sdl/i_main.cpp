@@ -1,6 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2025 by Kart Krew.
+// Copyright (C) 2026 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -11,6 +11,9 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief Main program, simply calls D_SRB2Main and D_SRB2Loop, the high level loop.
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 
 #include "../doomdef.h"
 #include "../m_argv.h"
@@ -31,22 +34,7 @@
 #include <errno.h>
 #endif
 
-#include "time.h" // For log timestamps
-
-#ifdef HAVE_TTF
-#include "SDL.h"
-#include "i_ttf.h"
-#endif
-
-#if defined (_WIN32) && !defined (main)
-//#define SDLMAIN
-#endif
-
-#ifdef SDLMAIN
-#include "SDL_main.h"
-#elif defined(FORCESDLMAIN)
-extern int SDL_main(int argc, char *argv[]);
-#endif
+#include <time.h> // For log timestamps
 
 #ifdef LOGMESSAGES
 FILE *logstream = NULL;
@@ -221,11 +209,7 @@ static void walk_exception_stack(srb2::String& accum, const std::exception& ex, 
 #pragma GCC diagnostic ignored "-Wmissing-noreturn"
 #endif
 
-#ifdef FORCESDLMAIN
-int SDL_main(int argc, char **argv)
-#else
 int main(int argc, char **argv)
-#endif
 {
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
@@ -234,9 +218,9 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_TTF
 #ifdef _WIN32
-	I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO|SDL_INIT_AUDIO, SDL_SWSURFACE);
+		I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO|SDL_INIT_AUDIO, 0);
 #else
-	I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO, SDL_SWSURFACE);
+		I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO, 0);
 #endif
 #endif
 
@@ -290,13 +274,6 @@ int main(int argc, char **argv)
 	// return to OS
 	return 0;
 }
-
-#ifdef _MSC_VER
-int WINAPI WinMain(HINSTANCE pInstance, HINSTANCE pPrevInstance, LPSTR lpCmdLine, int nShowCmd)
-{
-	return main(__argc, __argv);
-}
-#endif
 
 void* operator new(size_t count)
 {

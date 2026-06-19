@@ -18,7 +18,7 @@
 #include "../rhi/gl2/gl2_rhi.hpp"
 #include "../rhi/rhi.hpp"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 namespace srb2::rhi
 {

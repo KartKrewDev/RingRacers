@@ -14,7 +14,7 @@
 #include "../rhi/gles2/gles2_rhi.hpp"
 #include "../rhi/rhi.hpp"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 namespace srb2::rhi
 {

@@ -8,11 +8,12 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
+#include <SDL3/SDL_audio.h>
 #include <algorithm>
 #include <cmath>
 #include <memory>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <tracy/tracy/Tracy.hpp>
 
 #include "../audio/chunk_load.hpp"
@@ -23,7 +24,6 @@
 #include "../audio/sound_chunk.hpp"
 #include "../audio/sound_effect_player.hpp"
 #include "../cxxutil.hpp"
-#include "../io/streams.hpp"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "../m_avrecorder.hpp"
@@ -52,7 +52,6 @@ using srb2::audio::SoundChunk;
 using srb2::audio::SoundEffectPlayer;
 using srb2::audio::Source;
 using namespace srb2;
-using namespace srb2::io;
 
 namespace
 {
@@ -62,7 +61,15 @@ class SdlAudioStream final
 public:
 	SdlAudioStream(const SDL_AudioFormat format, const Uint8 channels, const int src_rate, const SDL_AudioFormat dst_format, const Uint8 dst_channels, const int dst_rate) noexcept
 	{
-		stream_ = SDL_NewAudioStream(format, channels, src_rate, dst_format, dst_channels, dst_rate);
+		SDL_AudioSpec src {};
+		src.channels = channels;
+		src.freq = src_rate;
+		src.format = format;
+		SDL_AudioSpec dst {};
+		dst.channels = dst_channels;
+		dst.freq = dst_rate;
+		dst.format = dst_format;
+		stream_ = SDL_CreateAudioStream(&src, &dst);
 	}
 	SdlAudioStream(const SdlAudioStream&) = delete;
 	SdlAudioStream(SdlAudioStream&&) = default;
@@ -70,27 +77,28 @@ public:
 	SdlAudioStream& operator=(SdlAudioStream&&) = default;
 	~SdlAudioStream()
 	{
-		SDL_FreeAudioStream(stream_);
+		SDL_DestroyAudioStream(stream_);
 	}
 
 	void put(tcb::span<const std::byte> buf)
 	{
-		int result = SDL_AudioStreamPut(stream_, buf.data(), buf.size_bytes());
-		if (result < 0)
+		if (!SDL_PutAudioStreamData(stream_, buf.data(), buf.size_bytes()))
 		{
 			char errbuf[512];
-			SDL_GetErrorMsg(errbuf, sizeof(errbuf));
+			SDL_strlcpy(errbuf, SDL_GetError(), sizeof(errbuf) - 1);
+			errbuf[sizeof(errbuf) - 1] = '\0';
 			throw std::runtime_error(errbuf);
 		}
 	}
 
 	size_t available() const
 	{
-		int result = SDL_AudioStreamAvailable(stream_);
+		int result = SDL_GetAudioStreamAvailable(stream_);
 		if (result < 0)
 		{
 			char errbuf[512];
-			SDL_GetErrorMsg(errbuf, sizeof(errbuf));
+			SDL_strlcpy(errbuf, SDL_GetError(), sizeof(errbuf) - 1);
+			errbuf[sizeof(errbuf) - 1] = '\0';
 			throw std::runtime_error(errbuf);
 		}
 		return result;
@@ -98,11 +106,12 @@ public:
 
 	size_t get(tcb::span<std::byte> out)
 	{
-		int result = SDL_AudioStreamGet(stream_, out.data(), out.size_bytes());
+		int result = SDL_GetAudioStreamData(stream_, out.data(), out.size_bytes());
 		if (result < 0)
 		{
 			char errbuf[512];
-			SDL_GetErrorMsg(errbuf, sizeof(errbuf));
+			SDL_strlcpy(errbuf, SDL_GetError(), sizeof(errbuf) - 1);
+			errbuf[sizeof(errbuf) - 1] = '\0';
 			throw std::runtime_error(errbuf);
 		}
 		return result;
@@ -110,7 +119,7 @@ public:
 
 	void clear() noexcept
 	{
-		SDL_AudioStreamClear(stream_);
+		SDL_ClearAudioStream(stream_);
 	}
 };
 
@@ -122,7 +131,7 @@ class SdlVoiceStreamPlayer : public Source<2>
 	bool terminal_ = true;
 
 public:
-	SdlVoiceStreamPlayer() : stream_(AUDIO_F32SYS, 1, 48000, AUDIO_F32SYS, 2, 44100) {}
+	SdlVoiceStreamPlayer() : stream_(SDL_AUDIO_F32, 1, 48000, SDL_AUDIO_F32, 2, 44100) {}
 	virtual ~SdlVoiceStreamPlayer() = default;
 
 	virtual std::size_t generate(tcb::span<Sample<2>> buffer) override
@@ -197,9 +206,9 @@ static shared_ptr<srb2::media::AVRecorder> av_recorder;
 
 static void (*music_fade_callback)();
 
-static SDL_AudioDeviceID g_device_id;
-static SDL_AudioDeviceID g_input_device_id;
-static SDL_mutex* microphone_mutex = nullptr;
+static SDL_AudioStream* g_output_stream;
+static SDL_AudioStream* g_input_stream;
+static SDL_Mutex* microphone_mutex = nullptr;
 static SDL_Thread* microphone_thread = nullptr;
 
 void* I_GetSfx(sfxinfo_t* sfx)
@@ -248,39 +257,42 @@ namespace
 class SdlAudioLockHandle
 {
 public:
-	SdlAudioLockHandle() { SDL_LockAudioDevice(g_device_id); }
-	~SdlAudioLockHandle() { SDL_UnlockAudioDevice(g_device_id); }
+	SdlAudioLockHandle() { SDL_LockAudioStream(g_output_stream); }
+	~SdlAudioLockHandle() { SDL_UnlockAudioStream(g_output_stream); }
 };
 
 #ifdef TRACY_ENABLE
 static const char* kAudio = "Audio";
 #endif
 
-void audio_callback(void* userdata, Uint8* buffer, int len)
+void audio_callback(void* userdata, SDL_AudioStream* stream, int add, int total)
 {
 	tracy::SetThreadName("SDL Audio Thread");
 	FrameMarkStart(kAudio);
 	ZoneScoped;
+	if (add <= 0)
+		return;
 	floatdenormalstate_t dtzstate = M_EnterFloatDenormalToZero();
 	auto dtzrestore = srb2::finally([dtzstate] { M_ExitFloatDenormalToZero(dtzstate); });
 
-	// The SDL Audio lock is implied to be held during callback.
+	if (!master_gain)
+	{
+		FrameMarkEnd(kAudio);
+		return;
+	}
+
+	static std::array<Sample<2>, 2048> float_buffer = {};
+
+	SDL_LockAudioStream(stream);
 
 	try
 	{
-		Sample<2>* float_buffer = reinterpret_cast<Sample<2>*>(buffer);
-		size_t float_len = len / 8;
-
+		size_t float_len = std::min(float_buffer.size(), add / sizeof(Sample<2>));
 		for (size_t i = 0; i < float_len; i++)
 		{
 			float_buffer[i] = Sample<2> {0.f, 0.f};
 		}
-
-		if (!master_gain)
-			return;
-
-		master_gain->generate(tcb::span {float_buffer, float_len});
-
+		master_gain->generate(tcb::span {float_buffer.data(), float_len});
 		for (size_t i = 0; i < float_len; i++)
 		{
 			float_buffer[i] = {
@@ -290,12 +302,15 @@ void audio_callback(void* userdata, Uint8* buffer, int len)
 		}
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 		if (av_recorder)
-			av_recorder->push_audio_samples(tcb::span {float_buffer, float_len});
+			av_recorder->push_audio_samples(tcb::span {float_buffer.data(), float_len});
 #endif
+		SDL_PutAudioStreamData(stream, float_buffer.data(), float_len * sizeof(Sample<2>));
 	}
 	catch (...)
 	{
 	}
+
+	SDL_UnlockAudioStream(stream);
 
 	FrameMarkEnd(kAudio);
 
@@ -304,27 +319,25 @@ void audio_callback(void* userdata, Uint8* buffer, int len)
 
 void initialize_sound()
 {
-	if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
+	if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
 	{
 		CONS_Alert(CONS_ERROR, "Error initializing SDL Audio: %s\n", SDL_GetError());
 		return;
 	}
 
 	SDL_AudioSpec desired {};
-	desired.format = AUDIO_F32SYS;
+	desired.format = SDL_AUDIO_F32;
 	desired.channels = 2;
-	desired.samples = cv_soundmixingbuffersize.value;
+	// desired.samples = cv_soundmixingbuffersize.value;
 	desired.freq = 44100;
-	desired.callback = audio_callback;
 
-	if ((g_device_id = SDL_OpenAudioDevice(NULL, SDL_FALSE, &desired, NULL, 0)) == 0)
+	if ((g_output_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired, audio_callback, nullptr)) == 0)
 	{
 		CONS_Alert(CONS_ERROR, "Failed to open SDL Audio device: %s\n", SDL_GetError());
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
 		return;
 	}
-
-	SDL_PauseAudioDevice(g_device_id, SDL_FALSE);
+	SDL_ResumeAudioStreamDevice(g_output_stream);
 
 	{
 		SdlAudioLockHandle _;
@@ -380,16 +393,16 @@ void I_StartupSound(void)
 
 void I_ShutdownSound(void)
 {
-	if (g_device_id)
+	if (g_output_stream)
 	{
-		SDL_CloseAudioDevice(g_device_id);
-		g_device_id = 0;
+		SDL_DestroyAudioStream(g_output_stream);
+		g_output_stream = nullptr;
 	}
 	SDL_LockMutex(microphone_mutex);
-	if (g_input_device_id)
+	if (g_input_stream)
 	{
-		SDL_CloseAudioDevice(g_input_device_id);
-		g_input_device_id = 0;
+		SDL_DestroyAudioStream(g_input_stream);
+		g_input_stream = nullptr;
 	}
 	SDL_UnlockMutex(microphone_mutex);
 
@@ -1008,7 +1021,7 @@ void I_UpdateAudioRecorder(void)
 boolean I_SoundInputIsEnabled(void)
 {
 	SDL_LockMutex(microphone_mutex);
-	boolean ret = g_input_device_id != 0;
+	boolean ret = g_input_stream != nullptr;
 	SDL_UnlockMutex(microphone_mutex);
 	return ret;
 }
@@ -1016,25 +1029,17 @@ boolean I_SoundInputIsEnabled(void)
 static int microphone_opener(void* data)
 {
 	SDL_AudioSpec input_desired {};
-	input_desired.format = AUDIO_F32SYS;
+	input_desired.format = SDL_AUDIO_F32;
 	input_desired.channels = 1;
-	input_desired.samples = 1024;
 	input_desired.freq = 48000;
-	SDL_AudioSpec input_obtained {};
-	SDL_AudioDeviceID device_id = SDL_OpenAudioDevice(nullptr, SDL_TRUE, &input_desired, &input_obtained, 0);
-	if (!device_id)
+	SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_RECORDING, &input_desired, nullptr, nullptr);
+	if (!stream)
 	{
-		// CONS_Alert(CONS_WARNING, "Failed to open input audio device: %s\n", SDL_GetError());
 		return 0;
 	}
-	if (input_obtained.freq != 48000 || input_obtained.format != AUDIO_F32SYS || input_obtained.channels != 1)
-	{
-		// CONS_Alert(CONS_WARNING, "Input audio device has unexpected unusable format: %s\n", SDL_GetError());
-		return 0;
-	}
-	SDL_PauseAudioDevice(device_id, SDL_FALSE);
+	SDL_ResumeAudioStreamDevice(stream);
 	SDL_LockMutex(microphone_mutex);
-	g_input_device_id = device_id;
+	g_input_stream = stream;
 	SDL_UnlockMutex(microphone_mutex);
 	return 0;
 }
@@ -1043,9 +1048,13 @@ boolean I_SoundInputSetEnabled(boolean enabled)
 {
 	SDL_LockMutex(microphone_mutex);
 
-	if (g_input_device_id == 0 && enabled)
+	if (g_input_stream == nullptr && enabled)
 	{
-		if (!sound_started || SDL_GetNumAudioDevices(true) == 0)
+		int recording_devices = 0;
+		SDL_AudioDeviceID* device_ids;
+		device_ids = SDL_GetAudioRecordingDevices(&recording_devices);
+		SDL_free(device_ids);
+		if (!sound_started || recording_devices == 0)
 		{
 			SDL_UnlockMutex(microphone_mutex);
 			return false;
@@ -1053,13 +1062,13 @@ boolean I_SoundInputSetEnabled(boolean enabled)
 
 		SDL_CreateThread(microphone_opener, "Microphone Opener", nullptr);
 	}
-	else if (g_input_device_id != 0 && !enabled)
+	else if (g_input_stream != nullptr && !enabled)
 	{
 		microphone_thread = nullptr;
-		SDL_PauseAudioDevice(g_input_device_id, SDL_TRUE);
-		SDL_ClearQueuedAudio(g_input_device_id);
-		SDL_CloseAudioDevice(g_input_device_id);
-		g_input_device_id = 0;
+		SDL_PauseAudioStreamDevice(g_input_stream);
+		SDL_ClearAudioStream(g_input_stream);
+		SDL_DestroyAudioStream(g_input_stream);
+		g_input_stream = nullptr;
 	}
 
 	SDL_UnlockMutex(microphone_mutex);
@@ -1070,13 +1079,13 @@ boolean I_SoundInputSetEnabled(boolean enabled)
 UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
 {
 	SDL_LockMutex(microphone_mutex);
-	if (!g_input_device_id)
+	if (!g_input_stream)
 	{
 		SDL_UnlockMutex(microphone_mutex);
 		return 0;
 	}
 
-	UINT32 ret = SDL_DequeueAudio(g_input_device_id, data, len);
+	UINT32 ret = SDL_GetAudioStreamData(g_input_stream, data, len);
 	SDL_UnlockMutex(microphone_mutex);
 	return ret;
 }
@@ -1084,12 +1093,12 @@ UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
 UINT32 I_SoundInputRemainingSamples(void)
 {
 	SDL_LockMutex(microphone_mutex);
-	if (!g_input_device_id)
+	if (!g_input_stream)
 	{
 		SDL_UnlockMutex(microphone_mutex);
 		return 0;
 	}
-	UINT32 avail = SDL_GetQueuedAudioSize(g_input_device_id);
+	UINT32 avail = SDL_GetAudioStreamAvailable(g_input_stream);
 	SDL_UnlockMutex(microphone_mutex);
 	return avail / sizeof(float);
 }

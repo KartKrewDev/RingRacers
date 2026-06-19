@@ -13,8 +13,8 @@
 #ifndef __sdlmain__
 #define __sdlmain__
 
-extern SDL_bool consolevent;
-extern SDL_bool framebuffer;
+extern bool consolevent;
+extern bool framebuffer;
 
 #include "../m_fixed.h"
 #include "../doomdef.h"
@@ -37,7 +37,7 @@ extern "C" {
 typedef struct SDLJoyInfo_s
 {
 	/// Controller handle
-	SDL_GameController *dev;
+	SDL_Gamepad *dev;
 	/// number of old joystick
 	int oldjoy;
 	/// number of axies
@@ -60,7 +60,6 @@ extern SDLJoyInfo_t JoyInfo[MAXSPLITSCREENPLAYERS];
 /**	\brief joystick axis deadzone
 */
 #define SDL_JDEADZONE 153
-#undef SDL_JDEADZONE
 
 void I_GetConsoleEvents(void);
 

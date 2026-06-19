@@ -31,7 +31,7 @@
 
 #ifdef HAVE_SDLNET
 
-#include "SDL_net.h"
+#include <SDL3_net/SDL_net.h>
 
 #define MAXBANS 20
 

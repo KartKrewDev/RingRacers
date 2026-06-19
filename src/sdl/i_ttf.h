@@ -15,7 +15,7 @@
 #define __I_TTF__
 
 #include "../doomdef.h"
-#include <SDL_ttf.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 #ifdef __cplusplus
 extern "C" {

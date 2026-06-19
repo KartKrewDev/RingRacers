@@ -14,7 +14,7 @@
 #include <string>
 #include <sstream>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "../core/string.h"
 #include "../core/vector.hpp"
@@ -118,6 +118,6 @@ rhi::Rect SdlGl2Platform::get_default_framebuffer_dimensions()
 	SRB2_ASSERT(window != nullptr);
 	int w;
 	int h;
-	SDL_GL_GetDrawableSize(window, &w, &h);
+	SDL_GetWindowSizeInPixels(window, &w, &h);
 	return {0, 0, static_cast<uint32_t>(w), static_cast<uint32_t>(h)};
 }

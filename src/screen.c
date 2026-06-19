@@ -429,7 +429,6 @@ void SCR_SetDefaultMode(void)
 void SCR_ChangeFullscreen(void);
 void SCR_ChangeFullscreen(void)
 {
-#ifdef DIRECTFULLSCREEN
 	// allow_fullscreen is set by VID_PrepareModeList
 	// it is used to prevent switching to fullscreen during startup
 	if (!allow_fullscreen)
@@ -441,7 +440,6 @@ void SCR_ChangeFullscreen(void)
 		setmodeneeded = VID_GetModeForSize(vid.width, vid.height) + 1;
 	}
 	return;
-#endif
 }
 
 void SCR_ChangeRenderer(void)
