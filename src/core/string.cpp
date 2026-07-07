@@ -752,21 +752,6 @@ bool operator==(const String& lhs, const char* rhs)
 // 	return lhs.compare(rhs) == 0;
 // }
 
-bool operator!=(const String& lhs, const String& rhs)
-{
-	return !(lhs == rhs);
-}
-
-bool operator!=(const String& lhs, const char* rhs)
-{
-	return !(lhs == rhs);
-}
-
-// bool operator!=(const String& lhs, std::string_view rhs)
-// {
-// 	return !(lhs == rhs);
-// }
-
 bool operator<(const String& lhs, const String& rhs)
 {
 	return lhs.compare(rhs) < 0;

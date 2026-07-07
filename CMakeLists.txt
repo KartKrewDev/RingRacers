@@ -24,6 +24,20 @@ if(APPLE)
     enable_language(OBJC)
 endif()
 
+# We need some portion of C++20 support
+# Don't need/should not use: parallel algorithms, coroutines, modules, std::format
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "12.1")
+	# Released May 6, 2022
+	message(WARNING "GCC version 12.1 or higher is recommended. (Currently ${CMAKE_CXX_COMPILER_VERSION})")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES Clang AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "17.0.1")
+	# Released September 9, 2023
+	message(WARNING "Clang version 17.0.1 or higher is recommended. (Currently ${CMAKE_CXX_COMPILER_VERSION})")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES AppleClang AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14.0")
+	# Released September 12, 2022
+	# Last version that can run on Monterey; lacks C++20 libc++ support but full language feature support
+	message(WARNING "AppleClang/XCode version 14.0 or higher is recommended. (Currently ${CMAKE_CXX_COMPILER_VERSION})")
+endif()
+
 # Options
 if("${CMAKE_SYSTEM_NAME}" MATCHES Windows)
 	if(DEFINED VCPKG_TARGET_TRIPLET)

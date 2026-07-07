@@ -229,12 +229,6 @@ bool operator==(const srb2::StaticVec<T, L1>& lhs, const srb2::StaticVec<T, L2>&
 	return true;
 }
 
-template <typename T, size_t L1, size_t L2>
-bool operator!=(const srb2::StaticVec<T, L1>& lhs, const srb2::StaticVec<T, L2>& rhs)
-{
-	return !(lhs == rhs);
-}
-
 template <typename T, size_t Limit>
 struct std::hash<srb2::StaticVec<T, Limit>>
 {

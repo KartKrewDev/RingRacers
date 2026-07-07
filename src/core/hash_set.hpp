@@ -45,7 +45,6 @@ public:
 		Iter& operator=(Iter&&) noexcept = default;
 
 		bool operator==(const Iter& r) const noexcept { return iter_ == r.iter_; }
-		bool operator!=(const Iter& r) const noexcept { return !(*this == r); }
 
 		V& operator*() const noexcept { return iter_->first; }
 		V* operator->() const noexcept { return &iter_->first; }
@@ -82,7 +81,6 @@ public:
 		ConstIter& operator=(ConstIter&&) noexcept = default;
 
 		bool operator==(const ConstIter& r) const noexcept { return iter_ == r.iter_; }
-		bool operator!=(const ConstIter& r) const noexcept { return !(*this == r); }
 
 		const V& operator*() const noexcept { return iter_->first; }
 		const V* operator->() const noexcept { return &iter_->first; }

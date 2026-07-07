@@ -61,8 +61,6 @@ public:
 		return s_ == r.s_ && i_ == r.i_;
 	}
 
-	bool operator!=(const Utf8Iter& r) const noexcept { return !(*this == r); }
-
 	uint32_t operator*() const { return codepoint(); }
 	Utf8Iter& operator++()
 	{
@@ -112,8 +110,6 @@ public:
 	{
 		return s_ == r.s_ && i_ == r.i_;
 	}
-
-	bool operator!=(const Utf16Iter& r) const noexcept { return !(*this == r); }
 
 	uint32_t operator*() const { return codepoint(); }
 	Utf16Iter& operator++()
@@ -363,9 +359,6 @@ String operator+(const String& lhs, std::string_view view);
 bool operator==(const String& lhs, const String& rhs);
 bool operator==(const String& lhs, const char* rhs);
 // bool operator==(const String& lhs, std::string_view rhs);
-bool operator!=(const String& lhs, const String& rhs);
-bool operator!=(const String& lhs, const char* rhs);
-// bool operator!=(const String& lhs, std::string_view rhs);
 bool operator<(const String& lhs, const String& rhs);
 bool operator<(const String& lhs, const char* rhs);
 // bool operator<(const String& lhs, std::string_view rhs);
@@ -413,9 +406,9 @@ inline auto format_as(const String& str) { return fmt::string_view(static_cast<s
 srb2::String vformat(fmt::string_view fmt, fmt::format_args args);
 
 template <typename... T>
-inline auto format(fmt::format_string<T...> fmt, T&&... args)
+inline srb2::String format(fmt::format_string<T...> fmt, T&&... args)
 {
-	return ::srb2::vformat(fmt, fmt::vargs<T...>{{args...}});
+	return ::srb2::vformat(fmt.get(), fmt::vargs<T...>{{args...}});
 }
 
 } // namespace srb2

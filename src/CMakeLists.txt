@@ -277,12 +277,12 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND MSVC)
 	target_link_options(SRB2SDL2 PRIVATE "$<$<CONFIG:RelWithDebInfo,Release>:/pdbaltpath:%_PDB%>")
 endif()
 
-target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
+target_compile_features(SRB2SDL2 PRIVATE c_std_17 cxx_std_20)
 set_target_properties(SRB2SDL2 PROPERTIES
-	C_STANDARD 11
+	C_STANDARD 17
 	C_STANDARD_REQUIRED ON
 	C_STANDARD_EXTENSIONS OFF
-	CXX_STANDARD 17
+	CXX_STANDARD 20
 	CXX_STANDARD_REQUIRED ON
 	CXX_EXTENSIONS OFF
 )
@@ -544,65 +544,39 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wformat-y2k
 		-Wformat-security
 
-		$<$<VERSION_LESS:$<C_COMPILER_VERSION>,2.9.5>:
-			-Wno-div-by-zero
-			-Wendif-labels
-			-Wdisabled-optimization
-		>
+		-Wold-style-definition
+		-Wmissing-field-initializers
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.0.0>:
-			-Wold-style-definition
-			-Wmissing-field-initializers
-		>
+		-Wshadow
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.1.0>:
-			-Wshadow
-		>
+		-funit-at-a-time
+		-Wlogical-op
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.3.0>:
-			-funit-at-a-time
-			-Wlogical-op
-		>
+		-Wlogical-op
+		-Wno-error=array-bounds
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.5.0>:
-			-Wlogical-op
-			-Wno-error=array-bounds
-		>
+		-Wno-suggest-attribute=noreturn
+		-Wno-error=suggest-attribute=noreturn
+		-Werror=vla
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.6.0>:
-			-Wno-suggest-attribute=noreturn
-			-Wno-error=suggest-attribute=noreturn
-			-Werror=vla
-		>
+		-Wno-logical-op
+		-Wno-error=logical-op
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,5.4.0>:
-			-Wno-logical-op
-			-Wno-error=logical-op
-		>
+		-Wno-tautological-compare
+		-Wno-error=tautological-compare
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,6.1.0>:
-			-Wno-tautological-compare
-			-Wno-error=tautological-compare
-		>
+		-Wno-error=format-overflow=2
+		-Wimplicit-fallthrough=4
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,7.1.0>:
-			-Wno-error=format-overflow=2
-			-Wimplicit-fallthrough=4
-		>
+		-Wno-error=format-overflow
+		-Wno-error=stringop-truncation
+		-Wno-error=stringop-overflow
+		-Wno-format-overflow
+		-Wno-stringop-truncation
+		-Wno-stringop-overflow
+		-Wno-error=multistatement-macros
 
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,8.1.0>:
-			-Wno-error=format-overflow
-			-Wno-error=stringop-truncation
-			-Wno-error=stringop-overflow
-			-Wno-format-overflow
-			-Wno-stringop-truncation
-			-Wno-stringop-overflow
-			-Wno-error=multistatement-macros
-		>
-
-		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,9.1.0>:
-			-Wno-error=address-of-packed-member
-		>
+		-Wno-error=address-of-packed-member
 	>
 
 	# C, Clang and Apple Clang

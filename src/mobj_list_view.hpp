@@ -45,7 +45,6 @@ struct MobjListView
 		}
 
 		bool operator==(const Iterator& b) const { return ptr_ == b.ptr_; };
-		bool operator!=(const Iterator& b) const { return ptr_ != b.ptr_; };
 
 		reference operator*() const { return ptr_; }
 		pointer operator->() { return ptr_; }

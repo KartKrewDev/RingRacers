@@ -365,7 +365,7 @@ private:
 
 	void spawn_sparkle(const vector3_t& pos, fixed_t xy_momentum, fixed_t z_momentum, angle_t dir, skincolornum_t color = SKINCOLOR_ULTRAMARINE)
 	{
-		auto rng = [=](int units) { return P_RandomRange(PR_DECORATION, -(units) * scale, +(units) * scale); };
+		auto rng = [=, this](int units) { return P_RandomRange(PR_DECORATION, -(units) * scale, +(units) * scale); };
 
 		// note: determinate random argument eval order
 		fixed_t rand_z = rng(24);

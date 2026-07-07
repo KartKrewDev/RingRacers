@@ -16,6 +16,7 @@
 #include <utility>
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "core/hash_map.hpp"
 #include "core/string.h"
@@ -301,7 +302,7 @@ public:
 
 		template <class... Args>
 		explicit TextElement(fmt::format_string<Args...> format, Args&&... args) :
-			TextElement(fmt::format(format, args...))
+			TextElement(fmt::format(format, std::forward<Args>(args)...))
 		{
 		}
 
@@ -323,7 +324,7 @@ public:
 		template <class... Args>
 		TextElement& parse(fmt::format_string<Args...> format, Args&&... args)
 		{
-			return parse(fmt::format(format, args...));
+			return parse(fmt::format(format, std::forward<Args>(args)...));
 		}
 
 		TextElement& font(Font font)
@@ -398,7 +399,9 @@ public:
 		}
 
 		template <class... Args>
-		void text(fmt::format_string<Args...> format, Args&&... args) const { text(fmt::format(format, args...)); }
+		void text(fmt::format_string<Args...> format, Args&&... args) const {
+			text(fmt::format(format, std::forward<Args>(args)...));
+		}
 
 		TextElement text() const { return TextElement().font(font_).flags(flags_); }
 
@@ -497,11 +500,17 @@ public:
 
 #undef METHOD
 
+	void text(const char* str) const { chain_.text(str); }
+	void text(const srb2::String& str) const { chain_.text(str); }
+	void text(const TextElement& elm) const { chain_.text(elm); }
+	template <class... Args>
+	void text(fmt::format_string<Args...> format, Args&&... args) const { chain_.text(format, std::forward<Args>(args)...); }
+	TextElement text() const { return chain_.text(); }
+
 #define VOID_METHOD(Name) \
 	template <typename... Args>\
 	auto Name (Args&&... args) const { return chain_.Name(std::forward<Args>(args)...); }
 
-	VOID_METHOD(text);
 	VOID_METHOD(patch);
 	VOID_METHOD(thumbnail);
 	VOID_METHOD(fill);

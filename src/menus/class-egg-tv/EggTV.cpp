@@ -1001,7 +1001,7 @@ void EggTV::draw_replay(const Replay& replay) const
 		}
 		else
 		{
-			gametype.text(replay.gametype().name());
+			gametype.text("{}", replay.gametype().name());
 		}
 
 		if (winner)
