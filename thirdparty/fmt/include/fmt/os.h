@@ -1,6 +1,6 @@
 // Formatting library for C++ - optional OS-specific functionality
 //
-// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
+// Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -29,8 +29,7 @@
 #  if (FMT_HAS_INCLUDE(<fcntl.h>) || defined(__APPLE__) || \
        defined(__linux__)) &&                              \
       (!defined(WINAPI_FAMILY) ||                          \
-       (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)) &&    \
-      !defined(__wasm__)
+       (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
 #    include <fcntl.h>  // for O_RDONLY
 #    define FMT_USE_FCNTL 1
 #  else
@@ -136,9 +135,10 @@ FMT_API std::system_error vwindows_error(int error_code, string_view fmt,
  * **Example**:
  *
  *     // This throws a system_error with the description
- *     //   cannot open file 'foo': The system cannot find the file specified.
- *     // or similar (system message may vary) if the file doesn't exist.
- *     const char *filename = "foo";
+ *     //   cannot open file 'madeup': The system cannot find the file
+ * specified.
+ *     // or similar (system message may vary).
+ *     const char *filename = "madeup";
  *     LPOFSTRUCT of = LPOFSTRUCT();
  *     HFILE file = OpenFile(filename, &of, OF_READ);
  *     if (file == HFILE_ERROR) {
@@ -160,6 +160,14 @@ inline auto system_category() noexcept -> const std::error_category& {
   return std::system_category();
 }
 #endif  // _WIN32
+
+// std::system is not available on some platforms such as iOS (#2248).
+#ifdef __OSX__
+template <typename S, typename... Args, typename Char = char_t<S>>
+void say(const S& fmt, Args&&... args) {
+  std::system(format("say \"{}\"", format(fmt, args...)).c_str());
+}
+#endif
 
 // A buffered file.
 class buffered_file {
@@ -356,17 +364,17 @@ FMT_INLINE_VARIABLE constexpr auto buffer_size = detail::buffer_size();
 
 /// A fast buffered output stream for writing from a single thread. Writing from
 /// multiple threads without external synchronization may result in a data race.
-class ostream : private detail::buffer<char> {
+class FMT_API ostream : private detail::buffer<char> {
  private:
   file file_;
 
-  FMT_API ostream(cstring_view path, const detail::ostream_params& params);
+  ostream(cstring_view path, const detail::ostream_params& params);
 
-  FMT_API static void grow(buffer<char>& buf, size_t);
+  static void grow(buffer<char>& buf, size_t);
 
  public:
-  FMT_API ostream(ostream&& other) noexcept;
-  FMT_API ~ostream();
+  ostream(ostream&& other) noexcept;
+  ~ostream();
 
   operator writer() {
     detail::buffer<char>& buf = *this;

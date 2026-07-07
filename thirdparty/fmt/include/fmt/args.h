@@ -1,6 +1,6 @@
 // Formatting library for C++ - dynamic argument lists
 //
-// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
+// Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -71,7 +71,7 @@ class dynamic_arg_list {
  * It can be implicitly converted into `fmt::basic_format_args` for passing
  * into type-erased formatting functions such as `fmt::vformat`.
  */
-FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
+template <typename Context> class dynamic_format_arg_store {
  private:
   using char_type = typename Context::char_type;
 
@@ -113,7 +113,8 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
     data_.emplace_back(arg);
   }
 
-  template <typename T> void emplace_arg(const named_arg<T, char_type>& arg) {
+  template <typename T>
+  void emplace_arg(const detail::named_arg<char_type, T>& arg) {
     if (named_info_.empty())
       data_.insert(data_.begin(), basic_format_arg<Context>(nullptr, 0));
     data_.emplace_back(detail::unwrap(arg.value));
@@ -151,7 +152,7 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
    *     std::string result = fmt::vformat("{} and {} and {}", store);
    */
   template <typename T> void push_back(const T& arg) {
-    if FMT_CONSTEXPR20 (need_copy<T>::value)
+    if (detail::const_check(need_copy<T>::value))
       emplace_arg(dynamic_args_.push<stored_t<T>>(arg));
     else
       emplace_arg(detail::unwrap(arg));
@@ -182,10 +183,11 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
    * formatting function. `std::reference_wrapper` is supported to avoid
    * copying of the argument. The name is always copied into the store.
    */
-  template <typename T> void push_back(const named_arg<T, char_type>& arg) {
+  template <typename T>
+  void push_back(const detail::named_arg<char_type, T>& arg) {
     const char_type* arg_name =
         dynamic_args_.push<std::basic_string<char_type>>(arg.name).c_str();
-    if FMT_CONSTEXPR20 (need_copy<T>::value) {
+    if (detail::const_check(need_copy<T>::value)) {
       emplace_arg(
           fmt::arg(arg_name, dynamic_args_.push<stored_t<T>>(arg.value)));
     } else {
@@ -210,7 +212,7 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
   }
 
   /// Returns the number of elements in the store.
-  auto size() const noexcept -> size_t { return data_.size(); }
+  size_t size() const noexcept { return data_.size(); }
 };
 
 FMT_END_NAMESPACE
