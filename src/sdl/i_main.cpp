@@ -216,14 +216,6 @@ int main(int argc, char **argv)
 
 	tracy::SetThreadName("Main");
 
-#ifdef HAVE_TTF
-#ifdef _WIN32
-		I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO|SDL_INIT_AUDIO, 0);
-#else
-		I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO, 0);
-#endif
-#endif
-
 #ifdef _WIN32
 	ChDirToExe();
 #endif

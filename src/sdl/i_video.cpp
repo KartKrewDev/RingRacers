@@ -42,16 +42,11 @@
 #pragma warning(default : 4214 4244)
 #endif
 
-#ifdef HAVE_TTF
-#include "i_ttf.h"
-#endif
-
 #if (defined (__unix__) || (!defined(__APPLE__) && defined (UNIXCOMMON)))
 #define USE_XPM_ICON
 #include "IMG_xpm.h"
-#endif
-
 #include "SDL_icon.xpm"
+#endif
 
 #include "../doomdef.h"
 
@@ -1528,14 +1523,12 @@ void I_StartupGraphics(void)
 
 	keyboard_started = true;
 
-#if !defined(HAVE_TTF)
 	// Previously audio was init here for questionable reasons?
 	if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
 	{
 		CONS_Printf(M_GetText("Couldn't initialize SDL's Video System: %s\n"), SDL_GetError());
 		return;
 	}
-#endif
 
 	// Renderer choices
 	// Takes priority over the config.
