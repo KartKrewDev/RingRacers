@@ -42,10 +42,8 @@
  * requires about 13K in binary form.
  */
 
-// SDLCALL terms removed from original SDL_image declarations
-int IMG_isXPM(SDL_IOStream *src);
-SDL_Surface *IMG_LoadXPM_IO(SDL_IOStream *src);
-SDL_Surface *IMG_ReadXPMFromArray(const char **xpm);
+#include "IMG_xpm.h"
+
 #define IMG_SetError    SDL_SetError
 #define IMG_GetError    SDL_GetError
 

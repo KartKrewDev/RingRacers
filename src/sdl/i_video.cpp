@@ -46,12 +46,12 @@
 #include "i_ttf.h"
 #endif
 
-#include "IMG_xpm.c" //Alam: I don't want to add SDL_Image.dll/so
-#define HAVE_IMAGE //I have SDL_Image, sortof
-
-#ifdef HAVE_IMAGE
-#include "SDL_icon.xpm"
+#if (defined (__unix__) || (!defined(__APPLE__) && defined (UNIXCOMMON)))
+#define USE_XPM_ICON
+#include "IMG_xpm.h"
 #endif
+
+#include "SDL_icon.xpm"
 
 #include "../doomdef.h"
 
@@ -1586,7 +1586,7 @@ void I_StartupGraphics(void)
 #endif
 
 	// Window icon
-#if defined(HAVE_IMAGE) && (defined (__unix__) || (!defined(__APPLE__) && defined (UNIXCOMMON)))
+#if USE_XPM_ICON
 	icoSurface = IMG_ReadXPMFromArray(SDL_icon_xpm);
 #endif
 
