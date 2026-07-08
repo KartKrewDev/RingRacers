@@ -593,7 +593,7 @@ static void loading_status(void)
 
 	I_OsPolling();
 	CON_Drawer();
-	sprintf(s, "%d%%", (++ls_percent)<<1);
+	snprintf(s, sizeof(s), "%d%%", (++ls_percent)<<1);
 	x = BASEVIDWIDTH/2;
 	y = BASEVIDHEIGHT/2;
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol); // Black background to match fade in effect

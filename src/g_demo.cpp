@@ -2941,7 +2941,7 @@ corrupt:
 
 badreplay:
 	pdemo->type = MD_INVALID;
-	sprintf(pdemo->title, "INVALID REPLAY");
+	snprintf(pdemo->title, sizeof(pdemo->title), "INVALID REPLAY");
 	Z_Free(skinlist);
 	P_SaveBufferFree(&info);
 }
@@ -4314,7 +4314,7 @@ void G_SaveDemo(void)
 			// Slug is valid, write the chosen filename.
 			writepoint = strstr(strrchr(demoname, *PATHSEP), "-") + 1;
 			demo_slug[128 - (writepoint - demoname) - 4] = 0;
-			sprintf(writepoint, "%s.lmp", demo_slug);
+			snprintf(writepoint, sizeof(demoname) - (writepoint - demoname), "%s.lmp", demo_slug);
 		}
 		else if (demo.titlename[0] == '\0')
 		{

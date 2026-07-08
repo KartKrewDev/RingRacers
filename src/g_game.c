@@ -5394,7 +5394,7 @@ void G_LoadGame(void)
 	versionMinor = READUINT8(save.p);
 
 	memset(vcheck, 0, sizeof (vcheck));
-	sprintf(vcheck, "version %d", VERSION);
+	snprintf(vcheck, sizeof(vcheck), "version %d", VERSION);
 
 	if (versionMinor != SAV_VERSIONMINOR
 	|| memcmp(save.p, vcheck, VERSIONSIZE))
@@ -5455,7 +5455,7 @@ void G_GetBackupCupData(boolean actuallygetdata)
 	versionMinor = READUINT8(save.p);
 
 	memset(vcheck, 0, sizeof (vcheck));
-	sprintf(vcheck, "version %d", VERSION);
+	snprintf(vcheck, sizeof(vcheck), "version %d", VERSION);
 
 	if (versionMinor != SAV_VERSIONMINOR
 	|| memcmp(save.p, vcheck, VERSIONSIZE))
@@ -5511,7 +5511,7 @@ void G_SaveGame(void)
 		WRITEUINT8(save.p, SAV_VERSIONMINOR);
 
 		memset(name, 0, sizeof (name));
-		sprintf(name, "version %d", VERSION);
+		snprintf(name, sizeof(name), "version %d", VERSION);
 		WRITEMEM(save.p, name, VERSIONSIZE);
 
 		P_SaveGame(&save);
@@ -5732,9 +5732,9 @@ char *G_BuildMapTitle(INT32 mapnum)
 
 		title = Z_Malloc(len, PU_STATIC, NULL);
 
-		sprintf(title, "%s", mapheaderinfo[mapnum-1]->lvlttl);
-		if (zonetext) sprintf(title + strlen(title), " %s", zonetext);
-		if (actnum > 0) sprintf(title + strlen(title), " %d", actnum);
+		snprintf(title, len, "%s", mapheaderinfo[mapnum-1]->lvlttl);
+		if (zonetext) snprintf(title + strlen(title), len - strlen(title), " %s", zonetext);
+		if (actnum > 0) snprintf(title + strlen(title), len - strlen(title), " %d", actnum);
 	}
 
 	return title;
@@ -6286,4 +6286,3 @@ UINT32 G_TeamOrIndividualScore(const player_t *player)
 
 	return player->roundscore;
 }
-

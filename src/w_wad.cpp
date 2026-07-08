@@ -259,8 +259,7 @@ static inline void W_LoadDehackedLumpsPK3(UINT16 wadnum, boolean mainfile)
 			lumpinfo_t *lump_p = &wadfiles[wadnum]->lumpinfo[posStart];
 			size_t length = strlen(wadfiles[wadnum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
 			char *name = static_cast<char*>(malloc(length + 1));
-			sprintf(name, "%s|%s", wadfiles[wadnum]->filename, lump_p->fullname);
-			name[length] = '\0';
+			snprintf(name, length + 1, "%s|%s", wadfiles[wadnum]->filename, lump_p->fullname);
 			CONS_Printf(M_GetText("Loading SOC from %s\n"), name);
 			DEH_LoadDehackedLumpPwad(wadnum, posStart, mainfile);
 			free(name);
@@ -288,8 +287,7 @@ static inline void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
 			{	// shameless copy+paste of code from LUA_LoadLump
 				size_t length = strlen(wadfiles[wadnum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
 				char *name = static_cast<char*>(malloc(length + 1));
-				sprintf(name, "%s|%s", wadfiles[wadnum]->filename, lump_p->fullname);
-				name[length] = '\0';
+				snprintf(name, length + 1, "%s|%s", wadfiles[wadnum]->filename, lump_p->fullname);
 
 				CONS_Printf(M_GetText("Loading SOC from %s\n"), name);
 				DEH_LoadDehackedLumpPwad(wadnum, lump, mainfile);
@@ -2601,7 +2599,7 @@ static boolean ReadShaderFlatFile(const char *filename, size_t *size, void *dest
 		nameonly(filename_buf);
 		strncpy(filename_only_buf, filename_buf, 512);
 		filename_only_buf[512 - 1] = '\0';
-		sprintf(filename_buf, "%s/shaders/%s", srb2path, filename_only_buf);
+		snprintf(filename_buf, sizeof(filename_buf), "%s/shaders/%s", srb2path, filename_only_buf);
 		if ((flat_handle = fopen(filename_buf, "rb")) == NULL)
 		{
 			return false;

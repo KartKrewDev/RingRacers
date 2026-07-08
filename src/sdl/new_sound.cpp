@@ -85,8 +85,7 @@ public:
 		if (!SDL_PutAudioStreamData(stream_, buf.data(), buf.size_bytes()))
 		{
 			char errbuf[512];
-			SDL_strlcpy(errbuf, SDL_GetError(), sizeof(errbuf) - 1);
-			errbuf[sizeof(errbuf) - 1] = '\0';
+			snprintf(errbuf, sizeof(errbuf), "%s", SDL_GetError());
 			throw std::runtime_error(errbuf);
 		}
 	}
@@ -97,8 +96,7 @@ public:
 		if (result < 0)
 		{
 			char errbuf[512];
-			SDL_strlcpy(errbuf, SDL_GetError(), sizeof(errbuf) - 1);
-			errbuf[sizeof(errbuf) - 1] = '\0';
+			snprintf(errbuf, sizeof(errbuf), "%s", SDL_GetError());
 			throw std::runtime_error(errbuf);
 		}
 		return result;
@@ -110,8 +108,7 @@ public:
 		if (result < 0)
 		{
 			char errbuf[512];
-			SDL_strlcpy(errbuf, SDL_GetError(), sizeof(errbuf) - 1);
-			errbuf[sizeof(errbuf) - 1] = '\0';
+			snprintf(errbuf, sizeof(errbuf), "%s", SDL_GetError());
 			throw std::runtime_error(errbuf);
 		}
 		return result;

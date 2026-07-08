@@ -2144,7 +2144,7 @@ static void CV_SetValueMaybeStealth(consvar_t *var, INT32 value, boolean stealth
 		strlcpy(val, tmpskin, SKINNAMESIZE+1);
 	}
 	else
-		sprintf(val, "%d", value);
+		snprintf(val, sizeof(val), "%d", value);
 
 	CV_SetCVar(var, val, stealth);
 }
@@ -2489,9 +2489,9 @@ void CV_SaveVariables(FILE *f)
 					INT32 value = cvar->PossibleValue[which].value;
 
 					if (cvar->flags & CV_FLOAT)
-						sprintf(stringtowrite, "%f", FIXED_TO_FLOAT(value));
+						snprintf(stringtowrite, sizeof(stringtowrite), "%f", FIXED_TO_FLOAT(value));
 					else
-						sprintf(stringtowrite, "%d", value);
+						snprintf(stringtowrite, sizeof(stringtowrite), "%d", value);
 
 					string = stringtowrite;
 				}

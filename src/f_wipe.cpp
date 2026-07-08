@@ -576,7 +576,7 @@ tic_t F_GetWipeLength(UINT8 wipetype)
 
 	for (wipeframe = 0; wipeframe < 100; wipeframe++)
 	{
-		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT16)wipetype, (UINT16)wipeframe);
+		snprintf(&lumpname[4], sizeof(lumpname) - 4, "%.2hu%.2hu", (UINT16)wipetype, (UINT16)wipeframe);
 
 		lumpnum = W_CheckNumForName(lumpname);
 		if (lumpnum == LUMPERROR)
@@ -600,7 +600,7 @@ boolean F_WipeExists(UINT8 wipetype)
 	if (wipetype > 99)
 		return false;
 
-	sprintf(&lumpname[4], "%.2hu00", (UINT16)wipetype);
+	snprintf(&lumpname[4], sizeof(lumpname) - 4, "%.2hu00", (UINT16)wipetype);
 
 	lumpnum = W_CheckNumForName(lumpname);
 	return !(lumpnum == LUMPERROR);
@@ -626,4 +626,3 @@ boolean F_WipeIsCrossfade(UINT8 wipemode)
 {
 	return g_wipedef_crossfade[wipemode];
 }
-

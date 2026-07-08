@@ -145,7 +145,7 @@ static void M_AddFloatVar(consvar_t *cv, fixed_t step)
 	char s[20];
 	double f = FIXED_TO_FLOAT(n);
 	const char *d = M_Ftrim(f);
-	sprintf(s, "%ld%s", (long)f, *d ? d : ".0");
+	snprintf(s, sizeof(s), "%ld%s", (long)f, *d ? d : ".0");
 
 	CV_Set(cv, s);
 }

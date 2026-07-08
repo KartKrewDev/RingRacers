@@ -756,16 +756,16 @@ static void Got_Saycmd(const UINT8 **p, INT32 playernum)
 
 				if (chatcolor > V_TANMAP)
 				{
-					sprintf(color_prefix, "%c", '\x80');
+					snprintf(color_prefix, sizeof(color_prefix), "%c", '\x80');
 				}
 				else
 				{
-					sprintf(color_prefix, "%c", '\x80' + (chatcolor >> V_CHARCOLORSHIFT));
+					snprintf(color_prefix, sizeof(color_prefix), "%c", '\x80' + (chatcolor >> V_CHARCOLORSHIFT));
 				}
 			}
 			else
 			{
-				sprintf(color_prefix, "%c", '\x80' + cv_shoutcolor.value);
+				snprintf(color_prefix, sizeof(color_prefix), "%c", '\x80' + cv_shoutcolor.value);
 			}
 
 			// Colorize full text
@@ -778,7 +778,7 @@ static void Got_Saycmd(const UINT8 **p, INT32 playernum)
 		}
 		else if (target == -1) // say team
 		{
-			sprintf(color_prefix, "%c", '\x80' + (g_teaminfo[ players[playernum].team ].chat_color >> V_CHARCOLORSHIFT));
+			snprintf(color_prefix, sizeof(color_prefix), "%c", '\x80' + (g_teaminfo[ players[playernum].team ].chat_color >> V_CHARCOLORSHIFT));
 			cstart = textcolor = color_prefix;
 		}
 		else
@@ -787,11 +787,11 @@ static void Got_Saycmd(const UINT8 **p, INT32 playernum)
 
 			if (chatcolor > V_TANMAP)
 			{
-				sprintf(color_prefix, "%c", '\x80');
+				snprintf(color_prefix, sizeof(color_prefix), "%c", '\x80');
 			}
 			else
 			{
-				sprintf(color_prefix, "%c", '\x80' + (chatcolor >> V_CHARCOLORSHIFT));
+				snprintf(color_prefix, sizeof(color_prefix), "%c", '\x80' + (chatcolor >> V_CHARCOLORSHIFT));
 			}
 
 			cstart = color_prefix;

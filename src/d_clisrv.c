@@ -1427,7 +1427,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	size_t length, decompressedlen;
 	char tmpsave[256];
 
-	sprintf(tmpsave, "%s" PATHSEP TMPSAVENAME, srb2home);
+	snprintf(tmpsave, sizeof(tmpsave), "%s" PATHSEP TMPSAVENAME, srb2home);
 
 	if (P_SaveBufferFromFile(&save, tmpsave) == false)
 	{
@@ -1524,7 +1524,7 @@ static void CL_ReloadReceivedSavegame(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		LUA_InvalidatePlayer(&players[i]);
-		sprintf(player_names[i], "Player %c", 'A' + i);
+		snprintf(player_names[i], MAXPLAYERNAME+1, "Player %c", 'A' + i);
 	}
 
 	CL_LoadReceivedSavegame(true);
@@ -1983,7 +1983,7 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 
 				for (n = 0; n < GIT_SHA_ABBREV; ++n)
 				{
-					sprintf(&theirs[n * 2], "%02hhx",
+					snprintf(&theirs[n * 2], sizeof(theirs) - n * 2, "%02hhx",
 							serverlist[i].info.commit[n]);
 				}
 
@@ -2335,7 +2335,7 @@ static void CL_ConnectToServer(void)
 	tic_t asksent;
 	char tmpsave[256];
 
-	sprintf(tmpsave, "%s" PATHSEP TMPSAVENAME, srb2home);
+	snprintf(tmpsave, sizeof(tmpsave), "%s" PATHSEP TMPSAVENAME, srb2home);
 
 	lastfilenum = -1;
 
@@ -2714,7 +2714,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		doomcom->numslots--;
 
 	// Reset the name
-	sprintf(player_names[playernum], "Player %c", 'A' + playernum);
+	snprintf(player_names[playernum], MAXPLAYERNAME+1, "Player %c", 'A' + playernum);
 
 	player_name_changes[playernum] = 0;
 
@@ -3591,7 +3591,7 @@ void SV_ResetServer(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		LUA_InvalidatePlayer(&players[i]);
-		sprintf(player_names[i], "Player %c", 'A' + i);
+		snprintf(player_names[i], MAXPLAYERNAME+1, "Player %c", 'A' + i);
 	}
 
 	memset(playeringame, false, sizeof playeringame);
@@ -4809,7 +4809,7 @@ static void PT_WillResendGamestate(void)
 
 	CONS_Printf(M_GetText("Reloading game state...\n"));
 
-	sprintf(tmpsave, "%s" PATHSEP TMPSAVENAME, srb2home);
+	snprintf(tmpsave, sizeof(tmpsave), "%s" PATHSEP TMPSAVENAME, srb2home);
 
 	// Don't get a corrupt savegame error because tmpsave already exists
 	if (FIL_FileExists(tmpsave) && unlink(tmpsave) == -1)

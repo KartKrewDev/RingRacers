@@ -361,11 +361,11 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 
 	if (gamemap > 0 && gamemap <= nummapheaders && mapheaderinfo[gamemap-1])
 	{
-		sprintf(mapname, "%s", mapheaderinfo[gamemap-1]->lumpname);
+		snprintf(mapname, sizeof(mapname), "%s", mapheaderinfo[gamemap-1]->lumpname);
 	}
 	else
 	{
-		sprintf(mapname, "ID %d", gamemap-1);
+		snprintf(mapname, sizeof(mapname), "ID %d", gamemap-1);
 	}
 
 	CON_LogMessage("Map ");
@@ -8210,7 +8210,7 @@ static void P_InitGametype(void)
 
 #ifdef DEVELOP
 		if (strcmp(compbranch, ""))
-			sprintf(ver, "%s-%s", compbranch, comprevision);
+			snprintf(ver, sizeof(ver), "%s-%s", compbranch, comprevision);
 		else
 			strcpy(ver, comprevision);
 #else
@@ -8225,8 +8225,8 @@ static void P_InitGametype(void)
 				p++;
 			}
 		}
-		sprintf(buf, "%s" PATHSEP "media" PATHSEP "replay" PATHSEP "online" PATHSEP "%s" PATHSEP "%d-%s",
-				srb2home, ver, (int) (time(NULL)), G_BuildMapName(gamemap));
+		snprintf(buf, sizeof(buf), "%s" PATHSEP "media" PATHSEP "replay" PATHSEP "online" PATHSEP "%s" PATHSEP "%d-%s",
+						srb2home, ver, (int) (time(NULL)), G_BuildMapName(gamemap));
 
 		parts = M_PathParts(buf);
 		M_MkdirEachUntil(buf, parts - 5, parts - 1, 0755);
@@ -9482,7 +9482,7 @@ void Command_dumprrautomedaltimes(void)
 	FILE* out;
 	char outname[512];
 	memset(outname, 0, sizeof(outname));
-	sprintf(outname, "%s/rrautomedaltimes.csv", srb2home);
+	snprintf(outname, sizeof(outname), "%s/rrautomedaltimes.csv", srb2home);
 	out = fopen(outname, "wb");
 	if (out == NULL)
 	{

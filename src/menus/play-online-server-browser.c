@@ -202,7 +202,7 @@ static void M_CheckMODVersion(int id)
 	const char *updatecheck = GetMODVersion(id);
 	if(updatecheck)
 	{
-		sprintf(updatestring, UPDATE_ALERT_STRING, VERSIONSTRING, updatecheck);
+		snprintf(updatestring, sizeof(updatestring), UPDATE_ALERT_STRING, VERSIONSTRING, updatecheck);
 #ifdef HAVE_THREADS
 		I_lock_mutex(&k_menu_mutex);
 #endif

@@ -1422,7 +1422,7 @@ boolean D_CheckNetGame(void)
 		while (!debugfile && k < MAXPLAYERS)
 		{
 			k++;
-			sprintf(filename, "debug%d.txt", k);
+			snprintf(filename, sizeof(filename), "debug%d.txt", k);
 			debugfile = fopen(va("%s" PATHSEP "%s", srb2home, filename), "w");
 		}
 		if (debugfile)

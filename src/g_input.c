@@ -1015,7 +1015,7 @@ const char *G_KeynumToString(INT32 keynum)
 			return keynames[j].name;
 
 	// create a name for unknown keys
-	sprintf(keynamestr, "KEY%d", keynum);
+	snprintf(keynamestr, sizeof(keynamestr), "KEY%d", keynum);
 	return keynamestr;
 }
 
@@ -1039,7 +1039,7 @@ const char *G_KeynumToShortString(INT32 keynum)
 			return shortkeynames[j].name;
 
 	// create a name for unknown keys
-	sprintf(keynamestr, "KEY%d", keynum);
+	snprintf(keynamestr, sizeof(keynamestr), "KEY%d", keynum);
 	return keynamestr;
 }
 

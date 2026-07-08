@@ -1590,13 +1590,13 @@ void S_InitRuntimeSounds (void)
 		value = (i+1) - sfx_freeslot0;
 
 		if (value < 10)
-			sprintf(soundname, "fre00%d", value);
+			snprintf(soundname, sizeof(soundname), "fre00%d", value);
 		else if (value < 100)
-			sprintf(soundname, "fre0%d", value);
+			snprintf(soundname, sizeof(soundname), "fre0%d", value);
 		else if (value < 1000)
-			sprintf(soundname, "fre%d", value);
+			snprintf(soundname, sizeof(soundname), "fre%d", value);
 		else
-			sprintf(soundname, "fr%d", value);
+			snprintf(soundname, sizeof(soundname), "fr%d", value);
 
 		strcpy(freeslotnames[value-1], soundname);
 

@@ -67,24 +67,24 @@ void K_SetNameForBot(UINT8 newplayernum, const char *realname)
 	if (canApplyNameChange)
 	{
 		// No conflict detected!
-		sprintf(player_names[newplayernum], "%s", realname);
+		snprintf(player_names[newplayernum], MAXPLAYERNAME+1, "%s", realname);
 		return;
 	}
 
 	// Ok, now we append on the end for duplicates...
 	char namebuffer[MAXPLAYERNAME+1];
-	sprintf(namebuffer, "%s %c", realname, 'A'+newplayernum);
+	snprintf(namebuffer, sizeof(namebuffer), "%s %c", realname, 'A'+newplayernum);
 
 	// ...and use the actual function, to handle more devious duplication.
 	if (!EnsurePlayerNameIsGood(namebuffer, newplayernum))
 	{
 		// we can't bail from adding the bot...
 		// this hopefully uncontroversial pick is all we CAN do
-		sprintf(namebuffer, "Bot %u", newplayernum+1);
+		snprintf(namebuffer, sizeof(namebuffer), "Bot %u", newplayernum+1);
 	}
 
 	// And finally write.
-	sprintf(player_names[newplayernum], "%s", namebuffer);
+	snprintf(player_names[newplayernum], MAXPLAYERNAME+1, "%s", namebuffer);
 }
 
 /*--------------------------------------------------

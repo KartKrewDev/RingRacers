@@ -193,8 +193,7 @@ void K_InitBrightmapsPwad(INT32 wadNum)
 			size_t nameLength = strlen(wadfiles[wadNum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
 			char *name = malloc(nameLength + 1);
 
-			sprintf(name, "%s|%s", wadfiles[wadNum]->filename, lump_p->fullname);
-			name[nameLength] = '\0';
+			snprintf(name, nameLength + 1, "%s|%s", wadfiles[wadNum]->filename, lump_p->fullname);
 
 			size = W_LumpLengthPwad(wadNum, lumpNum);
 

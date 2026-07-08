@@ -263,11 +263,11 @@ void M_UpdateMenuBGImage(boolean forceReset)
 
 	if (currentMenu->menuitems[itemOn].patch)
 	{
-		sprintf(bgImageName, "%s", currentMenu->menuitems[itemOn].patch);
+		snprintf(bgImageName, sizeof(bgImageName), "%s", currentMenu->menuitems[itemOn].patch);
 	}
 	else
 	{
-		sprintf(bgImageName, "MENUI000");
+		snprintf(bgImageName, sizeof(bgImageName), "MENUI000");
 	}
 
 	if (forceReset == false && strcmp(bgImageName, oldName))
@@ -2153,9 +2153,9 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				if (p->color < numskincolors)
 				{
 					if(p->color == SKINCOLOR_NONE) //'default' handling
-						sprintf(variadicInfoBuffer, "%s (%s)", skincolors[p->color].name, skincolors[skins[p->skin]->prefcolor].name);
+						snprintf(variadicInfoBuffer, sizeof(variadicInfoBuffer), "%s (%s)", skincolors[p->color].name, skincolors[skins[p->skin]->prefcolor].name);
 					else
-						sprintf(variadicInfoBuffer, "%s", skincolors[p->color].name);
+						snprintf(variadicInfoBuffer, sizeof(variadicInfoBuffer), "%s", skincolors[p->color].name);
 
 					V_DrawThinString(x-3, y+2, 0, variadicInfoBuffer);
 				}
@@ -2191,20 +2191,20 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 				if (p->followercolor == FOLLOWERCOLOR_MATCH)
 				{
-					sprintf(variadicInfoBuffer, "Match (%s)", skincolors[folcol].name);
+					snprintf(variadicInfoBuffer, sizeof(variadicInfoBuffer), "Match (%s)", skincolors[folcol].name);
 					V_DrawThinString(x-3, y+2, 0, variadicInfoBuffer);
 				}
 				else if (p->followercolor == FOLLOWERCOLOR_OPPOSITE)
 				{
-					sprintf(variadicInfoBuffer, "Opposite (%s)", skincolors[folcol].name);
+					snprintf(variadicInfoBuffer, sizeof(variadicInfoBuffer), "Opposite (%s)", skincolors[folcol].name);
 					V_DrawThinString(x-3, y+2, 0, variadicInfoBuffer);
 				}
 				else if (p->followercolor < numskincolors)
 				{
 					if(p->followercolor == SKINCOLOR_NONE) //'default' handling
-						sprintf(variadicInfoBuffer, "%s (%s)", skincolors[p->followercolor].name, skincolors[folcol].name);
+						snprintf(variadicInfoBuffer, sizeof(variadicInfoBuffer), "%s (%s)", skincolors[p->followercolor].name, skincolors[folcol].name);
 					else
-						sprintf(variadicInfoBuffer, "%s", skincolors[p->followercolor].name);
+						snprintf(variadicInfoBuffer, sizeof(variadicInfoBuffer), "%s", skincolors[p->followercolor].name);
 
 					V_DrawThinString(x-3, y+2, 0, variadicInfoBuffer);
 				}
@@ -7290,7 +7290,7 @@ drawborder:
 	{
 		boolean maj = (ref != NULL && ref->majorunlock);
 		char buffer[9];
-		sprintf(buffer, "UN_RETA1");
+		snprintf(buffer, sizeof(buffer), "%s", "UN_RETA1");
 		buffer[6] = maj ? 'B' : 'A';
 		buffer[7] = (skullAnimCounter/5) ? '2' : '1';
 		pat = W_CachePatchName(buffer, PU_CACHE);
@@ -9379,19 +9379,19 @@ void M_DrawStatistics(void)
 	V_DrawThinString(20, 40, highlightflags, "Total Rings:");
 	if (gamedata->totalrings > GDMAX_RINGS)
 	{
-		sprintf(beststr, "%c999,999,999+", '\x82');
+		snprintf(beststr, sizeof(beststr), "%c999,999,999+", '\x82');
 	}
 	else if (gamedata->totalrings >= 1000000)
 	{
-		sprintf(beststr, "%u,%03u,%03u", (gamedata->totalrings/1000000), (gamedata->totalrings/1000)%1000, (gamedata->totalrings%1000));
+		snprintf(beststr, sizeof(beststr), "%u,%03u,%03u", (gamedata->totalrings/1000000), (gamedata->totalrings/1000)%1000, (gamedata->totalrings%1000));
 	}
 	else if (gamedata->totalrings >= 1000)
 	{
-		sprintf(beststr, "%u,%03u", (gamedata->totalrings/1000), (gamedata->totalrings%1000));
+		snprintf(beststr, sizeof(beststr), "%u,%03u", (gamedata->totalrings/1000), (gamedata->totalrings%1000));
 	}
 	else
 	{
-		sprintf(beststr, "%u", gamedata->totalrings);
+		snprintf(beststr, sizeof(beststr), "%u", gamedata->totalrings);
 	}
 	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 40, 0, va("%s collected", beststr));
 

@@ -340,7 +340,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_timeoutsticker, "K_STTOUT");
 
 	// Pre-start countdown bulbs
-	sprintf(buffer, "K_BULBxx");
+	snprintf(buffer, sizeof(buffer), "K_BULBxx");
 	for (i = 0; i < 15; i++)
 	{
 		buffer[6] = '0'+((i+1)/10);
@@ -348,7 +348,7 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_prestartbulb[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "K_SBLBxx");
+	snprintf(buffer, sizeof(buffer), "K_SBLBxx");
 	for (i = 0; i < 15; i++)
 	{
 		buffer[6] = '0'+((i+1)/10);
@@ -417,7 +417,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_racefinish[5], "K_2PFINB");
 
 	// Position numbers
-	sprintf(buffer, "KRNKxyz");
+	snprintf(buffer, sizeof(buffer), "KRNKxyz");
 	for (i = 0; i < 10; i++)
 	{
 		buffer[6] = '0'+i;
@@ -442,7 +442,7 @@ void K_LoadKartHUDGraphics(void)
 		}
 	}
 
-	sprintf(buffer, "OPPRNKxx");
+	snprintf(buffer, sizeof(buffer), "OPPRNKxx");
 	for (i = 0; i <= MAXPLAYERS; i++)
 	{
 		buffer[6] = '0'+(i/10);
@@ -450,7 +450,7 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_facenum[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "K_CHILIx");
+	snprintf(buffer, sizeof(buffer), "K_CHILIx");
 	for (i = 0; i < 8; i++)
 	{
 		buffer[7] = '0'+(i+1);
@@ -478,7 +478,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
 	HU_UpdatePatch(&kp_ringsticker[1], "RNGBACKB");
 
-	sprintf(buffer, "K_RINGx");
+	snprintf(buffer, sizeof(buffer), "K_RINGx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[6] = '0'+(i+1);
@@ -488,7 +488,7 @@ void K_LoadKartHUDGraphics(void)
 	// Amps
 	{
 		// Levels 1-6
-		sprintf(buffer, "b_xAMPxx");
+		snprintf(buffer, sizeof(buffer), "b_xAMPxx");
 		for (i = 0; i < 6; i++)
 		{
 			buffer[2] = '0'+i+1;
@@ -518,7 +518,7 @@ void K_LoadKartHUDGraphics(void)
 		}
 	}
 
-	sprintf(buffer, "b_OVRDxx");
+	snprintf(buffer, sizeof(buffer), "b_OVRDxx");
 	for (i = 0; i < 32; i++)
 	{
 		buffer[6] = '0'+((i) / 10);
@@ -526,7 +526,7 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_overdrive[0][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "bsOVRDxx");
+	snprintf(buffer, sizeof(buffer), "bsOVRDxx");
 	for (i = 0; i < 32; i++)
 	{
 		buffer[6] = '0'+((i) / 10);
@@ -536,7 +536,7 @@ void K_LoadKartHUDGraphics(void)
 
 	HU_UpdatePatch(&kp_ringdebtminus, "RDEBTMIN");
 
-	sprintf(buffer, "SPBRNGxx");
+	snprintf(buffer, sizeof(buffer), "SPBRNGxx");
 	for (i = 0; i < 16; i++)
 	{
 		buffer[6] = '0'+((i+1) / 10);
@@ -547,7 +547,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_ringstickersplit[0], "SMRNGBGA");
 	HU_UpdatePatch(&kp_ringstickersplit[1], "SMRNGBGB");
 
-	sprintf(buffer, "K_SRINGx");
+	snprintf(buffer, sizeof(buffer), "K_SRINGx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '0'+(i+1);
@@ -556,7 +556,7 @@ void K_LoadKartHUDGraphics(void)
 
 	HU_UpdatePatch(&kp_ringdebtminussmall, "SRDEBTMN");
 
-	sprintf(buffer, "SPBRGSxx");
+	snprintf(buffer, sizeof(buffer), "SPBRGSxx");
 	for (i = 0; i < 16; i++)
 	{
 		buffer[6] = '0'+((i+1) / 10);
@@ -567,7 +567,7 @@ void K_LoadKartHUDGraphics(void)
 	// Speedometer
 	HU_UpdatePatch(&kp_speedometersticker, "K_SPDMBG");
 
-	sprintf(buffer, "K_SPDMLx");
+	snprintf(buffer, sizeof(buffer), "K_SPDMLx");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '0'+(i+1);
@@ -621,7 +621,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_sneaker[0], "K_ITSHOE");
 	HU_UpdatePatch(&kp_rocketsneaker[0], "K_ITRSHE");
 
-	sprintf(buffer, "K_ITINVx");
+	snprintf(buffer, sizeof(buffer), "K_ITINVx");
 	for (i = 0; i < 7; i++)
 	{
 		buffer[7] = '1'+i;
@@ -629,7 +629,7 @@ void K_LoadKartHUDGraphics(void)
 	}
 	HU_UpdatePatch(&kp_banana[0], "K_ITBANA");
 	HU_UpdatePatch(&kp_eggman[0], "K_ITEGGM");
-	sprintf(buffer, "K_ITORBx");
+	snprintf(buffer, sizeof(buffer), "K_ITORBx");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '1'+i;
@@ -661,7 +661,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_seven[0], "K_RBSEV");
 	HU_UpdatePatch(&kp_jackpot[0], "K_RBJACK");
 
-	sprintf(buffer, "FSMFGxxx");
+	snprintf(buffer, sizeof(buffer), "FSMFGxxx");
 	for (i = 0; i < FLAMESHIELD_MAX; i++)
 	{
 		buffer[5] = '0'+((i+1)/100);
@@ -670,7 +670,7 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_flameshieldmeter[i][0], "%s", buffer);
 	}
 
-	sprintf(buffer, "FSMBGxxx");
+	snprintf(buffer, sizeof(buffer), "FSMBGxxx");
 	for (i = 0; i < FLAMESHIELD_MAX; i++)
 	{
 		buffer[5] = '0'+((i+1)/100);
@@ -688,7 +688,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_sadface[1], "K_ISSAD");
 	HU_UpdatePatch(&kp_sneaker[1], "K_ISSHOE");
 	HU_UpdatePatch(&kp_rocketsneaker[1], "K_ISRSHE");
-	sprintf(buffer, "K_ISINVx");
+	snprintf(buffer, sizeof(buffer), "K_ISINVx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
@@ -723,7 +723,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_seven[1], "K_SBSEV");
 	HU_UpdatePatch(&kp_jackpot[1], "K_SBJACK");
 
-	sprintf(buffer, "FSMFSxxx");
+	snprintf(buffer, sizeof(buffer), "FSMFSxxx");
 	for (i = 0; i < 120; i++)
 	{
 		buffer[5] = '0'+((i+1)/100);
@@ -732,7 +732,7 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_flameshieldmeter[i][1], "%s", buffer);
 	}
 
-	sprintf(buffer, "FSMBS0xx");
+	snprintf(buffer, sizeof(buffer), "FSMBS0xx");
 	for (i = 0; i < 120; i++)
 	{
 		buffer[5] = '0'+((i+1)/100);
@@ -748,7 +748,7 @@ void K_LoadKartHUDGraphics(void)
 	//HU_UpdatePatch(&kp_sadface[2], "ISPYSAD");
 	HU_UpdatePatch(&kp_sneaker[2], "ISPYSHOE");
 	HU_UpdatePatch(&kp_rocketsneaker[2], "ISPYRSHE");
-	sprintf(buffer, "ISPYINVx");
+	snprintf(buffer, sizeof(buffer), "ISPYINVx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
@@ -778,7 +778,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_toxomister[2], "ISPYTOX");
 
 	// CHECK indicators
-	sprintf(buffer, "K_CHECKx");
+	snprintf(buffer, sizeof(buffer), "K_CHECKx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
@@ -786,7 +786,7 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	// Rival indicators
-	sprintf(buffer, "K_RIVALx");
+	snprintf(buffer, sizeof(buffer), "K_RIVALx");
 	for (i = 0; i < 2; i++)
 	{
 		buffer[7] = '1'+i;
@@ -794,7 +794,7 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	// Rival indicators
-	sprintf(buffer, "K_SSPLxx");
+	snprintf(buffer, sizeof(buffer), "K_SSPLxx");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[6] = 'A'+i;
@@ -810,7 +810,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_typdot, "K_TYPDOT");
 
 	// Eggman warning numbers
-	sprintf(buffer, "K_EGGNx");
+	snprintf(buffer, sizeof(buffer), "K_EGGNx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[6] = '0'+i;
@@ -823,7 +823,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_fpview[2], "VIEWC0E0");
 
 	// Input UI Wheel
-	sprintf(buffer, "K_WHEELx");
+	snprintf(buffer, sizeof(buffer), "K_WHEELx");
 	for (i = 0; i < 5; i++)
 	{
 		buffer[7] = '0'+i;
@@ -831,7 +831,7 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	// HERE COMES A NEW CHALLENGER
-	sprintf(buffer, "K_CHALxx");
+	snprintf(buffer, sizeof(buffer), "K_CHALxx");
 	for (i = 0; i < 25; i++)
 	{
 		buffer[6] = '0'+((i+1)/10);
@@ -840,14 +840,14 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	// Lap start animation
-	sprintf(buffer, "K_LAP0x");
+	snprintf(buffer, sizeof(buffer), "K_LAP0x");
 	for (i = 0; i < 7; i++)
 	{
 		buffer[6] = '0'+(i+1);
 		HU_UpdatePatch(&kp_lapanim_lap[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "K_LAPFxx");
+	snprintf(buffer, sizeof(buffer), "K_LAPFxx");
 	for (i = 0; i < 11; i++)
 	{
 		buffer[6] = '0'+((i+1)/10);
@@ -855,7 +855,7 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_lapanim_final[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "K_LAPNxx");
+	snprintf(buffer, sizeof(buffer), "K_LAPNxx");
 	for (i = 0; i < 10; i++)
 	{
 		buffer[6] = '0'+i;
@@ -866,14 +866,14 @@ void K_LoadKartHUDGraphics(void)
 		}
 	}
 
-	sprintf(buffer, "K_LAPE0x");
+	snprintf(buffer, sizeof(buffer), "K_LAPE0x");
 	for (i = 0; i < 2; i++)
 	{
 		buffer[7] = '0'+(i+1);
 		HU_UpdatePatch(&kp_lapanim_emblem[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "K_LAPH0x");
+	snprintf(buffer, sizeof(buffer), "K_LAPH0x");
 	for (i = 0; i < 3; i++)
 	{
 		buffer[7] = '0'+(i+1);
@@ -883,14 +883,14 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_yougotem, "YOUGOTEM");
 	HU_UpdatePatch(&kp_itemminimap, "MMAPITEM");
 
-	sprintf(buffer, "ALAGLESx");
+	snprintf(buffer, sizeof(buffer), "ALAGLESx");
 	for (i = 0; i < 10; ++i)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_alagles[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "BLAGLESx");
+	snprintf(buffer, sizeof(buffer), "BLAGLESx");
 	for (i = 0; i < 6; ++i)
 	{
 		buffer[7] = '0'+i;
@@ -911,21 +911,21 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_autoroulette, "A11YITEM");
 	HU_UpdatePatch(&kp_autoring, "A11YRING");
 
-	sprintf(buffer, "K_BOSB0x");
+	snprintf(buffer, sizeof(buffer), "K_BOSB0x");
 	for (i = 0; i < 8; i++)
 	{
 		buffer[7] = '0'+((i+1)%10);
 		HU_UpdatePatch(&kp_bossbar[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "K_BOSR0x");
+	snprintf(buffer, sizeof(buffer), "K_BOSR0x");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '0'+((i+1)%10);
 		HU_UpdatePatch(&kp_bossret[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "HCAPARxx");
+	snprintf(buffer, sizeof(buffer), "HCAPARxx");
 	for (i = 0; i < 2; i++)
 	{
 		buffer[6] = 'A'+i;
@@ -937,84 +937,84 @@ void K_LoadKartHUDGraphics(void)
 		}
 	}
 
-	sprintf(buffer, "HUDCAPDx");
+	snprintf(buffer, sizeof(buffer), "HUDCAPDx");
 	for (i = 0; i < 2; i++)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_capsuletarget_far_text[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "HUDCAPCx");
+	snprintf(buffer, sizeof(buffer), "HUDCAPCx");
 	for (i = 0; i < 2; i++)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_capsuletarget_icon[i], "%s", buffer);
 	}
 
-	sprintf(buffer, "HUDCAPBx");
+	snprintf(buffer, sizeof(buffer), "HUDCAPBx");
 	for (i = 0; i < 2; i++)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_capsuletarget_far[0][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "HUDC4PBx");
+	snprintf(buffer, sizeof(buffer), "HUDC4PBx");
 	for (i = 0; i < 2; i++)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_capsuletarget_far[1][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "HUDCAPAx");
+	snprintf(buffer, sizeof(buffer), "HUDCAPAx");
 	for (i = 0; i < 8; i++)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_capsuletarget_near[0][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "HUDC4PAx");
+	snprintf(buffer, sizeof(buffer), "HUDC4PAx");
 	for (i = 0; i < 8; i++)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_capsuletarget_near[1][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "HUDFLKAx");
+	snprintf(buffer, sizeof(buffer), "HUDFLKAx");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_superflickytarget[0][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "H4PFLKAx");
+	snprintf(buffer, sizeof(buffer), "H4PFLKAx");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_superflickytarget[1][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "SPCNBFAx");
+	snprintf(buffer, sizeof(buffer), "SPCNBFAx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
 		HU_UpdatePatch(&kp_spraycantarget_far[0][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "SPCNSFAx");
+	snprintf(buffer, sizeof(buffer), "SPCNSFAx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
 		HU_UpdatePatch(&kp_spraycantarget_far[1][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "SPCNBCLx");
+	snprintf(buffer, sizeof(buffer), "SPCNBCLx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
 		HU_UpdatePatch(&kp_spraycantarget_near[0][i], "%s", buffer);
 	}
 
-	sprintf(buffer, "SPCNSCLx");
+	snprintf(buffer, sizeof(buffer), "SPCNSCLx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
@@ -1097,7 +1097,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_duel_4over, "DUEL4_B2");
 	HU_UpdatePatch(&kp_duel_you, "DUEL_YOU");
 
-	sprintf(buffer, "DUELMBxx");
+	snprintf(buffer, sizeof(buffer), "DUELMBxx");
 	for (i = 0; i < MARGINLEVELS; i++)
 	{
 		buffer[6] = '0'+(i/10);

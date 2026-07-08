@@ -229,7 +229,7 @@ lumpnum_t S_GetSfxLumpNum(sfxinfo_t *sfx)
 	char namebuf[9];
 	lumpnum_t sfxlump;
 
-	sprintf(namebuf, "ds%s", sfx->name);
+	snprintf(namebuf, sizeof(namebuf), "ds%s", sfx->name);
 
 	sfxlump = W_CheckNumForName(namebuf);
 	if (sfxlump != LUMPERROR)

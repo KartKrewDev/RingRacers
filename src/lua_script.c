@@ -584,8 +584,7 @@ void LUA_LoadLump(UINT16 wad, UINT16 lump, boolean noresults)
 		lumpinfo_t *lump_p = &wadfiles[wad]->lumpinfo[lump];
 		len += 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
 		name = malloc(len+1);
-		sprintf(name, "%s|%s", wadfiles[wad]->filename, lump_p->fullname);
-		name[len] = '\0';
+		snprintf(name, len + 1, "%s|%s", wadfiles[wad]->filename, lump_p->fullname);
 	}
 
 	LUA_LoadFile(&f, name, noresults); // actually load file!

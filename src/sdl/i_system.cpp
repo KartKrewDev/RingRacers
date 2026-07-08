@@ -456,7 +456,7 @@ static void I_ReportSignal(int num, int coredumped, void* tracefromcpptrace)
 		break;
 	default:
 		sigmsg = "";
-		sprintf(msg, "unknown exception %d", num);
+		snprintf(msg, sizeof(msg), "unknown exception %d", num);
 		break;
 	}
 #else
@@ -484,25 +484,28 @@ static void I_ReportSignal(int num, int coredumped, void* tracefromcpptrace)
 		sigmsg = "SIGABRT - abnormal termination triggered by abort call";
 		break;
 	default:
-		sprintf(msg,"signal number %d", num);
+		snprintf(msg, sizeof(msg), "signal number %d", num);
 		if (coredumped)
 			sigmsg = 0;
 		else
 			sigmsg = msg;
 	}
 #endif
+	size_t msg_len = 0;
 	if (sigmsg)
 	{
-		strcpy(msg, sigmsg);
+		msg_len = snprintf(msg, sizeof(msg), "%s", sigmsg);
 	}
 
 	if (coredumped)
 	{
-		strcat(msg, " (core dumped)");
+		if (msg_len < sizeof(msg))
+			msg_len += snprintf(msg + msg_len, sizeof(msg) - msg_len, "%s", " (core dumped)");
 	}
 
 #ifdef HAVE_CPPTRACE
-	strncat(msg, "\n", sizeof(msg) - strlen(msg) - 1);
+	if (msg_len < sizeof(msg))
+		msg_len += snprintf(msg + msg_len, sizeof(msg) - msg_len, "%s", "\n");
 
 	cpptrace::stacktrace const& trace = *(cpptrace::stacktrace*)tracefromcpptrace;
 	bool firstfound = false;
@@ -538,7 +541,8 @@ static void I_ReportSignal(int num, int coredumped, void* tracefromcpptrace)
 			frame_str = srb2::format("{}\n", frame.symbol);
 		}
 
-		strncat(msg, frame_str.c_str(), sizeof(msg) - strlen(msg) - 1);
+		if (msg_len < sizeof(msg))
+			msg_len += snprintf(msg + msg_len, sizeof(msg) - msg_len, "%s", frame_str.c_str());
 	}
 #endif
 
@@ -589,7 +593,8 @@ static LONG WriteMinidumpExceptionFilter(PEXCEPTION_POINTERS ExceptionInfo)
 
 	char outfilename[1024];
 	GetModuleFileNameA(NULL, outfilename, sizeof(outfilename));
-	strncat(outfilename, ".dmp", sizeof(outfilename) - strlen(outfilename) - 1);
+	size_t outfilenamelen = strnlen(outfilename, sizeof(outfilename));
+	snprintf(outfilename + outfilenamelen, sizeof(outfilename) - outfilenamelen, "%s", ".dmp");
 
 	outfile = CreateFileA(outfilename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
 	if (outfile == NULL)
@@ -1065,14 +1070,14 @@ void I_OutputMsg(const char *fmt, ...)
 	va_list  argptr;
 
 	va_start(argptr,fmt);
-	vsprintf(txt, fmt, argptr);
+	vsnprintf(txt, sizeof(txt), fmt, argptr);
 	va_end(argptr);
 
 #if defined (_WIN32) && defined (_MSC_VER)
 	OutputDebugStringA(txt);
 #endif
 
-	len = strlen(txt);
+	len = strnlen(txt, sizeof(txt));
 
 #ifdef LOGMESSAGES
 	if (logstream)
@@ -1304,7 +1309,6 @@ void I_GetGamepadName(INT32 device_id, char *out, int out_len)
 {
 	SDL_Gamepad *controller;
 	const char *name;
-	int name_len;
 
 	I_Assert(device_id > 0);
 	I_Assert(out != NULL);
@@ -1318,9 +1322,7 @@ void I_GetGamepadName(INT32 device_id, char *out, int out_len)
 	}
 
 	name = SDL_GetGamepadName(controller);
-	name_len = strlen(name) + 1;
-	memcpy(out, name, out_len < name_len ? out_len : name_len);
-	out[out_len - 1] = 0;
+	snprintf(out, out_len, "%s", name);
 }
 
 void I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength)
@@ -1359,13 +1361,13 @@ void I_StartupInput(void)
 
 	{
 		char dbpath[1024];
-		sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb.txt", srb2path);
+		snprintf(dbpath, sizeof(dbpath), "%s" PATHSEP "gamecontrollerdb.txt", srb2path);
 		SDL_AddGamepadMappingsFromFile(dbpath);
 	}
 
 	{
 		char dbpath[1024];
-		sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb_user.txt", srb2home);
+		snprintf(dbpath, sizeof(dbpath), "%s" PATHSEP "gamecontrollerdb_user.txt", srb2home);
 		SDL_AddGamepadMappingsFromFile(dbpath);
 	}
 
@@ -1449,8 +1451,7 @@ const char *I_GetJoyName(INT32 joyindex)
 	tempname = SDL_GetJoystickName(joystick);
 	if (tempname)
 	{
-		strncpy(joyname, tempname, 254);
-		joyname[254] = 0;
+		snprintf(joyname, sizeof(joyname), "%s", tempname);
 	}
 
 	return joyname;
@@ -1922,7 +1923,7 @@ FUNCIERROR void ATTRNORETURN I_Error(const char *error, ...)
 		if (errorcount > 20)
 		{
 			va_start(argptr, error);
-			vsprintf(buffer, error, argptr);
+			vsnprintf(buffer, sizeof(buffer), error, argptr);
 			va_end(argptr);
 			// Implement message box with SDL_ShowSimpleMessageBox,
 			// which should fail gracefully if it can't put a message box up
@@ -1948,7 +1949,7 @@ FUNCIERROR void ATTRNORETURN I_Error(const char *error, ...)
 
 	// Display error message in the console before we start shutting it down
 	va_start(argptr, error);
-	vsprintf(buffer, error, argptr);
+	vsnprintf(buffer, sizeof(buffer), error, argptr);
 	va_end(argptr);
 	I_OutputMsg("\nI_Error(): %s\n", buffer);
 	// ---
@@ -2182,7 +2183,7 @@ char *I_GetUserName(void)
 				}
 			}
 		}
-		strncpy(username, p, MAXPLAYERNAME);
+		snprintf(username, sizeof(username), "%s", p);
 	}
 
 
@@ -2229,8 +2230,7 @@ INT32 I_ClipboardCopy(const char *data, size_t size)
 	char storage[256];
 	if (size > 255)
 		size = 255;
-	memcpy(storage, data, size);
-	storage[size] = 0;
+	snprintf(storage, sizeof(storage), "%.*s", (int)size, data);
 
 	if (SDL_SetClipboardText(storage))
 		return 0;
@@ -2246,7 +2246,7 @@ const char *I_ClipboardPaste(void)
 		return NULL;
 
 	clipboard_contents = SDL_GetClipboardText();
-	strlcpy(clipboard_modified, clipboard_contents, 256);
+	snprintf(clipboard_modified, sizeof(clipboard_modified), "%s", clipboard_contents);
 	SDL_free(clipboard_contents);
 
 	while (*i)
@@ -2275,28 +2275,23 @@ const char *I_ClipboardPaste(void)
 */
 static boolean isWadPathOk(const char *path)
 {
-	char *wad3path = static_cast<char*>(malloc(256));
+	char wad3path[256];
 
-	if (!wad3path)
-		return false;
-
-	sprintf(wad3path, pandf, path, WADKEYWORD);
+	snprintf(wad3path, sizeof(wad3path), pandf, path, WADKEYWORD);
 
 	if (FIL_ReadFileOK(wad3path))
 	{
-		free(wad3path);
 		return true;
 	}
 
-	free(wad3path);
 	return false;
 }
 
-static void pathonly(char *s)
+static void pathonly(char *s, size_t size)
 {
 	size_t j;
 
-	for (j = strlen(s); j != (size_t)-1; j--)
+	for (j = strnlen(s, size); j != (size_t)-1; j--)
 		if ((s[j] == '\\') || (s[j] == ':') || (s[j] == '/'))
 		{
 			if (s[j] == ':') s[j+1] = 0;
@@ -2318,11 +2313,11 @@ static const char *searchWad(const char *searchDir)
 	static char tempsw[256] = "";
 	filestatus_t fstemp;
 
-	strcpy(tempsw, WADKEYWORD);
+	snprintf(tempsw, sizeof(tempsw), "%s", WADKEYWORD);
 	fstemp = filesearch(tempsw, searchDir, NULL, NULL, true, 20);
 	if (fstemp == FS_FOUND)
 	{
-		pathonly(tempsw);
+		pathonly(tempsw, sizeof(tempsw));
 		return tempsw;
 	}
 
@@ -2355,7 +2350,7 @@ static const char *locateWad(void)
 #ifndef NOCWD
 	I_OutputMsg(",.");
 	// examine current dir
-	strcpy(returnWadPath, ".");
+	snprintf(returnWadPath, sizeof(returnWadPath), "%s", ".");
 	if (isWadPathOk(returnWadPath))
 		return NULL;
 #endif
@@ -2366,7 +2361,7 @@ static const char *locateWad(void)
 	// examine user jart directory
 	if ((envstr = I_GetEnv("HOME")) != NULL)
 	{
-		sprintf(returnWadPath, "%s" PATHSEP DEFAULTDIR, envstr);
+		snprintf(returnWadPath, sizeof(returnWadPath), "%s" PATHSEP DEFAULTDIR, envstr);
 		if (isWadPathOk(returnWadPath))
 			return returnWadPath;
 	}
@@ -2384,43 +2379,43 @@ static const char *locateWad(void)
 	// examine default dirs
 #ifdef DEFAULTWADLOCATION1
 	I_OutputMsg("," DEFAULTWADLOCATION1);
-	strcpy(returnWadPath, DEFAULTWADLOCATION1);
+	snprintf(returnWadPath, sizeof(returnWadPath), "%s", DEFAULTWADLOCATION1);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION2
 	I_OutputMsg("," DEFAULTWADLOCATION2);
-	strcpy(returnWadPath, DEFAULTWADLOCATION2);
+	snprintf(returnWadPath, sizeof(returnWadPath), "%s", DEFAULTWADLOCATION2);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION3
 	I_OutputMsg("," DEFAULTWADLOCATION3);
-	strcpy(returnWadPath, DEFAULTWADLOCATION3);
+	snprintf(returnWadPath, sizeof(returnWadPath), "%s", DEFAULTWADLOCATION3);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION4
 	I_OutputMsg("," DEFAULTWADLOCATION4);
-	strcpy(returnWadPath, DEFAULTWADLOCATION4);
+	snprintf(returnWadPath, sizeof(returnWadPath), "%s", DEFAULTWADLOCATION4);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION5
 	I_OutputMsg("," DEFAULTWADLOCATION5);
-	strcpy(returnWadPath, DEFAULTWADLOCATION5);
+	snprintf(returnWadPath, sizeof(returnWadPath), "%s", DEFAULTWADLOCATION5);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION6
 	I_OutputMsg("," DEFAULTWADLOCATION6);
-	strcpy(returnWadPath, DEFAULTWADLOCATION6);
+	snprintf(returnWadPath, sizeof(returnWadPath), "%s", DEFAULTWADLOCATION6);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif
 #ifdef DEFAULTWADLOCATION7
 	I_OutputMsg("," DEFAULTWADLOCATION7);
-	strcpy(returnWadPath, DEFAULTWADLOCATION7);
+	snprintf(returnWadPath, sizeof(returnWadPath), "%s", DEFAULTWADLOCATION7);
 	if (isWadPathOk(returnWadPath))
 		return returnWadPath;
 #endif

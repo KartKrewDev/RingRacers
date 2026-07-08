@@ -1133,7 +1133,7 @@ boolean F_IntroResponder(event_t *event)
 				break;
 			case KEY_LEFTARROW:
 				AdvanceSkipSequences(4);
-				break;					
+				break;
 		}
 	}
 
@@ -1706,7 +1706,7 @@ else if (strlen(name) <= 6) \
 	strncpy(lumpname, name, 7); \
 	for (i = 0; i < maxf-1; i++) \
 	{ \
-		sprintf(&lumpname[cnt], "%.2hu", (UINT16)(i+1)); \
+		snprintf(&lumpname[cnt], 3, "%.2hu", (UINT16)(i+1)); \
 		lumpname[8] = 0; \
 		lumpnum = W_CheckNumForName(lumpname); \
 		if (lumpnum != LUMPERROR) \

@@ -40,7 +40,7 @@ namespace ACSVM
 
       void drop();
 
-      // Formats using sprintf. Does not reserve space.
+      // Formats using snprintf. Does not reserve space.
       void format(char const *fmt, ...);
       void formatv(char const *fmt, std::va_list arg);
 
@@ -71,4 +71,3 @@ namespace ACSVM
 }
 
 #endif//ACSVM__PrintBuf_H__
-

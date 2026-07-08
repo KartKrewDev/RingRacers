@@ -703,11 +703,11 @@ void M_SaveConfig(const char *filename)
 		// but check if srb2home isn't already there, first
 		if (!strstr(filename, srb2home))
 		{
-			sprintf(tmppath, "%s" PATHSEP "%s.tmp", srb2home, filename);
+			snprintf(tmppath, sizeof(tmppath), "%s" PATHSEP "%s.tmp", srb2home, filename);
 		}
 		else
 		{
-			sprintf(tmppath, "%s", filename);
+			snprintf(tmppath, sizeof(tmppath), "%s", filename);
 		}
 
 		f = fopen(tmppath, "w");
@@ -730,7 +730,7 @@ void M_SaveConfig(const char *filename)
 			return;
 		}
 
-		sprintf(tmppath, "%s.tmp", configfile);
+		snprintf(tmppath, sizeof(tmppath), "%s.tmp", configfile);
 
 		f = fopen(tmppath, "w");
 		if (!f)
@@ -1360,7 +1360,7 @@ void M_StartMovie(moviemode_t mode)
 		folder = "slideshows";
 	}
 
-	sprintf(pathname, "%s" PATHSEP "media" PATHSEP "%s" PATHSEP, srb2home, folder);
+	snprintf(pathname, sizeof(pathname), "%s" PATHSEP "media" PATHSEP "%s" PATHSEP, srb2home, folder);
 	M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 
 	if (rendermode == render_none)
@@ -1987,7 +1987,7 @@ char *va(const char *format, ...)
 	static char string[1024];
 
 	va_start(argptr, format);
-	vsprintf(string, format, argptr);
+	vsnprintf(string, sizeof(string), format, argptr);
 	va_end(argptr);
 
 	return string;
@@ -2523,35 +2523,35 @@ TMatrix *RotateZMatrix(angle_t rad)
 char *sizeu1(size_t num)
 {
 	static char sizeu1_buf[28];
-	sprintf(sizeu1_buf, "%" PRIdS, num);
+	snprintf(sizeu1_buf, sizeof(sizeu1_buf), "%" PRIdS, num);
 	return sizeu1_buf;
 }
 
 char *sizeu2(size_t num)
 {
 	static char sizeu2_buf[28];
-	sprintf(sizeu2_buf, "%" PRIdS, num);
+	snprintf(sizeu2_buf, sizeof(sizeu2_buf), "%" PRIdS, num);
 	return sizeu2_buf;
 }
 
 char *sizeu3(size_t num)
 {
 	static char sizeu3_buf[28];
-	sprintf(sizeu3_buf, "%" PRIdS, num);
+	snprintf(sizeu3_buf, sizeof(sizeu3_buf), "%" PRIdS, num);
 	return sizeu3_buf;
 }
 
 char *sizeu4(size_t num)
 {
 	static char sizeu4_buf[28];
-	sprintf(sizeu4_buf, "%" PRIdS, num);
+	snprintf(sizeu4_buf, sizeof(sizeu4_buf), "%" PRIdS, num);
 	return sizeu4_buf;
 }
 
 char *sizeu5(size_t num)
 {
 	static char sizeu5_buf[28];
-	sprintf(sizeu5_buf, "%" PRIdS, num);
+	snprintf(sizeu5_buf, sizeof(sizeu5_buf), "%" PRIdS, num);
 	return sizeu5_buf;
 }
 
@@ -2690,7 +2690,7 @@ const char * M_Ftrim (double f)
 	static char dig[9];/* "0." + 6 digits (6 is printf's default) */
 	int i;
 	/* I know I said it's the default, but just in case... */
-	sprintf(dig, "%.6f", fabs(modf(f, &f)));
+	snprintf(dig, sizeof(dig), "%.6f", fabs(modf(f, &f)));
 	/* trim trailing zeroes */
 	for (i = strlen(dig)-1; dig[i] == '0'; --i)
 		;

@@ -156,26 +156,27 @@ HMS_connect (const char *format, ...)
 	seek = strlen(hms_api) + 1;/* + '/' */
 
 	va_start (ap, format);
-	url = malloc(seek + vsnprintf(0, 0, format, ap) +
+	size_t url_size = seek + vsnprintf(0, 0, format, ap) +
 			sizeof HMS_QUERY_VERSION - 1 +
-			token_length + 1);
+			token_length + 1;
+	url = malloc(url_size);
 	va_end (ap);
 
-	sprintf(url, "%s/", hms_api);
+	snprintf(url, seek + 1, "%s/", hms_api);
 
 #ifdef HAVE_THREADS
 	I_unlock_mutex(hms_api_mutex);
 #endif
 
 	va_start (ap, format);
-	seek += vsprintf(&url[seek], format, ap);
+	seek += vsnprintf(&url[seek], url_size - seek, format, ap);
 	va_end (ap);
 
 	strcpy(&url[seek], HMS_QUERY_VERSION);
 	seek += sizeof HMS_QUERY_VERSION - 1;
 
 	if (quack_token)
-		sprintf(&url[seek], "&token=%s", quack_token);
+		snprintf(&url[seek], url_size - seek, "&token=%s", quack_token);
 
 	Printf_url(url);
 

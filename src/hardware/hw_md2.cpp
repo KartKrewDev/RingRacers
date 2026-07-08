@@ -1499,7 +1499,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		if (!md2->model)
 		{
 			//CONS_Debug(DBG_RENDER, "Loading model... (%s)", sprnames[spr->mobj->sprite]);
-			sprintf(filename, "models/%s", md2->filename);
+			snprintf(filename, sizeof(filename), "models/%s", md2->filename);
 			md2->model = md2_readModel(filename);
 
 			if (md2->model)

@@ -526,7 +526,7 @@
 	#define LUA_NUMBER_SCAN		"%d"
 	#define LUA_NUMBER_FMT		"%d"
 #endif
-#define lua_number2str(s,n)	sprintf((s), LUA_NUMBER_FMT, (n))
+#define lua_number2str(s,n)	snprintf((s), LUAI_MAXNUMBER2STR, LUA_NUMBER_FMT, (n))
 #define LUAI_MAXNUMBER2STR	12 /* 10 digits, sign, and \0 */
 #define lua_str2number(s,p)	strtol((s), (p), 10)
 

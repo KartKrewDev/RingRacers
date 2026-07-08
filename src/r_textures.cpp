@@ -1316,10 +1316,10 @@ Rloadtextures (INT32 i, INT32 w)
 				// This is INTENTIONAL. Even if software can handle it, very old GL hardware will not.
 				// For the sake of a compatibility baseline, we will not allow anything larger than this.
 				char header[1024];
-				sprintf(header,
-					"Texture patch size cannot be greater than %dx%d!\n"
-					"List of affected textures:\n",
-					sizeLimit, sizeLimit);
+				snprintf(header, sizeof(header),
+								"Texture patch size cannot be greater than %dx%d!\n"
+								"List of affected textures:\n",
+								sizeLimit, sizeLimit);
 				R_InsertTextureWarning(header, va("\x82" "WARNING: %s", wadfiles[wadnum]->lumpinfo[lumpnum].fullname));
 				continue;
 			}

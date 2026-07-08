@@ -430,7 +430,7 @@ EXPORT void HWRAPI(GetModeList) (vmode_t** pvidmodes, INT32 *numvidmodes)
 			video_modes[iMode].windowed = 0;                    // fullscreen is the default
 			video_modes[iMode].misc = 0;
 			video_modes[iMode].name = (char *)malloc(12 * sizeof (CHAR));
-			sprintf(video_modes[iMode].name, "%dx%d", (INT32)Tmp.dmPelsWidth, (INT32)Tmp.dmPelsHeight);
+			snprintf(video_modes[iMode].name, 12, "%dx%d", (INT32)Tmp.dmPelsWidth, (INT32)Tmp.dmPelsHeight);
 			GL_DBG_Printf ("Mode: %s\n", video_modes[iMode].name);
 			video_modes[iMode].width = Tmp.dmPelsWidth;
 			video_modes[iMode].height = Tmp.dmPelsHeight;
@@ -483,7 +483,7 @@ EXPORT void HWRAPI(GetModeList) (vmode_t** pvidmodes, INT32 *numvidmodes)
 		video_modes[i].windowed = 0; // fullscreen is the default
 		video_modes[i].misc = 0;
 		video_modes[i].name = (char *)malloc(12 * sizeof (CHAR));
-		sprintf(video_modes[i].name, "%dx%d", res[i][0], res[i][1]);
+		snprintf(video_modes[i].name, 12, "%dx%d", res[i][0], res[i][1]);
 		GL_DBG_Printf ("Mode: %s\n", video_modes[i].name);
 		video_modes[i].width = res[i][0];
 		video_modes[i].height = res[i][1];

@@ -74,7 +74,7 @@ namespace ACSVM
    //
    void PrintBuf::formatv(char const *fmt, va_list arg)
    {
-      bufPtr += std::vsprintf(bufPtr, fmt, arg);
+      bufPtr += std::vsnprintf(bufPtr, bufEnd - bufPtr, fmt, arg);
    }
 
    //

@@ -685,14 +685,14 @@ static void ST_cacheLevelTitle(void)
 	// Cache round #
 	for (i=1; i <= 10; i++)
 	{
-		sprintf(buf, "TT_RND%d", i);
+		snprintf(buf, sizeof(buf), "TT_RND%d", i);
 		tcroundnum[i-1] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
 	}
 	tcroundbonus =	(patch_t *)W_CachePatchName("TT_RNDX", PU_HUDGFX);
 
 	for (i=1; i <= 10; i++)
 	{
-		sprintf(buf, "TT_RNS%d", i);
+		snprintf(buf, sizeof(buf), "TT_RNS%d", i);
 		tsroundnum[i-1] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
 	}
 	tsroundbonus =	(patch_t *)W_CachePatchName("TT_RNSX", PU_HUDGFX);
@@ -700,7 +700,7 @@ static void ST_cacheLevelTitle(void)
 	// Cache act #
 	for (i=0; i < 10; i++)
 	{
-		sprintf(buf, "TT_ACT%d", i);
+		snprintf(buf, sizeof(buf), "TT_ACT%d", i);
 		tcactnum[i] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
 	}
 

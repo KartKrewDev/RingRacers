@@ -1167,7 +1167,7 @@ const char *VID_GetModeName(INT32 modeNum)
 		if (modeNum > MAXWINMODES)
 			return NULL;
 
-		sprintf(&vidModeName[modeNum][0], "%dx%d",
+		snprintf(&vidModeName[modeNum][0], sizeof(vidModeName[modeNum]), "%dx%d",
 			windowedModes[modeNum][0],
 			windowedModes[modeNum][1]);
 	//}

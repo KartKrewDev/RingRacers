@@ -289,7 +289,7 @@ model_t *MD3_LoadModel(const char *fileName, int ztag, boolean useFloat)
 				*ptr++ = 'z';
 				*ptr++ = '\0';
 
-				sprintf(openfilename, "%s/%s", "textures", normalMapName);
+				snprintf(openfilename, sizeof(openfilename), "%s/%s", "textures", normalMapName);
 				// Convert backslashes to forward slashes
 				for (int k = 0; k < 1024; k++)
 				{

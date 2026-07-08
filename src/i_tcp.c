@@ -99,7 +99,7 @@ static char *get_WSAErrorStr(int e)
 		NULL);
 
 	if (!buf[0]) // provide a fallback error message if no message is available for some reason
-		sprintf(buf, "Unknown error");
+		snprintf(buf, sizeof(buf), "Unknown error");
 
 	return buf;
 }
@@ -253,9 +253,9 @@ const char *SOCK_AddrToStr(mysockaddr_t *sk)
 		addr = NULL;
 
 	if(addr == NULL)
-		sprintf(s, "No address");
+		snprintf(s, sizeof(s), "No address");
 	else if(inet_ntop(sk->any.sa_family, addr, s, sizeof (s)) == NULL)
-		sprintf(s, "Unknown family type, error #%u", errno);
+		snprintf(s, sizeof(s), "Unknown family type, error #%u", errno);
 #ifdef HAVE_IPV6
 	else if(sk->any.sa_family == AF_INET6 && sk->ip6.sin6_port != 0)
 		strcat(s, va(":%d", ntohs(sk->ip6.sin6_port)));
@@ -269,7 +269,7 @@ const char *SOCK_AddrToStr(mysockaddr_t *sk)
 		if (sk->ip4.sin_port != 0) strcat(s, va(":%d", ntohs(sk->ip4.sin_port)));
 	}
 	else
-		sprintf(s, "Unknown type");
+		snprintf(s, sizeof(s), "Unknown type");
 #endif
 	return s;
 }

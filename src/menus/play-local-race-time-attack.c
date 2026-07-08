@@ -488,13 +488,13 @@ void M_ReplayTimeAttack(INT32 choice)
 			which = "last";
 			break;
 		case tareplay_guest:
-			sprintf(menudemo.filepath, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%sguest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), modeprefix);
+			snprintf(menudemo.filepath, sizeof(menudemo.filepath), "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%sguest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), modeprefix);
 			break;
 	}
 
 	if (which)
 	{
-		sprintf(menudemo.filepath, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%s-%s%s.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), cv_skin[0].string, modeprefix, which);
+		snprintf(menudemo.filepath, sizeof(menudemo.filepath), "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%s-%s%s.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), cv_skin[0].string, modeprefix, which);
 	}
 
 	G_LoadDemoInfo(&menudemo, /*allownonmultiplayer*/ true);

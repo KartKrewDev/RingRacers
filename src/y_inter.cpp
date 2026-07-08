@@ -169,7 +169,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		;
 	else if ((data.rankingsmode = (boolean)rankingsmode))
 	{
-		sprintf(data.headerstring, "Total Rankings");
+		snprintf(data.headerstring, sizeof data.headerstring, "Total Rankings");
 		data.gotthrough = false;
 	}
 	else
