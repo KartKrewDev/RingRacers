@@ -9,13 +9,11 @@
 /// \brief String uppercasing/lowercasing functions for non-DOS non-Win32
 ///        systems
 
-#include "../doomtype.h"
-
-#ifndef HAVE_DOSSTR_FUNCS
+#include "doomtype.h"
 
 #include <ctype.h>
 
-int strupr(char *n)
+int srb2_strupr(char *n)
 {
 	while (*n != '\0')
 	{
@@ -25,7 +23,7 @@ int strupr(char *n)
 	return 1;
 }
 
-int strlwr(char *n)
+int srb2_strlwr(char *n)
 {
 	while (*n != '\0')
 	{
@@ -34,5 +32,3 @@ int strlwr(char *n)
 	}
 	return 1;
 }
-
-#endif

@@ -18,9 +18,10 @@
 #ifndef __DOOMTYPE__
 #define __DOOMTYPE__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <string.h>
+#include <stdint.h>
+
+#include "config.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -31,9 +32,11 @@ extern "C" {
 #undef max
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* 7.18.1.1  Exact-width integer types */
-#define __STDC_LIMIT_MACROS
-#include <stdint.h>
 
 #ifndef _MSC_VER
 #define UINT8 uint8_t
@@ -49,70 +52,44 @@ extern "C" {
 
 #define SINT8 int8_t
 
-#ifdef __APPLE_CC__
-#define DEBUG_LOG
-#define NOIPX
-#endif
-
 /* Strings and some misc platform specific stuff */
 
-#ifdef _MSC_VER
-	// Microsoft VisualC++
-#if (_MSC_VER <= 1800) // MSVC 2013 and back
-	#define snprintf                _snprintf
-#if (_MSC_VER <= 1200) // MSVC 6.0 and back
-	#define vsnprintf               _vsnprintf
-#endif
-#endif
-	#define strncasecmp             strnicmp
-	#define strcasecmp              stricmp
-#ifndef __cplusplus
-	#define inline                  __inline
-#endif
-#elif defined (__WATCOMC__)
-	#include <dos.h>
-	#include <sys\types.h>
-	#include <direct.h>
-	#include <malloc.h>
-	#define strncasecmp             strnicmp
-	#define strcasecmp              strcmpi
-#endif
-#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
-	#undef stricmp
-	#define stricmp(x,y) strcasecmp(x,y)
-	#undef strnicmp
-	#define strnicmp(x,y,n) strncasecmp(x,y,n)
-#endif
-
 char *nongnu_strcasestr(const char *in, const char *what);
-#ifndef _GNU_SOURCE
+#ifndef HAVE_STRCASESTR
 #define strcasestr nongnu_strcasestr
 #endif
-#define stristr strcasestr
-
-#if defined (PC_DOS) || defined (_WIN32) || defined (__HAIKU__)
-#define HAVE_DOSSTR_FUNCS
+#if !defined(HAVE_STRCASECMP) && defined(HAVE_STRICMP)
+#define strcasecmp stricmp
+#endif
+#if !defined(HAVE_STRNCASECMP) && defined(HAVE_STRNICMP)
+#define strncasecmp strnicmp
+#endif
+#if !defined(HAVE_STRICMP) && defined(HAVE_STRCASECMP)
+#define stricmp strcasecmp
+#endif
+#if !defined(HAVE_STRNICMP) && defined(HAVE_STRNCASECMP)
+#define strnicmp strncasecmp
 #endif
 
-#if defined (__APPLE__)
-	#define SRB2_HAVE_STRLCPY
-#elif defined (__GLIBC_PREREQ)
-	// glibc 2.38: added strlcpy and strlcat to _DEFAULT_SOURCE
-	#if __GLIBC_PREREQ(2, 38)
-		#define SRB2_HAVE_STRLCPY
-	#endif
-#endif
 
-#ifndef HAVE_DOSSTR_FUNCS
-int strupr(char *n); // from dosstr.c
-int strlwr(char *n); // from dosstr.c
+int srb2_strupr(char *n); // from dosstr.c
+int srb2_strlwr(char *n); // from dosstr.c
+#ifndef HAVE_STRUPR
+#define strupr srb2_strupr
+#endif
+#ifndef HAVE_STRLWR
+#define strlwr srb2_strlwr
 #endif
 
 #include <stddef.h> // for size_t
 
-#ifndef SRB2_HAVE_STRLCPY
-size_t strlcat(char *dst, const char *src, size_t siz);
-size_t strlcpy(char *dst, const char *src, size_t siz);
+size_t srb2_strlcat(char *dst, const char *src, size_t siz);
+size_t srb2_strlcpy(char *dst, const char *src, size_t siz);
+#ifndef HAVE_STRLCAT
+#define strlcat srb2_strlcat
+#endif
+#ifndef HAVE_STRLCPY
+#define strlcpy srb2_strlcpy
 #endif
 
 // Macro for use with char foo[FOOSIZE+1] type buffers.
@@ -125,117 +102,37 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 
 /* Boolean type definition */
 
-// Note: C++ bool and C99/C11 _Bool are NOT compatible.
-// Historically, boolean was win32 BOOL on Windows. For equivalence, it's now
-// int32_t. "true" and "false" are only declared for C code; in C++, conversion
-// between "bool" and "int32_t" takes over.
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
 #ifndef _WIN32
 typedef int32_t boolean;
 #else
+// Did you know including windows.h on mingw typedefs boolean?
+// I wonder how long this has quietly broken rpcndr.h.
+// Anyway, this should probably be fixed. God I hate WIN32.
 #define boolean BOOL
-#endif
-
-#ifndef __cplusplus
-#ifndef _WIN32
-#ifndef false // SDL3 workaround
-enum {false = 0, true = 1};
-#endif
-#else
-#ifndef false // SDL3 workaround
-#define false FALSE
-#define true TRUE
-#endif
-#endif
-#endif
-
-/* 7.18.2.1  Limits of exact-width integer types */
-
-#ifndef INT8_MIN
-#define INT8_MIN (-128)
-#endif
-#ifndef INT16_MIN
-#define INT16_MIN (-32768)
-#endif
-#ifndef INT32_MIN
-#define INT32_MIN (-2147483647 - 1)
-#endif
-#ifndef INT64_MIN
-#define INT64_MIN  (-9223372036854775807LL - 1)
-#endif
-
-#ifndef INT8_MAX
-#define INT8_MAX 127
-#endif
-#ifndef INT16_MAX
-#define INT16_MAX 32767
-#endif
-#ifndef INT32_MAX
-#define INT32_MAX 2147483647
-#endif
-#ifndef INT64_MAX
-#define INT64_MAX 9223372036854775807LL
-#endif
-
-#ifndef UINT8_MAX
-#define UINT8_MAX 0xff /* 255U */
-#endif
-#ifndef UINT16_MAX
-#define UINT16_MAX 0xffff /* 65535U */
-#endif
-#ifndef UINT32_MAX
-#define UINT32_MAX 0xffffffff  /* 4294967295U */
-#endif
-#ifndef UINT64_MAX
-#define UINT64_MAX 0xffffffffffffffffULL /* 18446744073709551615ULL */
 #endif
 
 /* Compiler-specific attributes and other macros */
 
 #ifdef __GNUC__ // __attribute__ ((X))
 	#define FUNCNORETURN __attribute__ ((noreturn))
-
-	#if ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && defined (__MINGW32__) // MinGW, >= GCC 4.1
-		#include "inttypes.h"
-		#if 0 //defined  (__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO > 0
-			#define FUNCPRINTF __attribute__ ((format(gnu_printf, 1, 2)))
-			#define FUNCDEBUG  __attribute__ ((format(gnu_printf, 2, 3)))
-			#define FUNCIERROR __attribute__ ((format(gnu_printf, 1, 2),noreturn))
-		#elif (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4) // >= GCC 4.4
-			#define FUNCPRINTF __attribute__ ((format(ms_printf, 1, 2)))
-			#define FUNCDEBUG  __attribute__ ((format(ms_printf, 2, 3)))
-			#define FUNCIERROR __attribute__ ((format(ms_printf, 1, 2),noreturn))
-		#else
-			#define FUNCPRINTF __attribute__ ((format(printf, 1, 2)))
-			#define FUNCDEBUG  __attribute__ ((format(printf, 2, 3)))
-			#define FUNCIERROR __attribute__ ((format(printf, 1, 2),noreturn))
-		#endif
-	#else
-		#define FUNCPRINTF __attribute__ ((format(printf, 1, 2)))
-		#define FUNCDEBUG  __attribute__ ((format(printf, 2, 3)))
-		#define FUNCIERROR __attribute__ ((format(printf, 1, 2),noreturn))
-	#endif
-
-	#ifndef FUNCIERROR
-		#define FUNCIERROR __attribute__ ((noreturn))
-	#endif
-
+	#define FUNCPRINTF __attribute__ ((format(printf, 1, 2)))
+	#define FUNCDEBUG  __attribute__ ((format(printf, 2, 3)))
+	#define FUNCIERROR __attribute__ ((format(printf, 1, 2),noreturn))
 	#define FUNCMATH __attribute__((const))
-
-	#if (__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1) // >= GCC 3.1
-		#define FUNCDEAD __attribute__ ((deprecated))
-		#define FUNCINLINE __attribute__((always_inline))
-		#define FUNCNONNULL __attribute__((nonnull))
-	#endif
-
+	#define FUNCDEAD __attribute__ ((deprecated))
+	#define FUNCINLINE __attribute__((always_inline))
+	#define FUNCNONNULL __attribute__((nonnull))
 	#define FUNCNOINLINE __attribute__((noinline))
 
-	#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4) // >= GCC 4.4
-		#ifdef __i386__ // i386 only
-			#define FUNCTARGET(X)  __attribute__ ((__target__ (X)))
-		#endif
+	#ifdef __i386__ // i386 only
+		#define FUNCTARGET(X)  __attribute__ ((__target__ (X)))
 	#endif
 
-	#if defined (__MINGW32__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)) && !defined(__clang__) // MinGW, >= GCC 3.4, not Clang
+	#if defined(__MINGW32__) && !defined(__clang__) // MinGW, not Clang
 		#define ATTRPACK __attribute__((packed, gcc_struct))
 	#else
 		#define ATTRPACK __attribute__((packed))
@@ -246,9 +143,7 @@ enum {false = 0, true = 1};
 #elif defined (_MSC_VER)
 	#define ATTRNORETURN __declspec(noreturn)
 	#define ATTRINLINE __forceinline
-	#if _MSC_VER > 1200 // >= MSVC 6.0
-		#define ATTRNOINLINE __declspec(noinline)
-	#endif
+	#define ATTRNOINLINE __declspec(noinline)
 #endif
 
 #ifndef FUNCPRINTF

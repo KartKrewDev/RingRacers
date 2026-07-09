@@ -26,6 +26,7 @@
 #include "d_net.h"
 #include "d_netfil.h" // fileneedednum
 #include "d_main.h"
+#include "doomtype.h"
 #include "g_game.h"
 #include "st_stuff.h"
 #include "hu_stuff.h"

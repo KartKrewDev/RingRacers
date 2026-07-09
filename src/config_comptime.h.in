@@ -1,0 +1,24 @@
+/** SRB2 CMake Comptime Configuration */
+
+#ifndef SRB2_CONFIG_COMPTIME_H
+#define SRB2_CONFIG_COMPTIME_H
+
+/* DO NOT MODIFY config.h DIRECTLY! It will be overwritten by cmake.
+ * If you want to change a configuration option here, modify it in
+ * your CMakeCache.txt. config_comptime.h.in is used as a template for CMake
+ * variables, so you can insert them here too.
+ */
+
+#define SRB2_COMP_REVISION       "${SRB2_COMP_REVISION}"
+#define SRB2_COMP_BRANCH         "${SRB2_COMP_BRANCH}"
+#define SRB2_COMP_NOTE           "${SRB2_COMP_NOTE}"
+// This is done with configure_file instead of defines in order to avoid
+// recompiling the whole target whenever the working directory state changes
+#cmakedefine SRB2_COMP_UNCOMMITTED
+#ifdef SRB2_COMP_UNCOMMITTED
+#define COMPVERSION_UNCOMMITTED
+#endif
+
+#cmakedefine01 SRB2_COMP_OPTIMIZED
+
+#endif // SRB2_CONFIG_COMPTIME_H

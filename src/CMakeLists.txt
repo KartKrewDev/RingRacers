@@ -15,6 +15,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	deh_soc.c
 	deh_lua.c
 	deh_tables.c
+	dosstr.c
 	z_zone.cpp
 	f_finale.c
 	f_wipe.cpp
@@ -101,6 +102,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	v_video.cpp
 	s_sound.c
 	sounds.c
+	strcasestr.c
 	w_wad.cpp
 	filesrch.c
 	mserv.c

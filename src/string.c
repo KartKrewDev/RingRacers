@@ -14,13 +14,10 @@
 
 #include <stddef.h>
 #include <string.h>
-#include "doomdef.h"
-
-#ifndef SRB2_HAVE_STRLCPY
 
 // Like the OpenBSD version, but it doesn't check for src not being a valid
 // C string.
-size_t strlcat(char *dst, const char *src, size_t siz)
+size_t srb2_strlcat(char *dst, const char *src, size_t siz)
 {
 	size_t dstlen, n = siz;
 	char *p = dst;
@@ -41,15 +38,11 @@ size_t strlcat(char *dst, const char *src, size_t siz)
 	return strlen(src) + dstlen;
 }
 
-size_t strlcpy(char *dst, const char *src, size_t siz)
+size_t srb2_strlcpy(char *dst, const char *src, size_t siz)
 {
 	if (siz == 0)
 		return strlen(dst);
 
 	dst[0] = '\0';
-	return strlcat(dst, src, siz);
+	return srb2_strlcat(dst, src, siz);
 }
-
-#endif
-
-#include "strcasestr.c"

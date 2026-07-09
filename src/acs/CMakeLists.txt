@@ -19,6 +19,10 @@ target_include_directories(SRB2SDL2 PRIVATE vm) # This sucks
 #set(ACSVM_NOFLAGS ON)
 
 set(ACSVM_SHARED OFF)
+set(ACSVM_INSTALL_API OFF)
+set(ACSVM_INSTALL_DOC OFF)
+set(ACSVM_INSTALL_EXE OFF)
+set(ACSVM_INSTALL_LIB OFF)
 add_subdirectory(vm)
 
 target_link_libraries(SRB2SDL2 PRIVATE acsvm)

@@ -1,7 +1,7 @@
 /** SRB2 CMake Configuration */
 
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#ifndef SRB2_CONFIG_H
+#define SRB2_CONFIG_H
 
 /* DO NOT MODIFY config.h DIRECTLY! It will be overwritten by cmake.
  * If you want to change a configuration option here, modify it in
@@ -9,21 +9,18 @@
  * variables, so you can insert them here too.
  */
 
-#ifdef CMAKECONFIG
+#include "config_comptime.h"
 
-#define SRB2_COMP_REVISION       "${SRB2_COMP_REVISION}"
-#define SRB2_COMP_BRANCH         "${SRB2_COMP_BRANCH}"
-#define SRB2_COMP_NOTE           "${SRB2_COMP_NOTE}"
-// This is done with configure_file instead of defines in order to avoid
-// recompiling the whole target whenever the working directory state changes
-#cmakedefine SRB2_COMP_UNCOMMITTED
-#ifdef SRB2_COMP_UNCOMMITTED
-#define COMPVERSION_UNCOMMITTED
-#endif
+#cmakedefine HAVE_STRUPR
+#cmakedefine HAVE_STRLWR
+#cmakedefine HAVE_STRCASESTR
+#cmakedefine HAVE_STRCASECMP
+#cmakedefine HAVE_STRNCASECMP
+#cmakedefine HAVE_STRICMP
+#cmakedefine HAVE_STRNICMP
+#cmakedefine HAVE_STRLCAT
+#cmakedefine HAVE_STRLCPY
 
 #define CMAKE_BUILD_TYPE         "${CMAKE_BUILD_TYPE}"
-#cmakedefine01 SRB2_COMP_OPTIMIZED
 
-#endif
-
-#endif
+#endif // SRB2_CONFIG_H

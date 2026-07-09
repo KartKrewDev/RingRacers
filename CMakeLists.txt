@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.28 FATAL_ERROR)
 
 if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source builds are blocked. Please build from a separate directory.")
@@ -9,6 +9,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 include(CMakeDependentOption)
 include(CheckCXXCompilerFlag)
+include(CheckSymbolExists)
 
 file(STRINGS src/version.h SRB2_VERSION)
 string(REGEX MATCH "[0-9]+\\.[0-9.]+" SRB2_VERSION ${SRB2_VERSION})
@@ -113,13 +114,6 @@ find_package(Opus REQUIRED)
 if(WIN32 AND NOT MINGW)
 	find_package(cpptrace CONFIG REQUIRED)
 endif()
-# Use the one in thirdparty/fmt to guarantee a minimum version
-#find_package(FMT CONFIG REQUIRED)
-
-# libgme defaults to "Nuked" YM2612 emulator, which is
-# very SLOW. The system library probably uses the
-# default so just always build it.
-#find_package(GME REQUIRED)
 
 if (SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	find_package(YUV REQUIRED)
@@ -130,12 +124,10 @@ if (SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	endif()
 
 	find_package(Ogg REQUIRED)
-	find_package(Vorbis REQUIRED)
-	find_package(VorbisEnc REQUIRED)
-endif()
-
-if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
-	message(FATAL_ERROR "In-source builds will bring you a world of pain. Please make a separate directory to invoke CMake from.")
+	find_package(Vorbis REQUIRED OPTIONAL_COMPONENTS vorbisenc)
+	if(NOT TARGET Vorbis::vorbisenc)
+		message(FATAL_ERROR "vorbisenc not found; despite being in OPTIONAL_COMPONENTS, it is actually required")
+	endif()
 endif()
 
 if ((${SRB2_USE_CCACHE}) AND (${CMAKE_C_COMPILER} MATCHES "clang"))
@@ -145,15 +137,10 @@ endif()
 # bitness check
 set(SRB2_SYSTEM_BITS 0)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	message(STATUS "Target is 64-bit")
 	set(SRB2_SYSTEM_BITS 64)
 endif()
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-	message(STATUS "Target is 32-bit")
 	set(SRB2_SYSTEM_BITS 32)
-endif()
-if(${SRB2_SYSTEM_BITS} EQUAL 0)
-	message(STATUS "Target bitness is unknown")
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
@@ -205,3 +192,16 @@ list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_SUFFIX})
 
 list(JOIN EXE_NAME_PARTS "_" EXE_NAME)
 set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME ${EXE_NAME})
+
+# Test for functions not consistently available
+check_symbol_exists(strupr "string.h" HAVE_STRUPR)
+check_symbol_exists(strlwr "string.h" HAVE_STRLWR)
+check_symbol_exists(strcasestr "string.h" HAVE_STRCASESTR)
+check_symbol_exists(strcasecmp "string.h" HAVE_STRCASECMP)
+check_symbol_exists(strncasecmp "string.h" HAVE_STRNCASECMP)
+check_symbol_exists(stricmp "string.h" HAVE_STRICMP)
+check_symbol_exists(strnicmp "string.h" HAVE_STRNICMP)
+check_symbol_exists(strlcat "string.h" HAVE_STRLCAT)
+check_symbol_exists(strlcpy "string.h" HAVE_STRLCPY)
+
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/src/config.h")

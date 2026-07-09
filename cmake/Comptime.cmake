@@ -29,4 +29,4 @@ else()
 	set(SRB2_COMP_OPTIMIZED FALSE)
 endif()
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/src/config.h")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config_comptime.h.in" "${CMAKE_CURRENT_BINARY_DIR}/src/config_comptime.h")
