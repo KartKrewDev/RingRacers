@@ -1579,7 +1579,7 @@ void I_StartupGraphics(void)
 #endif
 
 	// Window icon
-#if USE_XPM_ICON
+#ifdef USE_XPM_ICON
 	icoSurface = IMG_ReadXPMFromArray(SDL_icon_xpm);
 #endif
 
