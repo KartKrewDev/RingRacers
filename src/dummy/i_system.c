@@ -20,7 +20,7 @@ UINT8 graphics_started = 0;
 
 UINT8 keyboard_started = 0;
 
-UINT32 I_GetFreeMem(UINT32 *total)
+UINT64 I_GetFreeMem(UINT64 *total)
 {
 	*total = 0;
 	return 0;

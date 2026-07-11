@@ -211,6 +211,18 @@ static SDL_AudioStream* g_input_stream;
 static SDL_Mutex* microphone_mutex = nullptr;
 static SDL_Thread* microphone_thread = nullptr;
 
+static size_t g_sound_chunk_bytes = 0;
+
+static size_t SoundChunkHeapBytes(const srb2::audio::SoundChunk& chunk)
+{
+	return sizeof(srb2::audio::SoundChunk) + chunk.samples.capacity() * sizeof(srb2::audio::Sample<1>);
+}
+
+size_t I_GetSoundMemUsage(void)
+{
+	return g_sound_chunk_bytes;
+}
+
 void* I_GetSfx(sfxinfo_t* sfx)
 {
 	if (sfx->lumpnum == LUMPERROR)
@@ -227,6 +239,7 @@ void* I_GetSfx(sfxinfo_t* sfx)
 		return nullptr;
 
 	SoundChunk* heap_chunk = new SoundChunk {std::move(*chunk)};
+	g_sound_chunk_bytes += SoundChunkHeapBytes(*heap_chunk);
 
 	return heap_chunk;
 }
@@ -236,6 +249,7 @@ void I_FreeSfx(sfxinfo_t* sfx)
 	if (sfx->data)
 	{
 		SoundChunk* chunk = static_cast<SoundChunk*>(sfx->data);
+		g_sound_chunk_bytes -= SoundChunkHeapBytes(*chunk);
 		auto _ = srb2::finally([chunk]() { delete chunk; });
 
 		// Stop any channels playing this chunk

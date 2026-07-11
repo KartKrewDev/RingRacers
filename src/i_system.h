@@ -44,7 +44,7 @@ extern boolean g_in_exiting_signal_handler;
 
 	\return	free memory in the system
 */
-UINT32 I_GetFreeMem(UINT32 *total);
+UINT64 I_GetFreeMem(UINT64 *total);
 
 /**	\brief	Returns precise time value for performance measurement. The precise
             time should be a monotonically increasing counter, and will wrap.

@@ -25,6 +25,11 @@ void I_FreeSfx(sfxinfo_t *sfx)
 	(void)sfx;
 }
 
+size_t I_GetSoundMemUsage(void)
+{
+	return 0;
+}
+
 void I_StartupSound(void){}
 
 void I_ShutdownSound(void){}

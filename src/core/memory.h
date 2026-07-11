@@ -37,6 +37,7 @@ class PoolAllocator final
 	FreeBlock* head_;
 	size_t block_size_;
 	size_t blocks_;
+	size_t allocated_blocks_;
 	int32_t tag_;
 
 	ChunkFooter* allocate_chunk();
@@ -47,6 +48,7 @@ public:
 		, head_(nullptr)
 		, block_size_(block_size)
 		, blocks_(blocks)
+		, allocated_blocks_(0)
 		, tag_(tag)
 	{}
 	PoolAllocator(const PoolAllocator&) = delete;
@@ -59,6 +61,8 @@ public:
 	void* allocate();
 	void deallocate(void* p);
 	constexpr size_t block_size() const noexcept { return block_size_; };
+	constexpr size_t allocated_blocks() const noexcept { return allocated_blocks_; };
+	constexpr size_t allocated_bytes() const noexcept { return allocated_blocks_ * block_size_; };
 
 	void release();
 };

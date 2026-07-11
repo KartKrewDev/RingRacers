@@ -113,6 +113,7 @@ void* PoolAllocator::allocate()
 
 	FreeBlock* ret = head_;
 	head_ = head_->next;
+	allocated_blocks_++;
 	return ret;
 }
 
@@ -124,6 +125,7 @@ void PoolAllocator::deallocate(void* p)
 	FreeBlock* block = reinterpret_cast<FreeBlock*>(p);
 	block->next = head_;
 	head_ = block;
+	allocated_blocks_--;
 }
 
 void PoolAllocator::release()
@@ -143,6 +145,7 @@ void PoolAllocator::release()
 
 	first_chunk_ = nullptr;
 	head_ = nullptr;
+	allocated_blocks_ = 0;
 }
 
 static LinearMemory g_frame_memory {4 * 1024 * 1024};

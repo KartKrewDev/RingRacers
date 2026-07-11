@@ -36,6 +36,7 @@
 #include "doomstat.h"
 #include "r_patch.h"
 #include "r_picformats.h"
+#include "i_sound.h" // I_GetSoundMemUsage
 #include "i_system.h" // I_GetFreeMem
 #include "i_video.h" // rendermode
 #include "z_zone.h"
@@ -103,14 +104,14 @@ static void Command_Memdump_f(void);
   */
 void Z_Init(void)
 {
-	UINT32 total, memfree;
+	UINT64 total, memfree;
 
 	memset(&head, 0x00, sizeof(head));
 
 	head.next = head.prev = &head;
 
 	memfree = I_GetFreeMem(&total)>>20;
-	CONS_Printf("System memory: %uMB - Free: %uMB\n", total>>20, memfree);
+	CONS_Printf("System memory: %lluMB - Free: %lluMB\n", (unsigned long long)(total>>20), (unsigned long long)memfree);
 
 	// Note: This allocates memory. Watch out.
 	COM_AddDebugCommand("memfree", Command_Memfree_f);
@@ -614,13 +615,14 @@ size_t Z_TagsUsage(INT32 lowtag, INT32 hightag)
   */
 static void Command_Memfree_f(void)
 {
-	UINT32 freebytes, totalbytes;
+	UINT64 freebytes, totalbytes;
 
 	Z_CheckHeap(-1);
 	CONS_Printf("\x82%s", M_GetText("Memory Info\n"));
 	CONS_Printf(M_GetText("Total heap used        : %7s KB\n"), sizeu1(Z_TotalUsage()>>10));
 	CONS_Printf(M_GetText("Static                 : %7s KB\n"), sizeu1(Z_TagUsage(PU_STATIC)>>10));
 	CONS_Printf(M_GetText("Static (sound)         : %7s KB\n"), sizeu1(Z_TagUsage(PU_SOUND)>>10));
+	CONS_Printf(M_GetText("Non-tagged sound       : %7s KB\n"), sizeu1(I_GetSoundMemUsage()>>10));
 	CONS_Printf(M_GetText("Static (music)         : %7s KB\n"), sizeu1(Z_TagUsage(PU_MUSIC)>>10));
 	CONS_Printf(M_GetText("Patches                : %7s KB\n"), sizeu1(Z_TagUsage(PU_PATCH)>>10));
 	CONS_Printf(M_GetText("Patches (low priority) : %7s KB\n"), sizeu1(Z_TagUsage(PU_PATCH_LOWPRIORITY)>>10));
@@ -629,6 +631,7 @@ static void Command_Memfree_f(void)
 	CONS_Printf(M_GetText("HUD graphics           : %7s KB\n"), sizeu1(Z_TagUsage(PU_HUDGFX)>>10));
 	CONS_Printf(M_GetText("Locked cache           : %7s KB\n"), sizeu1(Z_TagUsage(PU_CACHE)>>10));
 	CONS_Printf(M_GetText("Level                  : %7s KB\n"), sizeu1(Z_TagUsage(PU_LEVEL)>>10));
+	CONS_Printf(M_GetText("Level (pooled)         : %7s KB\n"), sizeu1(Z_LevelPoolUsage()>>10));
 	CONS_Printf(M_GetText("Special thinker        : %7s KB\n"), sizeu1(Z_TagUsage(PU_LEVSPEC)>>10));
 	CONS_Printf(M_GetText("All purgable           : %7s KB\n"),
 		sizeu1(Z_TagsUsage(PU_PURGELEVEL, INT32_MAX)>>10));
@@ -647,8 +650,8 @@ static void Command_Memfree_f(void)
 
 	CONS_Printf("\x82%s", M_GetText("System Memory Info\n"));
 	freebytes = I_GetFreeMem(&totalbytes);
-	CONS_Printf(M_GetText("    Total physical memory: %7u KB\n"), totalbytes>>10);
-	CONS_Printf(M_GetText("Available physical memory: %7u KB\n"), freebytes>>10);
+	CONS_Printf(M_GetText("    Total physical memory: %10llu KB\n"), (unsigned long long)(totalbytes>>10));
+	CONS_Printf(M_GetText("Available physical memory: %10llu KB\n"), (unsigned long long)(freebytes>>10));
 }
 
 /** The function called by the "memdump" console command.
@@ -683,6 +686,14 @@ static void Command_Memdump_f(void)
 char *Z_StrDup(const char *s)
 {
 	return strcpy((char*)ZZ_Alloc(strlen(s) + 1), s);
+}
+
+size_t Z_LevelPoolUsage(void)
+{
+	return g_level_large_pool.allocated_bytes()
+		+ g_level_med_pool.allocated_bytes()
+		+ g_level_small_pool.allocated_bytes()
+		+ g_level_tiny_pool.allocated_bytes();
 }
 
 void* Z_LevelPoolMalloc(size_t size)

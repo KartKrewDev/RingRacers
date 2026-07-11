@@ -48,6 +48,10 @@ void *I_GetSfx(sfxinfo_t *sfx);
 */
 void I_FreeSfx(sfxinfo_t *sfx);
 
+/**	\brief	Returns total bytes allocated for loaded sound data on the heap.
+*/
+size_t I_GetSoundMemUsage(void);
+
 /**	\brief Init at program start...
 */
 void I_StartupSound(void);
