@@ -400,50 +400,6 @@ target_link_libraries(SRB2SDL2 PRIVATE nlohmann_json::nlohmann_json)
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
 
-if(${SRB2_CONFIG_HAVE_ZLIB})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(ZLIB_FOUND ON)
-		set(ZLIB_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/zlib)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(ZLIB_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/zlib/win32 -lz64")
-		else() # 32-bit
-			set(ZLIB_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/zlib/win32 -lz32")
-		endif()
-	else()
-		find_package(ZLIB)
-	endif()
-	if(${ZLIB_FOUND})
-		set(SRB2_HAVE_ZLIB ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB)
-	else()
-		message(WARNING "You have specified that ZLIB is available but it was not found. Dr Robotnik's Ring Racers may not compile correctly.")
-	endif()
-endif()
-
-if(${SRB2_CONFIG_HAVE_PNG} AND ${SRB2_CONFIG_HAVE_ZLIB})
-	if (${ZLIB_FOUND})
-		if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-			set(PNG_FOUND ON)
-			set(PNG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libpng-src)
-			if(${SRB2_SYSTEM_BITS} EQUAL 64)
-				set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng64")
-			else() # 32-bit
-				set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng32")
-			endif()
-		else()
-			find_package(PNG)
-		endif()
-		if(${PNG_FOUND})
-			set(SRB2_HAVE_PNG ON)
-			target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_PNG)
-			target_compile_definitions(SRB2SDL2 PRIVATE -D_LARGEFILE64_SOURCE)
-			target_sources(SRB2SDL2 PRIVATE apng.c)
-		else()
-			message(WARNING "You have specified that PNG is available but it was not found. Dr Robotnik's Ring Racers may not compile correctly.")
-		endif()
-	endif()
-endif()
-
 if("${SRB2_CONFIG_HWRENDER}")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHWRENDER)
 	add_subdirectory(hardware)
@@ -598,6 +554,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-unused-const-variable
 		-Wno-unused-variable
 		-Wno-unused-function
+		-Wno-nullability-completeness
 	>
 
 	# C, MSVC
@@ -636,6 +593,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-unused-const-variable
 		-Wno-unused-variable
 		-Wno-unused-function
+		-Wno-nullability-completeness
 	>
 
 	# C++, Clang and Apple Clang
@@ -661,13 +619,6 @@ if(SRB2_CONFIG_ERRORMODE)
 		>
 	)
 endif()
-
-# Link warnings configuration
-target_link_options(SRB2SDL2 PRIVATE
-	$<$<C_COMPILER_ID:GNU>:
-		# -Wl,--as-needed   - Was controlled by NOLDWARNING
-	>
-)
 
 if(${SRB2_CONFIG_DEV_BUILD})
 	target_compile_definitions(SRB2SDL2 PRIVATE -DDEVELOP)
@@ -732,180 +683,6 @@ if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
 			COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
 		)
 	endif()
-endif()
-
-# copy DLLs to bin/ directory if building internal shared on windows
-if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}" AND NOT MSVC)
-	# also copy implicitly linked system libraries
-	set(ADDITIONAL_DLLS "")
-	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL GNU)
-		string(CONCAT gcc_search_dirs_path "${CMAKE_BINARY_DIR}" /gcc_search_dirs.txt)
-		#message(STATUS gcc_search_dirs_path=${gcc_search_dirs_path})
-		execute_process(
-			COMMAND ${CMAKE_CXX_COMPILER} -print-search-dirs
-			OUTPUT_FILE "${gcc_search_dirs_path}"
-			#OUTPUT_VARIABLE gcc_search_dirs
-		)
-
-		file(READ "${gcc_search_dirs_path}" gcc_search_dirs)
-		#message(STATUS gcc_search_dirs=${gcc_search_dirs})
-
-		#set(gcc_install_dir "${gcc_search_dirs}")
-		#string(REGEX MATCH "install: =[ \t]*([^\r\n]*)" gcc_install_dir "${gcc_install_dir}" )
-		#set(gcc_install_dir "${CMAKE_MATCH_1}")
-		#message(STATUS gcc_install_dir="${gcc_install_dir}")
-
-
-		string(CONCAT gcc_search_dirs_install_path_1 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_install_1.txt)
-		#message(STATUS gcc_search_dirs_install_path_1=${gcc_search_dirs_install_path_1})
-		execute_process(
-			COMMAND grep "^install:"
-			INPUT_FILE "${gcc_search_dirs_path}"
-			OUTPUT_FILE "${gcc_search_dirs_install_path_1}"
-		)
-
-		string(CONCAT gcc_search_dirs_install_path_2 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_install_2.txt)
-		#message(STATUS gcc_search_dirs_install_path_2=${gcc_search_dirs_install_path_2})
-		execute_process(
-			COMMAND sed -e "s/^install: //" -e "s,=/,/,g"
-			INPUT_FILE "${gcc_search_dirs_install_path_1}"
-			OUTPUT_FILE "${gcc_search_dirs_install_path_2}"
-		)
-
-		if(NOT ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows"))
-			string(REPLACE ":" ";" gcc_install_dir "${gcc_install_dir}")
-		endif()
-
-		file(READ ${gcc_search_dirs_install_path_2} gcc_install_dir)
-
-		#set(gcc_programs_dir "${gcc_search_dirs}")
-		#string(REGEX MATCH "programs: =[ \t]*([^\r\n]*)" gcc_programs_dir "${gcc_programs_dir}" )
-		#set(gcc_programs_dir "${CMAKE_MATCH_1}")
-		#message(STATUS gcc_programs_dir="${gcc_programs_dir}")
-
-		string(CONCAT gcc_search_dirs_programs_path_1 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_programs_1.txt)
-		#message(STATUS gcc_search_dirs_programs_path_1=${gcc_search_dirs_programs_path_1})
-		execute_process(
-			COMMAND grep "^programs:"
-			INPUT_FILE "${gcc_search_dirs_path}"
-			OUTPUT_FILE "${gcc_search_dirs_programs_path_1}"
-		)
-
-		string(CONCAT gcc_search_dirs_programs_path_2 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_programs_2.txt)
-		#message(STATUS gcc_search_dirs_programs_path_2=${gcc_search_dirs_programs_path_2})
-		execute_process(
-			COMMAND sed -e "s/^programs: =//" -e "s,=/,/,g"
-			INPUT_FILE "${gcc_search_dirs_programs_path_1}"
-			OUTPUT_FILE "${gcc_search_dirs_programs_path_2}"
-		)
-
-		file(READ ${gcc_search_dirs_programs_path_2} gcc_programs_dir)
-
-		if(NOT ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows"))
-			string(REPLACE ":" ";" gcc_programs_dir "${gcc_programs_dir}")
-		endif()
-
-		#set(gcc_libraries_dir "${gcc_search_dirs}")
-		#string(REGEX MATCH "libraries: =[ \t]*([^\r\n]*)" gcc_libraries_dir "${gcc_libraries_dir}" )
-		#set(gcc_libraries_dir "${CMAKE_MATCH_1}")
-		#message(STATUS gcc_libraries_dir="${gcc_libraries_dir}")
-
-		string(CONCAT gcc_search_dirs_libraries_path_1 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_libraries_1.txt)
-		#message(STATUS gcc_search_dirs_libraries_path_1=${gcc_search_dirs_libraries_path_1})
-		execute_process(
-			COMMAND grep "^libraries:"
-			INPUT_FILE "${gcc_search_dirs_path}"
-			OUTPUT_FILE "${gcc_search_dirs_libraries_path_1}"
-		)
-
-		string(CONCAT gcc_search_dirs_libraries_path_2 "${CMAKE_BINARY_DIR}" /gcc_search_dirs_libraries_2.txt)
-		#message(STATUS gcc_search_dirs_libraries_path_2=${gcc_search_dirs_libraries_path_2})
-		execute_process(
-			COMMAND sed -e "s/^libraries: =//" -e "s,=/,/,g"
-			INPUT_FILE "${gcc_search_dirs_libraries_path_1}"
-			OUTPUT_FILE "${gcc_search_dirs_libraries_path_2}"
-		)
-
-		file(READ ${gcc_search_dirs_libraries_path_2} gcc_libraries_dir)
-
-		if(NOT ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows"))
-			string(REPLACE ":" ";" gcc_libraries_dir "${gcc_libraries_dir}")
-		endif()
-
-		#list(LENGTH gcc_install_dir gcc_install_dir_len)
-		#list(LENGTH gcc_programs_dir gcc_programs_dir_len)
-		#list(LENGTH gcc_libraries_dir gcc_libraries_dir_len)
-		#message(STATUS gcc_install_dir_len="${gcc_install_dir_len}")
-		#message(STATUS gcc_install_dir="${gcc_install_dir}")
-		#message(STATUS gcc_programs_dir_len="${gcc_programs_dir_len}")
-		#message(STATUS gcc_programs_dir="${gcc_programs_dir}")
-		#message(STATUS gcc_libraries_dir_len="${gcc_libraries_dir_len}")
-		#message(STATUS gcc_libraries_dir="${gcc_libraries_dir}")
-
-		get_filename_component(CMAKE_CXX_COMPILER_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
-		#message(STATUS CMAKE_CXX_COMPILER_DIR="${CMAKE_CXX_COMPILER_DIR}")
-
-		set(OLD_CMAKE_FIND_LIBRARY_SUFFIXES  ${CMAKE_FIND_LIBRARY_SUFFIXES})
-		set(CMAKE_FIND_LIBRARY_SUFFIXES "" ${CMAKE_FIND_LIBRARY_SUFFIXES})
-		set(OLD_CMAKE_FIND_LIBRARY_PREFIXES  ${CMAKE_FIND_LIBRARY_PREFIXES})
-		set(CMAKE_FIND_LIBRARY_PREFIXES "" ${CMAKE_FIND_LIBRARY_PREFIXES})
-
-		find_library(LIBUNWIND
-			NAMES "libunwind.dll"
-			PATHS ${gcc_programs_dir} ${CMAKE_CXX_COMPILER_DIR}
-		)
-		if (LIBUNWIND)
-			#message(STATUS LIBUNWIND="${LIBUNWIND}")
-			list(APPEND ADDITIONAL_DLLS ${LIBUNWIND})
-		endif()
-		unset(LIBUNWIND)
-		find_library(LIBGCC
-			NAMES "libgcc_s_dw2-1.dll" "libgcc_s_sjlj-1.dll" "libgcc_s_seh-1.dll"
-			PATHS ${gcc_programs_dir} ${CMAKE_CXX_COMPILER_DIR}
-		)
-		if (LIBGCC)
-			#message(STATUS LIBGCC="${LIBGCC}")
-			list(APPEND ADDITIONAL_DLLS ${LIBGCC})
-		endif()
-		unset(LIBGCC)
-		find_library(LIBSTDCPP
-			NAMES "libstdc++-6.dll" "libc++.dll"
-			PATHS ${gcc_programs_dir} ${CMAKE_CXX_COMPILER_DIR}
-		)
-		if (LIBSTDCPP)
-			#message(STATUS LIBSTDCPP="${LIBSTDCPP}")
-			list(APPEND ADDITIONAL_DLLS ${LIBSTDCPP})
-		endif()
-		unset(LIBSTDCPP)
-		find_library(LIBPTHREAD
-			NAMES "winpthread-1.dll" "libwinpthread-1.dll" "pthreadGC2.dll"
-			PATHS ${gcc_libraries_dir} ${CMAKE_CXX_COMPILER_DIR}
-		)
-		if(LIBPTHREAD)
-			#message(STATUS LIBPTHREAD="${LIBPTHREAD}")
-			list(APPEND ADDITIONAL_DLLS ${LIBPTHREAD})
-		endif()
-
-		set(CMAKE_FIND_LIBRARY_SUFFIXES ${OLD_CMAKE_FIND_LIBRARY_SUFFIXES})
-		set(CMAKE_FIND_LIBRARY_PREFIXES ${OLD_CMAKE_FIND_LIBRARY_PREFIXES})
-		unset(LIBPTHREAD)
-		unset(gcc_install_dir)
-		unset(gcc_programs_dir)
-		unset(gcc_libraries_dir)
-		unset(OLD_CMAKE_FIND_LIBRARY_SUFFIXES)
-		unset(OLD_CMAKE_FIND_LIBRARY_PREFIXES)
-
-		#message(STATUS ADDITIONAL_DLLS="${ADDITIONAL_DLLS}")
-	endif()
-	add_custom_command(TARGET SRB2SDL2 POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			$<TARGET_RUNTIME_DLLS:SRB2SDL2>
-			${ADDITIONAL_DLLS}
-
-			$<TARGET_FILE_DIR:SRB2SDL2>
-		COMMAND_EXPAND_LISTS
-		COMMENT "Copying runtime DLLs"
-	)
 endif()
 
 # Setup clang-tidy

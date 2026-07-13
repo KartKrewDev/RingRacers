@@ -1,18 +1,309 @@
-include:
-  - '.gitlab/ci/templates/*.yml'
-  - '.gitlab/ci/jobs/*.yml'
-
 workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
   auto_cancel:
     on_new_commit: interruptible
 
+default:
+  interruptible: true
+
 variables:
-  GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_CONCURRENT_ID/$CI_PROJECT_PATH
+  GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_CONCURRENT_PROJECT_ID
   GIT_DEPTH: 20
 
 stages:
   - build
-  - osxcross
+  - upload-ftp
 
-default:
-  interruptible: true
+Alpine Linux:
+  stage: build
+  image: alpine:3.24
+  cache:
+    key: alpine-apk-cache
+    paths:
+      - .apk-cache
+  before_script:
+    - |
+      BRANCH_NAME=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_REF_NAME}
+
+      # Can override DEV_BUILD via environment variable
+      if [[ -z "$DEV_BUILD" ]]; then
+        if [[ -z "$CI_COMMIT_TAG" ]]; then
+          echo "DEV_BUILD=ON (no tag)"
+          DEV_BUILD=ON
+        else
+          echo "DEV_BUILD=OFF (tag)"
+          DEV_BUILD=OFF
+        fi
+      fi
+
+      # Can override EXE_NAME via environment variable
+      if [[ -z "$EXE_NAME" ]]; then
+        EXE_NAME="ringracers"
+
+        if ! [[ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" || -n "$CI_COMMIT_TAG" ]]; then
+          EXE_NAME="ringracers_${BRANCH_NAME//[^a-z0-9-]/_}"
+        fi
+      fi
+
+      export EXE_NAME
+      export DEV_BUILD
+      echo "EXE_NAME=$EXE_NAME DEV_BUILD=$DEV_BUILD"
+  script:
+    - | # Configure APK cache
+      mkdir -p .apk-cache
+      ln -sfn .apk-cache /etc/apk/cache
+    - | # Install APK packages and clean cache.
+      apk add --update-cache \
+        build-base \
+        cmake \
+        ninja-build \
+        ninja-is-really-ninja \
+        zlib zlib-dev \
+        libpng libpng-dev \
+        curl curl-dev \
+        libvpx libvpx-dev \
+        libogg libogg-dev \
+        libvorbis libvorbis-dev \
+        libyuv libyuv-dev \
+        opus opus-dev \
+        sdl3 sdl3-dev
+      apk cache clean
+    - | # Exclude files from git to avoid UNMODIFIED flag in builds
+      mkdir -p "$CI_PROJECT_DIR/.git/info"
+      touch "$CI_PROJECT_DIR/.git/info/exclude"
+      echo "/.apk-cache" >> "$CI_PROJECT_DIR/.git/info/exclude"
+    - |
+      cmake -B build -S . \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_COLOR_DIAGNOSTICS=ON \
+        -DSRB2_SDL2_EXE_NAME="$EXE_NAME" \
+        -DSRB2_CONFIG_DEV_BUILD="$DEV_BUILD"
+    - cmake --build build/ -- --quiet
+
+Windows:
+  variables:
+    SDK_PROJECT: "83528690"
+    SDK_PACKAGE: "ring-racers-sdk"
+    SDK_VERSION: "1"
+    SDK_FILE: "rrsdk-msys2-clang64.zip"
+
+  stage: build
+  image: mstorsjo/llvm-mingw:20260616
+
+  cache:
+    key: sdk-${SDK_VERSION}-llvm-mingw-w64
+    paths:
+      - rrsdk/
+
+  before_script:
+    - |
+      BRANCH_NAME=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_REF_NAME}
+
+      # Can override DEV_BUILD via environment variable
+      if [[ -z "$DEV_BUILD" ]]; then
+        if [[ -z "$CI_COMMIT_TAG" ]]; then
+          echo "DEV_BUILD=ON (no tag)"
+          DEV_BUILD=ON
+        else
+          echo "DEV_BUILD=OFF (tag)"
+          DEV_BUILD=OFF
+        fi
+      fi
+
+      # Can override EXE_NAME via environment variable
+      if [[ -z "$EXE_NAME" ]]; then
+        EXE_NAME="ringracers"
+
+        if ! [[ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" || -n "$CI_COMMIT_TAG" ]]; then
+          EXE_NAME="ringracers_${BRANCH_NAME//[^a-z0-9-]/_}"
+        fi
+      fi
+
+      export EXE_NAME
+      export DEV_BUILD
+      echo "EXE_NAME=$EXE_NAME DEV_BUILD=$DEV_BUILD"
+  script:
+    - | # Exclude files from git to avoid modified flag in builds
+      mkdir -p "$CI_PROJECT_DIR/.git/info"
+      touch "$CI_PROJECT_DIR/.git/info/exclude"
+      echo "/rrsdk" >> "$CI_PROJECT_DIR/.git/info/exclude"
+      echo "/toolchain.cmake" >> "$CI_PROJECT_DIR/.git/info/exclude"
+      echo "/jq" >> "$CI_PROJECT_DIR/.git/info/exclude"
+
+    - | # Download prebuilt libraries
+      if [ ! -d "rrsdk" ]; then
+        echo "SDK not cached, downloading..."
+        curl --fail --retry 3 --retry-delay 5 \
+          --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+          --output "${SDK_FILE}" \
+          "${CI_API_V4_URL}/projects/${SDK_PROJECT}/packages/generic/${SDK_PACKAGE}/${SDK_VERSION}/${SDK_FILE}"
+        mkdir -p "rrsdk"
+        unzip -q "${SDK_FILE}" -d "rrsdk"
+        rm -f "${SDK_FILE}"
+      else
+        echo "SDK found in cache, skipping download."
+      fi
+
+    - | # Download jq and yq
+      curl --fail --retry 3 --retry-delay 5 -o jq https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-amd64
+      chmod +x "jq"
+      #curl --fail --retry 3 --retry-delay 5 -o yq https://github.com/mikefarah/yq/releases/download/v4.53.3/yq_linux_amd64
+      #chmod +x "yq"
+
+    - | # Write toolchain file
+      cat <<EOF > toolchain.cmake
+      set(CMAKE_SYSTEM_NAME Windows)
+      set(CMAKE_SYSTEM_PROCESSOR x86_64)
+
+      set(CMAKE_C_COMPILER /opt/llvm-mingw/bin/x86_64-w64-mingw32-clang)
+      set(CMAKE_CXX_COMPILER /opt/llvm-mingw/bin/x86_64-w64-mingw32-clang++)
+      set(CMAKE_RC_COMPILER /opt/llvm-mingw/bin/x86_64-w64-mingw32-windres)
+
+      set(CMAKE_FIND_ROOT_PATH /usr/x86_64-w64-mingw32)
+
+      set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+      set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+      set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+      EOF
+
+    - | # Configure CMake
+      cmake -B build -S . \
+        -G Ninja \
+        -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+        -DCMAKE_PREFIX_PATH="${CI_PROJECT_DIR}/rrsdk" \
+        -DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_C_FLAGS="-g -gcodeview -fno-caret-diagnostics -fdiagnostics-format=msvc" \
+        -DCMAKE_CXX_FLAGS="-g -gcodeview -fno-caret-diagnostics -fdiagnostics-format=msvc" \
+        -DCMAKE_EXE_LINKER_FLAGS="-Wl,--pdb= -Wl,-s -static -static-libgcc -static-libstdc++ -lpthread" \
+        -DSRB2_SDL2_EXE_NAME="$EXE_NAME" \
+        -DSRB2_CONFIG_DEV_BUILD="$DEV_BUILD"
+
+    - | # Do the actual build
+      cmake --build build -- --quiet -k 0 | tee out.log
+      mv build/bin/*.exe build/bin/*.pdb .
+
+    - | # Generate code quality report
+      OUTPUT_JSON=gl-code-quality-report.json
+      echo "[" > "$OUTPUT_JSON"
+      FIRST_ENTRY=true
+      REGEX="^([^ ]+)\(([0-9]+),([0-9]+)\): ([^:]+): (.*)$"
+      while IFS= read -r line; do
+        if [[ $line =~ $REGEX ]]; then
+          FILE="${BASH_REMATCH[1]}"
+          LINE="${BASH_REMATCH[2]}"
+          COL="${BASH_REMATCH[3]}"
+          LEVEL="${BASH_REMATCH[4]}"
+          MESSAGE="${BASH_REMATCH[5]}"
+          case "$LEVEL" in
+            error) SEVERITY="blocker" ;;
+            warning) SEVERITY="major" ;;
+            *) SEVERITY="info" ;;
+          esac
+          if [[ $SEVERITY == "info" ]]; then
+            continue
+          fi
+
+          CLEAN_MSG=$(echo "$MESSAGE" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          CLEAN_FILE=$(echo "$FILE" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+          # Strip CI_PROJECT_DIR from file path
+          CLEAN_FILE=$(echo "$CLEAN_FILE" | sed "s|$CI_PROJECT_DIR/||")
+
+          # If the line comes from the thirdparty directory and it is major, make it minor instead
+          if [[ "$CLEAN_FILE" == "thirdparty/"* && "$SEVERITY" == "major" ]]; then
+            SEVERITY="minor"
+          fi
+
+          FINGERPRINT=$(echo -n "$FILE:$LINE:$MESSAGE" | md5sum | cut -d' ' -f1)
+          if [ "$FIRST_ENTRY" = true ]; then
+            FIRST_ENTRY=false
+          else
+            echo "," >> "$OUTPUT_JSON"
+          fi
+          cat << EOF >> "$OUTPUT_JSON"
+        {
+          "description": "$CLEAN_MSG",
+          "fingerprint": "$FINGERPRINT",
+          "severity": "$SEVERITY",
+          "location": {
+            "path": "$CLEAN_FILE",
+            "lines": {
+              "begin": $LINE
+            }
+          }
+        }
+      EOF
+        fi
+      done < out.log
+      echo "]" >> "$OUTPUT_JSON"
+
+  artifacts:
+    paths:
+      - "ringracers*.exe"
+      - "ringracers*.pdb"
+    reports:
+      codequality: gl-code-quality-report.json
+    expire_in: 1 day
+
+# Internal repo only
+Upload Windows to FTP:
+  rules:
+    # run only for internal project
+    - if: $CI_PROJECT_ID != "64633259"
+      when: never
+
+    # variables must also be set
+    - if: $KKD_FTP_HOST == "" || $KKD_FTP_EXE_PATH == "" || $KKD_FTP_USER == "" || $KKD_FTP_PASSWORD == ""
+      when: never
+
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: on_success
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: on_success
+    - if: $CI_COMMIT_TAG
+      when: on_success
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - when: never
+
+  stage: upload-ftp
+  needs:
+    - Windows
+  image: alpine:3.24
+  allow_failure: true
+  cache:
+    policy: pull
+    key: alpine-apk-cache
+    paths:
+      - .apk-cache
+  script:
+    - |
+      mkdir -p .apk-cache
+      ln -sfn .apk-cache /etc/apk/cache
+      apk add curl
+    - |
+      if [ -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" ]; then
+        UPLOAD_PATH="$KKD_FTP_EXE_PATH/One-Offs"
+      elif [[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ]]; then
+        UPLOAD_PATH="$KKD_FTP_EXE_PATH/One-Offs/No MR"
+      else
+        UPLOAD_PATH="$KKD_FTP_EXE_PATH"
+      fi
+
+      # url escape spaces
+      UPLOAD_PATH=$(echo "$UPLOAD_PATH" | sed 's/ /%20/g')
+
+      for f in ringracers*.exe; do
+        curl -k --ssl-reqd -u "$KKD_FTP_USER:$KKD_FTP_PASSWORD" -T "$f" "ftp://$KKD_FTP_HOST/$UPLOAD_PATH/$f"
+      done
+      for f in ringracers*.pdb; do
+        curl -k --ssl-reqd -u "$KKD_FTP_USER:$KKD_FTP_PASSWORD" -T "$f" "ftp://$KKD_FTP_HOST/$UPLOAD_PATH/$f"
+      done

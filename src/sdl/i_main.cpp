@@ -228,7 +228,7 @@ int main(int argc, char **argv)
 	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
 
-#if defined (_WIN32) && !defined(_MSC_VER)
+#if defined (_WIN32) && (!defined(_MSC_VER) && !defined(__clang_version__))
 	if (!M_CheckParm("-noexchndl"))
 	{
 		init_exchndl();

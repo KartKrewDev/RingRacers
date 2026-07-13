@@ -9,6 +9,7 @@
 //-----------------------------------------------------------------------------
 
 #include <cstddef>
+#include <cstdlib>
 #include <cstdint>
 #include <type_traits>
 
