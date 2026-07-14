@@ -1294,15 +1294,9 @@ static void init_imgui()
 	ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.IniFilename = NULL;
-	io.BackendFlags = 0;
+	io.BackendFlags = ImGuiBackendFlags_RendererHasTextures;
 	io.BackendRendererName = "SRB2 SDL 2 RHI";
 	io.Fonts->AddFontDefault();
-	{
-		unsigned char* pixels;
-		int width;
-		int height;
-		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-	}
 	ImGui::StyleColorsDark();
 }
 

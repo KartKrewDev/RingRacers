@@ -42,26 +42,6 @@ void ImguiRenderer::render(Rhi& rhi)
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	if (!font_atlas_)
-	{
-		unsigned char* pixels;
-		int width;
-		int height;
-		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-
-		uint32_t uwidth = static_cast<uint32_t>(width);
-		uint32_t uheight = static_cast<uint32_t>(height);
-
-		font_atlas_ = rhi.create_texture({
-			TextureFormat::kRGBA,
-			uwidth,
-			uheight,
-			TextureWrapMode::kRepeat,
-			TextureWrapMode::kRepeat
-		});
-		io.Fonts->SetTexID(font_atlas_);
-	}
-
 	if (!default_tex_)
 	{
 		uint32_t pixel = 0xFFFFFFFF;
@@ -80,7 +60,44 @@ void ImguiRenderer::render(Rhi& rhi)
 	ImDrawData* data = ImGui::GetDrawData();
 	ImVec2 clip_off(data->DisplayPos);
 	ImVec2 clip_scale(data->FramebufferScale);
-	tcb::span<ImDrawList*> draw_lists = tcb::span(data->CmdLists, data->CmdListsCount);
+	ImVector<ImTextureData*>* textures = data->Textures;
+
+	if (textures)
+	{
+		for (auto& texture : *textures)
+		{
+			if (texture)
+			{
+				if (texture->Status == ImTextureStatus_WantCreate)
+				{
+					Handle<Texture> tex = rhi.create_texture({
+						TextureFormat::kRGBA,
+						static_cast<uint32_t>(texture->Width),
+						static_cast<uint32_t>(texture->Height),
+						TextureWrapMode::kRepeat,
+						TextureWrapMode::kRepeat
+					});
+					rhi.update_texture(tex, {0, 0, static_cast<uint32_t>(texture->Width), static_cast<uint32_t>(texture->Height)}, rhi::PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(texture->Pixels, texture->Width * texture->Height * texture->BytesPerPixel)));
+					texture->SetTexID(tex);
+					texture->SetStatus(ImTextureStatus_OK);
+				}
+				else if (texture->Status == ImTextureStatus_WantUpdates)
+				{
+
+					rhi.update_texture(texture->TexID, {0, 0, static_cast<uint32_t>(texture->Width), static_cast<uint32_t>(texture->Height)}, rhi::PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(texture->Pixels, texture->Width * texture->Height * texture->BytesPerPixel)));
+					texture->SetStatus(ImTextureStatus_OK);
+				}
+				else if (texture->Status == ImTextureStatus_WantDestroy)
+				{
+					rhi.destroy_texture(texture->TexID);
+					texture->SetStatus(ImTextureStatus_Destroyed);
+					texture->SetTexID(0);
+				}
+			}
+		}
+	}
+
+	tcb::span<ImDrawList*> draw_lists = tcb::span(data->CmdLists.Data, data->CmdLists.Size);
 
 	for (auto list : draw_lists)
 	{
@@ -132,18 +149,6 @@ void ImguiRenderer::render(Rhi& rhi)
 			hwr2_list.cmds.push_back(std::move(draw_cmd));
 		}
 		draw_lists_.push_back(std::move(hwr2_list));
-	}
-
-	{
-		unsigned char* pixels;
-		int width, height;
-		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-		rhi.update_texture(
-			font_atlas_,
-			{0, 0, static_cast<uint32_t>(width), static_cast<uint32_t>(height)},
-			rhi::PixelFormat::kRGBA8,
-			tcb::as_bytes(tcb::span(pixels, static_cast<size_t>(width * height * 4)))
-		);
 	}
 
 	for (auto& draw_list : draw_lists_)
