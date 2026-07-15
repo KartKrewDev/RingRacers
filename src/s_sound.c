@@ -43,15 +43,6 @@
 
 extern consvar_t cv_mastervolume;
 
-CV_PossibleValue_t soundmixingbuffersize_cons_t[] = {
-	{256, "256"},
-	{512, "512"},
-	{1024, "1024"},
-	{2048, "2048"},
-	{4096, "4096"},
-	{0, NULL}
-};
-
 static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
 
 static void Command_Tunes_f(void);

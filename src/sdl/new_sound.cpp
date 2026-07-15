@@ -342,7 +342,6 @@ void initialize_sound()
 	SDL_AudioSpec desired {};
 	desired.format = SDL_AUDIO_F32;
 	desired.channels = 2;
-	// desired.samples = cv_soundmixingbuffersize.value;
 	desired.freq = 44100;
 
 	if ((g_output_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired, audio_callback, nullptr)) == 0)
