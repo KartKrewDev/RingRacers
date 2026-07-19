@@ -131,6 +131,24 @@ optional<SoundChunk> try_load_dmx(std::span<std::byte> data)
 
 optional<SoundChunk> try_load_wav(std::span<std::byte> data)
 {
+	// Quick signature check to avoid exceptions from the Wav constructor
+	// when the data is not a RIFF WAVE file.
+	{
+		io::SpanStream probe {data};
+		if (io::remaining(probe) < 12)
+			return nullopt;
+
+		uint32_t magic = io::read_uint32(probe);
+		if (magic != 0x46464952) // "RIFF"
+			return nullopt;
+
+		probe.seek(io::SeekFrom::kCurrent, 4); // skip file size
+
+		uint32_t type = io::read_uint32(probe);
+		if (type != 0x45564157) // "WAVE"
+			return nullopt;
+	}
+
 	io::SpanStream stream {data};
 
 	audio::Wav wav;
