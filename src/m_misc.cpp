@@ -74,20 +74,9 @@ typedef off_t off64_t;
 #endif
 #endif
 
-#if defined(__MINGW32__) && ((__GNUC__ > 7) || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3)) && (__GNUC__ < 8)
-#define PRIdS "u"
-#elif defined (_WIN32)
-// pedantic: %I is nonstandard, is it ok to assume
-// unsigned int?
-//#define PRIdS "Iu"
-#ifdef _WIN64
-#define PRIdS "lu"
-#else
-#define PRIdS "u"
-#endif
-#else
+// This used to be a whole heaping of nonsense.
+// Now %zu is standard for size_t and %zd for ssize_t.
 #define PRIdS "zu"
-#endif
 
 #ifdef HAVE_PNG
 

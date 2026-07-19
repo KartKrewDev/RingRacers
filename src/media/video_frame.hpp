@@ -52,6 +52,8 @@ public:
 	// BufferMethod::kEncoderAllocatedRGBA8888.
 	virtual const Buffer& rgba_buffer() const = 0;
 
+	virtual ~VideoFrame() = default;
+
 protected:
 	VideoFrame(int pts) : pts_(pts) {}
 
