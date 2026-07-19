@@ -222,7 +222,7 @@ void TwodeeRenderer::initialize(Rhi& rhi)
 		"ENABLE_VA_TEXCOORD0",
 		"ENABLE_VA_COLOR"
 	};
-	prog_desc.defines = tcb::make_span(defines);
+	prog_desc.defines = std::span(defines);
 	program_ = rhi.create_program(prog_desc);
 
 	{
@@ -234,7 +234,7 @@ void TwodeeRenderer::initialize(Rhi& rhi)
 			TextureWrapMode::kClamp
 		});
 		std::array<uint8_t, 4> data = {0, 255, 0, 255};
-		rhi.update_texture(default_tex_, {0, 0, 2, 1}, PixelFormat::kRG8, tcb::as_bytes(tcb::span(data)));
+		rhi.update_texture(default_tex_, {0, 0, 2, 1}, PixelFormat::kRG8, std::as_bytes(std::span(data)));
 	}
 
 	initialized_ = true;
@@ -280,7 +280,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Twodee& twodee)
 	for (auto& list : twodee)
 	{
 		Handle<Buffer> vbo;
-		uint32_t vertex_data_size = tcb::as_bytes(tcb::span(list.vertices)).size();
+		uint32_t vertex_data_size = std::as_bytes(std::span(list.vertices)).size();
 		uint32_t needed_vbo_size = std::max(
 			kVboInitSize,
 			((static_cast<uint32_t>(vertex_data_size) + kVboInitSize - 1) / kVboInitSize) * kVboInitSize
@@ -306,7 +306,7 @@ void TwodeeRenderer::flush(Rhi& rhi, Twodee& twodee)
 		}
 
 		Handle<Buffer> ibo;
-		uint32_t index_data_size = tcb::as_bytes(tcb::span(list.indices)).size();
+		uint32_t index_data_size = std::as_bytes(std::span(list.indices)).size();
 		uint32_t needed_ibo_size = std::max(
 			kIboInitSize,
 			((static_cast<uint32_t>(index_data_size) + kIboInitSize - 1) / kIboInitSize) * kIboInitSize
@@ -459,8 +459,8 @@ void TwodeeRenderer::flush(Rhi& rhi, Twodee& twodee)
 		auto& merged_list = cmd_lists_[i];
 		auto& orig_list = *ctx_list_itr;
 
-		tcb::span<const std::byte> vertex_data = tcb::as_bytes(tcb::span(orig_list.vertices));
-		tcb::span<const std::byte> index_data = tcb::as_bytes(tcb::span(orig_list.indices));
+		std::span<const std::byte> vertex_data = std::as_bytes(std::span(orig_list.vertices));
+		std::span<const std::byte> index_data = std::as_bytes(std::span(orig_list.indices));
 		rhi.update_buffer(merged_list.vbo, 0, vertex_data);
 		rhi.update_buffer(merged_list.ibo, 0, index_data);
 

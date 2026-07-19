@@ -11,7 +11,7 @@
 #ifndef __SRB2_MEDIA_AUDIO_ENCODER_HPP__
 #define __SRB2_MEDIA_AUDIO_ENCODER_HPP__
 
-#include <tcb/span.hpp>
+#include <span>
 
 #include "encoder.hpp"
 
@@ -21,7 +21,7 @@ namespace srb2::media
 class AudioEncoder : virtual public MediaEncoder
 {
 public:
-	using sample_buffer_t = tcb::span<const float>;
+	using sample_buffer_t = std::span<const float>;
 
 	struct Config
 	{

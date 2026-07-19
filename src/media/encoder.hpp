@@ -13,8 +13,7 @@
 
 #include <chrono>
 #include <cstddef>
-
-#include <tcb/span.hpp>
+#include <span>
 
 namespace srb2::media
 {
@@ -42,7 +41,7 @@ public:
 	virtual BitRate estimated_bit_rate() const = 0;
 
 protected:
-	using frame_buffer_t = tcb::span<const std::byte>;
+	using frame_buffer_t = std::span<const std::byte>;
 
 	virtual void write_frame(frame_buffer_t frame, time_unit_t timestamp, bool is_key_frame) = 0;
 };
@@ -50,3 +49,4 @@ protected:
 }; // namespace srb2::media
 
 #endif // __SRB2_MEDIA_ENCODER_HPP__
+

@@ -61,14 +61,14 @@ void SoftwareScreenRenderer::draw(Rhi& rhi)
 	}
 
 	// Upload screen
-	tcb::span<const std::byte> screen_span;
+	std::span<const std::byte> screen_span;
 	if (width_ % kPixelRowUnpackAlignment > 0)
 	{
-		screen_span = tcb::as_bytes(tcb::span(copy_buffer_));
+		screen_span = std::as_bytes(std::span(copy_buffer_));
 	}
 	else
 	{
-		screen_span = tcb::as_bytes(tcb::span(vid.buffer, width_ * height_));
+		screen_span = std::as_bytes(std::span(vid.buffer, width_ * height_));
 	}
 
 	rhi.update_texture(screen_texture_, {0, 0, width_, height_}, PixelFormat::kR8, screen_span);

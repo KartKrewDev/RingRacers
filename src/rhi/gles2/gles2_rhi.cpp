@@ -496,7 +496,7 @@ void Gles2Rhi::destroy_render_pass(rhi::Handle<rhi::RenderPass>&& handle)
 rhi::Handle<rhi::Texture> Gles2Rhi::create_texture(
 	const rhi::TextureDesc& desc,
 	srb2::rhi::PixelFormat data_format,
-	tcb::span<const std::byte> data
+	std::span<const std::byte> data
 )
 {
 	SRB2_ASSERT(graphics_context_active_ == false);
@@ -546,7 +546,7 @@ void Gles2Rhi::update_texture(
 	Handle<Texture> texture,
 	Rect region,
 	srb2::rhi::PixelFormat data_format,
-	tcb::span<const std::byte> data
+	std::span<const std::byte> data
 )
 {
 	SRB2_ASSERT(graphics_context_active_ == false);
@@ -578,7 +578,7 @@ void Gles2Rhi::update_texture(
 	);
 }
 
-rhi::Handle<rhi::Buffer> Gles2Rhi::create_buffer(const rhi::BufferDesc& desc, tcb::span<const std::byte> data)
+rhi::Handle<rhi::Buffer> Gles2Rhi::create_buffer(const rhi::BufferDesc& desc, std::span<const std::byte> data)
 {
 	SRB2_ASSERT(graphics_context_active_ == false);
 
@@ -619,7 +619,7 @@ void Gles2Rhi::destroy_buffer(rhi::Handle<rhi::Buffer>&& handle)
 	disposal_.push_back([name] { glDeleteBuffers(1, &name); });
 }
 
-void Gles2Rhi::update_buffer_contents(rhi::Handle<rhi::Buffer> handle, uint32_t offset, tcb::span<const std::byte> data)
+void Gles2Rhi::update_buffer_contents(rhi::Handle<rhi::Buffer> handle, uint32_t offset, std::span<const std::byte> data)
 {
 	SRB2_ASSERT(graphics_context_active_ == false);
 
@@ -1167,7 +1167,7 @@ void Gles2Rhi::update_bindings(Handle<GraphicsContext> ctx, const UpdateBindings
 	}
 }
 
-void Gles2Rhi::update_uniforms(Handle<GraphicsContext> ctx, tcb::span<UniformUpdateData> uniforms)
+void Gles2Rhi::update_uniforms(Handle<GraphicsContext> ctx, std::span<UniformUpdateData> uniforms)
 {
 	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);

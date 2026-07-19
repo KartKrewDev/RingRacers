@@ -15,9 +15,8 @@
 #include <cstddef>
 #include <istream>
 #include <ostream>
+#include <span>
 #include <vector>
-
-#include <tcb/span.hpp>
 
 #include "acsvm.hpp"
 
@@ -409,7 +408,7 @@ void ACS_Tick(void)
 }
 
 /*--------------------------------------------------
-	static std::vector<ACSVM::Word> ACS_MixArgs(tcb::span<const INT32> args, tcb::span<const char* const> stringArgs)
+	static std::vector<ACSVM::Word> ACS_MixArgs(std::span<const INT32> args, std::span<const char* const> stringArgs)
 
 		Convert strings to ACS arguments and position them
 		correctly among integer arguments.
@@ -421,7 +420,7 @@ void ACS_Tick(void)
 	Return:-
 		Final argument vector.
 --------------------------------------------------*/
-static std::vector<ACSVM::Word> ACS_MixArgs(tcb::span<const INT32> args, tcb::span<const char* const> stringArgs)
+static std::vector<ACSVM::Word> ACS_MixArgs(std::span<const INT32> args, std::span<const char* const> stringArgs)
 {
 	std::vector<ACSVM::Word> argV;
 	size_t first = std::min(args.size(), stringArgs.size());
@@ -477,7 +476,7 @@ boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const c
 	ThreadInfo info{activator};
 
 	ACSVM::String *script = env->getString(name, strlen(name));
-	std::vector<ACSVM::Word> argV = ACS_MixArgs(tcb::span {args, numArgs}, tcb::span {stringArgs, numStringArgs});
+	std::vector<ACSVM::Word> argV = ACS_MixArgs(std::span {args, numArgs}, std::span {stringArgs, numStringArgs});
 	return map->scriptStart(script, scope, {argV.data(), argV.size(), &info});
 }
 
@@ -498,7 +497,7 @@ boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, c
 	ThreadInfo info{activator};
 
 	ACSVM::String *script = env->getString(name, strlen(name));
-	std::vector<ACSVM::Word> argV = ACS_MixArgs(tcb::span {args, numArgs}, tcb::span {stringArgs, numStringArgs});
+	std::vector<ACSVM::Word> argV = ACS_MixArgs(std::span {args, numArgs}, std::span {stringArgs, numStringArgs});
 	return map->scriptStartForced(script, scope, {argV.data(), argV.size(), &info});
 }
 
@@ -611,3 +610,5 @@ void ACS_UnArchive(savebuffer_t *save)
 		I_Error("ACS_UnArchive: %s\n", e.what());
 	}
 }
+
+

@@ -13,11 +13,11 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
 
-#include <tcb/span.hpp>
 #include <zlib.h>
 
 #include "../core/string.h"
@@ -37,11 +37,11 @@ enum class SeekFrom {
 
 template <typename T>
 struct IsInputStream
-	: public std::is_same<decltype(std::declval<T&>().read(std::declval<tcb::span<std::byte>>())), StreamSize> {};
+	: public std::is_same<decltype(std::declval<T&>().read(std::declval<std::span<std::byte>>())), StreamSize> {};
 
 template <typename T>
 struct IsOutputStream
-	: public std::is_same<decltype(std::declval<T&>().write(std::declval<tcb::span<const std::byte>>())), StreamSize> {
+	: public std::is_same<decltype(std::declval<T&>().write(std::declval<std::span<const std::byte>>())), StreamSize> {
 };
 
 template <typename T>
@@ -77,7 +77,7 @@ class UnexpectedEof : public std::logic_error
 };
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
-void read_exact(I& stream, tcb::span<std::byte> buffer) {
+void read_exact(I& stream, std::span<std::byte> buffer) {
 	std::size_t total = 0;
 	const std::size_t buf_size = buffer.size();
 	while (total < buf_size) {
@@ -86,7 +86,7 @@ void read_exact(I& stream, tcb::span<std::byte> buffer) {
 }
 
 template <typename O, typename std::enable_if_t<IsOutputStreamV<O>>* = nullptr>
-void write_exact(O& stream, tcb::span<const std::byte> buffer) {
+void write_exact(O& stream, std::span<const std::byte> buffer) {
 	std::size_t total = 0;
 	const std::size_t buf_size = buffer.size();
 	while (total < buf_size) {
@@ -101,18 +101,18 @@ enum class Endian {
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
 void read(std::byte& value, I& stream) {
-	read_exact(stream, tcb::span {&value, 1});
+	read_exact(stream, std::span {&value, 1});
 }
 
 template <typename O, typename std::enable_if_t<IsOutputStreamV<O>>* = nullptr>
 void write(std::byte value, O& stream) {
-	write_exact(stream, tcb::span {&value, 1});
+	write_exact(stream, std::span {&value, 1});
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
 void read(uint8_t& value, I& stream) {
 	std::byte in;
-	read_exact(stream, tcb::span {&in, 1});
+	read_exact(stream, std::span {&in, 1});
 	value = std::to_integer<uint8_t>(in);
 }
 
@@ -127,7 +127,7 @@ template <typename O, typename std::enable_if_t<IsOutputStreamV<O>>* = nullptr>
 void write(uint8_t value, O& stream) {
 	std::byte out {value};
 
-	write_exact(stream, tcb::span {&out, 1});
+	write_exact(stream, std::span {&out, 1});
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
@@ -177,7 +177,7 @@ void write(int8_t value, O& stream) {
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
 void read(uint16_t& value, I& stream, Endian endian = Endian::kLE) {
 	std::array<std::byte, 2> out;
-	read_exact(stream, tcb::make_span(out));
+	read_exact(stream, std::span(out));
 	if (endian == Endian::kBE)
 		value = std::to_integer<uint16_t>(out[1]) + (std::to_integer<uint16_t>(out[0]) << 8);
 	else
@@ -202,7 +202,7 @@ void write(uint16_t value, O& stream, Endian endian = Endian::kLE) {
 		out = {std::byte {static_cast<uint8_t>((value & 0x00FF) >> 0)},
 			   std::byte {static_cast<uint8_t>((value & 0xFF00) >> 8)}};
 
-	write_exact(stream, tcb::make_span(out));
+	write_exact(stream, std::span(out));
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
@@ -227,7 +227,7 @@ void write(int16_t value, O& stream, Endian endian = Endian::kLE) {
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
 void read(uint32_t& value, I& stream, Endian endian = Endian::kLE) {
 	std::array<std::byte, 4> out;
-	read_exact(stream, tcb::make_span(out));
+	read_exact(stream, std::span(out));
 	if (endian == Endian::kBE)
 		value = std::to_integer<uint32_t>(out[3]) + (std::to_integer<uint32_t>(out[2]) << 8) +
 				(std::to_integer<uint32_t>(out[1]) << 16) + (std::to_integer<uint32_t>(out[0]) << 24);
@@ -258,7 +258,7 @@ void write(uint32_t value, O& stream, Endian endian = Endian::kLE) {
 			   std::byte {static_cast<uint8_t>((value & 0x00FF0000) >> 16)},
 			   std::byte {static_cast<uint8_t>((value & 0xFF000000) >> 24)}};
 
-	write_exact(stream, tcb::make_span(out));
+	write_exact(stream, std::span(out));
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
@@ -283,7 +283,7 @@ void write(int32_t value, O& stream, Endian endian = Endian::kLE) {
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
 void read(uint64_t& value, I& stream, Endian endian = Endian::kLE) {
 	std::array<std::byte, 8> out;
-	read_exact(stream, tcb::make_span(out));
+	read_exact(stream, std::span(out));
 	if (endian == Endian::kBE)
 		value = std::to_integer<uint64_t>(out[7]) + (std::to_integer<uint64_t>(out[6]) << 8) +
 				(std::to_integer<uint64_t>(out[5]) << 16) + (std::to_integer<uint64_t>(out[4]) << 24) +
@@ -326,7 +326,7 @@ void write(uint64_t value, O& stream, Endian endian = Endian::kLE) {
 			   std::byte {static_cast<uint8_t>((value & 0x00FF000000000000) >> 48)},
 			   std::byte {static_cast<uint8_t>((value & 0xFF00000000000000) >> 56)}};
 
-	write_exact(stream, tcb::make_span(out));
+	write_exact(stream, std::span(out));
 }
 
 template <typename I, typename std::enable_if_t<IsInputStreamV<I>>* = nullptr>
@@ -399,13 +399,13 @@ StreamSize remaining(S& stream) {
 class SpanStream {
 public:
 	SpanStream() noexcept = default;
-	SpanStream(tcb::span<std::byte> span) : span_(span), head_(0) {
+	SpanStream(std::span<std::byte> span) : span_(span), head_(0) {
 		if (span_.size() > static_cast<StreamSize>(static_cast<StreamOffset>(-1))) {
 			throw std::logic_error("Span must not be greater than 2 billion bytes");
 		}
 	};
 
-	StreamSize read(tcb::span<std::byte> buffer) {
+	StreamSize read(std::span<std::byte> buffer) {
 		if (head_ >= span_.size())
 			return 0;
 
@@ -416,7 +416,7 @@ public:
 		return std::distance(begin, end);
 	}
 
-	StreamSize write(tcb::span<const std::byte> buffer) {
+	StreamSize write(std::span<const std::byte> buffer) {
 		if (head_ >= span_.size())
 			return 0;
 
@@ -455,14 +455,14 @@ public:
 		return head_;
 	}
 
-	friend void read_exact(SpanStream& stream, tcb::span<std::byte> buffer);
+	friend void read_exact(SpanStream& stream, std::span<std::byte> buffer);
 
 private:
-	tcb::span<std::byte> span_;
+	std::span<std::byte> span_;
 	std::size_t head_ {0};
 };
 
-inline void read_exact(SpanStream& stream, tcb::span<std::byte> buffer)
+inline void read_exact(SpanStream& stream, std::span<std::byte> buffer)
 {
 	const std::size_t remaining = stream.span_.size() - stream.head_;
 	const std::size_t buffer_size = buffer.size();
@@ -498,7 +498,7 @@ public:
 	VecStream& operator=(const VecStream& rhs) = default;
 	VecStream& operator=(VecStream&& rhs) = default;
 
-	StreamSize read(tcb::span<std::byte> buffer) {
+	StreamSize read(std::span<std::byte> buffer) {
 		if (head_ >= vec_.size())
 			return 0;
 
@@ -509,7 +509,7 @@ public:
 		return std::distance(begin, end);
 	}
 
-	StreamSize write(tcb::span<const std::byte> buffer) {
+	StreamSize write(std::span<const std::byte> buffer) {
 		const std::size_t buffer_size = buffer.size();
 		if (head_ + buffer_size >= vec_.size()) {
 			vec_.resize(head_ + buffer_size);
@@ -552,10 +552,10 @@ public:
 
 	srb2::Vector<std::byte>& vector() { return vec_; }
 
-	friend void read_exact(VecStream& stream, tcb::span<std::byte> buffer);
+	friend void read_exact(VecStream& stream, std::span<std::byte> buffer);
 };
 
-inline void read_exact(VecStream& stream, tcb::span<std::byte> buffer)
+inline void read_exact(VecStream& stream, std::span<std::byte> buffer)
 {
 	const std::size_t remaining = stream.vec_.size() - stream.head_;
 	const std::size_t buffer_size = buffer.size();
@@ -616,8 +616,8 @@ public:
 	FileStream& operator=(const FileStream&) = delete;
 	FileStream& operator=(FileStream&&) noexcept;
 
-	StreamSize read(tcb::span<std::byte> buffer);
-	StreamSize write(tcb::span<const std::byte> buffer);
+	StreamSize read(std::span<std::byte> buffer);
+	StreamSize write(std::span<const std::byte> buffer);
 	StreamSize seek(SeekFrom seek_from, StreamOffset offset);
 
 	void close();
@@ -695,7 +695,7 @@ public:
 	ZlibInputStream& operator=(const ZlibInputStream& rhs) = delete;
 	ZlibInputStream& operator=(ZlibInputStream&& rhs) = delete;
 
-	StreamSize read(tcb::span<std::byte> buffer) {
+	StreamSize read(std::span<std::byte> buffer) {
 		if (zstream_ended_)
 			return 0;
 
@@ -759,12 +759,12 @@ private:
 		const std::size_t old_size = buf_.size();
 		if (old_size < kReadHighWater) {
 			buf_.resize(kReadHighWater);
-			const std::size_t read = inner_.read(tcb::span(buf_.data() + old_size, buf_.size() - old_size));
+			const std::size_t read = inner_.read(std::span(buf_.data() + old_size, buf_.size() - old_size));
 			buf_.resize(old_size + read);
 		}
 	}
 
-	StreamSize _inflate(tcb::span<std::byte> out) {
+	StreamSize _inflate(std::span<std::byte> out) {
 		if (!zstream_initialized_) {
 			_init();
 		}
@@ -822,11 +822,11 @@ class BufferedOutputStream final
 {
 	O inner_;
 	srb2::Vector<std::byte> buf_;
-	tcb::span<const std::byte>::size_type cap_;
+	std::span<const std::byte>::size_type cap_;
 
 public:
 	explicit BufferedOutputStream(O&& o) : inner_(std::forward<O>(o)), buf_(), cap_(8192) {}
-	BufferedOutputStream(O&& o, tcb::span<const std::byte>::size_type capacity) : inner_(std::forward<O>(o)), buf_(), cap_(capacity) {}
+	BufferedOutputStream(O&& o, std::span<const std::byte>::size_type capacity) : inner_(std::forward<O>(o)), buf_(), cap_(capacity) {}
 	BufferedOutputStream(const BufferedOutputStream&) = delete;
 	BufferedOutputStream(BufferedOutputStream&&) = default;
 	~BufferedOutputStream() = default;
@@ -834,13 +834,13 @@ public:
 	BufferedOutputStream& operator=(const BufferedOutputStream&) = delete;
 	BufferedOutputStream& operator=(BufferedOutputStream&&) = default;
 
-	StreamSize write(tcb::span<const std::byte> buffer)
+	StreamSize write(std::span<const std::byte> buffer)
 	{
 		StreamSize totalwritten = 0;
 		while (buffer.size() > 0)
 		{
 			std::size_t tocopy = std::min(std::min(cap_, cap_ - buf_.size()), buffer.size());
-			tcb::span<const std::byte> copy_slice = buffer.subspan(0, tocopy);
+			std::span<const std::byte> copy_slice = buffer.subspan(0, tocopy);
 			buf_.reserve(cap_);
 			buf_.insert(buf_.end(), copy_slice.begin(), copy_slice.end());
 			flush();
@@ -854,7 +854,7 @@ public:
 
 	void flush()
 	{
-		tcb::span<const std::byte> writebuf = tcb::make_span(buf_);
+		std::span<const std::byte> writebuf = std::span(buf_);
 		write_exact(inner_, writebuf);
 		buf_.resize(0);
 	}
@@ -874,14 +874,14 @@ class BufferedInputStream final
 {
 	I inner_;
 	srb2::Vector<std::byte> buf_;
-	tcb::span<std::byte>::size_type cap_;
+	std::span<std::byte>::size_type cap_;
 
 public:
 	template <typename std::enable_if_t<std::is_default_constructible_v<I>>* = nullptr>
 	BufferedInputStream() : inner_(), buf_(), cap_(8192) {}
 
 	explicit BufferedInputStream(I&& i) : inner_(std::forward<I>(i)), buf_(), cap_(8192) {}
-	BufferedInputStream(I&& i, tcb::span<std::byte>::size_type capacity) : inner_(std::forward<I>(i)), buf_(), cap_(capacity) {}
+	BufferedInputStream(I&& i, std::span<std::byte>::size_type capacity) : inner_(std::forward<I>(i)), buf_(), cap_(capacity) {}
 	BufferedInputStream(const BufferedInputStream&) = delete;
 	BufferedInputStream(BufferedInputStream&&) = default;
 	~BufferedInputStream() = default;
@@ -889,7 +889,7 @@ public:
 	BufferedInputStream& operator=(const BufferedInputStream&) = delete;
 	BufferedInputStream& operator=(BufferedInputStream&&) = default;
 
-	StreamSize read(tcb::span<std::byte> buffer)
+	StreamSize read(std::span<std::byte> buffer)
 	{
 		StreamSize totalread = 0;
 		buf_.reserve(cap_);
@@ -898,7 +898,7 @@ public:
 			std::size_t toread = cap_ - buf_.size();
 			std::size_t prereadsize = buf_.size();
 			buf_.resize(prereadsize + toread);
-			tcb::span<std::byte> readspan{buf_.data() + prereadsize, buf_.data() + prereadsize + toread};
+			std::span<std::byte> readspan{buf_.data() + prereadsize, buf_.data() + prereadsize + toread};
 			StreamSize bytesread = inner_.read(readspan);
 			buf_.resize(prereadsize + bytesread);
 
@@ -941,10 +941,10 @@ StreamSize pipe_all(I& input, O& output) {
 	do {
 		buf.clear();
 		buf.resize(2048);
-		read_this_time = input.read(tcb::make_span(buf));
+		read_this_time = input.read(std::span(buf));
 		buf.resize(read_this_time);
 
-		write_exact(output, tcb::make_span(buf));
+		write_exact(output, std::span(buf));
 		total_written += read_this_time;
 	} while (read_this_time != 0);
 
@@ -966,3 +966,5 @@ extern template class ZlibInputStream<VecStream>;
 } // namespace srb2::io
 
 #endif // __SRB2_IO_STREAMS_HPP__
+
+

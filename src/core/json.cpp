@@ -570,7 +570,7 @@ void JsonValue::do_to_ubjson(srb2::Vector<std::byte>& out) const
 	}
 }
 
-static uint8_t u8_from_ubjson(tcb::span<const std::byte>& ubjson)
+static uint8_t u8_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	if (ubjson.size() < 1) throw JsonParseError("insufficient data");
 	uint8_t ret = std::to_integer<uint8_t>(ubjson[0]);
@@ -578,7 +578,7 @@ static uint8_t u8_from_ubjson(tcb::span<const std::byte>& ubjson)
 	return ret;
 }
 
-static int8_t i8_from_ubjson(tcb::span<const std::byte>& ubjson)
+static int8_t i8_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	if (ubjson.size() < 1) throw JsonParseError("insufficient data");
 	int8_t ret = std::to_integer<int8_t>(ubjson[0]);
@@ -586,7 +586,7 @@ static int8_t i8_from_ubjson(tcb::span<const std::byte>& ubjson)
 	return ret;
 }
 
-static int16_t i16_from_ubjson(tcb::span<const std::byte>& ubjson)
+static int16_t i16_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	uint8_t b[2];
 	uint16_t native;
@@ -600,7 +600,7 @@ static int16_t i16_from_ubjson(tcb::span<const std::byte>& ubjson)
 	return ret;
 }
 
-static int32_t i32_from_ubjson(tcb::span<const std::byte>& ubjson)
+static int32_t i32_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	uint8_t b[4];
 	uint32_t native;
@@ -616,7 +616,7 @@ static int32_t i32_from_ubjson(tcb::span<const std::byte>& ubjson)
 	return ret;
 }
 
-static int64_t i64_from_ubjson(tcb::span<const std::byte>& ubjson)
+static int64_t i64_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	uint64_t b[8];
 	uint64_t native;
@@ -636,7 +636,7 @@ static int64_t i64_from_ubjson(tcb::span<const std::byte>& ubjson)
 	return ret;
 }
 
-static float f32_from_ubjson(tcb::span<const std::byte>& ubjson)
+static float f32_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	uint8_t b[8];
 	uint32_t native;
@@ -652,7 +652,7 @@ static float f32_from_ubjson(tcb::span<const std::byte>& ubjson)
 	return ret;
 }
 
-static double f64_from_ubjson(tcb::span<const std::byte>& ubjson)
+static double f64_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	uint64_t b[8];
 	uint64_t native;
@@ -672,7 +672,7 @@ static double f64_from_ubjson(tcb::span<const std::byte>& ubjson)
 	return ret;
 }
 
-static uint64_t length_from_ubjson(tcb::span<const std::byte>& ubjson)
+static uint64_t length_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	if (ubjson.size() < 1) throw JsonParseError("insufficient data");
 	uint64_t size = 0;
@@ -704,7 +704,7 @@ static uint64_t length_from_ubjson(tcb::span<const std::byte>& ubjson)
 	return size;
 }
 
-static String string_from_ubjson(tcb::span<const std::byte>& ubjson)
+static String string_from_ubjson(std::span<const std::byte>& ubjson)
 {
 	uint64_t len = length_from_ubjson(ubjson);
 	if (len > std::numeric_limits<size_t>().max())
@@ -726,7 +726,7 @@ static String string_from_ubjson(tcb::span<const std::byte>& ubjson)
 }
 
 template <typename F>
-static void read_ubjson_array_elements(F f, JsonArray& arr, tcb::span<const std::byte>& ubjson, uint64_t len)
+static void read_ubjson_array_elements(F f, JsonArray& arr, std::span<const std::byte>& ubjson, uint64_t len)
 {
 	ubjson = ubjson.subspan(1);
 	for (uint64_t i = 0; i < len; i++)
@@ -736,7 +736,7 @@ static void read_ubjson_array_elements(F f, JsonArray& arr, tcb::span<const std:
 }
 
 template <typename F>
-static void read_ubjson_array_elements(F f, JsonArray& arr, tcb::span<const std::byte>& ubjson, uint64_t len, int depth)
+static void read_ubjson_array_elements(F f, JsonArray& arr, std::span<const std::byte>& ubjson, uint64_t len, int depth)
 {
 	ubjson = ubjson.subspan(1);
 	for (uint64_t i = 0; i < len; i++)
@@ -745,10 +745,10 @@ static void read_ubjson_array_elements(F f, JsonArray& arr, tcb::span<const std:
 	}
 }
 
-static JsonValue do_from_ubjson(tcb::span<const std::byte>& ubjson, int depth);
-static JsonObject object_from_ubjson(tcb::span<const std::byte>& ubjson, int depth);
+static JsonValue do_from_ubjson(std::span<const std::byte>& ubjson, int depth);
+static JsonObject object_from_ubjson(std::span<const std::byte>& ubjson, int depth);
 
-static JsonArray array_from_ubjson(tcb::span<const std::byte>& ubjson, int depth)
+static JsonArray array_from_ubjson(std::span<const std::byte>& ubjson, int depth)
 {
 	char typecode = 0;
 	if ((char)(ubjson[0]) == '$')
@@ -834,7 +834,7 @@ static JsonArray array_from_ubjson(tcb::span<const std::byte>& ubjson, int depth
 }
 
 template <typename F>
-static void read_ubjson_object_elements(F f, JsonObject& obj, tcb::span<const std::byte>& ubjson, uint64_t len)
+static void read_ubjson_object_elements(F f, JsonObject& obj, std::span<const std::byte>& ubjson, uint64_t len)
 {
 	ubjson = ubjson.subspan(1);
 	for (uint64_t i = 0; i < len; i++)
@@ -846,7 +846,7 @@ static void read_ubjson_object_elements(F f, JsonObject& obj, tcb::span<const st
 }
 
 template <typename F>
-static void read_ubjson_object_elements(F f, JsonObject& obj, tcb::span<const std::byte>& ubjson, uint64_t len, int depth)
+static void read_ubjson_object_elements(F f, JsonObject& obj, std::span<const std::byte>& ubjson, uint64_t len, int depth)
 {
 	ubjson = ubjson.subspan(1);
 	for (uint64_t i = 0; i < len; i++)
@@ -857,7 +857,7 @@ static void read_ubjson_object_elements(F f, JsonObject& obj, tcb::span<const st
 	}
 }
 
-static JsonObject object_from_ubjson(tcb::span<const std::byte>& ubjson, int depth)
+static JsonObject object_from_ubjson(std::span<const std::byte>& ubjson, int depth)
 {
 	char typecode = 0;
 	if ((char)(ubjson[0]) == '$')
@@ -944,7 +944,7 @@ static JsonObject object_from_ubjson(tcb::span<const std::byte>& ubjson, int dep
 	return ret;
 }
 
-static JsonValue do_from_ubjson(tcb::span<const std::byte>& ubjson, int depth)
+static JsonValue do_from_ubjson(std::span<const std::byte>& ubjson, int depth)
 {
 	if (depth > 1000)
 	{
@@ -1003,7 +1003,7 @@ static JsonValue do_from_ubjson(tcb::span<const std::byte>& ubjson, int depth)
 	}
 }
 
-JsonValue JsonValue::from_ubjson(tcb::span<const std::byte> ubjson)
+JsonValue JsonValue::from_ubjson(std::span<const std::byte> ubjson)
 {
 	return do_from_ubjson(ubjson, 0);
 }

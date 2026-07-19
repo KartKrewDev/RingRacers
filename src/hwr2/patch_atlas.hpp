@@ -14,8 +14,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-
-#include <tcb/span.hpp>
+#include <span>
 
 #include "../core/hash_map.hpp"
 #include "../core/hash_set.hpp"
@@ -76,7 +75,7 @@ public:
 
 	std::optional<Entry> find_patch(srb2::NotNull<const patch_t*> patch) const;
 
-	void pack_rects(tcb::span<stbrp_rect> rects);
+	void pack_rects(std::span<stbrp_rect> rects);
 };
 
 /// @brief A resource-managing pass which creates and manages a set of Atlas Textures with
@@ -140,3 +139,4 @@ void convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, srb2::Vector<uint
 } // namespace srb2::hwr2
 
 #endif // __SRB2_HWR2_PATCH_ATLAS_HPP__
+

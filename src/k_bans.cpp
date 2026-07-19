@@ -12,11 +12,10 @@
 /// \file  k_bans.c
 /// \brief replacement for DooM Legacy ban system
 
+#include <span>
 #include <stdexcept>
 
 #include <fmt/format.h>
-#include <tcb/span.hpp>
-
 #include "i_tcp_detail.h" // clientaddress
 
 #include "core/json.hpp"
@@ -109,7 +108,7 @@ void SV_LoadBans(void)
 
 	try
 	{
-		srb2::Vector<tcb::byte> data = srb2::io::read_to_vec(bis);
+		srb2::Vector<std::byte> data = srb2::io::read_to_vec(bis);
 		srb2::String data_s;
 		data_s.reserve(data.size());
 		for (auto b : data)
@@ -181,7 +180,7 @@ void SV_SaveBans(void)
 	try
 	{
 		srb2::io::FileStream fs { banfile_path, srb2::io::FileStreamMode::kWrite };
-		srb2::io::write_exact(fs, tcb::as_bytes(tcb::span(json_string)));
+		srb2::io::write_exact(fs, std::as_bytes(std::span(json_string)));
 	}
 	catch (const std::exception& ex)
 	{
@@ -464,3 +463,5 @@ void Command_BanIP(void)
 
 	Z_Free(input);
 }
+
+

@@ -18,7 +18,7 @@ using srb2::audio::Sample;
 using srb2::audio::Source;
 
 template <size_t IC, size_t OC>
-size_t Filter<IC, OC>::generate(tcb::span<Sample<OC>> buffer)
+size_t Filter<IC, OC>::generate(std::span<Sample<OC>> buffer)
 {
 	input_buffer_.clear();
 	input_buffer_.resize(buffer.size());

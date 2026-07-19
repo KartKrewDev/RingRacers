@@ -103,7 +103,7 @@ FileStream& FileStream::operator=(FileStream&& r) noexcept
 	return *this;
 };
 
-StreamSize FileStream::read(tcb::span<std::byte> buffer)
+StreamSize FileStream::read(std::span<std::byte> buffer)
 {
 	if (this->file_ == nullptr)
 	{
@@ -126,7 +126,7 @@ StreamSize FileStream::read(tcb::span<std::byte> buffer)
 	return bytesread;
 }
 
-StreamSize FileStream::write(tcb::span<const std::byte> buffer)
+StreamSize FileStream::write(std::span<const std::byte> buffer)
 {
 	if (this->file_ == nullptr)
 	{

@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <variant>
 
 #include <glm/vec2.hpp>
@@ -21,8 +22,6 @@
 #include <glm/mat2x2.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
-#include <tcb/span.hpp>
-
 #include "../core/static_vec.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "handle.hpp"
@@ -415,7 +414,7 @@ enum class StencilOp
 struct ProgramDesc
 {
 	const char* name;
-	tcb::span<const char*> defines;
+	std::span<const char*> defines;
 };
 
 struct RasterizerStateDesc
@@ -547,13 +546,13 @@ struct TextureBinding
 
 struct CreateUniformSetInfo
 {
-	tcb::span<UniformVariant> uniforms;
+	std::span<UniformVariant> uniforms;
 };
 
 struct CreateBindingSetInfo
 {
-	tcb::span<VertexAttributeBufferBinding> vertex_buffers;
-	tcb::span<TextureBinding> sampler_textures;
+	std::span<VertexAttributeBufferBinding> vertex_buffers;
+	std::span<TextureBinding> sampler_textures;
 };
 
 struct TextureDetails
@@ -589,13 +588,13 @@ struct Rhi
 	virtual void update_buffer(
 		Handle<Buffer> buffer,
 		uint32_t offset,
-		tcb::span<const std::byte> data
+		std::span<const std::byte> data
 	) = 0;
 	virtual void update_texture(
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
-		tcb::span<const std::byte> data
+		std::span<const std::byte> data
 	) = 0;
 	virtual void update_texture_settings(
 		Handle<Texture> texture,
@@ -635,7 +634,7 @@ struct Rhi
 	virtual void draw(uint32_t vertex_count, uint32_t first_vertex) = 0;
 	virtual void draw_indexed(uint32_t index_count, uint32_t first_index) = 0;
 	virtual void
-	read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out) = 0;
+	read_pixels(const Rect& rect, PixelFormat format, std::span<std::byte> out) = 0;
 	virtual void copy_framebuffer_to_texture(
 		Handle<Texture> dst_tex,
 		const Rect& dst_region,
@@ -664,3 +663,5 @@ bool recreate_buffer_to_size(Rhi& rhi, Handle<Buffer>& buffer, const BufferDesc&
 } // namespace srb2::rhi
 
 #endif // __SRB2_RHI_RHI_HPP__
+
+

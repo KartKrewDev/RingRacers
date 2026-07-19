@@ -1402,9 +1402,9 @@ void M_StartMovie(moviemode_t mode)
 #endif
 }
 
-static void M_SaveFrame_AVRecorder(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
+static void M_SaveFrame_AVRecorder(uint32_t width, uint32_t height, std::span<const std::byte> data);
 
-static void M_SaveFrame_GIF(uint32_t width, uint32_t height, tcb::span<const std::byte> data)
+static void M_SaveFrame_GIF(uint32_t width, uint32_t height, std::span<const std::byte> data)
 {
 	if (moviemode != MM_GIF)
 	{
@@ -1424,7 +1424,7 @@ static void M_SaveFrame_GIF(uint32_t width, uint32_t height, tcb::span<const std
 	GIF_frame_rgb24(width, height, reinterpret_cast<const uint8_t*>(data.data()));
 }
 
-static void M_SaveFrame_AVRecorder(uint32_t width, uint32_t height, tcb::span<const std::byte> data)
+static void M_SaveFrame_AVRecorder(uint32_t width, uint32_t height, std::span<const std::byte> data)
 {
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	if (M_AVRecorder_IsExpired())
@@ -1447,7 +1447,7 @@ static void M_SaveFrame_AVRecorder(uint32_t width, uint32_t height, tcb::span<co
 #endif
 }
 
-void M_SaveFrame(uint32_t width, uint32_t height, tcb::span<const std::byte> data)
+void M_SaveFrame(uint32_t width, uint32_t height, std::span<const std::byte> data)
 {
 	switch (moviemode)
 	{
@@ -1705,7 +1705,7 @@ void M_ScreenShot(void)
   *
   * \sa HWR_ScreenShot
   */
-void M_DoScreenShot(UINT32 width, UINT32 height, tcb::span<const std::byte> data)
+void M_DoScreenShot(UINT32 width, UINT32 height, std::span<const std::byte> data)
 {
 #if NUMSCREENS > 2
 	const char *freename = NULL;
@@ -1769,7 +1769,7 @@ failure:
 #endif
 }
 
-void M_SaveMapThumbnail(UINT32 width, UINT32 height, tcb::span<const std::byte> data)
+void M_SaveMapThumbnail(UINT32 width, UINT32 height, std::span<const std::byte> data)
 {
 #ifdef USE_PNG
 #if NUMSCREENS > 2

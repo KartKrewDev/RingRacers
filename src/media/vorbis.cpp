@@ -137,7 +137,7 @@ void VorbisEncoder::analyse(sample_buffer_t in)
 void VorbisEncoder::write_packet(ogg_packet* op)
 {
 	using T = const std::byte;
-	tcb::span<T> p(reinterpret_cast<T*>(op->packet), static_cast<std::size_t>(op->bytes));
+	std::span<T> p(reinterpret_cast<T*>(op->packet), static_cast<std::size_t>(op->bytes));
 
 	write_frame(p, std::chrono::duration<float>(vorbis_granule_time(&vd_, op->granulepos)), true);
 }

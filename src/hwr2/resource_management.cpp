@@ -57,7 +57,7 @@ void PaletteManager::update(Rhi& rhi)
 		{
 			palette_32[i] = V_GetColor(i).s;
 		}
-		rhi.update_texture(palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
+		rhi.update_texture(palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, std::as_bytes(std::span(palette_32)));
 	}
 
 #if 0
@@ -65,7 +65,7 @@ void PaletteManager::update(Rhi& rhi)
 	{
 		if (colormaps != nullptr)
 		{
-			tcb::span<const std::byte> colormap_bytes = tcb::as_bytes(tcb::span(colormaps, kPaletteSize * kLighttableRows));
+			std::span<const std::byte> colormap_bytes = std::as_bytes(std::span(colormaps, kPaletteSize * kLighttableRows));
 			rhi.update_texture(lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
 		}
 
@@ -73,7 +73,7 @@ void PaletteManager::update(Rhi& rhi)
 		// Instead, use colormaps + COLORMAP_REMAPOFFSET. See R_ReInitColormaps.
 		if (encoremap != nullptr)
 		{
-			tcb::span<const std::byte> encoremap_bytes = tcb::as_bytes(tcb::span(encoremap, kPaletteSize * kLighttableRows));
+			std::span<const std::byte> encoremap_bytes = std::as_bytes(std::span(encoremap, kPaletteSize * kLighttableRows));
 			rhi.update_texture(encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
 		}
 	}
@@ -86,7 +86,7 @@ void PaletteManager::update(Rhi& rhi)
 		{
 			data[i] = i;
 		}
-		rhi.update_texture(default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, tcb::as_bytes(tcb::span(data)));
+		rhi.update_texture(default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, std::as_bytes(std::span(data)));
 	}
 }
 
@@ -116,7 +116,7 @@ Handle<Texture> PaletteManager::find_or_create_colormap(Rhi& rhi, srb2::NotNull<
 
 	Handle<Texture> texture = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
 
-	tcb::span<const std::byte> map_bytes = tcb::as_bytes(tcb::span(colormap.get(), kPaletteSize));
+	std::span<const std::byte> map_bytes = std::as_bytes(std::span(colormap.get(), kPaletteSize));
 	rhi.update_texture(texture, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, map_bytes);
 
 	colormaps_.insert_or_assign(colormap, texture);
@@ -132,7 +132,7 @@ Handle<Texture> PaletteManager::find_or_create_extra_lighttable(Rhi& rhi, srb2::
 
 	Handle<Texture> texture = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, kLighttableRows, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
 
-	tcb::span<const std::byte> lighttable_bytes = tcb::as_bytes(tcb::span(lighttable.get(), kPaletteSize * kLighttableRows));
+	std::span<const std::byte> lighttable_bytes = std::as_bytes(std::span(lighttable.get(), kPaletteSize * kLighttableRows));
 	rhi.update_texture(texture, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, lighttable_bytes);
 	lighttables_.insert_or_assign(lighttable, texture);
 
@@ -188,7 +188,7 @@ Handle<Texture> FlatTextureManager::find_or_create_indexed(Rhi& rhi, lumpnum_t l
 	const uint8_t* flat_memory = static_cast<const uint8_t*>(W_CacheLumpNum(lump, PU_PATCH));
 	SRB2_ASSERT(flat_memory != nullptr);
 
-	tcb::span<const uint8_t> flat_bytes = tcb::span(flat_memory, lump_length);
+	std::span<const uint8_t> flat_bytes = std::span(flat_memory, lump_length);
 	for (const uint8_t index : flat_bytes)
 	{
 		// The alpha/green channel is set to 0 if it's index 247; this is not usually used but fake floors can be
@@ -205,7 +205,7 @@ Handle<Texture> FlatTextureManager::find_or_create_indexed(Rhi& rhi, lumpnum_t l
 		flat_data.push_back({0, 0});
 	}
 
-	tcb::span<const std::byte> data_bytes = tcb::as_bytes(tcb::span(flat_data));
+	std::span<const std::byte> data_bytes = std::as_bytes(std::span(flat_data));
 	rhi.update_texture(new_tex, {0, 0, flat_size, flat_size}, rhi::PixelFormat::kRG8, data_bytes);
 
 	return new_tex;

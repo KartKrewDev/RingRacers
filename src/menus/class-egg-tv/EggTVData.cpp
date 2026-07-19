@@ -384,7 +384,7 @@ void EggTVData::save_favorites() const
 	{
 		srb2::String json_string = favoritesFile_.to_json_string();
 		srb2::io::FileStream fs { favoritesPath_.generic_string(), srb2::io::FileStreamMode::kWrite };
-		srb2::io::write_exact(fs, tcb::as_bytes(tcb::span(json_string.data(), json_string.size())));
+		srb2::io::write_exact(fs, std::as_bytes(std::span(json_string.data(), json_string.size())));
 	}
 	catch (const std::exception& ex)
 	{

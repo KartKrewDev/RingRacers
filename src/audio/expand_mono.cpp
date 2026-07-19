@@ -18,7 +18,7 @@ using namespace srb2::audio;
 
 ExpandMono::~ExpandMono() = default;
 
-size_t ExpandMono::filter(tcb::span<Sample<1>> input_buffer, tcb::span<Sample<2>> buffer)
+size_t ExpandMono::filter(std::span<Sample<1>> input_buffer, std::span<Sample<2>> buffer)
 {
 	for (size_t i = 0; i < std::min(input_buffer.size(), buffer.size()); i++)
 	{

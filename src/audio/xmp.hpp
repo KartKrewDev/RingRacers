@@ -14,9 +14,9 @@
 #include <array>
 #include <cstddef>
 #include <exception>
+#include <span>
 #include <utility>
 
-#include <tcb/span.hpp>
 #include <xmp.h>
 
 #include "../core/vector.hpp"
@@ -46,7 +46,7 @@ public:
 	Xmp();
 
 	explicit Xmp(Vector<std::byte> data);
-	explicit Xmp(tcb::span<std::byte> data);
+	explicit Xmp(std::span<std::byte> data);
 
 	Xmp(const Xmp<C>&) = delete;
 	Xmp(Xmp<C>&& rhs) noexcept;
@@ -54,7 +54,7 @@ public:
 	Xmp& operator=(const Xmp&) = delete;
 	Xmp& operator=(Xmp&& rhs) noexcept;
 
-	std::size_t play_buffer(tcb::span<std::array<int16_t, C>> buffer);
+	std::size_t play_buffer(std::span<std::array<int16_t, C>> buffer);
 	bool looping() const { return looping_; };
 	void looping(bool looping) { looping_ = looping; };
 	void reset();
@@ -81,3 +81,5 @@ inline Xmp<C> load_xmp(I& stream)
 } // namespace srb2::audio
 
 #endif // __SRB2_AUDIO_XMP_HPP__
+
+

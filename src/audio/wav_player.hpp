@@ -12,8 +12,7 @@
 #define __SRB2_AUDIO_WAV_PLAYER_HPP__
 
 #include <cstddef>
-
-#include <tcb/span.hpp>
+#include <span>
 
 #include "source.hpp"
 #include "wav.hpp"
@@ -37,7 +36,7 @@ public:
 
 	WavPlayer(Wav&& wav) noexcept;
 
-	virtual std::size_t generate(tcb::span<Sample<1>> buffer) override;
+	virtual std::size_t generate(std::span<Sample<1>> buffer) override;
 
 	bool looping() const { return looping_; }
 	void looping(bool looping) { looping_ = looping; }
@@ -50,3 +49,4 @@ public:
 } // namespace srb2::audio
 
 #endif // __SRB2_AUDIO_WAV_PLAYER_HPP__
+

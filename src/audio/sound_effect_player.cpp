@@ -17,7 +17,7 @@ using std::size_t;
 using srb2::audio::Sample;
 using srb2::audio::SoundEffectPlayer;
 
-size_t SoundEffectPlayer::generate(tcb::span<Sample<2>> buffer)
+size_t SoundEffectPlayer::generate(std::span<Sample<2>> buffer)
 {
 	if (!chunk_)
 		return 0;

@@ -81,7 +81,7 @@ Ogg::Ogg(Vector<std::byte> data) : memory_data_(std::move(data)), instance_(null
 	_init_with_data();
 }
 
-Ogg::Ogg(tcb::span<std::byte> data) : memory_data_(data.begin(), data.end()), instance_(nullptr)
+Ogg::Ogg(std::span<std::byte> data) : memory_data_(data.begin(), data.end()), instance_(nullptr)
 {
 	_init_with_data();
 }
@@ -109,7 +109,7 @@ Ogg::~Ogg()
 	}
 }
 
-std::size_t Ogg::get_samples(tcb::span<Sample<1>> buffer)
+std::size_t Ogg::get_samples(std::span<Sample<1>> buffer)
 {
 	SRB2_ASSERT(instance_ != nullptr);
 
@@ -123,7 +123,7 @@ std::size_t Ogg::get_samples(tcb::span<Sample<1>> buffer)
 	return read;
 }
 
-std::size_t Ogg::get_samples(tcb::span<Sample<2>> buffer)
+std::size_t Ogg::get_samples(std::span<Sample<2>> buffer)
 {
 	SRB2_ASSERT(instance_ != nullptr);
 

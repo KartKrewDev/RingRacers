@@ -168,20 +168,20 @@ void MainPaletteManager::upload_palette(Rhi& rhi)
 	{
 		palette_32[i] = V_GetColor(i).s;
 	}
-	rhi.update_texture(palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
+	rhi.update_texture(palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, std::as_bytes(std::span(palette_32)));
 }
 
 void MainPaletteManager::upload_lighttables(Rhi& rhi)
 {
 	if (colormaps != nullptr)
 	{
-		tcb::span<const std::byte> colormap_bytes = tcb::as_bytes(tcb::span(colormaps, kPaletteSize * kLighttableRows));
+		std::span<const std::byte> colormap_bytes = std::as_bytes(std::span(colormaps, kPaletteSize * kLighttableRows));
 		rhi.update_texture(lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
 	}
 
 	if (encoremap != nullptr)
 	{
-		tcb::span<const std::byte> encoremap_bytes = tcb::as_bytes(tcb::span(encoremap, kPaletteSize * kLighttableRows));
+		std::span<const std::byte> encoremap_bytes = std::as_bytes(std::span(encoremap, kPaletteSize * kLighttableRows));
 		rhi.update_texture(encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
 	}
 
@@ -191,7 +191,7 @@ void MainPaletteManager::upload_lighttables(Rhi& rhi)
 		{
 			Handle<Texture> lighttable_tex = find_extra_lighttable(lighttable);
 			SRB2_ASSERT(lighttable_tex != kNullHandle);
-			tcb::span<const std::byte> lighttable_bytes = tcb::as_bytes(tcb::span(lighttable, kPaletteSize * kLighttableRows));
+			std::span<const std::byte> lighttable_bytes = std::as_bytes(std::span(lighttable, kPaletteSize * kLighttableRows));
 			rhi.update_texture(lighttable_tex, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, lighttable_bytes);
 		}
 		lighttables_to_upload_.clear();
@@ -205,7 +205,7 @@ void MainPaletteManager::upload_default_colormap(Rhi& rhi)
 	{
 		data[i] = i;
 	}
-	rhi.update_texture(default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, tcb::as_bytes(tcb::span(data)));
+	rhi.update_texture(default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, std::as_bytes(std::span(data)));
 }
 
 void MainPaletteManager::upload_colormaps(Rhi& rhi)
@@ -217,7 +217,7 @@ void MainPaletteManager::upload_colormaps(Rhi& rhi)
 
 		rhi::Handle<rhi::Texture> map_texture = colormaps_.at(to_upload);
 
-		tcb::span<const std::byte> map_bytes = tcb::as_bytes(tcb::span(to_upload, kPaletteSize));
+		std::span<const std::byte> map_bytes = std::as_bytes(std::span(to_upload, kPaletteSize));
 		rhi.update_texture(map_texture, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, map_bytes);
 	}
 	colormaps_to_upload_.clear();
@@ -324,11 +324,11 @@ void CommonResourcesManager::transfer(Rhi& rhi)
 	if (!init_)
 	{
 		uint8_t black[4] = {0, 0, 0, 255};
-		tcb::span<const std::byte> black_bytes = tcb::as_bytes(tcb::span(black, 4));
+		std::span<const std::byte> black_bytes = std::as_bytes(std::span(black, 4));
 		uint8_t white[4] = {255, 255, 255, 255};
-		tcb::span<const std::byte> white_bytes = tcb::as_bytes(tcb::span(white, 4));
+		std::span<const std::byte> white_bytes = std::as_bytes(std::span(white, 4));
 		uint8_t transparent[4] = {0, 0, 0, 0};
-		tcb::span<const std::byte> transparent_bytes = tcb::as_bytes(tcb::span(transparent, 4));
+		std::span<const std::byte> transparent_bytes = std::as_bytes(std::span(transparent, 4));
 
 		rhi.update_texture(black_, {0, 0, 1, 1}, PixelFormat::kRGBA8, black_bytes);
 		rhi.update_texture(white_, {0, 0, 1, 1}, PixelFormat::kRGBA8, white_bytes);

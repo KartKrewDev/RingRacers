@@ -13,13 +13,12 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
-
-#include <tcb/span.hpp>
 
 #include "hash_map.hpp"
 #include "string.h"
@@ -122,7 +121,7 @@ public:
 	String to_json_string() const;
 	static JsonValue from_json_string(const String& str);
 	srb2::Vector<std::byte> to_ubjson() const;
-	static JsonValue from_ubjson(tcb::span<const std::byte> ubjson);
+	static JsonValue from_ubjson(std::span<const std::byte> ubjson);
 	constexpr Type type() const noexcept { return type_; }
 
 	template <typename V> V get() const;
@@ -531,3 +530,5 @@ extern template class HashMap<String, srb2::JsonValue>;
 } // namespace srb2
 
 #endif // SRB2_CORE_JSON_HPP
+
+

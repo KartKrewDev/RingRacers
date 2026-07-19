@@ -651,7 +651,7 @@ void Gl2Rhi::update_texture(
 	Handle<Texture> texture,
 	Rect region,
 	srb2::rhi::PixelFormat data_format,
-	tcb::span<const std::byte> data
+	std::span<const std::byte> data
 )
 {
 	if (data.empty())
@@ -757,7 +757,7 @@ void Gl2Rhi::destroy_buffer(rhi::Handle<rhi::Buffer> handle)
 void Gl2Rhi::update_buffer(
 	rhi::Handle<rhi::Buffer> handle,
 	uint32_t offset,
-	tcb::span<const std::byte> data
+	std::span<const std::byte> data
 )
 {
 	if (data.empty())
@@ -1476,7 +1476,7 @@ void Gl2Rhi::draw_indexed(uint32_t index_count, uint32_t first_index)
 	GL_ASSERT;
 }
 
-void Gl2Rhi::read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out)
+void Gl2Rhi::read_pixels(const Rect& rect, PixelFormat format, std::span<std::byte> out)
 {
 	SRB2_ASSERT(render_pass_stack_.empty() == false);
 

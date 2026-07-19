@@ -13,11 +13,10 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <span>
 #include <stdexcept>
 
 #include <fmt/format.h>
-#include <tcb/span.hpp>
-
 #include "../cxxutil.hpp"
 #include "vp8.hpp"
 #include "vpx_error.hpp"
@@ -80,7 +79,7 @@ VP8Encoder::VP8Encoder(Config config) : ctx_(config), img_(config.width, config.
 	auto plane = [this](int k, int ycs = 0)
 	{
 		using T = uint8_t;
-		auto view = tcb::span<T>(reinterpret_cast<T*>(img_->planes[k]), img_->stride[k] * (img_->h >> ycs));
+		auto view = std::span<T>(reinterpret_cast<T*>(img_->planes[k]), img_->stride[k] * (img_->h >> ycs));
 
 		return VideoFrame::Buffer {view, static_cast<std::size_t>(img_->stride[k])};
 	};
@@ -215,7 +214,7 @@ bool VP8Encoder::process()
 		const float ts = frame.pts / static_cast<float>(frame_rate());
 
 		using T = const std::byte;
-		tcb::span<T> p(reinterpret_cast<T*>(frame.buf), frame.sz);
+		std::span<T> p(reinterpret_cast<T*>(frame.buf), frame.sz);
 
 		write_frame(p, std::chrono::duration<float>(ts), (frame.flags & VPX_FRAME_IS_KEY));
 	}
@@ -240,3 +239,5 @@ VideoEncoder::FrameCount VP8Encoder::frame_count() const
 
 	return {frame_count_, std::chrono::duration<float>(duration_ / static_cast<float>(frame_rate()))};
 }
+
+

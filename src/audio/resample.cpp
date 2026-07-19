@@ -37,7 +37,7 @@ template <size_t C>
 Resampler<C>& Resampler<C>::operator=(Resampler<C>&& r) = default;
 
 template <size_t C>
-size_t Resampler<C>::generate(tcb::span<Sample<C>> buffer)
+size_t Resampler<C>::generate(std::span<Sample<C>> buffer)
 {
 	if (!source_)
 		return 0;

@@ -11,11 +11,10 @@
 #include "blit_rect.hpp"
 
 #include <optional>
+#include <span>
 #include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <tcb/span.hpp>
-
 #include "../cxxutil.hpp"
 
 using namespace srb2;
@@ -56,7 +55,7 @@ void BlitRectPass::prepass(Rhi& rhi)
 	{
 		ProgramDesc desc {};
 		const char* defines[1] = {"ENABLE_VA_TEXCOORD0"};
-		desc.defines = tcb::make_span(defines);
+		desc.defines = std::span(defines);
 		switch (blit_mode_)
 		{
 		case BlitRectPass::BlitMode::kNearest:
@@ -108,13 +107,13 @@ void BlitRectPass::transfer(Rhi& rhi)
 {
 	if (quad_vbo_needs_upload_ && quad_vbo_)
 	{
-		rhi.update_buffer(quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
+		rhi.update_buffer(quad_vbo_, 0, std::as_bytes(std::span(kVerts)));
 		quad_vbo_needs_upload_ = false;
 	}
 
 	if (quad_ibo_needs_upload_ && quad_ibo_)
 	{
-		rhi.update_buffer(quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
+		rhi.update_buffer(quad_ibo_, 0, std::as_bytes(std::span(kIndices)));
 		quad_ibo_needs_upload_ = false;
 	}
 
@@ -175,7 +174,7 @@ void BlitRectPass::transfer(Rhi& rhi)
 			0, 0, 255, 255,
 			0, 0, 0, 255,
 		};
-		rhi.update_texture(dot_pattern_, {0, 0, 12, 4}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(kDotPattern)));
+		rhi.update_texture(dot_pattern_, {0, 0, 12, 4}, PixelFormat::kRGBA8, std::as_bytes(std::span(kDotPattern)));
 		dot_pattern_needs_upload_ = false;
 	}
 }
@@ -245,3 +244,5 @@ void BlitRectPass::graphics(Rhi& rhi)
 	rhi.bind_index_buffer(quad_ibo_);
 	rhi.draw_indexed(6, 0);
 }
+
+

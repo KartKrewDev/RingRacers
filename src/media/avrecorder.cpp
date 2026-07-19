@@ -202,7 +202,7 @@ void AVRecorder::push_audio_samples(audio_buffer_t buffer)
 	}
 
 	using T = const float;
-	tcb::span<T> p(reinterpret_cast<T*>(buffer.data()), buffer.size() * 2); // 2 channels
+	std::span<T> p(reinterpret_cast<T*>(buffer.data()), buffer.size() * 2); // 2 channels
 
 	std::copy(p.begin(), p.end(), std::back_inserter(q.vec_));
 

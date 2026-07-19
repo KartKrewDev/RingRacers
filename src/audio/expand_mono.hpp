@@ -11,7 +11,7 @@
 #ifndef __SRB2_AUDIO_EXPAND_MONO_HPP__
 #define __SRB2_AUDIO_EXPAND_MONO_HPP__
 
-#include <tcb/span.hpp>
+#include <span>
 
 #include "filter.hpp"
 
@@ -22,7 +22,7 @@ class ExpandMono : public Filter<1, 2>
 {
 public:
 	virtual ~ExpandMono();
-	virtual std::size_t filter(tcb::span<Sample<1>> input_buffer, tcb::span<Sample<2>> buffer) override final;
+	virtual std::size_t filter(std::span<Sample<1>> input_buffer, std::span<Sample<2>> buffer) override final;
 };
 
 } // namespace srb2::audio

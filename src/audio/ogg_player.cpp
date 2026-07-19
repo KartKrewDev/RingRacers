@@ -83,7 +83,7 @@ template <size_t C>
 OggPlayer<C>::~OggPlayer() = default;
 
 template <size_t C>
-std::size_t OggPlayer<C>::generate(tcb::span<Sample<C>> buffer)
+std::size_t OggPlayer<C>::generate(std::span<Sample<C>> buffer)
 {
 	if (!playing_)
 		return 0;

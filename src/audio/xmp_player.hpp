@@ -36,7 +36,7 @@ public:
 
 	~XmpPlayer();
 
-	virtual std::size_t generate(tcb::span<Sample<C>> buffer) override final;
+	virtual std::size_t generate(std::span<Sample<C>> buffer) override final;
 
 	bool looping() { return xmp_.looping(); };
 	void looping(bool looping) { xmp_.looping(looping); }

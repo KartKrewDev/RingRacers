@@ -102,7 +102,7 @@ time_unit_t WebmContainer::track_duration(webm::track trackid) const
 }
 
 void WebmContainer::write_frame(
-	tcb::span<const std::byte> buffer,
+	std::span<const std::byte> buffer,
 	webm::track trackid,
 	webm::timestamp timestamp,
 	bool is_key_frame
@@ -129,7 +129,7 @@ void WebmContainer::write_frame(
 }
 
 void WebmContainer::queue_frame(
-	tcb::span<const std::byte> buffer,
+	std::span<const std::byte> buffer,
 	webm::track trackid,
 	webm::timestamp timestamp,
 	bool is_key_frame

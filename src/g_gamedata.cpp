@@ -296,7 +296,7 @@ void srb2::save_ng_gamedata()
 		srb2::io::write(static_cast<uint8_t>(gamedata->evercrashed), file); // dirty (crash recovery)
 
 		srb2::Vector<std::byte> ubjson = ngdata_json.to_ubjson();
-		srb2::io::write_exact(file, tcb::as_bytes(tcb::make_span(ubjson)));
+		srb2::io::write_exact(file, std::as_bytes(std::span(ubjson)));
 		file.close();
 	}
 	catch (const std::exception& ex)

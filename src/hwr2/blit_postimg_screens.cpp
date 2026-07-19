@@ -11,13 +11,13 @@
 #include "blit_postimg_screens.hpp"
 
 #include <cstddef>
+#include <span>
 
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <tcb/span.hpp>
 
 #include "../p_tick.h"
 #include "../i_time.h"
@@ -142,7 +142,7 @@ void BlitPostimgScreens::prepass(Rhi& rhi)
 		};
 		ProgramDesc desc {};
 		desc.name = "postimg";
-		desc.defines = tcb::make_span(defines);
+		desc.defines = std::span(defines);
 		program_ = rhi.create_program(desc);
 	}
 
@@ -154,7 +154,7 @@ void BlitPostimgScreens::prepass(Rhi& rhi)
 		};
 		ProgramDesc desc {};
 		desc.name = "postimg";
-		desc.defines = tcb::make_span(defines);
+		desc.defines = std::span(defines);
 		indexed_program_ = rhi.create_program(desc);
 	}
 
@@ -178,8 +178,8 @@ void BlitPostimgScreens::transfer(Rhi& rhi)
 	// Upload needed buffers
 	if (upload_quad_buffer_)
 	{
-		rhi.update_buffer(quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
-		rhi.update_buffer(quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
+		rhi.update_buffer(quad_vbo_, 0, std::as_bytes(std::span(kVerts)));
+		rhi.update_buffer(quad_ibo_, 0, std::as_bytes(std::span(kIndices)));
 		upload_quad_buffer_ = false;
 	}
 
@@ -200,3 +200,4 @@ void BlitPostimgScreens::transfer(Rhi& rhi)
 		screen_data_[i] = std::move(data);
 	}
 }
+

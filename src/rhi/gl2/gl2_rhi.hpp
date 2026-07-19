@@ -164,13 +164,13 @@ public:
 	virtual void update_buffer(
 		Handle<Buffer> buffer,
 		uint32_t offset,
-		tcb::span<const std::byte> data
+		std::span<const std::byte> data
 	) override;
 	virtual void update_texture(
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
-		tcb::span<const std::byte> data
+		std::span<const std::byte> data
 	) override;
 	virtual void update_texture_settings(
 		Handle<Texture> texture,
@@ -210,7 +210,7 @@ public:
 	virtual void draw(uint32_t vertex_count, uint32_t first_vertex) override;
 	virtual void draw_indexed(uint32_t index_count, uint32_t first_index) override;
 	virtual void
-	read_pixels(const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
+	read_pixels(const Rect& rect, PixelFormat format, std::span<std::byte> out) override;
 	virtual void copy_framebuffer_to_texture(
 		Handle<Texture> dst_tex,
 		const Rect& dst_region,

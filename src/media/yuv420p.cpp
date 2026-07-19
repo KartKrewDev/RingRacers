@@ -11,10 +11,10 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <span>
 
 #include <libyuv/convert.h>
 #include <libyuv/scale_argb.h>
-#include <tcb/span.hpp>
 
 #include "../cxxutil.hpp"
 #include "yuv420p.hpp"
@@ -57,7 +57,7 @@ bool YUV420pFrame::BufferRGBA::resize(int width, int height)
 	p = std::align(kAlignment, 1, p, n);
 	SRB2_ASSERT(p != nullptr);
 
-	plane = tcb::span<uint8_t>(reinterpret_cast<uint8_t*>(p), new_size);
+	plane = std::span<uint8_t>(reinterpret_cast<uint8_t*>(p), new_size);
 
 	return true;
 }
@@ -136,3 +136,4 @@ void YUV420pFrame::scale(const BufferRGBA& scaled_rgba)
 
 	rgba_ = &scaled_rgba;
 }
+

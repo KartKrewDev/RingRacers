@@ -40,7 +40,7 @@ void mix_sample_buffers(Sample<C>* dst, size_t size, Sample<C>* src, size_t src_
 } // namespace
 
 template <size_t C>
-size_t Mixer<C>::generate(tcb::span<Sample<C>> buffer)
+size_t Mixer<C>::generate(std::span<Sample<C>> buffer)
 {
 	buffer_.resize(buffer.size());
 

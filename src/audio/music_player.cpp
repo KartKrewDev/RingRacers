@@ -36,9 +36,9 @@ class MusicPlayer::Impl
 {
 public:
 	Impl() = default;
-	Impl(tcb::span<std::byte> data) : Impl() { _load(data); }
+	Impl(std::span<std::byte> data) : Impl() { _load(data); }
 
-	size_t generate(tcb::span<Sample<2>> buffer)
+	size_t generate(std::span<Sample<2>> buffer)
 	{
 		if (!resampler_)
 			return 0;
@@ -80,7 +80,7 @@ public:
 		return total_written;
 	}
 
-	void _load(tcb::span<std::byte> data)
+	void _load(std::span<std::byte> data)
 	{
 		ogg_inst_ = nullptr;
 		xmp_inst_ = nullptr;
@@ -303,7 +303,7 @@ private:
 MusicPlayer::MusicPlayer() : impl_(make_unique<MusicPlayer::Impl>())
 {
 }
-MusicPlayer::MusicPlayer(tcb::span<std::byte> data) : impl_(make_unique<MusicPlayer::Impl>(data))
+MusicPlayer::MusicPlayer(std::span<std::byte> data) : impl_(make_unique<MusicPlayer::Impl>(data))
 {
 }
 MusicPlayer::MusicPlayer(MusicPlayer&& rhs) noexcept = default;
@@ -353,7 +353,7 @@ bool MusicPlayer::playing() const
 	return impl_->playing();
 }
 
-size_t MusicPlayer::generate(tcb::span<Sample<2>> buffer)
+size_t MusicPlayer::generate(std::span<Sample<2>> buffer)
 {
 	SRB2_ASSERT(impl_ != nullptr);
 

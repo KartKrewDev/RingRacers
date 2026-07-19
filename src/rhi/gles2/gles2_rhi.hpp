@@ -108,10 +108,10 @@ public:
 	virtual Handle<RenderPass> create_render_pass(const RenderPassDesc& desc) override;
 	virtual void destroy_render_pass(Handle<RenderPass>&& handle) override;
 	virtual Handle<Texture>
-	create_texture(const TextureDesc& desc, srb2::rhi::PixelFormat data_format, tcb::span<const std::byte> data)
+	create_texture(const TextureDesc& desc, srb2::rhi::PixelFormat data_format, std::span<const std::byte> data)
 		override;
 	virtual void destroy_texture(Handle<Texture>&& handle) override;
-	virtual Handle<Buffer> create_buffer(const BufferDesc& desc, tcb::span<const std::byte> data) override;
+	virtual Handle<Buffer> create_buffer(const BufferDesc& desc, std::span<const std::byte> data) override;
 	virtual void destroy_buffer(Handle<Buffer>&& handle) override;
 	virtual Handle<Renderbuffer> create_renderbuffer(const RenderbufferDesc& desc) override;
 	virtual void destroy_renderbuffer(Handle<Renderbuffer>&& handle) override;
@@ -119,12 +119,12 @@ public:
 	virtual void destroy_pipeline(Handle<Pipeline>&& handle) override;
 
 	virtual void
-	update_buffer_contents(Handle<Buffer> buffer, uint32_t offset, tcb::span<const std::byte> data) override;
+	update_buffer_contents(Handle<Buffer> buffer, uint32_t offset, std::span<const std::byte> data) override;
 	virtual void update_texture(
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
-		tcb::span<const std::byte> data
+		std::span<const std::byte> data
 	) override;
 
 	virtual Handle<GraphicsContext> begin_graphics() override;
@@ -136,7 +136,7 @@ public:
 	virtual void pop_render_pass(Handle<GraphicsContext> ctx) override;
 	virtual void bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline) override;
 	virtual void update_bindings(Handle<GraphicsContext> ctx, const UpdateBindingsInfo& info) override;
-	virtual void update_uniforms(Handle<GraphicsContext> ctx, tcb::span<UniformUpdateData> uniforms) override;
+	virtual void update_uniforms(Handle<GraphicsContext> ctx, std::span<UniformUpdateData> uniforms) override;
 	virtual void set_scissor(Handle<GraphicsContext> ctx, const Rect& rect) override;
 	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) override;
 	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) override;

@@ -12,8 +12,7 @@
 #define __SRB2_AUDIO_SOUND_EFFECT_PLAYER_HPP__
 
 #include <cstddef>
-
-#include <tcb/span.hpp>
+#include <span>
 
 #include "sound_chunk.hpp"
 #include "source.hpp"
@@ -24,7 +23,7 @@ namespace srb2::audio
 class SoundEffectPlayer final : public Source<2>
 {
 public:
-	virtual std::size_t generate(tcb::span<Sample<2>> buffer) override final;
+	virtual std::size_t generate(std::span<Sample<2>> buffer) override final;
 
 	virtual ~SoundEffectPlayer() final;
 
@@ -47,3 +46,4 @@ private:
 } // namespace srb2::audio
 
 #endif // __SRB2_AUDIO_SOUND_EFFECT_PLAYER_HPP__
+

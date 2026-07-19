@@ -375,7 +375,6 @@ if(SRB2_CONFIG_ENABLE_DISCORDRPC)
 	target_sources(SRB2SDL2 PRIVATE discord.c)
 endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE tcbrindle::span)
 target_link_libraries(SRB2SDL2 PRIVATE glm::glm)
 target_link_libraries(SRB2SDL2 PRIVATE Stb)
 target_link_libraries(SRB2SDL2 PRIVATE xmp-lite::xmp-lite)

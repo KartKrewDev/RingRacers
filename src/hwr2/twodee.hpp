@@ -14,11 +14,10 @@
 #include <array>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <utility>
 #include <variant>
 #include <vector>
-
-#include <tcb/span.hpp>
 
 #include "blendmode.hpp"
 #include "../cxxutil.hpp"
@@ -271,3 +270,5 @@ inline Draw2dVerticesBuilder Twodee::begin_verts() noexcept
 } // namespace srb2::hwr2
 
 #endif // __SRB2_HWR2_TWODEE_HPP__
+
+

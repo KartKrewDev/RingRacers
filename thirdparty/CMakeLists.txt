@@ -7,7 +7,6 @@ add_subdirectory(imgui)
 
 add_subdirectory(nlohmann-json)
 
-add_subdirectory(tcbrindle_span)
 add_subdirectory(stb)
 add_subdirectory(glad)
 add_subdirectory(tracy)

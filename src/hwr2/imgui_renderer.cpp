@@ -10,9 +10,9 @@
 
 #include "imgui_renderer.hpp"
 
-#include <imgui.h>
-#include <tcb/span.hpp>
+#include <span>
 
+#include <imgui.h>
 #include "../v_video.h"
 
 using namespace srb2;
@@ -36,7 +36,7 @@ void ImguiRenderer::render(Rhi& rhi)
 		};
 		ProgramDesc desc;
 		desc.name = "unshaded";
-		desc.defines = tcb::make_span(defines);
+		desc.defines = std::span(defines);
 		program_ = rhi.create_program(desc);
 	}
 
@@ -52,7 +52,7 @@ void ImguiRenderer::render(Rhi& rhi)
 			TextureWrapMode::kRepeat,
 			TextureWrapMode::kRepeat
 		});
-		rhi.update_texture(default_tex_, {0, 0, 1, 1}, rhi::PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(&pixel, 1)));
+		rhi.update_texture(default_tex_, {0, 0, 1, 1}, rhi::PixelFormat::kRGBA8, std::as_bytes(std::span(&pixel, 1)));
 	}
 
 	ImGui::Render();
@@ -77,14 +77,14 @@ void ImguiRenderer::render(Rhi& rhi)
 						TextureWrapMode::kRepeat,
 						TextureWrapMode::kRepeat
 					});
-					rhi.update_texture(tex, {0, 0, static_cast<uint32_t>(texture->Width), static_cast<uint32_t>(texture->Height)}, rhi::PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(texture->Pixels, texture->Width * texture->Height * texture->BytesPerPixel)));
+					rhi.update_texture(tex, {0, 0, static_cast<uint32_t>(texture->Width), static_cast<uint32_t>(texture->Height)}, rhi::PixelFormat::kRGBA8, std::as_bytes(std::span(texture->Pixels, texture->Width * texture->Height * texture->BytesPerPixel)));
 					texture->SetTexID(tex);
 					texture->SetStatus(ImTextureStatus_OK);
 				}
 				else if (texture->Status == ImTextureStatus_WantUpdates)
 				{
 
-					rhi.update_texture(texture->TexID, {0, 0, static_cast<uint32_t>(texture->Width), static_cast<uint32_t>(texture->Height)}, rhi::PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(texture->Pixels, texture->Width * texture->Height * texture->BytesPerPixel)));
+					rhi.update_texture(texture->TexID, {0, 0, static_cast<uint32_t>(texture->Width), static_cast<uint32_t>(texture->Height)}, rhi::PixelFormat::kRGBA8, std::as_bytes(std::span(texture->Pixels, texture->Width * texture->Height * texture->BytesPerPixel)));
 					texture->SetStatus(ImTextureStatus_OK);
 				}
 				else if (texture->Status == ImTextureStatus_WantDestroy)
@@ -97,7 +97,7 @@ void ImguiRenderer::render(Rhi& rhi)
 		}
 	}
 
-	tcb::span<ImDrawList*> draw_lists = tcb::span(data->CmdLists.Data, data->CmdLists.Size);
+	std::span<ImDrawList*> draw_lists = std::span(data->CmdLists.Data, data->CmdLists.Size);
 
 	for (auto list : draw_lists)
 	{
@@ -167,11 +167,11 @@ void ImguiRenderer::render(Rhi& rhi)
 			vtx.colf[3] = ((vtx.col & 0xFF000000) >> 24) / 255.f;
 		}
 
-		tcb::span<ImDrawVert> vert_span = tcb::span(im_list->VtxBuffer.Data, im_list->VtxBuffer.size());
-		rhi.update_buffer(vbo, 0, tcb::as_bytes(vert_span));
+		std::span<ImDrawVert> vert_span = std::span(im_list->VtxBuffer.Data, im_list->VtxBuffer.size());
+		rhi.update_buffer(vbo, 0, std::as_bytes(vert_span));
 
-		tcb::span<ImDrawIdx> index_span = tcb::span(im_list->IdxBuffer.Data, im_list->IdxBuffer.size());
-		rhi.update_buffer(ibo, 0, tcb::as_bytes(index_span));
+		std::span<ImDrawIdx> index_span = std::span(im_list->IdxBuffer.Data, im_list->IdxBuffer.size());
+		rhi.update_buffer(ibo, 0, std::as_bytes(index_span));
 
 		for (auto& draw_cmd : draw_list.cmds)
 		{

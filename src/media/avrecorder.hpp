@@ -17,8 +17,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-
-#include <tcb/span.hpp>
+#include <span>
 
 #include "../core/string.h"
 #include "../core/vector.hpp"
@@ -31,7 +30,7 @@ class AVRecorder
 {
 public:
 	using audio_sample_t = srb2::audio::Sample<2>;
-	using audio_buffer_t = tcb::span<const audio_sample_t>;
+	using audio_buffer_t = std::span<const audio_sample_t>;
 
 	class Impl;
 
@@ -106,3 +105,4 @@ private:
 }; // namespace srb2::media
 
 #endif // __SRB2_MEDIA_AVRECORDER_HPP__
+

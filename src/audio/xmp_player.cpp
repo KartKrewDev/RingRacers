@@ -32,10 +32,10 @@ template <size_t C>
 XmpPlayer<C>::~XmpPlayer() = default;
 
 template <size_t C>
-std::size_t XmpPlayer<C>::generate(tcb::span<Sample<C>> buffer)
+std::size_t XmpPlayer<C>::generate(std::span<Sample<C>> buffer)
 {
 	buf_.resize(buffer.size());
-	std::size_t read = xmp_.play_buffer(tcb::make_span(buf_));
+	std::size_t read = xmp_.play_buffer(std::span(buf_));
 	buf_.resize(read);
 	std::size_t ret = std::min(buffer.size(), buf_.size());
 

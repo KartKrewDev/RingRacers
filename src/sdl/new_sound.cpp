@@ -80,7 +80,7 @@ public:
 		SDL_DestroyAudioStream(stream_);
 	}
 
-	void put(tcb::span<const std::byte> buf)
+	void put(std::span<const std::byte> buf)
 	{
 		if (!SDL_PutAudioStreamData(stream_, buf.data(), buf.size_bytes()))
 		{
@@ -104,7 +104,7 @@ public:
 		return result;
 	}
 
-	size_t get(tcb::span<std::byte> out)
+	size_t get(std::span<std::byte> out)
 	{
 		int result = SDL_GetAudioStreamData(stream_, out.data(), out.size_bytes());
 		if (result < 0)
@@ -134,9 +134,9 @@ public:
 	SdlVoiceStreamPlayer() : stream_(SDL_AUDIO_F32, 1, 48000, SDL_AUDIO_F32, 2, 44100) {}
 	virtual ~SdlVoiceStreamPlayer() = default;
 
-	virtual std::size_t generate(tcb::span<Sample<2>> buffer) override
+	virtual std::size_t generate(std::span<Sample<2>> buffer) override
 	{
-		size_t written = stream_.get(tcb::as_writable_bytes(buffer)) / sizeof(Sample<2>);
+		size_t written = stream_.get(std::as_writable_bytes(buffer)) / sizeof(Sample<2>);
 
 		for (size_t i = written; i < buffer.size(); i++)
 		{
@@ -232,7 +232,7 @@ void* I_GetSfx(sfxinfo_t* sfx)
 	std::byte* lump = static_cast<std::byte*>(W_CacheLumpNum(sfx->lumpnum, PU_SOUND));
 	auto _ = srb2::finally([lump]() { Z_Free(lump); });
 
-	tcb::span<std::byte> data_span(lump, sfx->length);
+	std::span<std::byte> data_span(lump, sfx->length);
 	std::optional<SoundChunk> chunk = srb2::audio::try_load_chunk(data_span);
 
 	if (!chunk)
@@ -306,7 +306,7 @@ void audio_callback(void* userdata, SDL_AudioStream* stream, int add, int total)
 		{
 			float_buffer[i] = Sample<2> {0.f, 0.f};
 		}
-		master_gain->generate(tcb::span {float_buffer.data(), float_len});
+		master_gain->generate(std::span {float_buffer.data(), float_len});
 		for (size_t i = 0; i < float_len; i++)
 		{
 			float_buffer[i] = {
@@ -316,7 +316,7 @@ void audio_callback(void* userdata, SDL_AudioStream* stream, int add, int total)
 		}
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 		if (av_recorder)
-			av_recorder->push_audio_samples(tcb::span {float_buffer.data(), float_len});
+			av_recorder->push_audio_samples(std::span {float_buffer.data(), float_len});
 #endif
 		SDL_PutAudioStreamData(stream, float_buffer.data(), float_len * sizeof(Sample<2>));
 	}
@@ -806,7 +806,7 @@ boolean I_LoadSong(char* data, size_t len)
 	if (!music_player)
 		return false;
 
-	tcb::span<std::byte> data_span(reinterpret_cast<std::byte*>(data), len);
+	std::span<std::byte> data_span(reinterpret_cast<std::byte*>(data), len);
 	audio::MusicPlayer new_player;
 	try
 	{
@@ -1125,7 +1125,7 @@ void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolea
 
 	SdlAudioLockHandle _;
 	SdlVoiceStreamPlayer* player = player_voice_channels.at(playernum).get();
-	player->stream().put(tcb::span((std::byte*)data, len));
+	player->stream().put(std::span((std::byte*)data, len));
 }
 
 void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep)

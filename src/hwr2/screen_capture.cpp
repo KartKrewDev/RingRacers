@@ -10,7 +10,7 @@
 
 #include "screen_capture.hpp"
 
-#include <tcb/span.hpp>
+#include <span>
 
 #include "../m_misc.h"
 
@@ -38,7 +38,7 @@ void ScreenshotPass::capture(Rhi& rhi)
 	pixel_data_.resize(read_stride * height_); // 3 bytes per pixel for RGB8
 	packed_data_.resize(stride * height_);
 
-	tcb::span<std::byte> data_bytes = tcb::as_writable_bytes(tcb::span(pixel_data_));
+	std::span<std::byte> data_bytes = std::as_writable_bytes(std::span(pixel_data_));
 	rhi.read_pixels({0, 0, width_, height_}, PixelFormat::kRGB8, data_bytes);
 
 	for (uint32_t row = 0; row < height_; row++)
@@ -51,16 +51,16 @@ void ScreenshotPass::capture(Rhi& rhi)
 
 	if (g_takemapthumbnail != TMT_NO)
 	{
-		M_SaveMapThumbnail(width_, height_, tcb::as_bytes(tcb::span(packed_data_)));
+		M_SaveMapThumbnail(width_, height_, std::as_bytes(std::span(packed_data_)));
 	}
 
 	if (takescreenshot)
 	{
-		M_DoScreenShot(width_, height_, tcb::as_bytes(tcb::span(packed_data_)));
+		M_DoScreenShot(width_, height_, std::as_bytes(std::span(packed_data_)));
 	}
 
 	if (moviemode != MM_OFF)
 	{
-		M_SaveFrame(width_, height_, tcb::as_bytes(tcb::span(packed_data_)));
+		M_SaveFrame(width_, height_, std::as_bytes(std::span(packed_data_)));
 	}
 }

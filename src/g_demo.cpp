@@ -14,8 +14,7 @@
 
 #include <algorithm>
 #include <cstddef>
-
-#include <tcb/span.hpp>
+#include <span>
 
 #include "doomdef.h"
 #include "doomtype.h"
@@ -2650,14 +2649,14 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	return c;
 }
 
-static bool load_ubjson_standing(menudemo_t* pdemo, tcb::span<std::byte> slice, tcb::span<democharlist_t> demoskins)
+static bool load_ubjson_standing(menudemo_t* pdemo, std::span<std::byte> slice, std::span<democharlist_t> demoskins)
 {
 	using namespace srb2;
 
 	StandingsJson js;
 	try
 	{
-		JsonValue value { JsonValue::from_ubjson(tcb::as_bytes(slice)) };
+		JsonValue value { JsonValue::from_ubjson(std::as_bytes(slice)) };
 		from_json(value, js);
 	}
 	catch (...)
@@ -2900,8 +2899,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
 				{
 					goto corrupt;
 				}
-				tcb::span<std::byte> slice = tcb::as_writable_bytes(tcb::span(info.p, size));
-				tcb::span<democharlist_t> demoskins {skinlist, worknumskins};
+				std::span<std::byte> slice = std::as_writable_bytes(std::span(info.p, size));
+				std::span<democharlist_t> demoskins {skinlist, worknumskins};
 				info.p += size;
 				if (!load_ubjson_standing(pdemo, slice, demoskins))
 				{
@@ -4422,3 +4421,4 @@ void G_SyncDemoParty(INT32 rem, INT32 newsplitscreen)
 	memcpy(displayplayers, displayplayers_copy, sizeof displayplayers);
 	R_ExecuteSetViewSize();
 }
+

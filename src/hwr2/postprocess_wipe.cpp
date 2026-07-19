@@ -10,10 +10,10 @@
 
 #include "postprocess_wipe.hpp"
 
+#include <span>
+
 #include <fmt/format.h>
 #include <glm/gtc/matrix_transform.hpp>
-#include <tcb/span.hpp>
-
 #include "../core/string.h"
 #include "../f_finale.h"
 #include "../w_wad.h"
@@ -60,7 +60,7 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 	{
 		ProgramDesc desc;
 		desc.name = "postprocesswipe";
-		desc.defines = tcb::span<const char*>();
+		desc.defines = std::span<const char*>();
 		program_ = rhi.create_program(desc);
 	}
 
@@ -169,17 +169,17 @@ void PostprocessWipePass::transfer(Rhi& rhi)
 
 	if (upload_vbo_)
 	{
-		rhi.update_buffer(vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
+		rhi.update_buffer(vbo_, 0, std::as_bytes(std::span(kPostprocessVerts)));
 		upload_vbo_ = false;
 	}
 
 	if (upload_ibo_)
 	{
-		rhi.update_buffer(ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
+		rhi.update_buffer(ibo_, 0, std::as_bytes(std::span(kPostprocessIndices)));
 		upload_ibo_ = false;
 	}
 
-	tcb::span<const std::byte> data = tcb::as_bytes(tcb::span(mask_data_));
+	std::span<const std::byte> data = std::as_bytes(std::span(mask_data_));
 	rhi.update_texture(wipe_tex_, {0, 0, mask_w_, mask_h_}, PixelFormat::kR8, data);
 }
 

@@ -13,9 +13,8 @@
 
 #include <cstddef>
 #include <memory>
+#include <span>
 #include <vector>
-
-#include <tcb/span.hpp>
 
 #include "source.hpp"
 
@@ -26,11 +25,11 @@ template <size_t IC, size_t OC>
 class Filter : public Source<OC>
 {
 public:
-	virtual std::size_t generate(tcb::span<Sample<OC>> buffer) override;
+	virtual std::size_t generate(std::span<Sample<OC>> buffer) override;
 
 	void bind(const std::shared_ptr<Source<IC>>& input);
 
-	virtual std::size_t filter(tcb::span<Sample<IC>> input_buffer, tcb::span<Sample<OC>> buffer) = 0;
+	virtual std::size_t filter(std::span<Sample<IC>> input_buffer, std::span<Sample<OC>> buffer) = 0;
 
 	virtual ~Filter();
 
@@ -47,3 +46,5 @@ extern template class Filter<2, 2>;
 } // namespace srb2::audio
 
 #endif // __SRB2_AUDIO_FILTER_HPP__
+
+

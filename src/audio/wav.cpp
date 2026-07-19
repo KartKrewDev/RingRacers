@@ -152,7 +152,7 @@ Vector<int16_t> read_int16_samples_from_stream(io::SpanStream& stream, std::size
 
 Wav::Wav() = default;
 
-Wav::Wav(tcb::span<std::byte> data)
+Wav::Wav(std::span<std::byte> data)
 {
 	io::SpanStream stream {data};
 
@@ -248,7 +248,7 @@ std::size_t read_samples(
 	std::size_t channels,
 	std::size_t offset,
 	const Vector<T>& samples,
-	tcb::span<audio::Sample<1>> buffer
+	std::span<audio::Sample<1>> buffer
 ) noexcept
 {
 	const std::size_t offset_interleaved = offset * channels;
@@ -278,7 +278,7 @@ std::size_t read_samples(
 
 } // namespace
 
-std::size_t Wav::get_samples(std::size_t offset, tcb::span<audio::Sample<1>> buffer) const noexcept
+std::size_t Wav::get_samples(std::size_t offset, std::span<audio::Sample<1>> buffer) const noexcept
 {
 	auto samples_visitor = srb2::Overload {
 		[&](const Vector<uint8_t>& samples) { return read_samples<uint8_t>(channels(), offset, samples, buffer); },

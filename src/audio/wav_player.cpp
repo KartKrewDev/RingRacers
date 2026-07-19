@@ -30,7 +30,7 @@ WavPlayer::WavPlayer(audio::Wav&& wav) noexcept : wav_(std::forward<Wav>(wav)), 
 {
 }
 
-std::size_t WavPlayer::generate(tcb::span<audio::Sample<1>> buffer)
+std::size_t WavPlayer::generate(std::span<audio::Sample<1>> buffer)
 {
 	std::size_t samples_read = 0;
 	while (samples_read < buffer.size())

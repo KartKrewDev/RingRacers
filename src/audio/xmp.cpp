@@ -57,7 +57,7 @@ Xmp<C>::Xmp(Vector<std::byte> data)
 }
 
 template <size_t C>
-Xmp<C>::Xmp(tcb::span<std::byte> data)
+Xmp<C>::Xmp(std::span<std::byte> data)
 	: data_(data.begin(), data.end()), instance_(nullptr), module_loaded_(false), looping_(false)
 {
 	_init();
@@ -94,7 +94,7 @@ Xmp<C>::~Xmp()
 }
 
 template <size_t C>
-std::size_t Xmp<C>::play_buffer(tcb::span<std::array<int16_t, C>> buffer)
+std::size_t Xmp<C>::play_buffer(std::span<std::array<int16_t, C>> buffer)
 {
 	SRB2_ASSERT(instance_ != nullptr);
 	SRB2_ASSERT(module_loaded_ == true);

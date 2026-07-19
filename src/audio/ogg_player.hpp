@@ -13,9 +13,9 @@
 
 #include <cstddef>
 #include <optional>
+#include <span>
 
 #include <stb_vorbis.h>
-#include <tcb/span.hpp>
 
 #include "ogg.hpp"
 #include "source.hpp"
@@ -40,7 +40,7 @@ public:
 	OggPlayer& operator=(const OggPlayer&) = delete;
 	OggPlayer& operator=(OggPlayer&& rhs) noexcept;
 
-	virtual std::size_t generate(tcb::span<Sample<C>> buffer) override final;
+	virtual std::size_t generate(std::span<Sample<C>> buffer) override final;
 
 	bool looping() const { return looping_; }
 
@@ -67,3 +67,4 @@ extern template class OggPlayer<2>;
 } // namespace srb2::audio
 
 #endif // __SRB2_AUDIO_OGG_SOURCE_HPP__
+

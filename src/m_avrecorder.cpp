@@ -13,11 +13,10 @@
 #include <cstdint>
 #include <exception>
 #include <memory>
+#include <span>
 #include <stdexcept>
 
 #include <fmt/format.h>
-#include <tcb/span.hpp>
-
 #include "cxxutil.hpp"
 #include "m_avrecorder.hpp"
 #include "media/options.hpp"
@@ -209,3 +208,5 @@ void M_AVRecorder_DrawFrameRate(void)
 
 	g_av_recorder->draw_statistics();
 }
+
+

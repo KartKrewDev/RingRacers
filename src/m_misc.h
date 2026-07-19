@@ -26,13 +26,12 @@
 #ifdef __cplusplus
 
 #include <cstddef>
+#include <span>
 
-#include <tcb/span.hpp>
+void M_DoScreenShot(uint32_t width, uint32_t height, std::span<const std::byte> data);
+void M_SaveFrame(uint32_t width, uint32_t height, std::span<const std::byte> data);
 
-void M_DoScreenShot(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
-void M_SaveFrame(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
-
-void M_SaveMapThumbnail(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
+void M_SaveMapThumbnail(uint32_t width, uint32_t height, std::span<const std::byte> data);
 
 extern "C" {
 #endif
@@ -175,3 +174,4 @@ void M_ExitFloatDenormalToZero(floatdenormalstate_t previous);
 #endif
 
 #endif
+

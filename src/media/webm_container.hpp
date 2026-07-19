@@ -53,7 +53,7 @@ public:
 
 	// init_queue MUST be called before using this function.
 	void queue_frame(
-		tcb::span<const std::byte> buffer,
+		std::span<const std::byte> buffer,
 		webm::track trackid,
 		webm::timestamp timestamp,
 		bool is_key_frame
@@ -70,7 +70,7 @@ private:
 			webm::timestamp timestamp;
 			bool is_key_frame;
 
-			Frame(tcb::span<const std::byte> buffer_, webm::timestamp timestamp_, bool is_key_frame_) :
+			Frame(std::span<const std::byte> buffer_, webm::timestamp timestamp_, bool is_key_frame_) :
 				buffer(buffer_.begin(), buffer_.end()), timestamp(timestamp_), is_key_frame(is_key_frame_)
 			{
 			}
@@ -97,7 +97,7 @@ private:
 	const dtor_cb_t dtor_cb_;
 
 	void write_frame(
-		tcb::span<const std::byte> buffer,
+		std::span<const std::byte> buffer,
 		webm::track trackid,
 		webm::timestamp timestamp,
 		bool is_key_frame

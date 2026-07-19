@@ -11,7 +11,7 @@
 #ifndef __SRB2_AUDIO_SOURCE_HPP__
 #define __SRB2_AUDIO_SOURCE_HPP__
 
-#include <tcb/span.hpp>
+#include <span>
 
 #include "sample.hpp"
 
@@ -22,7 +22,7 @@ template <size_t C>
 class Source
 {
 public:
-	virtual std::size_t generate(tcb::span<Sample<C>> buffer) = 0;
+	virtual std::size_t generate(std::span<Sample<C>> buffer) = 0;
 
 	virtual ~Source() = default;
 };

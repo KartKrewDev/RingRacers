@@ -13,8 +13,7 @@
 
 #include <cstddef>
 #include <optional>
-
-#include <tcb/span.hpp>
+#include <span>
 
 #include "sound_chunk.hpp"
 
@@ -22,8 +21,9 @@ namespace srb2::audio
 {
 
 /// @brief Try to load a chunk from the given byte span.
-std::optional<SoundChunk> try_load_chunk(tcb::span<std::byte> data);
+std::optional<SoundChunk> try_load_chunk(std::span<std::byte> data);
 
 } // namespace srb2::audio
 
 #endif // __SRB2_AUDIO_CHUNK_LOAD_HPP__
+

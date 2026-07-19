@@ -139,7 +139,7 @@ PatchAtlas::PatchAtlas(Handle<Texture> texture, uint32_t size) : tex_(texture), 
 PatchAtlas::PatchAtlas(PatchAtlas&&) = default;
 PatchAtlas& PatchAtlas::operator=(PatchAtlas&&) = default;
 
-void PatchAtlas::pack_rects(tcb::span<stbrp_rect> rects)
+void PatchAtlas::pack_rects(std::span<stbrp_rect> rects)
 {
 	stbrp_pack_rects(rp_ctx.get(), rects.data(), rects.size());
 }
@@ -313,7 +313,7 @@ void PatchAtlasCache::pack(Rhi& rhi)
 			atlas->tex_,
 			{static_cast<int32_t>(entry->x), static_cast<int32_t>(entry->y), entry->w, entry->h},
 			PixelFormat::kRG8,
-			tcb::as_bytes(tcb::span(patch_data))
+			std::as_bytes(std::span(patch_data))
 		);
 
 		patch_data.clear();

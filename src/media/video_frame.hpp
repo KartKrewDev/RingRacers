@@ -14,8 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-
-#include <tcb/span.hpp>
+#include <span>
 
 namespace srb2::media
 {
@@ -35,7 +34,7 @@ public:
 
 	struct Buffer
 	{
-		tcb::span<uint8_t> plane;
+		std::span<uint8_t> plane;
 		std::size_t row_stride; // size of each row
 	};
 
@@ -64,3 +63,4 @@ private:
 }; // namespace srb2::media
 
 #endif // __SRB2_MEDIA_VIDEO_FRAME_HPP__
+

@@ -39,7 +39,7 @@ public:
 	{
 	}
 
-	virtual size_t generate(tcb::span<Sample<1>> buffer) override final
+	virtual size_t generate(std::span<Sample<1>> buffer) override final
 	{
 		if (!chunk_)
 			return 0;
@@ -69,14 +69,14 @@ std::vector<Sample<1>> generate_to_vec(I& source, std::size_t estimate = 0)
 	do
 	{
 		generated.resize(total + 4096);
-		read = source.generate(tcb::span {generated.data() + total, 4096});
+		read = source.generate(std::span {generated.data() + total, 4096});
 		total += read;
 	} while (read != 0);
 	generated.resize(total);
 	return generated;
 }
 
-optional<SoundChunk> try_load_dmx(tcb::span<std::byte> data)
+optional<SoundChunk> try_load_dmx(std::span<std::byte> data)
 {
 	io::SpanStream stream {data};
 
@@ -121,7 +121,7 @@ optional<SoundChunk> try_load_dmx(tcb::span<std::byte> data)
 	do
 	{
 		resampled.resize(total + 4096);
-		read = resampler.generate(tcb::span {resampled.data() + total, 4096});
+		read = resampler.generate(std::span {resampled.data() + total, 4096});
 		total += read;
 	} while (read != 0);
 	resampled.resize(total);
@@ -129,7 +129,7 @@ optional<SoundChunk> try_load_dmx(tcb::span<std::byte> data)
 	return SoundChunk {std::move(resampled)};
 }
 
-optional<SoundChunk> try_load_wav(tcb::span<std::byte> data)
+optional<SoundChunk> try_load_wav(std::span<std::byte> data)
 {
 	io::SpanStream stream {data};
 
@@ -156,7 +156,7 @@ optional<SoundChunk> try_load_wav(tcb::span<std::byte> data)
 	return chunk;
 }
 
-optional<SoundChunk> try_load_ogg(tcb::span<std::byte> data)
+optional<SoundChunk> try_load_ogg(std::span<std::byte> data)
 {
 	std::shared_ptr<audio::OggPlayer<1>> player;
 	try
@@ -182,7 +182,7 @@ optional<SoundChunk> try_load_ogg(tcb::span<std::byte> data)
 
 } // namespace
 
-optional<SoundChunk> srb2::audio::try_load_chunk(tcb::span<std::byte> data)
+optional<SoundChunk> srb2::audio::try_load_chunk(std::span<std::byte> data)
 {
 	optional<SoundChunk> ret = nullopt;
 

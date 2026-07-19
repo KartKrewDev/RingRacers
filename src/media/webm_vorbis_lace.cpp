@@ -11,9 +11,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
+#include <span>
 #include <vector>
-
-#include <tcb/span.hpp>
 
 #include "webm_vorbis.hpp"
 
@@ -72,10 +71,12 @@ std::vector<std::byte> WebmVorbisEncoder::make_vorbis_private_data()
 	// actually is written here.
 	for (auto op : packets)
 	{
-		tcb::span<const std::byte> p(reinterpret_cast<const std::byte*>(op.packet), op.bytes);
+		std::span<const std::byte> p(reinterpret_cast<const std::byte*>(op.packet), op.bytes);
 
 		std::copy(p.begin(), p.end(), std::back_inserter(v));
 	}
 
 	return v;
 }
+
+
