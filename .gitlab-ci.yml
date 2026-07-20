@@ -22,10 +22,19 @@ stages:
 Alpine Linux:
   stage: build
   image: alpine:3.24
+  variables:
+    CCACHE_DIR: $CI_PROJECT_DIR/.ccache
+    CCACHE_COMPILERCHECK: content
+    CCACHE_BASEDIR: $CI_PROJECT_DIR
   cache:
-    key: alpine-apk-cache
-    paths:
-      - .apk-cache
+    - key: alpine-apk-cache
+      paths:
+        - .apk-cache
+    - key: alpine-ccache-$CI_COMMIT_REF_SLUG
+      fallback_keys:
+        - alpine-ccache-$CI_DEFAULT_BRANCH
+      paths:
+        - .ccache
   before_script:
     - |
       BRANCH_NAME=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_REF_NAME}
@@ -52,7 +61,6 @@ Alpine Linux:
 
       export EXE_NAME
       export DEV_BUILD
-      echo "EXE_NAME=$EXE_NAME DEV_BUILD=$DEV_BUILD"
   script:
     - | # Configure APK cache
       mkdir -p .apk-cache
@@ -71,20 +79,27 @@ Alpine Linux:
         libvorbis libvorbis-dev \
         libyuv libyuv-dev \
         opus opus-dev \
-        sdl3 sdl3-dev
+        sdl3 sdl3-dev \
+        ccache
       apk cache clean
+      ccache --zero-stats
     - | # Exclude files from git to avoid UNMODIFIED flag in builds
       mkdir -p "$CI_PROJECT_DIR/.git/info"
       touch "$CI_PROJECT_DIR/.git/info/exclude"
       echo "/.apk-cache" >> "$CI_PROJECT_DIR/.git/info/exclude"
+      echo "/.ccache" >> "$CI_PROJECT_DIR/.git/info/exclude"
     - |
       cmake -B build -S . \
         -G Ninja \
         -DCMAKE_BUILD_TYPE=Debug \
         -DCMAKE_COLOR_DIAGNOSTICS=ON \
+        -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
         -DSRB2_SDL2_EXE_NAME="$EXE_NAME" \
         -DSRB2_CONFIG_DEV_BUILD="$DEV_BUILD"
     - cmake --build build/ -- --quiet
+  after_script:
+    - ccache --show-stats
 
 Windows:
   variables:
@@ -92,14 +107,22 @@ Windows:
     SDK_PACKAGE: "ring-racers-sdk"
     SDK_VERSION: "1"
     SDK_FILE: "rrsdk-msys2-clang64.zip"
+    CCACHE_DIR: $CI_PROJECT_DIR/.ccache
+    CCACHE_COMPILERCHECK: content
+    CCACHE_BASEDIR: $CI_PROJECT_DIR
 
   stage: build
   image: mstorsjo/llvm-mingw:20260616
 
   cache:
-    key: sdk-${SDK_VERSION}-llvm-mingw-w64
-    paths:
-      - rrsdk/
+    - key: sdk-${SDK_VERSION}-llvm-mingw-w64
+      paths:
+        - rrsdk/
+    - key: windows-ccache-$CI_COMMIT_REF_SLUG
+      fallback_keys:
+        - windows-ccache-$CI_DEFAULT_BRANCH
+      paths:
+        - .ccache
 
   before_script:
     - |
@@ -127,7 +150,6 @@ Windows:
 
       export EXE_NAME
       export DEV_BUILD
-      echo "EXE_NAME=$EXE_NAME DEV_BUILD=$DEV_BUILD"
   script:
     - | # Exclude files from git to avoid modified flag in builds
       mkdir -p "$CI_PROJECT_DIR/.git/info"
@@ -135,6 +157,8 @@ Windows:
       echo "/rrsdk" >> "$CI_PROJECT_DIR/.git/info/exclude"
       echo "/toolchain.cmake" >> "$CI_PROJECT_DIR/.git/info/exclude"
       echo "/jq" >> "$CI_PROJECT_DIR/.git/info/exclude"
+      echo "/ccache" >> "$CI_PROJECT_DIR/.git/info/exclude"
+      echo "/.ccache" >> "$CI_PROJECT_DIR/.git/info/exclude"
 
     - | # Download prebuilt libraries
       if [ ! -d "rrsdk" ]; then
@@ -150,11 +174,14 @@ Windows:
         echo "SDK found in cache, skipping download."
       fi
 
-    - | # Download jq and yq
-      curl --fail --retry 3 --retry-delay 5 -o jq https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-amd64
+    - | # Download jq and ccache
+      curl --fail --retry 3 --retry-delay 5 -L -o jq https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-amd64
       chmod +x "jq"
-      #curl --fail --retry 3 --retry-delay 5 -o yq https://github.com/mikefarah/yq/releases/download/v4.53.3/yq_linux_amd64
-      #chmod +x "yq"
+      curl --fail --retry 3 --retry-delay 5 -L -o ccache.tar.xz https://github.com/ccache/ccache/releases/download/v4.13.6/ccache-4.13.6-linux-x86_64-musl-static.tar.xz
+      tar -xJf ccache.tar.xz --strip-components=1 ccache-4.13.6-linux-x86_64-musl-static/ccache
+      chmod +x ccache
+      rm ccache.tar.xz
+      $CI_PROJECT_DIR/ccache --zero-stats
 
     - | # Write toolchain file
       cat <<EOF > toolchain.cmake
@@ -180,6 +207,8 @@ Windows:
         -DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON \
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_C_COMPILER_LAUNCHER=$CI_PROJECT_DIR/ccache \
+        -DCMAKE_CXX_COMPILER_LAUNCHER=$CI_PROJECT_DIR/ccache \
         -DCMAKE_C_FLAGS="-g -gcodeview -fno-caret-diagnostics -fdiagnostics-format=msvc" \
         -DCMAKE_CXX_FLAGS="-g -gcodeview -fno-caret-diagnostics -fdiagnostics-format=msvc" \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,--pdb= -Wl,-s -static -static-libgcc -static-libstdc++ -lpthread" \
@@ -244,6 +273,8 @@ Windows:
         fi
       done < out.log
       echo "]" >> "$OUTPUT_JSON"
+  after_script:
+    - $CI_PROJECT_DIR/ccache --show-stats
 
   artifacts:
     paths:
