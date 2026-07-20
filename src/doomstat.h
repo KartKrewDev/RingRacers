@@ -17,8 +17,8 @@
 ///        here, and every relevant module will have to include
 ///        this header file. In practice... things are a bit messy.
 
-#ifndef __DOOMSTAT__
-#define __DOOMSTAT__
+#ifndef DOOMSTAT_H
+#define DOOMSTAT_H
 
 // We need globally shared data structures, for defining the global state variables.
 #include "doomdata.h"
@@ -994,4 +994,4 @@ extern INT32 adminplayers[MAXPLAYERS];
 } // extern "C"
 #endif
 
-#endif //__DOOMSTAT__
+#endif //DOOMSTAT_H

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_YUV420P_HPP__
-#define __SRB2_MEDIA_YUV420P_HPP__
+#ifndef SRB2_MEDIA_YUV420P_HPP
+#define SRB2_MEDIA_YUV420P_HPP
 
 #include <cstdint>
 
@@ -70,4 +70,4 @@ private:
 
 }; // namespace srb2::media
 
-#endif // __SRB2_MEDIA_YUV420P_HPP__
+#endif // SRB2_MEDIA_YUV420P_HPP

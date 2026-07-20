@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __FASTCMP_H__
-#define __FASTCMP_H__
+#ifndef FASTCMP_H
+#define FASTCMP_H
 
 #ifdef __cplusplus
 extern "C" {

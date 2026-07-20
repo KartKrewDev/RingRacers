@@ -9,8 +9,8 @@
 /// \file  k_color.h
 /// \brief Skincolor & colormapping code
 
-#ifndef __K_COLOR__
-#define __K_COLOR__
+#ifndef K_COLOR_H
+#define K_COLOR_H
 
 #include "doomdef.h"
 #include "doomtype.h"

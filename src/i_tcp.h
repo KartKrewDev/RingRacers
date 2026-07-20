@@ -11,8 +11,8 @@
 /// \file  i_tcp.h
 /// \brief TCP driver, sockets.
 
-#ifndef __I_TCP__
-#define __I_TCP__
+#ifndef I_TCP_H
+#define I_TCP_H
 
 #ifdef __cplusplus
 extern "C" {

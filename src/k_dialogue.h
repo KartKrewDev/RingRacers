@@ -11,8 +11,8 @@
 /// \file  k_dialogue.h
 /// \brief Basic text prompts
 
-#ifndef __K_DIALOGUE__
-#define __K_DIALOGUE__
+#ifndef K_DIALOGUE_H
+#define K_DIALOGUE_H
 
 #include "doomtype.h"
 #include "doomdef.h"
@@ -33,4 +33,4 @@ INT32 K_GetDialogueFade(void);
 } // extern "C"
 #endif
 
-#endif //__K_DIALOGUE__
+#endif //K_DIALOGUE_H

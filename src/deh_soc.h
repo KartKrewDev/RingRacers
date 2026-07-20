@@ -11,8 +11,8 @@
 /// \file  deh_soc.h
 /// \brief Load SOC file and change tables and text
 
-#ifndef __DEH_SOC_H__
-#define __DEH_SOC_H__
+#ifndef DEH_SOC_H
+#define DEH_SOC_H
 
 #include "doomdef.h"
 #include "g_game.h"

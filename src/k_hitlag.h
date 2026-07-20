@@ -10,8 +10,8 @@
 /// \file  k_hitlag.h
 /// \brief Race Mode specific code.
 
-#ifndef __K_HITLAG__
-#define __K_HITLAG__
+#ifndef K_HITLAG_H
+#define K_HITLAG_H
 
 #include "doomtype.h"
 #include "doomstat.h"
@@ -70,4 +70,4 @@ void K_SpawnSingleHitLagSpark(mobj_t *parent, vector3_t *offset, fixed_t scale, 
 } // extern "C"
 #endif
 
-#endif // __K_HITLAG__
+#endif // K_HITLAG_H

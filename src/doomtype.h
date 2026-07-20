@@ -15,8 +15,8 @@
 ///        Simple basic typedefs, isolated here to make it easier
 ///        separating modules.
 
-#ifndef __DOOMTYPE__
-#define __DOOMTYPE__
+#ifndef DOOMTYPE_H
+#define DOOMTYPE_H
 
 #include <string.h>
 #include <stdint.h>
@@ -293,4 +293,4 @@ typedef union {
 } // extern "C"
 #endif
 
-#endif //__DOOMTYPE__
+#endif //DOOMTYPE_H

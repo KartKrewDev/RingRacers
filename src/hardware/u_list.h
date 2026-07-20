@@ -17,8 +17,8 @@
 	Sonic Robo Blast 2.
 */
 
-#ifndef _U_LIST_H_
-#define _U_LIST_H_
+#ifndef U_LIST_H
+#define U_LIST_H
 
 #ifdef __cplusplus
 extern "C" {

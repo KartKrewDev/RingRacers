@@ -11,8 +11,8 @@
 /// \file  interface.h
 /// \brief Action Code Script: Interface for the rest of SRB2's game logic
 
-#ifndef __SRB2_ACS_INTERFACE_H__
-#define __SRB2_ACS_INTERFACE_H__
+#ifndef SRB2_ACS_INTERFACE_H
+#define SRB2_ACS_INTERFACE_H
 
 #include "../doomtype.h"
 #include "../doomdef.h"
@@ -370,4 +370,4 @@ void ACS_UnArchive(savebuffer_t *save);
 }
 #endif
 
-#endif // __SRB2_ACS_INTERFACE_H__
+#endif // SRB2_ACS_INTERFACE_H

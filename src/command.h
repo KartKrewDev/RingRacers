@@ -11,8 +11,8 @@
 /// \file  command.h
 /// \brief Deals with commands from console input, scripts, and remote server
 
-#ifndef __COMMAND_H__
-#define __COMMAND_H__
+#ifndef COMMAND_H
+#define COMMAND_H
 
 #include <stdio.h>
 #include "doomdef.h"
@@ -302,4 +302,4 @@ consvar_t *CV_FindVar(const char *name);
 } // extern "C"
 #endif
 
-#endif // __COMMAND_H__
+#endif // COMMAND_H

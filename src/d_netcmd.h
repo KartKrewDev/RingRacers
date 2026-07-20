@@ -13,8 +13,8 @@
 ///        commands are executed through the command buffer
 ///        like console commands
 
-#ifndef __D_NETCMD__
-#define __D_NETCMD__
+#ifndef D_NETCMD_H
+#define D_NETCMD_H
 
 #include "command.h"
 #include "d_player.h"

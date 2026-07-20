@@ -9,8 +9,8 @@
 /// \file  k_hud.h
 /// \brief HUD drawing functions exclusive to Kart
 
-#ifndef __K_HUD__
-#define __K_HUD__
+#ifndef K_HUD_H
+#define K_HUD_H
 
 #include "doomtype.h"
 #include "doomstat.h"

@@ -9,8 +9,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef i_tcp_detail_h
-#define i_tcp_detail_h
+#ifndef I_TCP_DETAIL_H
+#define I_TCP_DETAIL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -138,4 +138,4 @@ boolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask);
 } // extern "C"
 #endif
 
-#endif/*i_tcp_detail_h*/
+#endif/*I_TCP_DETAIL_H*/

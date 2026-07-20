@@ -12,8 +12,8 @@
 /// \file  p_local.h
 /// \brief Play functions, animation, global header
 
-#ifndef __P_LOCAL__
-#define __P_LOCAL__
+#ifndef P_LOCAL_H
+#define P_LOCAL_H
 
 #include "command.h"
 #include "d_player.h"
@@ -632,4 +632,4 @@ tic_t P_MobjIsReappearing(const mobj_t *mobj);
 } // extern "C"
 #endif
 
-#endif // __P_LOCAL__
+#endif // P_LOCAL_H

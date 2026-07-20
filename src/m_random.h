@@ -14,8 +14,8 @@
 /// \file  m_random.h
 /// \brief RNG for client effects and PRNG for game actions
 
-#ifndef __M_RANDOM__
-#define __M_RANDOM__
+#ifndef M_RANDOM_H
+#define M_RANDOM_H
 
 #include "doomtype.h"
 #include "m_fixed.h"

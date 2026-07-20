@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_WEBM_VORBIS_HPP__
-#define __SRB2_MEDIA_WEBM_VORBIS_HPP__
+#ifndef SRB2_MEDIA_WEBM_VORBIS_HPP
+#define SRB2_MEDIA_WEBM_VORBIS_HPP
 
 #include <chrono>
 #include <cstddef>
@@ -63,4 +63,4 @@ private:
 
 }; // namespace srb2::media
 
-#endif // __SRB2_MEDIA_WEBM_VORBIS_HPP__
+#endif // SRB2_MEDIA_WEBM_VORBIS_HPP

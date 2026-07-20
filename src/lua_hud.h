@@ -11,8 +11,8 @@
 /// \file  lua_hud.h
 /// \brief HUD enable/disable flags for Lua scripting
 
-#ifndef __LUA_HUD_H__
-#define __LUA_HUD_H__
+#ifndef LUA_HUD_H
+#define LUA_HUD_H
 
 #include "lua_hudlib_drawlist.h"
 
@@ -57,4 +57,4 @@ void LUA_SetHudHook(int hook, huddrawlist_h list);
 } // extern "C"
 #endif
 
-#endif // __LUA_HUD_H__
+#endif // LUA_HUD_H

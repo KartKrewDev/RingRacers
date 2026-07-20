@@ -13,8 +13,8 @@
 /// \file  am_map.h
 /// \brief Code for the 'automap', former Doom feature used for DEVMODE testing
 
-#ifndef __AMMAP_H__
-#define __AMMAP_H__
+#ifndef AMMAP_H
+#define AMMAP_H
 
 #include "d_event.h"
 

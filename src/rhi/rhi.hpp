@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_RHI_RHI_HPP__
-#define __SRB2_RHI_RHI_HPP__
+#ifndef SRB2_RHI_RHI_HPP
+#define SRB2_RHI_RHI_HPP
 
 #include <cstdint>
 #include <optional>
@@ -662,6 +662,6 @@ bool recreate_buffer_to_size(Rhi& rhi, Handle<Buffer>& buffer, const BufferDesc&
 
 } // namespace srb2::rhi
 
-#endif // __SRB2_RHI_RHI_HPP__
+#endif // SRB2_RHI_RHI_HPP
 
 

@@ -12,8 +12,8 @@
 /// \file  i_system.h
 /// \brief System specific interface stuff.
 
-#ifndef __I_SYSTEM__
-#define __I_SYSTEM__
+#ifndef I_SYSTEM_H
+#define I_SYSTEM_H
 
 #include "d_ticcmd.h"
 #include "d_event.h"

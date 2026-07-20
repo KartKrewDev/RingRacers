@@ -15,8 +15,8 @@
 ///        most of the data is loaded into different structures at run time
 ///        some internal structures shared by many modules are here
 
-#ifndef __DOOMDATA__
-#define __DOOMDATA__
+#ifndef DOOMDATA_H
+#define DOOMDATA_H
 
 // The most basic types we use, portability.
 #include "doomtype.h"
@@ -299,4 +299,4 @@ enum
 } // extern "C"
 #endif
 
-#endif // __DOOMDATA__
+#endif // DOOMDATA_H

@@ -11,8 +11,8 @@
 /// \file  y_inter.h
 /// \brief Tally screens, or "Intermissions" as they were formally called in Doom
 
-#ifndef __Y_INTER_H__
-#define __Y_INTER_H__
+#ifndef Y_INTER_H
+#define Y_INTER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,4 +84,4 @@ void Y_DetermineIntermissionType(void);
 } // extern "C"
 #endif
 
-#endif // __Y_INTER_H__
+#endif // Y_INTER_H

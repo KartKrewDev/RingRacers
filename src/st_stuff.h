@@ -12,8 +12,8 @@
 /// \file  st_stuff.h
 /// \brief Status bar header
 
-#ifndef __STSTUFF_H__
-#define __STSTUFF_H__
+#ifndef STSTUFF_H
+#define STSTUFF_H
 
 #include "doomtype.h"
 #include "d_event.h"

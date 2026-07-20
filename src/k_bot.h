@@ -10,8 +10,8 @@
 /// \file  k_bot.h
 /// \brief Bot logic & ticcmd generation code
 
-#ifndef __K_BOT__
-#define __K_BOT__
+#ifndef K_BOT_H
+#define K_BOT_H
 
 #include "typedef.h"
 #include "k_waypoint.h"

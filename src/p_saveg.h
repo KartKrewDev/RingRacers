@@ -12,8 +12,8 @@
 /// \file  p_saveg.h
 /// \brief Savegame I/O, archiving, persistence
 
-#ifndef __P_SAVEG__
-#define __P_SAVEG__
+#ifndef P_SAVEG_H
+#define P_SAVEG_H
 
 #ifdef __cplusplus
 extern "C" {

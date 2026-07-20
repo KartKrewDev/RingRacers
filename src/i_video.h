@@ -12,8 +12,8 @@
 /// \file  i_video.h
 /// \brief System specific interface stuff.
 
-#ifndef __I_VIDEO__
-#define __I_VIDEO__
+#ifndef I_VIDEO_H
+#define I_VIDEO_H
 
 #include "doomtype.h"
 

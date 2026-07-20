@@ -12,8 +12,8 @@
 /// \file  d_ticcmd.h
 /// \brief Button/action code definitions, ticcmd_t
 
-#ifndef __D_TICCMD__
-#define __D_TICCMD__
+#ifndef D_TICCMD_H
+#define D_TICCMD_H
 
 #include "m_fixed.h"
 #include "doomtype.h"

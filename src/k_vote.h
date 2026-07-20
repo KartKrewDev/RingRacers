@@ -10,8 +10,8 @@
 /// \file  k_vote.h
 /// \brief Voting screen
 
-#ifndef __K_VOTE_H__
-#define __K_VOTE_H__
+#ifndef K_VOTE_H
+#define K_VOTE_H
 
 #include "doomstat.h"
 
@@ -35,4 +35,4 @@ UINT8 Y_VoteContext(void);
 } // extern "C"
 #endif
 
-#endif // __K_VOTE_H__
+#endif // K_VOTE_H

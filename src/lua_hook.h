@@ -11,8 +11,8 @@
 /// \file  lua_hook.h
 /// \brief hooks for Lua scripting
 
-#ifndef __LUA_HOOK_H__
-#define __LUA_HOOK_H__
+#ifndef LUA_HOOK_H
+#define LUA_HOOK_H
 
 #include "r_defs.h"
 #include "d_player.h"
@@ -160,4 +160,4 @@ int LUA_HookGPRankPoints(UINT8 position, UINT8 numplayers, INT16 *points);
 } // extern "C"
 #endif
 
-#endif // __LUA_HOOK_H__
+#endif // LUA_HOOK_H

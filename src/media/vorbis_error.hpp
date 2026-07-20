@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_VORBIS_ERROR_HPP__
-#define __SRB2_MEDIA_VORBIS_ERROR_HPP__
+#ifndef SRB2_MEDIA_VORBIS_ERROR_HPP
+#define SRB2_MEDIA_VORBIS_ERROR_HPP
 
 #include <fmt/format.h>
 #include <vorbis/codec.h>
@@ -52,4 +52,4 @@ struct fmt::formatter<VorbisError> : formatter<srb2::String>
 	}
 };
 
-#endif // __SRB2_MEDIA_VORBIS_ERROR_HPP__
+#endif // SRB2_MEDIA_VORBIS_ERROR_HPP

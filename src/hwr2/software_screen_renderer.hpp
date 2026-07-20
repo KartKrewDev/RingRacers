@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP_
-#define __SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP_
+#ifndef SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP
+#define SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP
 
 #include <cstddef>
 #include <vector>
@@ -41,4 +41,4 @@ public:
 
 } // namespace srb2::hwr2
 
-#endif // __SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP_
+#endif // SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP

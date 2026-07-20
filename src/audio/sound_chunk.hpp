@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_SOUND_CHUNK_HPP__
-#define __SRB2_AUDIO_SOUND_CHUNK_HPP__
+#ifndef SRB2_AUDIO_SOUND_CHUNK_HPP
+#define SRB2_AUDIO_SOUND_CHUNK_HPP
 
 #include <vector>
 
@@ -25,4 +25,4 @@ struct SoundChunk
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_SOUND_CHUNK_HPP__
+#endif // SRB2_AUDIO_SOUND_CHUNK_HPP

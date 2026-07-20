@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_OGG_SOURCE_HPP__
-#define __SRB2_AUDIO_OGG_SOURCE_HPP__
+#ifndef SRB2_AUDIO_OGG_SOURCE_HPP
+#define SRB2_AUDIO_OGG_SOURCE_HPP
 
 #include <cstddef>
 #include <optional>
@@ -66,5 +66,5 @@ extern template class OggPlayer<2>;
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_OGG_SOURCE_HPP__
+#endif // SRB2_AUDIO_OGG_SOURCE_HPP
 

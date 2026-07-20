@@ -12,8 +12,8 @@
 /// \file  r_plane.h
 /// \brief Refresh, visplane stuff (floor, ceilings)
 
-#ifndef __R_PLANE__
-#define __R_PLANE__
+#ifndef R_PLANE_H
+#define R_PLANE_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef p_sweep_hpp
-#define p_sweep_hpp
+#ifndef P_SWEEP_HPP
+#define P_SWEEP_HPP
 
 #include <optional>
 #include <variant>
@@ -129,4 +129,4 @@ private:
 
 }; // namespace srb2::sweep
 
-#endif/*p_sweep_hpp*/
+#endif/*P_SWEEP_HPP*/

@@ -13,8 +13,8 @@
 /// \file  r_fps.h
 /// \brief Uncapped framerate stuff.
 
-#ifndef __R_FPS_H__
-#define __R_FPS_H__
+#ifndef R_FPS_H
+#define R_FPS_H
 
 #include "m_fixed.h"
 #include "p_local.h"

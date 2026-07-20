@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_PASS_IMGUI_HPP__
-#define __SRB2_HWR2_PASS_IMGUI_HPP__
+#ifndef SRB2_HWR2_PASS_IMGUI_HPP
+#define SRB2_HWR2_PASS_IMGUI_HPP
 
 #include <vector>
 
@@ -53,4 +53,4 @@ public:
 
 } // namespace srb2::hwr2
 
-#endif // __SRB2_HWR2_PASS_IMGUI_HPP__
+#endif // SRB2_HWR2_PASS_IMGUI_HPP

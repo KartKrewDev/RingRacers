@@ -7,8 +7,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef objects_objects_hpp
-#define objects_objects_hpp
+#ifndef OBJECTS_OBJECTS_HPP
+#define OBJECTS_OBJECTS_HPP
 
 #include "../math/fixed.hpp"
 #include "../math/vec.hpp"
@@ -25,4 +25,4 @@ using srb2::math::Vec2;
 
 }; // namespace srb2::objects
 
-#endif/*objects_objects_hpp*/
+#endif/*OBJECTS_OBJECTS_HPP*/

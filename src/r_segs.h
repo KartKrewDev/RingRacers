@@ -12,8 +12,8 @@
 /// \file  r_segs.h
 /// \brief Refresh module, drawing LineSegs from BSP
 
-#ifndef __R_SEGS__
-#define __R_SEGS__
+#ifndef R_SEGS_H
+#define R_SEGS_H
 
 #ifdef __cplusplus
 extern "C" {

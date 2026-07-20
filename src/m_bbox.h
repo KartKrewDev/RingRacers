@@ -12,8 +12,8 @@
 /// \file  m_bbox.h
 /// \brief bounding boxes
 
-#ifndef __M_BBOX__
-#define __M_BBOX__
+#ifndef M_BBOX_H
+#define M_BBOX_H
 
 #include "m_fixed.h"
 

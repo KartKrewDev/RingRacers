@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __V_DRAW_HPP__
-#define __V_DRAW_HPP__
+#ifndef V_DRAW_HPP
+#define V_DRAW_HPP
 
 #include <string_view>
 #include <optional>
@@ -535,4 +535,4 @@ private:
 
 #include "v_draw_setter.hpp"
 
-#endif // __V_DRAW_HPP__
+#endif // V_DRAW_HPP

@@ -7,8 +7,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __K_COLLIDE__
-#define __K_COLLIDE__
+#ifndef K_COLLIDE_H
+#define K_COLLIDE_H
 
 #include "doomtype.h"
 #include "p_mobj.h"

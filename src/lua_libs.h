@@ -10,8 +10,8 @@
 //-----------------------------------------------------------------------------
 /// \file  lua_libs.h
 /// \brief libraries for Lua scripting
-#ifndef __LUA_LIBS_H__
-#define __LUA_LIBS_H__
+#ifndef LUA_LIBS_H
+#define LUA_LIBS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,4 +150,4 @@ int LUA_GrandPrixLib(lua_State *L);
 } // extern "C"
 #endif
 
-#endif // __LUA_LIBS_H__
+#endif // LUA_LIBS_H

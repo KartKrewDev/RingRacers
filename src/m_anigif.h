@@ -11,8 +11,8 @@
 /// \file  m_anigif.h
 /// \brief Animated GIF creation movie mode.
 
-#ifndef __M_ANIGIF_H__
-#define __M_ANIGIF_H__
+#ifndef M_ANIGIF_H
+#define M_ANIGIF_H
 
 #include "doomdef.h"
 #include "command.h"

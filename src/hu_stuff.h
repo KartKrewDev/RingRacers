@@ -12,8 +12,8 @@
 /// \file  hu_stuff.h
 /// \brief Heads up display
 
-#ifndef __HU_STUFF_H__
-#define __HU_STUFF_H__
+#ifndef HU_STUFF_H
+#define HU_STUFF_H
 
 #include "d_event.h"
 #include "w_wad.h"

@@ -11,8 +11,8 @@
 /// \file  acsvm.hpp
 /// \brief ACSVM include file
 
-#ifndef __SRB2_ACSVM_HPP__
-#define __SRB2_ACSVM_HPP__
+#ifndef SRB2_ACSVM_HPP
+#define SRB2_ACSVM_HPP
 
 #include <ACSVM/Action.hpp>
 #include <ACSVM/Array.hpp>
@@ -45,4 +45,4 @@
 
 #include <Util/Floats.hpp>
 
-#endif //__SRB2_ACSVM_HPP__
+#endif //SRB2_ACSVM_HPP

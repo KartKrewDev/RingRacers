@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __EGGTV_HPP__
-#define __EGGTV_HPP__
+#ifndef EGGTV_HPP
+#define EGGTV_HPP
 
 #include <algorithm>
 #include <cstddef>
@@ -334,4 +334,4 @@ private:
 
 }; // namespace srb2::menus::egg_tv
 
-#endif // __EGGTV_HPP__
+#endif // EGGTV_HPP

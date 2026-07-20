@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef k_endcam_h
-#define k_endcam_h
+#ifndef K_ENDCAM_H
+#define K_ENDCAM_H
 
 #include "typedef.h"
 
@@ -78,4 +78,4 @@ void K_LoadEndCamera(savebuffer_t *save);
 } // extern "C"
 #endif
 
-#endif/*k_endcam_h*/
+#endif/*K_ENDCAM_H*/

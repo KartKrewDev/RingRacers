@@ -12,8 +12,8 @@
 /// \file  p_tick.h
 /// \brief Thinkers, Tickers
 
-#ifndef __P_TICK__
-#define __P_TICK__
+#ifndef P_TICK_H
+#define P_TICK_H
 
 #include "doomdef.h"
 

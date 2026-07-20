@@ -11,8 +11,8 @@
 /// \file  keys.h
 /// \brief SRB2 keyboard definition
 
-#ifndef __KEYS_H__
-#define __KEYS_H__
+#ifndef KEYS_H
+#define KEYS_H
 
 #ifdef __cplusplus
 extern "C" {

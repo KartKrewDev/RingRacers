@@ -10,8 +10,8 @@
 /// \file  k_zvote.h
 /// \brief Player callable mid-game vote
 
-#ifndef __K_ZVOTE__
-#define __K_ZVOTE__
+#ifndef K_ZVOTE_H
+#define K_ZVOTE_H
 
 #include "doomdef.h"
 #include "doomstat.h"
@@ -352,4 +352,4 @@ void K_DrawMidVote(void);
 } // extern "C"
 #endif
 
-#endif // __K_ZVOTE__
+#endif // K_ZVOTE_H

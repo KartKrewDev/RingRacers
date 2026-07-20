@@ -13,8 +13,8 @@
 /// \file  k_bans.h
 /// \brief ban system definitions
 
-#ifndef __BANS_H__
-#define __BANS_H__
+#ifndef BANS_H
+#define BANS_H
 
 #include "doomdef.h"
 

@@ -10,8 +10,8 @@
 /// \file m_perfstats.h
 /// \brief Performance measurement tools.
 
-#ifndef __M_PERFSTATS_H__
-#define __M_PERFSTATS_H__
+#ifndef M_PERFSTATS_H
+#define M_PERFSTATS_H
 
 #include "doomdef.h"
 #include "lua_script.h"

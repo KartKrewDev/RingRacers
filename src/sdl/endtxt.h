@@ -11,8 +11,8 @@
 /// \file
 /// \brief Support to show ENDOOM text
 
-#ifndef __ENDTXT__
-#define __ENDTXT__
+#ifndef ENDTXT_H
+#define ENDTXT_H
 
 #ifdef __cplusplus
 extern "C" {

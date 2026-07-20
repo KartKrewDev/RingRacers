@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_WAV_HPP__
-#define __SRB2_AUDIO_WAV_HPP__
+#ifndef SRB2_AUDIO_WAV_HPP
+#define SRB2_AUDIO_WAV_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -51,6 +51,6 @@ inline Wav load_wav(I& stream)
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_WAV_HPP__
+#endif // SRB2_AUDIO_WAV_HPP
 
 

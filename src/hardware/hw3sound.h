@@ -11,8 +11,8 @@
 /// \file hw3sound.h
 /// \brief High-level functions of hardware 3D sound
 
-#ifndef __HW3_SOUND_H__
-#define __HW3_SOUND_H__
+#ifndef HW3_SOUND_H
+#define HW3_SOUND_H
 
 #ifdef HW3SOUND
 #include "hws_data.h"
@@ -105,4 +105,4 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source,
 } // extern "C"
 #endif
 
-#endif // __HW3_SOUND_H__
+#endif // HW3_SOUND_H

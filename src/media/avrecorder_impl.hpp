@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_AVRECORDER_IMPL_HPP__
-#define __SRB2_MEDIA_AVRECORDER_IMPL_HPP__
+#ifndef SRB2_MEDIA_AVRECORDER_IMPL_HPP
+#define SRB2_MEDIA_AVRECORDER_IMPL_HPP
 
 #include <atomic>
 #include <chrono>
@@ -172,4 +172,4 @@ extern template class AVRecorder::Impl::Queue<VideoEncoder>;
 
 }; // namespace srb2::media
 
-#endif // __SRB2_MEDIA_AVRECORDER_IMPL_HPP__
+#endif // SRB2_MEDIA_AVRECORDER_IMPL_HPP

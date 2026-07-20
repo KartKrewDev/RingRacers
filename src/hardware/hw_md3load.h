@@ -17,8 +17,8 @@
 	Sonic Robo Blast 2.
 */
 
-#ifndef _HW_MD3LOAD_H_
-#define _HW_MD3LOAD_H_
+#ifndef HW_MD3LOAD_H
+#define HW_MD3LOAD_H
 
 #include "hw_model.h"
 #include "../doomtype.h"

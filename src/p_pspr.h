@@ -15,8 +15,8 @@
 ///        handles maximum brightness (torches, muzzle flare, light sources)
 
 // we use the upper 16 bits of the frame field for effects.
-#ifndef __P_PSPR__
-#define __P_PSPR__
+#ifndef P_PSPR_H
+#define P_PSPR_H
 
 // Basic data types.
 // Needs fixed point, and BAM angles.

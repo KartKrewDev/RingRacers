@@ -11,8 +11,8 @@
 /// \file  k_director.h
 /// \brief SRB2kart automatic spectator camera.
 
-#ifndef __K_DIRECTOR_H__
-#define __K_DIRECTOR_H__
+#ifndef K_DIRECTOR_H
+#define K_DIRECTOR_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,4 +30,4 @@ boolean K_DirectorIsAvailable(UINT8 viewnum);
 } // extern "C"
 #endif
 
-#endif // __K_DIRECTOR_H__
+#endif // K_DIRECTOR_H

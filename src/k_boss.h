@@ -10,8 +10,8 @@
 /// \file  k_boss.h
 /// \brief Boss battle game logic
 
-#ifndef __K_BOSS__
-#define __K_BOSS__
+#ifndef K_BOSS_H
+#define K_BOSS_H
 
 #include "doomdef.h"
 #include "doomstat.h"

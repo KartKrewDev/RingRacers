@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_XMP_HPP__
-#define __SRB2_AUDIO_XMP_HPP__
+#ifndef SRB2_AUDIO_XMP_HPP
+#define SRB2_AUDIO_XMP_HPP
 
 #include <array>
 #include <cstddef>
@@ -80,6 +80,6 @@ inline Xmp<C> load_xmp(I& stream)
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_XMP_HPP__
+#endif // SRB2_AUDIO_XMP_HPP
 
 

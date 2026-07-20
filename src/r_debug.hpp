@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef r_debug_hpp
-#define r_debug_hpp
+#ifndef R_DEBUG_HPP
+#define R_DEBUG_HPP
 
 #include "doomtype.h"
 
@@ -22,4 +22,4 @@ void draw_frame_list();
 
 }; // namespace srb2::r_debug
 
-#endif/*r_debug_hpp*/
+#endif/*R_DEBUG_HPP*/

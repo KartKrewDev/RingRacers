@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_RHI_HANDLE_HPP__
-#define __SRB2_RHI_HANDLE_HPP__
+#ifndef SRB2_RHI_HANDLE_HPP
+#define SRB2_RHI_HANDLE_HPP
 
 #include <atomic>
 #include <cstdint>
@@ -306,4 +306,4 @@ struct hash<srb2::rhi::Handle<T>>
 
 } // namespace std
 
-#endif // __SRB2_RHI_HANDLE_HPP__
+#endif // SRB2_RHI_HANDLE_HPP

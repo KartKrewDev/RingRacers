@@ -12,8 +12,8 @@
 /// \file
 /// \brief SDL specific part of the OpenGL API for SRB2
 
-#ifndef __SDL_OGL_SDL_H__
-#define __SDL_OGL_SDL_H__
+#ifndef SDL_OGL_SDL_H
+#define SDL_OGL_SDL_H
 
 #include <SDL3/SDL.h>
 
@@ -45,4 +45,4 @@ EXPORT void HWRAPI( OglSdlSetPalette ) (RGBA_t *palette);
 } // extern "C"
 #endif
 
-#endif // __SDL_OGL_SDL_H__
+#endif // SDL_OGL_SDL_H

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __G_PARTY_H__
-#define __G_PARTY_H__
+#ifndef G_PARTY_H
+#define G_PARTY_H
 
 #include "doomdef.h" // MAXPLAYERS
 
@@ -81,4 +81,4 @@ extern INT32 splitscreen_invitations[MAXPLAYERS];
 } // extern "C"
 #endif
 
-#endif // __G_PARTY_H__
+#endif // G_PARTY_H

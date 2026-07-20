@@ -10,8 +10,8 @@
 /// \file  k_mapuser.h
 /// \brief UDMF: Custom user properties
 
-#ifndef __K_MAPUSER__
-#define __K_MAPUSER__
+#ifndef K_MAPUSER_H
+#define K_MAPUSER_H
 
 #include "doomdef.h"
 #include "doomstat.h"
@@ -91,4 +91,4 @@ void K_UserPropertiesClear(mapUserProperties_t *user);
 } // extern "C"
 #endif
 
-#endif // __K_MAPUSER__
+#endif // K_MAPUSER_H

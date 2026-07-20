@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_MIXER_HPP__
-#define __SRB2_AUDIO_MIXER_HPP__
+#ifndef SRB2_AUDIO_MIXER_HPP
+#define SRB2_AUDIO_MIXER_HPP
 
 #include <memory>
 #include <span>
@@ -40,6 +40,6 @@ extern template class Mixer<2>;
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_MIXER_HPP__
+#endif // SRB2_AUDIO_MIXER_HPP
 
 

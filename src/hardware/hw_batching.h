@@ -10,8 +10,8 @@
 /// \file hw_batching.h
 /// \brief Draw call batching and related things.
 
-#ifndef __HWR_BATCHING_H__
-#define __HWR_BATCHING_H__
+#ifndef HWR_BATCHING_H
+#define HWR_BATCHING_H
 
 #include "hw_defs.h"
 #include "hw_data.h"

@@ -11,8 +11,8 @@
 /// \file  environment.hpp
 /// \brief Action Code Script: Environment definition
 
-#ifndef __SRB2_ACS_ENVIRONMENT_HPP__
-#define __SRB2_ACS_ENVIRONMENT_HPP__
+#ifndef SRB2_ACS_ENVIRONMENT_HPP
+#define SRB2_ACS_ENVIRONMENT_HPP
 
 #include "acsvm.hpp"
 
@@ -44,4 +44,4 @@ protected:
 
 extern srb2::acs::Environment ACSEnv;
 
-#endif // __SRB2_ACS_ENVIRONMENT_HPP__
+#endif // SRB2_ACS_ENVIRONMENT_HPP

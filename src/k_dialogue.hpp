@@ -11,8 +11,8 @@
 /// \file  k_dialogue.hpp
 /// \brief Basic text prompts
 
-#ifndef __K_DIALOGUE_HPP__
-#define __K_DIALOGUE_HPP__
+#ifndef K_DIALOGUE_HPP
+#define K_DIALOGUE_HPP
 
 #include <string_view>
 
@@ -112,4 +112,4 @@ private:
 
 extern srb2::Dialogue g_dialogue;
 
-#endif //__K_DIALOGUE_HPP__
+#endif //K_DIALOGUE_HPP

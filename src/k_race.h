@@ -9,8 +9,8 @@
 /// \file  k_race.h
 /// \brief Race Mode specific code.
 
-#ifndef __K_RACE__
-#define __K_RACE__
+#ifndef K_RACE_H
+#define K_RACE_H
 
 #include "r_defs.h"
 

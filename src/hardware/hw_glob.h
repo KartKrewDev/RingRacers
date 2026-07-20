@@ -11,8 +11,8 @@
 /// \file hw_glob.h
 /// \brief globals (shared data & code) for hw_ modules
 
-#ifndef _HWR_GLOB_H_
-#define _HWR_GLOB_H_
+#ifndef HWR_GLOB_H
+#define HWR_GLOB_H
 
 #include "hw_defs.h"
 #include "hw_main.h"

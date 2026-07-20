@@ -10,8 +10,8 @@
 /// \file
 /// \brief System specific interface stuff.
 
-#ifndef __sdlmain__
-#define __sdlmain__
+#ifndef SDLMAIN_H
+#define SDLMAIN_H
 
 extern bool consolevent;
 extern bool framebuffer;

@@ -11,8 +11,8 @@
 /// \file  k_follower.h
 /// \brief Code relating to the follower system
 
-#ifndef __K_FOLLOWER__
-#define __K_FOLLOWER__
+#ifndef K_FOLLOWER_H
+#define K_FOLLOWER_H
 
 #include "doomdef.h"
 #include "doomstat.h"
@@ -267,4 +267,4 @@ INT32 K_GetEffectiveFollowerSkin(const player_t *player);
 } // extern "C"
 #endif
 
-#endif // __K_FOLLOWER__
+#endif // K_FOLLOWER_H

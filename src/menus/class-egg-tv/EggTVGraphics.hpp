@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __EGGTVGRAPHICS_HPP__
-#define __EGGTVGRAPHICS_HPP__
+#ifndef EGGTVGRAPHICS_HPP
+#define EGGTVGRAPHICS_HPP
 
 #include <array>
 #include <string_view>
@@ -158,4 +158,4 @@ public:
 
 }; // namespace srb2::menus::egg_tv
 
-#endif // __EGGTVGRAPHICS_HPP__
+#endif // EGGTVGRAPHICS_HPP

@@ -12,8 +12,8 @@
 /// \file  r_data.h
 /// \brief Refresh module, data I/O, caching, retrieval of graphics by name
 
-#ifndef __R_DATA__
-#define __R_DATA__
+#ifndef R_DATA_H
+#define R_DATA_H
 
 #include "r_defs.h"
 #include "r_state.h"

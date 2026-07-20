@@ -11,8 +11,8 @@
 /// \file  p_maputl.h
 /// \brief map utility functions
 
-#ifndef __P_MAPUTL__
-#define __P_MAPUTL__
+#ifndef P_MAPUTL_H
+#define P_MAPUTL_H
 
 #include "doomtype.h"
 #include "r_defs.h"
@@ -114,4 +114,4 @@ extern divline_t g_trace;
 } // extern "C"
 #endif
 
-#endif // __P_MAPUTL__
+#endif // P_MAPUTL_H

@@ -12,8 +12,8 @@
 /// \file  d_player.h
 /// \brief player data structures
 
-#ifndef __D_PLAYER__
-#define __D_PLAYER__
+#ifndef D_PLAYER_H
+#define D_PLAYER_H
 
 #include <stdint.h>
 

@@ -12,8 +12,8 @@
 /// \file  z_zone.h
 /// \brief Zone Memory Allocation, perhaps NeXT ObjectiveC inspired
 
-#ifndef __Z_ZONE__
-#define __Z_ZONE__
+#ifndef Z_ZONE_H
+#define Z_ZONE_H
 
 #include <stdio.h>
 #include "doomdef.h"

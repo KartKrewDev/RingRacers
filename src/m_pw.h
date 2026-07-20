@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef m_pw_H
-#define m_pw_H
+#ifndef M_PW_H
+#define M_PW_H
 
 #include "doomtype.h"
 
@@ -33,4 +33,4 @@ boolean M_TryExactPassword(const char *password, const char *encodedhash);
 } // extern "C"
 #endif
 
-#endif/*m_pw_H*/
+#endif/*M_PW_H*/

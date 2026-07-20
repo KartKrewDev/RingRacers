@@ -11,8 +11,8 @@
 /// \file  r_splats.h
 /// \brief Flat sprites & splats effects
 
-#ifndef __R_SPLATS_H__
-#define __R_SPLATS_H__
+#ifndef R_SPLATS_H
+#define R_SPLATS_H
 
 #include "r_defs.h"
 #include "r_things.h"
@@ -52,4 +52,4 @@ void R_DrawFloorSplat(vissprite_t *spr);
 } // extern "C"
 #endif
 
-#endif /*__R_SPLATS_H__*/
+#endif /*R_SPLATS_H*/

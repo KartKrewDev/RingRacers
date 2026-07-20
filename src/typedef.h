@@ -11,8 +11,8 @@
 ///        file exists so these types can be used anywhere
 ///        without needing to include specific headers.
 
-#ifndef __TYPEDEF_H__
-#define __TYPEDEF_H__
+#ifndef TYPEDEF_H
+#define TYPEDEF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -478,4 +478,4 @@ TYPEDEF (wadfile_t);
 } // extern "C"
 #endif
 
-#endif // __TYPEDEF_H__
+#endif // TYPEDEF_H

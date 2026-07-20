@@ -11,8 +11,8 @@
 /// \file  dehacked.h
 /// \brief Dehacked files.
 
-#ifndef __DEHACKED_H__
-#define __DEHACKED_H__
+#ifndef DEHACKED_H
+#define DEHACKED_H
 
 #include "m_fixed.h" // for get_number
 

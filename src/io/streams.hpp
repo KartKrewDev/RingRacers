@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_IO_STREAMS_HPP__
-#define __SRB2_IO_STREAMS_HPP__
+#ifndef SRB2_IO_STREAMS_HPP
+#define SRB2_IO_STREAMS_HPP
 
 #include <algorithm>
 #include <cstddef>
@@ -965,6 +965,6 @@ extern template class ZlibInputStream<VecStream>;
 
 } // namespace srb2::io
 
-#endif // __SRB2_IO_STREAMS_HPP__
+#endif // SRB2_IO_STREAMS_HPP
 
 

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_EXPAND_MONO_HPP__
-#define __SRB2_AUDIO_EXPAND_MONO_HPP__
+#ifndef SRB2_AUDIO_EXPAND_MONO_HPP
+#define SRB2_AUDIO_EXPAND_MONO_HPP
 
 #include <span>
 
@@ -27,4 +27,4 @@ public:
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_EXPAND_MONO_HPP__
+#endif // SRB2_AUDIO_EXPAND_MONO_HPP

@@ -13,8 +13,8 @@
 /// \brief Fixed point arithmetics implementation
 ///        Fixed point, 32bit as 16.16.
 
-#ifndef __M_FIXED__
-#define __M_FIXED__
+#ifndef M_FIXED_H
+#define M_FIXED_H
 
 #include "doomtype.h"
 #include <stdlib.h>

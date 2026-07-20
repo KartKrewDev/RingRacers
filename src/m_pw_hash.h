@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef m_pw_hash_H
-#define m_pw_hash_H
+#ifndef M_PW_HASH_H
+#define M_PW_HASH_H
 
 #include "doomtype.h"
 
@@ -27,4 +27,4 @@ UINT8 *M_HashPassword(UINT8 hash[M_PW_HASH_SIZE], const char *key, const UINT8 s
 } // extern "C"
 #endif
 
-#endif/*m_pw_hash_H*/
+#endif/*M_PW_HASH_H*/

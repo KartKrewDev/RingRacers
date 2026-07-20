@@ -11,8 +11,8 @@
 /// \file hw_data.h
 /// \brief defines structures and exports for the hardware interface used by Sonic Robo Blast 2
 
-#ifndef _HWR_DATA_
-#define _HWR_DATA_
+#ifndef HWR_DATA_H
+#define HWR_DATA_H
 
 #if defined (_WIN32) && !defined (__CYGWIN__)
 //#define WIN32_LEAN_AND_MEAN
@@ -95,4 +95,4 @@ typedef struct GLPatch_s GLPatch_t;
 } // extern "C"
 #endif
 
-#endif //_HWR_DATA_
+#endif //HWR_DATA_H

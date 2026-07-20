@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_CORE_STATIC_VEC_HPP__
-#define __SRB2_CORE_STATIC_VEC_HPP__
+#ifndef SRB2_CORE_STATIC_VEC_HPP
+#define SRB2_CORE_STATIC_VEC_HPP
 
 #include <array>
 #include <cstddef>
@@ -246,4 +246,4 @@ struct std::hash<srb2::StaticVec<T, Limit>>
 	}
 };
 
-#endif // __SRB2_CORE_STATIC_VEC_HPP__
+#endif // SRB2_CORE_STATIC_VEC_HPP

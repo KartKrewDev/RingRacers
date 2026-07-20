@@ -9,8 +9,8 @@
 //-----------------------------------------------------------------------------
 // \brief Power Level system
 
-#ifndef __K_PWRLV__
-#define __K_PWRLV__
+#ifndef K_PWRLV_H
+#define K_PWRLV_H
 
 #include "doomtype.h"
 #include "doomdef.h"

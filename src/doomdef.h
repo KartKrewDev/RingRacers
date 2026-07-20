@@ -13,8 +13,8 @@
 /// \brief Internally used data structures for virtually everything,
 ///        key definitions, lots of other stuff.
 
-#ifndef __DOOMDEF__
-#define __DOOMDEF__
+#ifndef DOOMDEF_H
+#define DOOMDEF_H
 
 #ifdef _WIN32
 #define ASMCALL __cdecl
@@ -762,4 +762,4 @@ extern int
 } // extern "C"
 #endif
 
-#endif // __DOOMDEF__
+#endif // DOOMDEF_H

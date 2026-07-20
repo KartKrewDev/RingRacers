@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_RHI_GLES2_RHI_HPP__
-#define __SRB2_RHI_GLES2_RHI_HPP__
+#ifndef SRB2_RHI_GLES2_RHI_HPP
+#define SRB2_RHI_GLES2_RHI_HPP
 
 #include <functional>
 #include <memory>
@@ -156,4 +156,4 @@ void load_gles2(Gles2LoadFunc func);
 
 } // namespace srb2::rhi
 
-#endif // __SRB2_RHI_GLES2_RHI_HPP__
+#endif // SRB2_RHI_GLES2_RHI_HPP

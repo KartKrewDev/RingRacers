@@ -11,8 +11,8 @@
 /// \file  d_netfil.h
 /// \brief File transferring related structs and functions.
 
-#ifndef __D_NETFIL__
-#define __D_NETFIL__
+#ifndef D_NETFIL_H
+#define D_NETFIL_H
 
 #include "d_net.h"
 #include "d_clisrv.h"
@@ -175,4 +175,4 @@ HTTP_login * CURLGetLogin (const char *url, HTTP_login ***return_prev_next);
 } // extern "C"
 #endif
 
-#endif // __D_NETFIL__
+#endif // D_NETFIL_H

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_CORE_MEMORY_H__
-#define __SRB2_CORE_MEMORY_H__
+#ifndef SRB2_CORE_MEMORY_H
+#define SRB2_CORE_MEMORY_H
 
 #include <stddef.h>
 
@@ -85,4 +85,4 @@ void Z_Frame_Reset(void);
 } // extern "C"
 #endif // __cplusplus
 
-#endif // __SRB2_CORE_MEMORY_H__
+#endif // SRB2_CORE_MEMORY_H

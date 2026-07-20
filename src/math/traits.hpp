@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef math_traits_hpp
-#define math_traits_hpp
+#ifndef MATH_TRAITS_HPP
+#define MATH_TRAITS_HPP
 
 #include <cmath>
 #include <type_traits>
@@ -32,4 +32,4 @@ struct Traits<T, std::enable_if_t<std::is_floating_point_v<T>>>
 
 }; // namespace srb2::math
 
-#endif/*math_traits_hpp*/
+#endif/*MATH_TRAITS_HPP*/

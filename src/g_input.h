@@ -12,8 +12,8 @@
 /// \brief handle mouse/keyboard/joystick inputs,
 ///        maps inputs to game controls (forward, spin, jump...)
 
-#ifndef __G_INPUT__
-#define __G_INPUT__
+#ifndef G_INPUT_H
+#define G_INPUT_H
 
 #include "d_event.h"
 #include "keys.h"

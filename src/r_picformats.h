@@ -13,8 +13,8 @@
 /// \file  r_picformats.h
 /// \brief Patch generation.
 
-#ifndef __R_PICFORMATS__
-#define __R_PICFORMATS__
+#ifndef R_PICFORMATS_H
+#define R_PICFORMATS_H
 
 #include "r_defs.h"
 #include "doomdef.h"
@@ -139,4 +139,4 @@ void R_ParseSPRTINFOLump(UINT16 wadNum, UINT16 lumpNum);
 } // extern "C"
 #endif
 
-#endif // __R_PICFORMATS__
+#endif // R_PICFORMATS_H

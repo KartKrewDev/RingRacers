@@ -12,8 +12,8 @@
 /// \file  mserv.h
 /// \brief Header file for the master server routines
 
-#ifndef _MSERV_H_
-#define _MSERV_H_
+#ifndef MSERV_H
+#define MSERV_H
 
 #include "i_threads.h"
 

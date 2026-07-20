@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef mobj_list_hpp
-#define mobj_list_hpp
+#ifndef MOBJ_LIST_HPP
+#define MOBJ_LIST_HPP
 
 #include <type_traits>
 
@@ -92,4 +92,4 @@ private:
 
 }; // namespace srb2
 
-#endif/*mobj_list_hpp*/
+#endif/*MOBJ_LIST_HPP*/

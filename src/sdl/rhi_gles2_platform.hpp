@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
-#define __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
+#ifndef SRB2_SDL_RHI_GLES2_PLATFORM_HPP
+#define SRB2_SDL_RHI_GLES2_PLATFORM_HPP
 
 #include "../rhi/gles2/gles2_rhi.hpp"
 #include "../rhi/rhi.hpp"
@@ -32,4 +32,4 @@ struct SdlGles2Platform final : public Gles2Platform
 
 } // namespace srb2::rhi
 
-#endif // __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
+#endif // SRB2_SDL_RHI_GLES2_PLATFORM_HPP

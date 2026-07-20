@@ -11,8 +11,8 @@
 /// \file  p_slopes.c
 /// \brief ZDoom + Eternity Engine Slopes, ported and enhanced by Kalaron
 
-#ifndef P_SLOPES_H__
-#define P_SLOPES_H__
+#ifndef P_SLOPES_H
+#define P_SLOPES_H
 
 #include "m_fixed.h" // Vectors
 

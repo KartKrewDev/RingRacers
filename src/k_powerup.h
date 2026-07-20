@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __K_POWERUP__
-#define __K_POWERUP__
+#ifndef K_POWERUP_H
+#define K_POWERUP_H
 
 #include "doomtype.h"
 #include "d_player.h"
@@ -29,4 +29,4 @@ void K_DropPowerUps(player_t *player);
 } // extern "C"
 #endif
 
-#endif // __K_POWERUP__
+#endif // K_POWERUP_H

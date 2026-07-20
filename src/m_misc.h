@@ -13,8 +13,8 @@
 /// \brief Commonly used routines
 ///        Default config file, PCX screenshots, file i/o
 
-#ifndef __M_MISC__
-#define __M_MISC__
+#ifndef M_MISC_H
+#define M_MISC_H
 
 #include "doomtype.h"
 #include "tables.h"

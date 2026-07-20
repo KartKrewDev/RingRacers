@@ -13,8 +13,8 @@
 /// \file  k_menu.h
 /// \brief Menu widget stuff, selection and such
 
-#ifndef __K_MENU__
-#define __K_MENU__
+#ifndef K_MENU_H
+#define K_MENU_H
 
 #include "d_event.h"
 #include "command.h"
@@ -1656,4 +1656,4 @@ constexpr inline itemaction_t itemaction(void (*routine)(INT32 choice))
 }
 #endif
 
-#endif //__K_MENU__
+#endif //K_MENU_H

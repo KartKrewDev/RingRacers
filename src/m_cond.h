@@ -12,8 +12,8 @@
 /// \file  m_cond.h
 /// \brief Challenges internals
 
-#ifndef __M_COND_H__
-#define __M_COND_H__
+#ifndef M_COND_H
+#define M_COND_H
 
 #include "doomdef.h"
 
@@ -508,4 +508,4 @@ INT32 M_GameDataGameType(INT32 gametype, boolean battleprisons);
 } // extern "C"
 #endif
 
-#endif // __M_COND_H__
+#endif // M_COND_H

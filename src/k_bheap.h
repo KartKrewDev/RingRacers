@@ -10,8 +10,8 @@
 /// \file  k_bheap.h
 /// \brief Binary Heap implementation for SRB2 code base.
 
-#ifndef __K_BHEAP__
-#define __K_BHEAP__
+#ifndef K_BHEAP_H
+#define K_BHEAP_H
 
 #include "doomdef.h"
 

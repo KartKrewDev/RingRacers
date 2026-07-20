@@ -11,8 +11,8 @@
 /// \file
 /// \brief Tool for dynamic referencing of hardware rendering/3D sound functions
 
-#ifndef __SDL_HWSYM_SDL_H__
-#define __SDL_HWSYM_SDL_H__
+#ifndef SDL_HWSYM_SDL_H
+#define SDL_HWSYM_SDL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,4 +28,4 @@ void hwClose(void *handle);
 } // extern "C"
 #endif
 
-#endif // __SDL_HWSYM_SDL_H__
+#endif // SDL_HWSYM_SDL_H

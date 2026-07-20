@@ -12,8 +12,8 @@
 /// \brief Movable segs like in Hexen, but more flexible
 ///        due to application of dynamic binary space partitioning theory.
 
-#ifndef POLYOBJ_H__
-#define POLYOBJ_H__
+#ifndef POLYOBJ_H
+#define POLYOBJ_H
 
 #include "m_dllist.h"
 #include "p_mobj.h"

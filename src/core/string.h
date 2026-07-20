@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef SRB2_CORE_STRING_HPP
-#define SRB2_CORE_STRING_HPP
+#ifndef SRB2_CORE_STRING_H
+#define SRB2_CORE_STRING_H
 
 #ifdef __cplusplus
 
@@ -443,4 +443,4 @@ uint32_t Str_NextCodepointFromUTF8(const char** itr);
 } // extern "C"
 #endif
 
-#endif // SRB2_CORE_STRING_HPP
+#endif // SRB2_CORE_STRING_H

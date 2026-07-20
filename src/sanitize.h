@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef sanitize_h
-#define sanitize_h
+#ifndef SANITIZE_H
+#define SANITIZE_H
 
 #include "doomtype.h"
 
@@ -54,4 +54,4 @@ INT32 M_DrawCaretString(INT32 x, INT32 y, const char *string, boolean preserve);
 } // extern "C"
 #endif
 
-#endif // sanitize_h
+#endif // SANITIZE_H

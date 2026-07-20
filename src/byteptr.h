@@ -12,8 +12,8 @@
 /// \brief Macros to read/write from/to a UINT8 *,
 ///        used for packet creation and such
 
-#ifndef __BYTEPTR_H__
-#define __BYTEPTR_H__
+#ifndef BYTEPTR_H
+#define BYTEPTR_H
 
 #if defined (__alpha__) || defined (__arm__) || defined (__mips__) || defined (__ia64__) || defined (__clang__)
 #define DEALIGNED
@@ -227,4 +227,4 @@ FUNCINLINE static ATTRINLINE UINT32 readulong(void *ptr)
 } // extern "C"
 #endif
 
-#endif // __BYTEPTR_H__
+#endif // BYTEPTR_H

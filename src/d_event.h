@@ -12,8 +12,8 @@
 /// \file  d_event.h
 /// \brief Event handling
 
-#ifndef __D_EVENT__
-#define __D_EVENT__
+#ifndef D_EVENT_H
+#define D_EVENT_H
 
 #include "doomtype.h"
 #include "g_state.h"

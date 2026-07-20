@@ -10,8 +10,8 @@
 /// \file  p_deepcopy.h
 /// \brief Methods for deep copying
 
-#ifndef __P_DEEPCOPY__
-#define __P_DEEPCOPY__
+#ifndef P_DEEPCOPY_H
+#define P_DEEPCOPY_H
 
 #include "doomdef.h"
 
@@ -128,4 +128,4 @@ void P_DeepCopySides(side_t **target_array, side_t **source_array, size_t source
 } // extern "C"
 #endif
 
-#endif // __P_DEEPCOPY__
+#endif // P_DEEPCOPY_H

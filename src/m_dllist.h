@@ -23,8 +23,8 @@
 // pass it to these routines. You are responsible for defining the
 // pointer used as the head of the list.
 
-#ifndef M_DLLIST_H__
-#define M_DLLIST_H__
+#ifndef M_DLLIST_H
+#define M_DLLIST_H
 
 #ifdef __cplusplus
 extern "C" {

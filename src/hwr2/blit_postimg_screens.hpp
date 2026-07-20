@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_PASS_BLIT_POSTIMG_SCREENS__
-#define __SRB2_HWR2_PASS_BLIT_POSTIMG_SCREENS__
+#ifndef SRB2_HWR2_PASS_BLIT_POSTIMG_SCREENS_HPP
+#define SRB2_HWR2_PASS_BLIT_POSTIMG_SCREENS_HPP
 
 #include <array>
 #include <cstdint>
@@ -92,4 +92,4 @@ public:
 
 }; // namespace srb2::hwr2
 
-#endif // __SRB2_HWR2_PASS_BLIT_POSTIMG_SCREENS__
+#endif // SRB2_HWR2_PASS_BLIT_POSTIMG_SCREENS_HPP

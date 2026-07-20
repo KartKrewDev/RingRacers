@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __M_AVRECORDER_HPP__
-#define __M_AVRECORDER_HPP__
+#ifndef M_AVRECORDER_HPP
+#define M_AVRECORDER_HPP
 
 #include <memory> // shared_ptr
 
@@ -17,4 +17,4 @@
 
 extern std::shared_ptr<srb2::media::AVRecorder> g_av_recorder;
 
-#endif // __M_AVRECORDER_HPP__
+#endif // M_AVRECORDER_HPP

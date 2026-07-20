@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_CFILE_HPP__
-#define __SRB2_MEDIA_CFILE_HPP__
+#ifndef SRB2_MEDIA_CFILE_HPP
+#define SRB2_MEDIA_CFILE_HPP
 
 #include <cstdio>
 
@@ -35,4 +35,4 @@ private:
 
 }; // namespace srb2::media
 
-#endif // __SRB2_MEDIA_CFILE_HPP__
+#endif // SRB2_MEDIA_CFILE_HPP

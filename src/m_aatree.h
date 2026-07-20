@@ -12,8 +12,8 @@
 /// \file  m_aatree.h
 /// \brief AA trees code
 
-#ifndef __M_AATREE__
-#define __M_AATREE__
+#ifndef M_AATREE_H
+#define M_AATREE_H
 
 #include "doomtype.h"
 

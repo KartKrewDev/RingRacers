@@ -12,8 +12,8 @@
 /// \file  filesrch.h
 /// \brief Support to find files
 
-#ifndef __FILESRCH_H__
-#define __FILESRCH_H__
+#ifndef FILESRCH_H
+#define FILESRCH_H
 
 #include "doomdef.h"
 #include "d_netfil.h"
@@ -113,4 +113,4 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut);
 } // extern "C"
 #endif
 
-#endif // __FILESRCH_H__
+#endif // FILESRCH_H

@@ -12,8 +12,8 @@
 /// \file  g_game.h
 /// \brief Game loop, events handling.
 
-#ifndef __G_GAME__
-#define __G_GAME__
+#ifndef G_GAME_H
+#define G_GAME_H
 
 #include "doomdef.h"
 #include "doomstat.h"

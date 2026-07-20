@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef archive_wrapper_hpp
-#define archive_wrapper_hpp
+#ifndef ARCHIVE_WRAPPER_HPP
+#define ARCHIVE_WRAPPER_HPP
 
 #include <type_traits>
 
@@ -131,4 +131,4 @@ inline constexpr bool is_archive_wrapper_v = is_archive_wrapper<T>::value;
 
 }; // namespace
 
-#endif/*archive_wrapper_hpp*/
+#endif/*ARCHIVE_WRAPPER_HPP*/

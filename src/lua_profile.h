@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef lua_profile_h
-#define lua_profile_h
+#ifndef LUA_PROFILE_H
+#define LUA_PROFILE_H
 
 #include "blua/lua.h"
 #include "doomtype.h"
@@ -32,4 +32,4 @@ void LUA_RenderTimers(void);
 } // extern "C"
 #endif
 
-#endif/*lua_profile_h*/
+#endif/*LUA_PROFILE_H*/

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_AVRECORDER_HPP__
-#define __SRB2_MEDIA_AVRECORDER_HPP__
+#ifndef SRB2_MEDIA_AVRECORDER_HPP
+#define SRB2_MEDIA_AVRECORDER_HPP
 
 #include <array>
 #include <chrono>
@@ -104,5 +104,5 @@ private:
 
 }; // namespace srb2::media
 
-#endif // __SRB2_MEDIA_AVRECORDER_HPP__
+#endif // SRB2_MEDIA_AVRECORDER_HPP
 

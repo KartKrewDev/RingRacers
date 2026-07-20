@@ -12,8 +12,8 @@
 /// \file  s_sound.h
 /// \brief The not so system specific sound interface
 
-#ifndef __S_SOUND__
-#define __S_SOUND__
+#ifndef S_SOUND_H
+#define S_SOUND_H
 
 #include "sounds.h"
 #include "m_fixed.h"

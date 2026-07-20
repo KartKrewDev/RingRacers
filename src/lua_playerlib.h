@@ -11,8 +11,8 @@
 /// \file  lua_playerlib.h
 /// \brief LUA Player library header.
 
-#ifndef __LUA_PLAYER_H__
-#define __LUA_PLAYER_H__
+#ifndef LUA_PLAYER_H
+#define LUA_PLAYER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,4 +24,4 @@ extern boolean constplayer;
 } // extern "C"
 #endif
 
-#endif // __LUA_PLAYER_H__
+#endif // LUA_PLAYER_H

@@ -12,8 +12,8 @@
 /// \file  r_portal.h
 /// \brief Software renderer portal struct, functions, linked list extern.
 
-#ifndef __R_PORTAL__
-#define __R_PORTAL__
+#ifndef R_PORTAL_H
+#define R_PORTAL_H
 
 #include "r_data.h"
 #include "r_textures.h"

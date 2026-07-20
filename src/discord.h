@@ -10,8 +10,8 @@
 /// \file  discord.h
 /// \brief Discord Rich Presence handling
 
-#ifndef __DISCORD__
-#define __DISCORD__
+#ifndef DISCORD_H
+#define DISCORD_H
 
 #ifdef HAVE_DISCORDRPC
 
@@ -99,4 +99,4 @@ void DRPC_UpdatePresence(void);
 } // extern "C"
 #endif
 
-#endif // __DISCORD__
+#endif // DISCORD_H

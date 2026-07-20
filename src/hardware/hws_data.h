@@ -10,8 +10,8 @@
 /// \file hws_data.h
 /// \brief 3D sound definitions
 
-#ifndef __HWS_DATA_H__
-#define __HWS_DATA_H__
+#ifndef HWS_DATA_H
+#define HWS_DATA_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -122,4 +122,4 @@ typedef struct snddev_s
 } // extern "C"
 #endif
 
-#endif //__HWS_DATA_H__
+#endif //HWS_DATA_H

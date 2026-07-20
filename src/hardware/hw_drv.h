@@ -11,8 +11,8 @@
 /// \file hw_drv.h
 /// \brief imports/exports for the 3D hardware low-level interface API
 
-#ifndef __HWR_DRV_H__
-#define __HWR_DRV_H__
+#ifndef HWR_DRV_H
+#define HWR_DRV_H
 
 // this must be here 19991024 by Kin
 #include "../screen.h"
@@ -140,4 +140,4 @@ extern struct hwdriver_s hwdriver;
 } // extern "C"
 #endif
 
-#endif //__HWR_DRV_H__
+#endif //HWR_DRV_H

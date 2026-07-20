@@ -12,8 +12,8 @@
 /// \file  info.h
 /// \brief Thing frame/state LUT
 
-#ifndef __INFO__
-#define __INFO__
+#ifndef INFO_H
+#define INFO_H
 
 // Needed for action function pointer handling.
 #include "d_think.h"

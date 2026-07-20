@@ -15,8 +15,8 @@
 // that the HUD hooks from Lua are called at precisely 35hz to avoid problems
 // with variable framerates in existing Lua addons.
 
-#ifndef __LUA_HUDLIB_DRAWLIST__
-#define __LUA_HUDLIB_DRAWLIST__
+#ifndef LUA_HUDLIB_DRAWLIST_H
+#define LUA_HUDLIB_DRAWLIST_H
 
 #include "doomtype.h"
 #include "r_defs.h"
@@ -141,4 +141,4 @@ void LUA_HUD_DrawList(huddrawlist_h list);
 } // extern "C"
 #endif 
 
-#endif // __LUA_HUDLIB_DRAWLIST__
+#endif // LUA_HUDLIB_DRAWLIST_H

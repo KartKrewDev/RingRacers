@@ -10,8 +10,8 @@
 /// \file  r_debug_detail.cpp
 /// \brief Software renderer debugging, internal header
 
-#ifndef __R_DEBUG_DETAIL__
-#define __R_DEBUG_DETAIL__
+#ifndef R_DEBUG_DETAIL_HPP
+#define R_DEBUG_DETAIL_HPP
 
 #include "r_main.h"
 
@@ -40,4 +40,4 @@ void highlight_help(bool only_on);
 
 }; // srb2::r_debug::detail
 
-#endif // __R_DEBUG_DETAIL__
+#endif // R_DEBUG_DETAIL_HPP

@@ -12,8 +12,8 @@
 /// \file  m_argv.h
 /// \brief Command line arguments
 
-#ifndef __M_ARGV__
-#define __M_ARGV__
+#ifndef M_ARGV_H
+#define M_ARGV_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,4 +48,4 @@ void M_FindResponseFile(void);
 } // extern "C"
 #endif
 
-#endif //__M_ARGV__
+#endif //M_ARGV_H

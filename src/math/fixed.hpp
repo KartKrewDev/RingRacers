@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef math_fixed_hpp
-#define math_fixed_hpp
+#ifndef MATH_FIXED_HPP
+#define MATH_FIXED_HPP
 
 #include <type_traits>
 
@@ -105,4 +105,4 @@ struct Traits<Fixed>
 
 }; // namespace srb2::math
 
-#endif/*math_fixed_hpp*/
+#endif/*MATH_FIXED_HPP*/

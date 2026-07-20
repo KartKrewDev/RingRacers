@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef mobj_hpp
-#define mobj_hpp
+#ifndef MOBJ_HPP
+#define MOBJ_HPP
 
 #include <optional>
 
@@ -293,4 +293,4 @@ struct Mobj : mobj_t
 
 }; // namespace srb2
 
-#endif/*mobj_hpp*/
+#endif/*MOBJ_HPP*/

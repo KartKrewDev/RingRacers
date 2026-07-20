@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_SDL_RHI_GL2_PLATFORM_HPP__
-#define __SRB2_SDL_RHI_GL2_PLATFORM_HPP__
+#ifndef SRB2_SDL_RHI_GL2_PLATFORM_HPP
+#define SRB2_SDL_RHI_GL2_PLATFORM_HPP
 
 #include <tuple>
 
@@ -37,4 +37,4 @@ struct SdlGl2Platform final : public Gl2Platform
 
 } // namespace srb2::rhi
 
-#endif // __SRB2_SDL_RHI_GL2_PLATFORM_HPP__
+#endif // SRB2_SDL_RHI_GL2_PLATFORM_HPP

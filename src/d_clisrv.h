@@ -11,8 +11,8 @@
 /// \file  d_clisrv.h
 /// \brief high level networking stuff
 
-#ifndef __D_CLISRV__
-#define __D_CLISRV__
+#ifndef D_CLISRV_H
+#define D_CLISRV_H
 
 #include "d_ticcmd.h"
 #include "d_net.h"

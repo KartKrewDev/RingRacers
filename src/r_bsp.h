@@ -12,8 +12,8 @@
 /// \file  r_bsp.h
 /// \brief Refresh module, BSP traversal and handling
 
-#ifndef __R_BSP__
-#define __R_BSP__
+#ifndef R_BSP_H
+#define R_BSP_H
 
 #include "typedef.h"
 

@@ -12,8 +12,8 @@
 /// \file  r_defs.h
 /// \brief Refresh/rendering module, shared data struct definitions
 
-#ifndef __R_DEFS__
-#define __R_DEFS__
+#ifndef R_DEFS_H
+#define R_DEFS_H
 
 // Some more or less basic data types we depend on.
 #include "m_fixed.h"

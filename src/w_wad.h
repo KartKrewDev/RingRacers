@@ -12,8 +12,8 @@
 /// \file  w_wad.h
 /// \brief WAD I/O functions, wad resource definitions (some)
 
-#ifndef __W_WAD__
-#define __W_WAD__
+#ifndef W_WAD_H
+#define W_WAD_H
 
 #ifdef HWRENDER
 #include "hardware/hw_data.h"
@@ -239,4 +239,4 @@ boolean W_ReadShader(const char *filename, size_t *size, void *dest);
 } // extern "C"
 #endif
 
-#endif // __W_WAD__
+#endif // W_WAD_H

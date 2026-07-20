@@ -12,8 +12,8 @@
 /// \brief 3D Model Handling
 ///	Inspired from md2.h by Mete Ciragan (mete@swissquake.ch)
 
-#ifndef _HW_MD2_H_
-#define _HW_MD2_H_
+#ifndef HW_MD2_H
+#define HW_MD2_H
 
 #include "hw_glob.h"
 #include "hw_model.h"
@@ -55,4 +55,4 @@ boolean HWR_DrawModel(gl_vissprite_t *spr);
 } // extern "C"
 #endif
 
-#endif // _HW_MD2_H_
+#endif // HW_MD2_H

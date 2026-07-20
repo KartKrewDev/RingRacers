@@ -12,8 +12,8 @@
 /// \file  i_sound.h
 /// \brief System interface, sound, music
 
-#ifndef __I_SOUND__
-#define __I_SOUND__
+#ifndef I_SOUND_H
+#define I_SOUND_H
 
 #include "doomdef.h"
 #include "sounds.h"

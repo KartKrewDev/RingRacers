@@ -10,8 +10,8 @@
 /// \file  k_rank.h
 /// \brief Grand Prix mode ranking
 
-#ifndef __K_RANK__
-#define __K_RANK__
+#ifndef K_RANK_H
+#define K_RANK_H
 
 #include "doomdef.h"
 #include "doomstat.h"

@@ -13,8 +13,8 @@
 /* NOTE: The canonical source of this file is maintained with the GNU C
    Library.  Bugs can be reported to bug-glibc@prep.ai.mit.edu. */
 
-#ifndef _MD5_H
-#define _MD5_H 1
+#ifndef MD5_H
+#define MD5_H 1
 
 #include <stdio.h>
 

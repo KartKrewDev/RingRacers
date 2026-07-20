@@ -12,8 +12,8 @@
 /// \file  r_textures.h
 /// \brief Texture generation.
 
-#ifndef __R_TEXTURES__
-#define __R_TEXTURES__
+#ifndef R_TEXTURES_H
+#define R_TEXTURES_H
 
 #include "r_defs.h"
 #include "r_state.h"

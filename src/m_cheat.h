@@ -12,8 +12,8 @@
 /// \file  m_cheat.h
 /// \brief Cheat code checking
 
-#ifndef __M_CHEAT__
-#define __M_CHEAT__
+#ifndef M_CHEAT_H
+#define M_CHEAT_H
 
 #include "d_event.h"
 #include "d_player.h"

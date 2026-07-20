@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef math_line_equation_hpp
-#define math_line_equation_hpp
+#ifndef MATH_LINE_EQUATION_HPP
+#define MATH_LINE_EQUATION_HPP
 
 #include "fixed.hpp"
 #include "line_segment.hpp"
@@ -100,4 +100,4 @@ protected:
 
 }; // namespace srb2::math
 
-#endif/*math_line_equation_hpp*/
+#endif/*MATH_LINE_EQUATION_HPP*/

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef objects_broly_hpp
-#define objects_broly_hpp
+#ifndef OBJECTS_BROLY_HPP
+#define OBJECTS_BROLY_HPP
 
 #include <type_traits>
 
@@ -94,4 +94,4 @@ struct Broly : Mobj
 
 }; // namespace srb2::objects
 
-#endif/*objects_broly_hpp*/
+#endif/*OBJECTS_BROLY_HPP*/

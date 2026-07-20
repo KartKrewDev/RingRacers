@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_SOUND_EFFECT_PLAYER_HPP__
-#define __SRB2_AUDIO_SOUND_EFFECT_PLAYER_HPP__
+#ifndef SRB2_AUDIO_SOUND_EFFECT_PLAYER_HPP
+#define SRB2_AUDIO_SOUND_EFFECT_PLAYER_HPP
 
 #include <cstddef>
 #include <span>
@@ -45,5 +45,5 @@ private:
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_SOUND_EFFECT_PLAYER_HPP__
+#endif // SRB2_AUDIO_SOUND_EFFECT_PLAYER_HPP
 

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_ENCODER_HPP__
-#define __SRB2_MEDIA_ENCODER_HPP__
+#ifndef SRB2_MEDIA_ENCODER_HPP
+#define SRB2_MEDIA_ENCODER_HPP
 
 #include <chrono>
 #include <cstddef>
@@ -48,5 +48,5 @@ protected:
 
 }; // namespace srb2::media
 
-#endif // __SRB2_MEDIA_ENCODER_HPP__
+#endif // SRB2_MEDIA_ENCODER_HPP
 

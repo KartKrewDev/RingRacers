@@ -12,8 +12,8 @@
 /// \file  i_net.h
 /// \brief System specific network interface stuff.
 
-#ifndef __I_NET__
-#define __I_NET__
+#ifndef I_NET_H
+#define I_NET_H
 
 #include "doomdef.h"
 #include "command.h"

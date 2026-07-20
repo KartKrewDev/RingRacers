@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_WEBM_HPP__
-#define __SRB2_MEDIA_WEBM_HPP__
+#ifndef SRB2_MEDIA_WEBM_HPP
+#define SRB2_MEDIA_WEBM_HPP
 
 #include <chrono>
 #include <cstdint>
@@ -24,4 +24,4 @@ using duration = std::chrono::duration<timestamp, std::nano>;
 
 }; // namespace srb2::media::webm
 
-#endif // __SRB2_MEDIA_WEBM_HPP__
+#endif // SRB2_MEDIA_WEBM_HPP

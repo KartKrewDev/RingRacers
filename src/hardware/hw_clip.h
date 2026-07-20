@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef __HARDWARE_HW_CLIP_H__
-#define __HARDWARE_HW_CLIP_H__
+#ifndef HARDWARE_HW_CLIP_H
+#define HARDWARE_HW_CLIP_H
 
 // OpenGL BSP clipping
 #include "../doomdef.h"
@@ -44,4 +44,4 @@ boolean gld_SphereInFrustum(float x, float y, float z, float radius);
 } // extern "C"
 #endif
 
-#endif // __HARDWARE_HW_CLIP_H__
+#endif // HARDWARE_HW_CLIP_H

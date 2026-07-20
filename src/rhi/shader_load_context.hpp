@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_RHI_SHADER_LOAD_CONTEXT_HPP__
-#define __SRB2_RHI_SHADER_LOAD_CONTEXT_HPP__
+#ifndef SRB2_RHI_SHADER_LOAD_CONTEXT_HPP
+#define SRB2_RHI_SHADER_LOAD_CONTEXT_HPP
 
 #include <string_view>
 
@@ -39,4 +39,4 @@ public:
 
 }; // namespace srb2::rhi
 
-#endif // __SRB2_RHI_SHADER_LOAD_CONTEXT_HPP__
+#endif // SRB2_RHI_SHADER_LOAD_CONTEXT_HPP

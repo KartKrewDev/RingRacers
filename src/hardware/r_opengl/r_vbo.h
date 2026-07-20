@@ -17,8 +17,8 @@
 	Sonic Robo Blast 2.
 */
 
-#ifndef _R_VBO_H_
-#define _R_VBO_H_
+#ifndef R_VBO_H
+#define R_VBO_H
 
 #ifdef __cplusplus
 extern "C" {

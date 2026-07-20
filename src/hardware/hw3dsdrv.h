@@ -11,8 +11,8 @@
 /// \file hw3dsdrv.h
 /// \brief 3D sound import/export prototypes for low-level hardware interface
 
-#ifndef __HW_3DS_DRV_H__
-#define __HW_3DS_DRV_H__
+#ifndef HW_3DS_DRV_H
+#define HW_3DS_DRV_H
 
 // Use standart hardware API
 #include "hw_dll.h"
@@ -84,4 +84,4 @@ extern struct hardware3ds_s hw3ds_driver;
 } // extern "C"
 #endif
 
-#endif // __HW_3DS_DRV_H__
+#endif // HW_3DS_DRV_H

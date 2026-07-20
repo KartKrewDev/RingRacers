@@ -1,6 +1,6 @@
 /* vi: set ft=c expandtab shiftwidth=4 tabstop=4: */
-#ifndef MODP_STDINT_H_
-#define MODP_STDINT_H_
+#ifndef MODP_STDINT_H
+#define MODP_STDINT_H
 
 /**
  * \file modp_stdint.h
@@ -40,4 +40,4 @@ typedef unsigned char bool;
 #endif
 
 #endif /* _WIN32 */
-#endif /* MODP_STDINT_H_ */
+#endif /* MODP_STDINT_H */

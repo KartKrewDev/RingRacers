@@ -11,8 +11,8 @@
 /// \file  k_profiles.h
 /// \brief Control profiles definition
 
-#ifndef __PROFILES_H__
-#define __PROFILES_H__
+#ifndef PROFILES_H
+#define PROFILES_H
 
 #include "doomdef.h"		// MAXPLAYERNAME
 //#include "r_skins.h"		// SKINNAMESIZE	// This cuases stupid issues.

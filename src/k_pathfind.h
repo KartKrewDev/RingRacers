@@ -10,8 +10,8 @@
 /// \file  k_pathfind.h
 /// \brief A* Pathfinding algorithm implementation for SRB2 code base.
 
-#ifndef __K_PATHFIND__
-#define __K_PATHFIND__
+#ifndef K_PATHFIND_H
+#define K_PATHFIND_H
 
 #include "doomtype.h"
 

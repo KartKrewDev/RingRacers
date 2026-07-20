@@ -11,8 +11,8 @@
 /// \brief Waypoint handling from the relevant mobjs
 ///        Setup and interfacing with waypoints for the main game
 
-#ifndef __K_WAYPOINT__
-#define __K_WAYPOINT__
+#ifndef K_WAYPOINT_H
+#define K_WAYPOINT_H
 
 #include "doomtype.h"
 #include "p_mobj.h"

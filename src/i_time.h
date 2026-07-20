@@ -12,8 +12,8 @@
 /// \file  i_time.h
 /// \brief Timing for the system layer.
 
-#ifndef __I_TIME_H__
-#define __I_TIME_H__
+#ifndef I_TIME_H
+#define I_TIME_H
 
 #include "command.h"
 #include "doomtype.h"
@@ -53,4 +53,4 @@ void I_SleepDuration(precise_t duration);
 } // extern "C"
 #endif
 
-#endif // __I_TIME_H__
+#endif // I_TIME_H

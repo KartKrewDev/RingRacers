@@ -12,8 +12,8 @@
 /// \file  r_draw.h
 /// \brief Low-level span/column drawer functions
 
-#ifndef __R_DRAW__
-#define __R_DRAW__
+#ifndef R_DRAW_H
+#define R_DRAW_H
 
 #include "r_defs.h"
 
@@ -293,4 +293,4 @@ void R_DrawTiltedSpan_Flat(drawspandata_t* ds);
 #endif // __cplusplus
 
 // =========================================================================
-#endif  // __R_DRAW__
+#endif  // R_DRAW_H

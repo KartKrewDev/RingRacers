@@ -10,8 +10,8 @@
 /// \file  k_specialstage.h
 /// \brief Special Stage game logic
 
-#ifndef __K_SPECIALSTAGE__
-#define __K_SPECIALSTAGE__
+#ifndef K_SPECIALSTAGE_H
+#define K_SPECIALSTAGE_H
 
 #include "doomdef.h"
 #include "doomstat.h"

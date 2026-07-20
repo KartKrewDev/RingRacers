@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_SAMPLE_HPP__
-#define __SRB2_AUDIO_SAMPLE_HPP__
+#ifndef SRB2_AUDIO_SAMPLE_HPP
+#define SRB2_AUDIO_SAMPLE_HPP
 
 #include <array>
 #include <cstddef>
@@ -92,4 +92,4 @@ constexpr float sample_to_float<int16_t>(int16_t sample) noexcept
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_SAMPLE_HPP__
+#endif // SRB2_AUDIO_SAMPLE_HPP

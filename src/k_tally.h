@@ -10,8 +10,8 @@
 /// \file  k_tally.h
 /// \brief End of level tally screen animations
 
-#ifndef __K_TALLY_H__
-#define __K_TALLY_H__
+#ifndef K_TALLY_H
+#define K_TALLY_H
 
 #include "typedef.h"
 #include "doomtype.h"
@@ -128,4 +128,4 @@ tic_t K_TallyDelay(void);
 } // extern "C"
 #endif
 
-#endif // __K_TALLY_H__
+#endif // K_TALLY_H

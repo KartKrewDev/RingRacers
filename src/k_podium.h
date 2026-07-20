@@ -10,8 +10,8 @@
 /// \file  k_podium.h
 /// \brief Grand Prix podium cutscene
 
-#ifndef __K_PODIUM__
-#define __K_PODIUM__
+#ifndef K_PODIUM_H
+#define K_PODIUM_H
 
 #include "doomtype.h"
 #include "doomstat.h" // gp_rank_e
@@ -204,4 +204,4 @@ void K_CeremonyDrawer(void);
 } // extern "C"
 #endif
 
-#endif // __K_PODIUM__
+#endif // K_PODIUM_H

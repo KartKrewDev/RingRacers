@@ -12,8 +12,8 @@
 /// \file  r_local.h
 /// \brief Refresh (R_*) module, global header. All the rendering/drawing stuff is here
 
-#ifndef __R_LOCAL__
-#define __R_LOCAL__
+#ifndef R_LOCAL_H
+#define R_LOCAL_H
 
 // Screen size related parameters.
 #include "doomdef.h"
@@ -48,4 +48,4 @@ void SplitScreen_OnChange(void);
 } // extern "C"
 #endif
 
-#endif // __R_LOCAL__
+#endif // R_LOCAL_H

@@ -10,8 +10,8 @@
 /// \file  k_respawn.h
 /// \brief Respawning logic
 
-#ifndef __K_RESPAWN__
-#define __K_RESPAWN__
+#ifndef K_RESPAWN_H
+#define K_RESPAWN_H
 
 #include "k_waypoint.h"
 #include "d_player.h"

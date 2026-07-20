@@ -11,8 +11,8 @@
 /// \file  m_easing.h
 /// \brief Easing functions
 
-#ifndef __M_EASING_H__
-#define __M_EASING_H__
+#ifndef M_EASING_H
+#define M_EASING_H
 
 #include "doomtype.h"
 #include "m_fixed.h"

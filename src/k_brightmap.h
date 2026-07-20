@@ -10,8 +10,8 @@
 /// \file  k_brightmap.h
 /// \brief Brightmap texture loading.
 
-#ifndef __K_BRIGHTMAP_H__
-#define __K_BRIGHTMAP_H__
+#ifndef K_BRIGHTMAP_H
+#define K_BRIGHTMAP_H
 
 #include "doomdata.h"
 #include "doomdef.h"
@@ -54,4 +54,4 @@ void K_InitBrightmaps(void);
 } // extern "C"
 #endif
 
-#endif // __K_BRIGHTMAP_H__
+#endif // K_BRIGHTMAP_H

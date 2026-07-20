@@ -12,8 +12,8 @@
 /// \file  g_state.h
 /// \brief SRB2 game states
 
-#ifndef __G_STATE__
-#define __G_STATE__
+#ifndef G_STATE_H
+#define G_STATE_H
 
 #include "doomtype.h"
 
@@ -70,4 +70,4 @@ boolean G_GamestateUsesLevel(void);
 } // extern "C"
 #endif
 
-#endif //__G_STATE__
+#endif //G_STATE_H

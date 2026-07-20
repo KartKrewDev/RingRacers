@@ -11,8 +11,8 @@
 /// \file  deh_lua.h
 /// \brief Lua SOC library
 
-#ifndef __DEH_LUA_H__
-#define __DEH_LUA_H__
+#ifndef DEH_LUA_H
+#define DEH_LUA_H
 
 #ifdef __cplusplus
 extern "C" {

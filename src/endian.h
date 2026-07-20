@@ -10,8 +10,8 @@
 /// \file  endian.h
 /// \brief Endian detection
 
-#ifndef __ENDIAN__
-#define __ENDIAN__
+#ifndef ENDIAN_H
+#define ENDIAN_H
 
 #if defined(SRB2_BIG_ENDIAN) || defined(SRB2_LITTLE_ENDIAN)
   // defined externally
@@ -43,4 +43,4 @@
   #endif
 #endif
 
-#endif //__ENDIAN__
+#endif //ENDIAN_H

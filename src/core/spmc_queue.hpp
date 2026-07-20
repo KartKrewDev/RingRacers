@@ -10,8 +10,8 @@
 
 // The original version was for C++23. This one has been shrunk slightly and adapted to our conventions.
 
-#ifndef __SRB2_CORE_SPMC_QUEUE_HPP__
-#define __SRB2_CORE_SPMC_QUEUE_HPP__
+#ifndef SRB2_CORE_SPMC_QUEUE_HPP
+#define SRB2_CORE_SPMC_QUEUE_HPP
 
 #include <array>
 #include <atomic>
@@ -189,4 +189,4 @@ public:
 
 } // namespace srb2
 
-#endif // __SRB2_CORE_SPMC_QUEUE_HPP__
+#endif // SRB2_CORE_SPMC_QUEUE_HPP

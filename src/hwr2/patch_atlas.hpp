@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_PATCH_ATLAS_HPP__
-#define __SRB2_HWR2_PATCH_ATLAS_HPP__
+#ifndef SRB2_HWR2_PATCH_ATLAS_HPP
+#define SRB2_HWR2_PATCH_ATLAS_HPP
 
 #include <cstdint>
 #include <memory>
@@ -138,5 +138,5 @@ void convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, srb2::Vector<uint
 
 } // namespace srb2::hwr2
 
-#endif // __SRB2_HWR2_PATCH_ATLAS_HPP__
+#endif // SRB2_HWR2_PATCH_ATLAS_HPP
 

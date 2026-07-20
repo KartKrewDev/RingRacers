@@ -11,8 +11,8 @@
 /// \file  k_terrain.h
 /// \brief Implementation of a TERRAIN-style lump for DRRR, ala GZDoom's codebase.
 
-#ifndef __K_TERRAIN_H__
-#define __K_TERRAIN_H__
+#ifndef K_TERRAIN_H
+#define K_TERRAIN_H
 
 #include "doomdata.h"
 #include "doomdef.h"
@@ -617,4 +617,4 @@ boolean K_TerrainHasAffect(terrain_t *terrain, boolean badonly);
 } // extern "C"
 #endif
 
-#endif // __K_TERRAIN_H__
+#endif // K_TERRAIN_H

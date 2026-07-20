@@ -10,8 +10,8 @@
 /// \file  k_credits.h
 /// \brief Grand Prix podium cutscene
 
-#ifndef __K_CREDITS__
-#define __K_CREDITS__
+#ifndef K_CREDITS_H
+#define K_CREDITS_H
 
 #include "doomtype.h"
 #include "d_event.h"
@@ -46,4 +46,4 @@ void F_CreditDrawer(void);
 } // extern "C"
 #endif
 
-#endif // __K_CREDITS__
+#endif // K_CREDITS_H

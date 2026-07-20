@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_TWODEE_HPP__
-#define __SRB2_HWR2_TWODEE_HPP__
+#ifndef SRB2_HWR2_TWODEE_HPP
+#define SRB2_HWR2_TWODEE_HPP
 
 #include <array>
 #include <cstdint>
@@ -269,6 +269,6 @@ inline Draw2dVerticesBuilder Twodee::begin_verts() noexcept
 
 } // namespace srb2::hwr2
 
-#endif // __SRB2_HWR2_TWODEE_HPP__
+#endif // SRB2_HWR2_TWODEE_HPP
 
 

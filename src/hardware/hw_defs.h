@@ -11,8 +11,8 @@
 /// \file hw_defs.h
 /// \brief 3D hardware renderer definitions
 
-#ifndef _HWR_DEFS_
-#define _HWR_DEFS_
+#ifndef HWR_DEFS_H
+#define HWR_DEFS_H
 #include "../doomtype.h"
 #include "../r_defs.h"
 
@@ -341,4 +341,4 @@ enum hwdfiltermode
 } // extern "C"
 #endif
 
-#endif //_HWR_DEFS_
+#endif //HWR_DEFS_H

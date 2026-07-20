@@ -10,8 +10,8 @@
 /// \file  k_serverstats.h
 /// \brief serverside stat tracking definitions
 
-#ifndef __SERVERSTATS_H__
-#define __SERVERSTATS_H__
+#ifndef SERVERSTATS_H
+#define SERVERSTATS_H
 
 #include "doomdef.h"		// MAXPLAYERNAME
 #include "g_input.h"		// Input related stuff

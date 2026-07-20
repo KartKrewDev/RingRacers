@@ -12,8 +12,8 @@
 /// \file  d_main.h
 /// \brief game startup, and main loop code, system specific interface stuff.
 
-#ifndef __D_MAIN__
-#define __D_MAIN__
+#ifndef D_MAIN_H
+#define D_MAIN_H
 
 #include "k_profiles.h"	// PR_LoadProfiles()
 #include "d_event.h"
@@ -69,4 +69,4 @@ boolean D_IsDeferredStartTitle(void);
 } // extern "C"
 #endif
 
-#endif //__D_MAIN__
+#endif //D_MAIN_H

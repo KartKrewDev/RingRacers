@@ -11,8 +11,8 @@
 /// \file  deh_tables.h
 /// \brief Define DeHackEd tables.
 
-#ifndef __DEH_TABLES_H__
-#define __DEH_TABLES_H__
+#ifndef DEH_TABLES_H
+#define DEH_TABLES_H
 
 #include "doomdef.h" // Constants
 #include "d_think.h" // actionf_t

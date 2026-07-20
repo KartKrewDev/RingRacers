@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef math_vec_hpp
-#define math_vec_hpp
+#ifndef MATH_VEC_HPP
+#define MATH_VEC_HPP
 
 #include <type_traits>
 
@@ -82,4 +82,4 @@ X(/)
 
 }; // namespace srb2::math
 
-#endif/*math_vec_hpp*/
+#endif/*MATH_VEC_HPP*/

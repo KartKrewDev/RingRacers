@@ -11,8 +11,8 @@
 /// \file hw_main.h
 /// \brief 3D render mode functions
 
-#ifndef __HWR_MAIN_H__
-#define __HWR_MAIN_H__
+#ifndef HWR_MAIN_H
+#define HWR_MAIN_H
 
 #include "hw_data.h"
 #include "hw_defs.h"

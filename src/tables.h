@@ -12,8 +12,8 @@
 /// \file  tables.h
 /// \brief Lookup tables
 
-#ifndef __TABLES__
-#define __TABLES__
+#ifndef TABLES_H
+#define TABLES_H
 
 #ifdef LINUX
 #include <math.h>

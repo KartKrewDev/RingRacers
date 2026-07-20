@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_PASS_RESOURCE_MANAGERS_HPP__
-#define __SRB2_HWR2_PASS_RESOURCE_MANAGERS_HPP__
+#ifndef SRB2_HWR2_PASS_RESOURCE_MANAGERS_HPP
+#define SRB2_HWR2_PASS_RESOURCE_MANAGERS_HPP
 
 #include <array>
 #include <cstddef>
@@ -130,4 +130,4 @@ public:
 
 } // namespace srb2::hwr2
 
-#endif // __SRB2_HWR2_PASS_RESOURCE_MANAGERS_HPP__
+#endif // SRB2_HWR2_PASS_RESOURCE_MANAGERS_HPP

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __EGGTVDATA_HPP__
-#define __EGGTVDATA_HPP__
+#ifndef EGGTVDATA_HPP
+#define EGGTVDATA_HPP
 
 #include <algorithm>
 #include <chrono>
@@ -287,4 +287,4 @@ public:
 
 }; // namsepace srb2::menus::egg_tv
 
-#endif // __EGGTVDATA_HPP__
+#endif // EGGTVDATA_HPP

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef p_link_h
-#define p_link_h
+#ifndef P_LINK_H
+#define P_LINK_H
 
 #include "typedef.h"
 
@@ -25,4 +25,4 @@ void P_LoadMobjPointers(void(*callback)(mobj_t**));
 } // extern "C"
 #endif
 
-#endif/*p_link_h*/
+#endif/*P_LINK_H*/

@@ -12,8 +12,8 @@
 /// \file  r_main.h
 /// \brief Rendering variables, consvars, defines
 
-#ifndef __R_MAIN__
-#define __R_MAIN__
+#ifndef R_MAIN_H
+#define R_MAIN_H
 
 #include "d_player.h"
 #include "r_data.h"

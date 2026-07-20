@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_RHI_GL2_RHI_HPP__
-#define __SRB2_RHI_GL2_RHI_HPP__
+#ifndef SRB2_RHI_GL2_RHI_HPP
+#define SRB2_RHI_GL2_RHI_HPP
 
 #include <functional>
 #include <memory>
@@ -227,4 +227,4 @@ public:
 
 } // namespace srb2::rhi
 
-#endif // __SRB2_RHI_GL2_RHI_HPP__
+#endif // SRB2_RHI_GL2_RHI_HPP

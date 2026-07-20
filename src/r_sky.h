@@ -12,8 +12,8 @@
 /// \file  r_sky.h
 /// \brief Sky rendering
 
-#ifndef __R_SKY__
-#define __R_SKY__
+#ifndef R_SKY_H
+#define R_SKY_H
 
 #include "m_fixed.h"
 

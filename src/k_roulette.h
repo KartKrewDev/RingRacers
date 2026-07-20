@@ -10,8 +10,8 @@
 /// \file  k_roulette.h
 /// \brief Item roulette code.
 
-#ifndef __K_ROULETTE_H__
-#define __K_ROULETTE_H__
+#ifndef K_ROULETTE_H
+#define K_ROULETTE_H
 
 #include "doomtype.h"
 #include "d_player.h"
@@ -409,4 +409,4 @@ boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette);
 } // extern "C"
 #endif
 
-#endif // __K_ROULETTE_H__
+#endif // K_ROULETTE_H

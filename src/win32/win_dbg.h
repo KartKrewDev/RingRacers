@@ -11,8 +11,8 @@
 /// \file
 /// \brief exception handler
 
-#ifndef __WIN32_WIN_DBG_H__
-#define __WIN32_WIN_DBG_H__
+#ifndef WIN32_WIN_DBG_H
+#define WIN32_WIN_DBG_H
 
 //#define WIN32_LEAN_AND_MEAN
 #define RPC_NO_WINDOWS_H
@@ -69,4 +69,4 @@ void *__cdecl _exception_info(void);
 } // extern "C"
 #endif
 
-#endif // __WIN32_WIN_DBG_H__
+#endif // WIN32_WIN_DBG_H

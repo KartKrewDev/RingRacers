@@ -11,8 +11,8 @@
 /// \file  r_patch.h
 /// \brief Patch generation.
 
-#ifndef __R_PATCH__
-#define __R_PATCH__
+#ifndef R_PATCH_H
+#define R_PATCH_H
 
 #include "r_defs.h"
 #include "r_picformats.h"
@@ -63,4 +63,4 @@ vector2_t* R_RotateSpriteOffsetsByPitchRoll(
 } // extern "C"
 #endif
 
-#endif // __R_PATCH__
+#endif // R_PATCH_H

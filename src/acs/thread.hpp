@@ -11,8 +11,8 @@
 /// \file  thread.hpp
 /// \brief Action Code Script: Thread definition
 
-#ifndef __SRB2_ACS_THREAD_HPP__
-#define __SRB2_ACS_THREAD_HPP__
+#ifndef SRB2_ACS_THREAD_HPP
+#define SRB2_ACS_THREAD_HPP
 
 #include "acsvm.hpp"
 
@@ -150,4 +150,4 @@ public:
 
 }
 
-#endif // __SRB2_ACS_THREAD_HPP__
+#endif // SRB2_ACS_THREAD_HPP

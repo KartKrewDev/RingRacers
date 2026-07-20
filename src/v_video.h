@@ -12,8 +12,8 @@
 /// \file  v_video.h
 /// \brief Gamma correction LUT
 
-#ifndef __V_VIDEO__
-#define __V_VIDEO__
+#ifndef V_VIDEO_H
+#define V_VIDEO_H
 
 #include "doomdef.h"
 #include "doomtype.h"

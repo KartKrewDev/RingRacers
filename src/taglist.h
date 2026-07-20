@@ -12,8 +12,8 @@
 /// \file  taglist.h
 /// \brief Tag iteration and reading functions and macros' declarations.
 
-#ifndef __R_TAGLIST__
-#define __R_TAGLIST__
+#ifndef R_TAGLIST_H
+#define R_TAGLIST_H
 
 #include "doomtype.h"
 
@@ -135,4 +135,4 @@ If no elements are found for a given tag, the loop inside won't be executed.
 } // extern "C"
 #endif
 
-#endif //__R_TAGLIST__
+#endif //R_TAGLIST_H

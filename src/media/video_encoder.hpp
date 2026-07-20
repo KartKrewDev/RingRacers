@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_VIDEO_ENCODER_HPP__
-#define __SRB2_MEDIA_VIDEO_ENCODER_HPP__
+#ifndef SRB2_MEDIA_VIDEO_ENCODER_HPP
+#define SRB2_MEDIA_VIDEO_ENCODER_HPP
 
 #include "encoder.hpp"
 #include "video_frame.hpp"
@@ -56,4 +56,4 @@ public:
 
 }; // namespace srb2::media
 
-#endif // __SRB2_MEDIA_VIDEO_ENCODER_HPP__
+#endif // SRB2_MEDIA_VIDEO_ENCODER_HPP

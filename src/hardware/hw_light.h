@@ -11,8 +11,8 @@
 /// \file hw_light.h
 /// \brief Dynamic lighting & coronas add on by Hurdler
 
-#ifndef _HW_LIGHTS_
-#define _HW_LIGHTS_
+#ifndef HW_LIGHTS_H
+#define HW_LIGHTS_H
 
 #include "hw_glob.h"
 #include "hw_defs.h"

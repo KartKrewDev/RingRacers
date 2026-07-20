@@ -14,8 +14,8 @@
 
 // TODO? Maybe untie this file from ACS?
 
-#ifndef __SRB2_ACS_STREAM_HPP__
-#define __SRB2_ACS_STREAM_HPP__
+#ifndef SRB2_ACS_STREAM_HPP
+#define SRB2_ACS_STREAM_HPP
 
 #include <streambuf>
 
@@ -45,4 +45,4 @@ private:
 
 }
 
-#endif // __SRB2_ACS_STREAM_HPP__
+#endif // SRB2_ACS_STREAM_HPP

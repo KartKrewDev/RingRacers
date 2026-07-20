@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_HARDWARE_STATE_HPP__
-#define __SRB2_HWR2_HARDWARE_STATE_HPP__
+#ifndef SRB2_HWR2_HARDWARE_STATE_HPP
+#define SRB2_HWR2_HARDWARE_STATE_HPP
 
 #include "blit_postimg_screens.hpp"
 #include "blit_rect.hpp"
@@ -52,4 +52,4 @@ struct HardwareState
 
 } // srb2::hwr2
 
-#endif // __SRB2_HWR2_HARDWARE_STATE_HPP__
+#endif // SRB2_HWR2_HARDWARE_STATE_HPP

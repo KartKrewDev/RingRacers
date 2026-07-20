@@ -15,8 +15,8 @@
 ///
 ///        anything that moves, acts, or suffers state changes of more or less violent nature.
 
-#ifndef __D_THINK__
-#define __D_THINK__
+#ifndef D_THINK_H
+#define D_THINK_H
 
 #include "doomdef.h"
 

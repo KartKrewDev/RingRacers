@@ -7,8 +7,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __K_BATTLE__
-#define __K_BATTLE__
+#ifndef K_BATTLE_H
+#define K_BATTLE_H
 
 #include "doomtype.h"
 #include "d_player.h"

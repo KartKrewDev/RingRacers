@@ -11,8 +11,8 @@
 /// \file  console.h
 /// \brief Console drawing and input
 
-#ifndef __CONSOLE_H__
-#define __CONSOLE_H__
+#ifndef CONSOLE_H
+#define CONSOLE_H
 
 #include "d_event.h"
 #include "command.h"
@@ -99,4 +99,4 @@ void CON_DrawLoadBar(void);
 } // extern "C"
 #endif
 
-#endif // __CONSOLE_H__
+#endif // CONSOLE_H

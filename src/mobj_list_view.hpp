@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef mobj_list_view_hpp
-#define mobj_list_view_hpp
+#ifndef MOBJ_LIST_VIEW_HPP
+#define MOBJ_LIST_VIEW_HPP
 
 #include <cstddef>
 #include <iterator>
@@ -81,4 +81,4 @@ private:
 
 }; // namespace srb2
 
-#endif/*mobj_list_view_hpp*/
+#endif/*MOBJ_LIST_VIEW_HPP*/

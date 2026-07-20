@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_GAIN_HPP__
-#define __SRB2_AUDIO_GAIN_HPP__
+#ifndef SRB2_AUDIO_GAIN_HPP
+#define SRB2_AUDIO_GAIN_HPP
 
 #include <span>
 
@@ -33,4 +33,4 @@ private:
 };
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_GAIN_HPP__
+#endif // SRB2_AUDIO_GAIN_HPP

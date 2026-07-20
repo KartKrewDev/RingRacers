@@ -10,8 +10,8 @@
 /// \file  k_grandprix.h
 /// \brief Grand Prix mode game logic & bot behaviors
 
-#ifndef __K_GRANDPRIX__
-#define __K_GRANDPRIX__
+#ifndef K_GRANDPRIX_H
+#define K_GRANDPRIX_H
 
 #include "doomdef.h"
 #include "doomstat.h"

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_CXXUTIL_HPP__
-#define __SRB2_CXXUTIL_HPP__
+#ifndef SRB2_CXXUTIL_HPP
+#define SRB2_CXXUTIL_HPP
 
 #include <cstdlib>
 #include <functional>
@@ -186,4 +186,4 @@ inline void hash_combine(std::size_t& seed, const T& v, Rest... rest)
 
 } // namespace srb2
 
-#endif // __SRB2_CXXUTIL_HPP__
+#endif // SRB2_CXXUTIL_HPP

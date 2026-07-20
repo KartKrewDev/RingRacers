@@ -10,8 +10,8 @@
 /// \file  k_modinfo.h
 /// \brief Mod metadata
 
-#ifndef __K_MODINFO_H__
-#define __K_MODINFO_H__
+#ifndef K_MODINFO_H
+#define K_MODINFO_H
 
 #include "typedef.h"
 #include "doomtype.h"
@@ -122,4 +122,4 @@ mod_compat_e ModMetadata_Compatible(mod_metadata_t *meta);
 } // extern "C"
 #endif
 
-#endif // __K_MODINFO_H__
+#endif // K_MODINFO_H

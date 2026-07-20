@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef math_line_segment_hpp
-#define math_line_segment_hpp
+#ifndef MATH_LINE_SEGMENT_HPP
+#define MATH_LINE_SEGMENT_HPP
 
 #include <algorithm>
 #include <utility>
@@ -41,4 +41,4 @@ struct LineSegment
 
 }; // namespace srb2
 
-#endif/*math_line_segment_hpp*/
+#endif/*MATH_LINE_SEGMENT_HPP*/

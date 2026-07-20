@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __MAC_RESOURCES_H__
-#define __MAC_RESOURCES_H__
+#ifndef MAC_RESOURCES_H
+#define MAC_RESOURCES_H
 
 #ifdef __cplusplus
 extern "C"

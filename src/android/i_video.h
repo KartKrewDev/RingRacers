@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef _SRB2_ANDROID_VIDEO_
-#define _SRB2_ANDROID_VIDEO_
+#ifndef SRB2_ANDROID_VIDEO_H
+#define SRB2_ANDROID_VIDEO_H
 
 #include <jni.h>
 

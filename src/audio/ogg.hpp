@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_AUDIO_OGG_HPP__
-#define __SRB2_AUDIO_OGG_HPP__
+#ifndef SRB2_AUDIO_OGG_HPP
+#define SRB2_AUDIO_OGG_HPP
 
 #include <exception>
 #include <span>
@@ -82,6 +82,6 @@ inline Ogg load_ogg(I& stream)
 
 } // namespace srb2::audio
 
-#endif // __SRB2_AUDIO_OGG_HPP__
+#endif // SRB2_AUDIO_OGG_HPP
 
 

@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_CORE_THREAD_POOL_H__
-#define __SRB2_CORE_THREAD_POOL_H__
+#ifndef SRB2_CORE_THREAD_POOL_H
+#define SRB2_CORE_THREAD_POOL_H
 
 #include <stddef.h>
 
@@ -160,4 +160,4 @@ void I_ThreadPoolWaitIdle(void);
 } // extern "C"
 #endif
 
-#endif // __SRB2_CORE_THREAD_POOL_H__
+#endif // SRB2_CORE_THREAD_POOL_H

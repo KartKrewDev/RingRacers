@@ -15,8 +15,8 @@
 ///        according to adjacent sectors, respective
 ///        utility functions, etc.
 
-#ifndef __P_SPEC__
-#define __P_SPEC__
+#ifndef P_SPEC_H
+#define P_SPEC_H
 
 #ifdef __cplusplus
 extern "C" {

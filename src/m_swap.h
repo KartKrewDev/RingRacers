@@ -12,8 +12,8 @@
 /// \file  m_swap.h
 /// \brief Endianess handling, swapping 16bit and 32bit
 
-#ifndef __M_SWAP__
-#define __M_SWAP__
+#ifndef M_SWAP_H
+#define M_SWAP_H
 
 #include "endian.h"
 

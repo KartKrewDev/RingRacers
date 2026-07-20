@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __V_DRAW_SETTER_HPP__
-#define __V_DRAW_SETTER_HPP__
+#ifndef V_DRAW_SETTER_HPP
+#define V_DRAW_SETTER_HPP
 
 #include "r_draw.h" // R_GetTranslationColormap
 
@@ -129,4 +129,4 @@ inline Draw::Chain& Draw::Chain::colorize(UINT16 color)
 
 }; // namespace srb2
 
-#endif // __V_DRAW_SETTER_HPP__
+#endif // V_DRAW_SETTER_HPP

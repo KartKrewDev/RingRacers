@@ -11,8 +11,8 @@
 /// \file  i_joy.h
 /// \brief share joystick information with game control code
 
-#ifndef __I_JOY_H__
-#define __I_JOY_H__
+#ifndef I_JOY_H
+#define I_JOY_H
 
 #include "g_input.h"
 
@@ -70,4 +70,4 @@ void I_GamepadRumbleTriggers(INT32 device_id, UINT16 left_strength, UINT16 right
 } // extern "C"
 #endif
 
-#endif // __I_JOY_H__
+#endif // I_JOY_H

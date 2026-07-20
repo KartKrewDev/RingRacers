@@ -11,8 +11,8 @@
 /// \file
 /// \brief OpenGL API for Doom Legacy
 
-#ifndef _R_OPENGL_H_
-#define _R_OPENGL_H_
+#ifndef R_OPENGL_H
+#define R_OPENGL_H
 
 #ifdef HAVE_SDL
 #define _MATH_DEFINES_DEFINED

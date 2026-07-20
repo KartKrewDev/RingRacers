@@ -12,8 +12,8 @@
 /// \file  p_mobj.h
 /// \brief Map Objects, MObj, definition and handling
 
-#ifndef __P_MOBJ__
-#define __P_MOBJ__
+#ifndef P_MOBJ_H
+#define P_MOBJ_H
 
 // Basics.
 #include "tables.h"

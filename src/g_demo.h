@@ -12,8 +12,8 @@
 /// \file  g_demo.h
 /// \brief Demo recording and playback
 
-#ifndef __G_DEMO__
-#define __G_DEMO__
+#ifndef G_DEMO_H
+#define G_DEMO_H
 
 #include "doomdef.h"
 #include "doomstat.h"
@@ -268,4 +268,4 @@ void G_SyncDemoParty(INT32 rem, INT32 newsplitscreen);
 } // extern "C"
 #endif
 
-#endif // __G_DEMO__
+#endif // G_DEMO_H

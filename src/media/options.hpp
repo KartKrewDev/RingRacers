@@ -8,8 +8,8 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_MEDIA_OPTIONS_HPP__
-#define __SRB2_MEDIA_OPTIONS_HPP__
+#ifndef SRB2_MEDIA_OPTIONS_HPP
+#define SRB2_MEDIA_OPTIONS_HPP
 
 #include <map>
 #include <optional>
@@ -61,4 +61,4 @@ extern template consvar_t Options::values(const char* default_value, const Range
 
 }; // namespace srb2::media
 
-#endif // __SRB2_MEDIA_OPTIONS_HPP__
+#endif // SRB2_MEDIA_OPTIONS_HPP

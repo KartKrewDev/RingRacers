@@ -12,8 +12,8 @@
 /// \file  sounds.h
 /// \brief Sound and music info
 
-#ifndef __SOUNDS__
-#define __SOUNDS__
+#ifndef SOUNDS_H
+#define SOUNDS_H
 
 #include "doomdef.h"
 

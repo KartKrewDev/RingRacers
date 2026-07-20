@@ -10,8 +10,8 @@
 /// \file hw_dll.h
 /// \brief Win32 DLL and Shared Objects API definitions
 
-#ifndef __HWR_DLL_H__
-#define __HWR_DLL_H__
+#ifndef HWR_DLL_H
+#define HWR_DLL_H
 
 #ifdef __cplusplus
 extern "C" {

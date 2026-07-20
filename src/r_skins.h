@@ -13,8 +13,8 @@
 /// \file  r_skins.h
 /// \brief Skins stuff
 
-#ifndef __R_SKINS__
-#define __R_SKINS__
+#ifndef R_SKINS_H
+#define R_SKINS_H
 
 #include "info.h"
 #include "sounds.h"
@@ -142,4 +142,4 @@ UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player);
 } // extern "C"
 #endif
 
-#endif //__R_SKINS__
+#endif //R_SKINS_H

@@ -12,8 +12,8 @@
 /// \file  p_setup.h
 /// \brief Setup a game, startup stuff
 
-#ifndef __P_SETUP__
-#define __P_SETUP__
+#ifndef P_SETUP_H
+#define P_SETUP_H
 
 #include "doomdata.h"
 #include "doomstat.h"
