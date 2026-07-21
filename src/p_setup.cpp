@@ -3995,11 +3995,20 @@ static boolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype
 				segs[k].linedef = (linenum == 0xFFFF) ? NULL : &lines[linenum];
 				segs[k].side = READUINT8((*data));
 			}
-			while (segs[subsectors[i].firstline].glseg)
+			// Validate that at least one seg in this subsector is a full (non-gl) segment.
 			{
-				subsectors[i].firstline++;
-				if (subsectors[i].firstline == k)
+				size_t checkline;
+				for (checkline = subsectors[i].firstline; checkline < k; checkline++)
+				{
+					if (!segs[checkline].glseg)
+					{
+						break;
+					}
+				}
+				if (checkline == k)
+				{
 					I_Error("P_LoadExtendedSubsectorsAndSegs: Subsector %s does not have any valid segs!", sizeu1(i));
+				}
 			}
 			break;
 
@@ -9932,4 +9941,3 @@ void ReduceVFX_OnChange(void)
 		return;
 	P_ReduceVFXTextureReload();
 }
-
