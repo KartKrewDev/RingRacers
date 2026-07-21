@@ -27,4 +27,9 @@ target_compile_definitions(libwebm_mkvmuxer PRIVATE
 
 )
 set_target_properties(libwebm_mkvmuxer PROPERTIES CXX_STANDARD 11)
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+	target_compile_options(libwebm_mkvmuxer PRIVATE -w)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	target_compile_options(libwebm_mkvmuxer PRIVATE /W0)
+endif()
 add_library(webm::libwebm_mkvmuxer ALIAS libwebm_mkvmuxer)

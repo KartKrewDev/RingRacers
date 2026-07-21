@@ -19,6 +19,11 @@ list(TRANSFORM DiscordRPC_SOURCES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 # Discord RPC is always statically linked because it's tiny.
 add_library(discord-rpc STATIC ${DiscordRPC_SOURCES})
 add_library(DiscordRPC::DiscordRPC ALIAS discord-rpc)
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+	target_compile_options(discord-rpc PRIVATE -w)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	target_compile_options(discord-rpc PRIVATE /W0)
+endif()
 
 target_include_directories(discord-rpc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_features(discord-rpc PUBLIC cxx_std_11)
