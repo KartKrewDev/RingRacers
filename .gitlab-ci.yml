@@ -144,7 +144,7 @@ Windows:
         EXE_NAME="ringracers"
 
         if ! [[ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" || -n "$CI_COMMIT_TAG" ]]; then
-          EXE_NAME="ringracers_${BRANCH_NAME//[^a-z0-9-]/_}"
+          EXE_NAME="ringracers_${BRANCH_NAME//[^a-zA-Z0-9-]/_}"
         fi
       fi
 
