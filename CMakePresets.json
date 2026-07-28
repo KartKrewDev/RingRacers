@@ -2,6 +2,29 @@
 	"version": 3,
 	"configurePresets": [
 		{
+			"name": "easymode",
+			"hidden": false,
+			"description": "Compile for Windows x86_64 by automatically downloading llvm-mingw64 and the Ring Racers SDK via FetchContent.",
+			"generator": "Ninja",
+			"toolchainFile": "scripts/rrsdk-toolchain.cmake",
+			"binaryDir": "build/${presetName}",
+			"cacheVariables": {
+				"CMAKE_COLOR_DIAGNOSTICS": "ON",
+				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+				"CMAKE_BUILD_TYPE": "Debug",
+				"CMAKE_C_FLAGS_DEBUG": "-g -gcodeview",
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-g -gcodeview",
+				"CMAKE_CXX_FLAGS_DEBUG": "-g -gcodeview",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-g -gcodeview",
+				"CMAKE_EXE_LINKER_FLAGS": "-static -static-libgcc -static-libstdc++ -lpthread",
+				"CMAKE_EXE_LINKER_FLAGS_DEBUG": "-Wl,--pdb= -Wl,-s",
+				"CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "-Wl,--pdb= -Wl,-s",
+				"FETCHCONTENT_QUIET": "OFF",
+				"SRB2_CONFIG_DEV_BUILD": "ON"
+			}
+		},
+
+		{
 			"name": "__debug",
 			"hidden": true,
 			"cacheVariables": {
