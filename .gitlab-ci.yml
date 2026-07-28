@@ -11,10 +11,6 @@ workflow:
 default:
   interruptible: true
 
-variables:
-  GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_CONCURRENT_PROJECT_ID
-  GIT_DEPTH: 20
-
 stages:
   - build
   - upload-ftp
