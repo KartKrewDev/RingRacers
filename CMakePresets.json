@@ -5,13 +5,14 @@
 			"name": "easymode",
 			"hidden": false,
 			"description": "Compile for Windows x86_64 by automatically downloading llvm-mingw64 and the Ring Racers SDK via FetchContent.",
-			"generator": "Ninja",
+			"generator": "Ninja Multi-Config",
 			"toolchainFile": "scripts/rrsdk-toolchain.cmake",
 			"binaryDir": "build/${presetName}",
 			"cacheVariables": {
 				"CMAKE_COLOR_DIAGNOSTICS": "ON",
 				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-				"CMAKE_BUILD_TYPE": "Debug",
+				"CMAKE_CONFIGURATION_TYPES": "Debug;RelWithDebInfo",
+				"CMAKE_DEFAULT_BUILD_TYPE": "RelWithDebInfo",
 				"CMAKE_C_FLAGS_DEBUG": "-g -gcodeview",
 				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-g -gcodeview -O3 -DNDEBUG",
 				"CMAKE_CXX_FLAGS_DEBUG": "-g -gcodeview",
@@ -50,17 +51,6 @@
 				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O3 -g -DNDEBUG",
 				"SRB2_CONFIG_DEV_BUILD": "OFF",
 				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
-			}
-		},
-		{
-			"name": "__testers",
-			"hidden": true,
-			"cacheVariables": {
-				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-O3 -g -DNDEBUG",
-				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O3 -g -DNDEBUG",
-				"SRB2_CONFIG_DEV_BUILD": "ON",
-				"CMAKE_BUILD_TYPE": "RelWithDebInfo",
-				"SRB2_CONFIG_TESTERS": "ON"
 			}
 		},
 		{
@@ -115,14 +105,19 @@
 			"hidden": true,
 			"cacheVariables": {
 				"CMAKE_C_COMPILER": "i686-w64-mingw32-gcc",
-				"CMAKE_CXX_COMPILER": "i686-w64-mingw32-g++"
+				"CMAKE_CXX_COMPILER": "i686-w64-mingw32-g++",
+				"CMAKE_C_FLAGS": "-msse2",
+				"CMAKE_CXX_FLAGS": "-msse2",
+				"CMAKE_EXE_LINKER_FLAGS": "-Wl,--large-address-aware -Wl,--disable-dynamicbase -Wl,--add-stdcall-alias -static-libgcc -static-libstdc++ -static",
+				"THREADS_PREFER_PTHREAD_FLAG": "ON"
 			}
 		},
 		{
 			"name": "__mingw-dynamic",
 			"hidden": true,
 			"cacheVariables": {
-				"VCPKG_TARGET_TRIPLET": "x86-mingw-dynamic"
+				"VCPKG_TARGET_TRIPLET": "x86-mingw-dynamic",
+				"THREADS_PREFER_PTHREAD_FLAG": "ON"
 			}
 		},
 		{
@@ -130,7 +125,8 @@
 			"hidden": true,
 			"cacheVariables": {
 				"VCPKG_HOST_TRIPLET": "x86-mingw-static",
-				"VCPKG_TARGET_TRIPLET": "x86-mingw-static"
+				"VCPKG_TARGET_TRIPLET": "x86-mingw-static",
+				"THREADS_PREFER_PTHREAD_FLAG": "ON"
 			}
 		},
 		{
@@ -180,12 +176,6 @@
 			"binaryDir": "build/${presetName}",
 			"inherits": [ "__release", "__ninja" ]
 		},
-		{
-			"name": "ninja-testers",
-			"hidden": false,
-			"binaryDir": "build/${presetName}",
-			"inherits": [ "__testers", "__ninja" ]
-		},
 
 		{
 			"name": "ninja-vcpkg-debug",
@@ -205,12 +195,6 @@
 			"binaryDir": "build/${presetName}",
 			"inherits": [ "__release", "__ninja", "__vcpkg-toolchain" ]
 		},
-		{
-			"name": "ninja-vcpkg-testers",
-			"hidden": false,
-			"binaryDir": "build/${presetName}",
-			"inherits": [ "__testers", "__ninja", "__vcpkg-toolchain" ]
-		},
 
 		{
 			"name": "ninja-x86_mingw_static_vcpkg-debug",
@@ -229,12 +213,6 @@
 			"hidden": false,
 			"binaryDir": "build/${presetName}",
 			"inherits": [ "__release", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static" ]
-		},
-		{
-			"name": "ninja-x86_mingw_static_vcpkg-testers",
-			"hidden": false,
-			"binaryDir": "build/${presetName}",
-			"inherits": [ "__testers", "__compiler-mingw-w64-i686", "__ninja", "__vcpkg-toolchain", "__mingw-static" ]
 		},
 
 		{
@@ -331,10 +309,6 @@
 		{
 			"name": "ninja-x86_mingw_static_vcpkg-release",
 			"configurePreset": "ninja-x86_mingw_static_vcpkg-release"
-		},
-		{
-			"name": "ninja-x86_mingw_static_vcpkg-testers",
-			"configurePreset": "ninja-x86_mingw_static_vcpkg-testers"
 		},
 		{
 			"name": "ninja-x64_windows_vcpkg-debug",

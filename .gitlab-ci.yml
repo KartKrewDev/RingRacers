@@ -231,7 +231,7 @@ Windows:
 
     - | # Do the actual build
       cmake --build build -- --quiet -k 0 | tee out.log
-      mv build/bin/*.exe build/bin/*.pdb .
+      mv build/ringracers*.exe build/ringracers*.pdb .
 
     - | # Generate code quality report
       OUTPUT_JSON=gl-code-quality-report.json

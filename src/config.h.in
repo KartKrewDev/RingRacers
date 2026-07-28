@@ -21,6 +21,6 @@
 #cmakedefine HAVE_STRLCAT
 #cmakedefine HAVE_STRLCPY
 
-#define CMAKE_BUILD_TYPE         "${CMAKE_BUILD_TYPE}"
+
 
 #endif // SRB2_CONFIG_H

@@ -19,6 +19,4 @@
 #define COMPVERSION_UNCOMMITTED
 #endif
 
-#cmakedefine01 SRB2_COMP_OPTIMIZED
-
 #endif // SRB2_CONFIG_COMPTIME_H

@@ -14,6 +14,10 @@ include(CheckSymbolExists)
 file(STRINGS src/version.h SRB2_VERSION)
 string(REGEX MATCH "[0-9]+\\.[0-9.]+" SRB2_VERSION ${SRB2_VERSION})
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+	set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
+
 # DO NOT CHANGE THIS SRB2 STRING! Some variable names depend on this string.
 # Version change is fine.
 project(SRB2
@@ -40,64 +44,28 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES AppleClang AND CMAKE_CXX_COMPILER_VERSION V
 endif()
 
 # Options
-if("${CMAKE_SYSTEM_NAME}" MATCHES Windows)
-	if(DEFINED VCPKG_TARGET_TRIPLET)
-		set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT ON)
-	else()
-		set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT OFF)
-	endif()
-else()
-	set(SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT ON)
-endif()
 
-# Clang tidy options will be ignored if CMAKE_<LANG>_CLANG_TIDY are set.
-option(SRB2_CONFIG_ENABLE_CLANG_TIDY_C "Enable default clang-tidy check configuration for C" OFF)
-option(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX "Enable default clang-tidy check configuration for C++" OFF)
-option(
-	SRB2_CONFIG_STATIC_STDLIB
-	"Link static version of standard library. All dependencies must also be static"
-	ON
-)
 option(SRB2_CONFIG_ENABLE_WEBM_MOVIES "Enable WebM recording support" ON)
 option(SRB2_CONFIG_ENABLE_DISCORDRPC "Enable Discord RPC features" ON)
 option(SRB2_CONFIG_HWRENDER "Enable hardware render (OpenGL) support" ON)
-option(SRB2_CONFIG_STATIC_OPENGL "Enable static linking GL (do not do this)" OFF)
+option(SRB2_CONFIG_LINK_OPENGL "Enable directly linking GL (needed for some platforms)" OFF)
 option(SRB2_CONFIG_ERRORMODE "Compile C code with warnings treated as errors." OFF)
 option(SRB2_CONFIG_DEBUGMODE "Compile with PARANOIA, ZDEBUG, RANGECHECK and PACKETDROP defined." OFF)
 option(SRB2_CONFIG_DEV_BUILD "Compile a development build." OFF)
-option(SRB2_CONFIG_ALWAYS_MAKE_DEBUGLINK "Always make a debuglink .debug." OFF)
-option(SRB2_CONFIG_TESTERS "Compile a build for testers." OFF)
+option(SRB2_CONFIG_DISABLE_DEBUGLINK "Disable debuglink generation" OFF)
+option(SRB2_CONFIG_INSTALL_DEBUGLINK "Install .debug debuglink with cmake installation (Windows only)" OFF)
 option(SRB2_CONFIG_MOBJCONSISTANCY "Compile with MOBJCONSISTANCY defined." OFF)
 option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
-option(SRB2_CONFIG_EXECINFO "Enable stack trace dump support." ON)
 option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
 option(SRB2_CONFIG_SKIP_COMPTIME "Skip regenerating comptime. To speed up iterative debug builds in IDEs." OFF)
-# SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
 option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
 option(SRB2_CONFIG_TRACY "Compile with Tracy profiling enabled" OFF)
 option(SRB2_CONFIG_ASAN "Compile with AddressSanitizer (libasan)." OFF)
-set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains all asset files for the installer. If set, assets will be part of installation and cpack.")
-
-# Enable CCache
-# (Set USE_CCACHE=ON to use, CCACHE_OPTIONS for options)
-if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL Windows)
-	option(USE_CCACHE "Enable ccache support" OFF)
-
-	if(USE_CCACHE)
-		find_program(CCACHE_TOOL_PATH ccache)
-		if(CCACHE_TOOL_PATH)
-			set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_TOOL_PATH} CACHE STRING "" FORCE)
-			set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_TOOL_PATH} CACHE STRING "" FORCE)
-		else()
-			message(WARNING "USE_CCACHE was set but ccache is not found (set CCACHE_TOOL_PATH)")
-		endif()
-	endif()
-endif()
 
 # Dependencies
 add_subdirectory(thirdparty)
 
-
+find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
@@ -122,29 +90,23 @@ if (SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	endif()
 endif()
 
-if ((${SRB2_USE_CCACHE}) AND (${CMAKE_C_COMPILER} MATCHES "clang"))
-	message(WARNING "Using clang and CCache: You may want to set environment variable CCACHE_CPP2=yes to prevent include errors during compile.")
-endif()
-
-# bitness check
-set(SRB2_SYSTEM_BITS 0)
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(SRB2_SYSTEM_BITS 64)
-endif()
-if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-	set(SRB2_SYSTEM_BITS 32)
-endif()
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-
 # Set EXE names so the assets CMakeLists can refer to its target
 set(SRB2_SDL2_EXE_NAME "" CACHE STRING "Override executable binary output name")
 set(SRB2_SDL2_EXE_SUFFIX "" CACHE STRING "Optional executable suffix, separated by an underscore")
 
 set(GIT_EXECUTABLE "git" CACHE FILEPATH "Path to git binary")
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
+add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32)
+target_compile_features(SRB2SDL2 PRIVATE c_std_17 cxx_std_20)
+set_target_properties(SRB2SDL2 PROPERTIES
+	C_STANDARD 17
+	C_STANDARD_REQUIRED ON
+	C_STANDARD_EXTENSIONS OFF
+	CXX_STANDARD 20
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF
+	CXX_SCAN_FOR_MODULES OFF
+)
 
 add_subdirectory(src)
 
@@ -170,10 +132,6 @@ if(NOT "${SRB2_GIT_DIR}" STREQUAL "" AND "${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 		string(REGEX REPLACE "[\\\/\^\$]" "_" SAFE_REVISION "${SRB2_GIT_REVISION}")
 		list(APPEND EXE_NAME_PARTS ${SAFE_REVISION})
 	endif()
-
-	if (SRB2_CONFIG_TESTERS)
-		list(APPEND EXE_NAME_PARTS "TESTERS")
-	endif()
 elseif(NOT "${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_NAME})
 else()
@@ -183,17 +141,93 @@ endif()
 list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_SUFFIX})
 
 list(JOIN EXE_NAME_PARTS "_" EXE_NAME)
-set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME ${EXE_NAME})
+set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME "${EXE_NAME}")
+
+if(NOT SRB2_CONFIG_SKIP_COMPTIME)
+	# This updates the modification time for comptime.c at the
+	# end of building so when the build system is ran next time,
+	# that file gets flagged. comptime.c will always be rebuilt.
+	#
+	# This begs the question, why always rebuild comptime.c?
+	# Some things like the git commit must be checked each time
+	# the program is built. But the build system determines which
+	# files should be rebuilt before anything else. So
+	# comptime.c, which only needs to be rebuilt based on
+	# information known at build time, must be told to rebuild
+	# before that information can be ascertained.
+	add_custom_command(
+		TARGET SRB2SDL2
+		POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E touch_nocreate "${CMAKE_CURRENT_SOURCE_DIR}/src/comptime.c"
+	)
+endif()
+
+set_target_properties(SRB2SDL2 PROPERTIES
+	MACOSX_BUNDLE_INFO_PLIST
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/sdl/macosx/MacOSXBundleInfo.plist.in"
+)
+
+# config_comptime.h is generated by this command. It should be done at
+# build time for accurate git information and before anything
+# that needs it, obviously.
+add_custom_target(_SRB2_reconf ALL
+	COMMAND ${CMAKE_COMMAND}
+		"-DGIT_EXECUTABLE=${GIT_EXECUTABLE}"
+		"-DCMAKE_BUILD_TYPE=$<CONFIG>"
+		"-DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+		-P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Comptime.cmake"
+	DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/config_comptime.h.in"
+	BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/src/config_comptime.h"
+	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+add_dependencies(SRB2SDL2 _SRB2_reconf)
 
 # Test for functions not consistently available
 check_symbol_exists(strupr "string.h" HAVE_STRUPR)
 check_symbol_exists(strlwr "string.h" HAVE_STRLWR)
 check_symbol_exists(strcasestr "string.h" HAVE_STRCASESTR)
-check_symbol_exists(strcasecmp "string.h" HAVE_STRCASECMP)
-check_symbol_exists(strncasecmp "string.h" HAVE_STRNCASECMP)
+check_symbol_exists(strcasecmp "strings.h" HAVE_STRCASECMP)
+check_symbol_exists(strncasecmp "strings.h" HAVE_STRNCASECMP)
 check_symbol_exists(stricmp "string.h" HAVE_STRICMP)
 check_symbol_exists(strnicmp "string.h" HAVE_STRNICMP)
 check_symbol_exists(strlcat "string.h" HAVE_STRLCAT)
 check_symbol_exists(strlcpy "string.h" HAVE_STRLCPY)
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/src/config.h")
+
+# Strip debug sections
+find_program(CMAKE_OBJCOPY objcopy)
+if(CMAKE_OBJCOPY AND NOT SRB2_CONFIG_DISABLE_DEBUGLINK)
+	add_custom_command(TARGET SRB2SDL2 POST_BUILD
+		COMMAND ${CMAKE_COMMAND}
+			-D "OBJCOPY=${CMAKE_OBJCOPY}"
+			-D "TARGET_FILE=$<TARGET_FILE:SRB2SDL2>"
+			-P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/strip_debug.cmake"
+	)
+endif()
+
+#### Installation ####
+
+if(CMAKE_SYSTEM_NAME MATCHES Darwin)
+	# Mac bundle fixup
+	# Must be installed before the actual target.
+	install(CODE "
+		include(BundleUtilities)
+		fixup_bundle(\"$<TARGET_FILE:SRB2SDL2>\" \"\" /Library/Frameworks)
+		"
+	)
+	install(TARGETS SRB2SDL2 BUNDLE DESTINATION .)
+	set_property(TARGET SRB2SDL2 PROPERTY INSTALL_RPATH_USE_LINK_PATH ON)
+else()
+	if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+		install(TARGETS SRB2SDL2 RUNTIME DESTINATION .)
+		if(SRB2_CONFIG_INSTALL_DEBUGLINK)
+			install(FILES $<TARGET_FILE:SRB2SDL2>.debug
+				DESTINATION .
+				OPTIONAL
+			)
+		endif()
+	else()
+		install(TARGETS SRB2SDL2)
+	endif()
+endif()

@@ -17,8 +17,20 @@
  *
  */
 
+#if !defined(__OPTIMIZE__) && defined(__GNUC__)
+#define SRB2_COMP_OPTIMIZED 0
+#else
+// we can't detect optimization level at compile time on other compilers
+#define SRB2_COMP_OPTIMIZED 1
+#endif
+
 #if (defined(CMAKECONFIG))
 #include "config.h"
+
+#ifndef CMAKE_BUILD_TYPE
+#define CMAKE_BUILD_TYPE "None"
+#endif
+
 const char *compbranch = SRB2_COMP_BRANCH;
 const char *comprevision = SRB2_COMP_REVISION;
 const char *compnote = SRB2_COMP_NOTE;

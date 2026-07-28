@@ -26,3 +26,4 @@ set(ACSVM_INSTALL_LIB OFF)
 add_subdirectory(vm)
 
 target_link_libraries(SRB2SDL2 PRIVATE acsvm)
+target_include_directories(acsvm PRIVATE "${CMAKE_BINARY_DIR}/src" "${CMAKE_BINARY_DIR}/$<CONFIG>/src")

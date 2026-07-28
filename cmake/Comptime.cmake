@@ -19,14 +19,4 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 	set(CMAKE_BUILD_TYPE None)
 endif()
 
-# These build types enable optimizations of some kind by default.
-set(optimized_build_types "MINSIZEREL;RELEASE;RELWITHDEBINFO")
-
-string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type)
-if("${build_type}" IN_LIST optimized_build_types)
-	set(SRB2_COMP_OPTIMIZED TRUE)
-else()
-	set(SRB2_COMP_OPTIMIZED FALSE)
-endif()
-
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config_comptime.h.in" "${CMAKE_CURRENT_BINARY_DIR}/src/config_comptime.h")
+configure_file("${CMAKE_SOURCE_DIR}/src/config_comptime.h.in" "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/src/config_comptime.h")
