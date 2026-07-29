@@ -219,8 +219,12 @@ Windows:
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
         -DCMAKE_C_COMPILER_LAUNCHER=$CI_PROJECT_DIR/ccache \
         -DCMAKE_CXX_COMPILER_LAUNCHER=$CI_PROJECT_DIR/ccache \
-        -DCMAKE_C_FLAGS="-g -gcodeview -fno-caret-diagnostics -fdiagnostics-format=msvc" \
-        -DCMAKE_CXX_FLAGS="-g -gcodeview -fno-caret-diagnostics -fdiagnostics-format=msvc" \
+        -DCMAKE_C_FLAGS="-fno-caret-diagnostics -fdiagnostics-format=msvc" \
+        -DCMAKE_CXX_FLAGS="-fno-caret-diagnostics -fdiagnostics-format=msvc" \
+        -DCMAKE_C_FLAGS_DEBUG="-g -gcodeview" \
+        -DCMAKE_CXX_FLAGS_DEBUG="-g -gcodeview" \
+        -DCMAKE_C_FLAGS_RELWITHDEBINFO="-g -gcodeview -O3 -DNDEBUG" \
+        -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-g -gcodeview -O3 -DNDEBUG" \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,--pdb= -Wl,-s -static -static-libgcc -static-libstdc++ -lpthread" \
         -DSRB2_SDL2_EXE_NAME="$EXE_NAME" \
         -DSRB2_CONFIG_DEV_BUILD="$DEV_BUILD"
