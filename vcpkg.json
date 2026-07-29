@@ -6,7 +6,7 @@
   "dependencies": [
     {
       "name": "cpptrace",
-      "platform": "windows & !mingw"
+      "platform": "windows"
     },
     "curl",
     "libogg",

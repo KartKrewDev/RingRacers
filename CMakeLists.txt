@@ -71,7 +71,7 @@ find_package(PNG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Opus REQUIRED)
-if(WIN32 AND NOT MINGW)
+if(WIN32)
 	find_package(cpptrace CONFIG REQUIRED)
 endif()
 

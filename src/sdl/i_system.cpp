@@ -40,9 +40,9 @@ typedef UINT (WINAPI *p_timeEndPeriod) (UINT);
 typedef HANDLE (WINAPI *p_OpenFileMappingA) (DWORD, BOOL, LPCSTR);
 typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
-#if defined(_WIN32) && !defined(__GNUC__)
+#if defined(_WIN32) && (!defined(__GNUC__) || defined(__MINGW64__) || defined(__clang__))
 #define USE_DBGHELP
-#include <DbgHelp.h>
+#include <dbghelp.h>
 #endif
 
 #endif
@@ -549,10 +549,10 @@ static void I_ReportSignal(int num, int coredumped, void* tracefromcpptrace)
 	I_ShowErrorMessageBox(sigmsg,
 #if defined (UNIXBACKTRACE)
 		true
-#elif defined (_WIN32) && defined (__GNUC__)
-		!M_CheckParm("-noexchndl")
 #elif defined (USE_DBGHELP)
 		true
+#elif defined (_WIN32) && defined (__GNUC__)
+		!M_CheckParm("-noexchndl")
 #else
 		false
 #endif
@@ -602,7 +602,7 @@ static LONG WriteMinidumpExceptionFilter(PEXCEPTION_POINTERS ExceptionInfo)
 	if (result == FALSE)
 	{
 		CloseHandle(outfile);
-		DeleteFileA("ringracers_minidump.dmp");
+		DeleteFileA(outfilename);
 		goto exit;
 	}
 
