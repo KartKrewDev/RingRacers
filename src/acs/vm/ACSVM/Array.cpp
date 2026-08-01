@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2025 David Hill
 //
 // See COPYING for license information.
 //
@@ -46,31 +46,6 @@ namespace ACSVM
    }
 
    //
-   // ReadData (Word)
-   //
-   static void ReadData(std::istream &in, Word &out)
-   {
-      out = ReadVLN<Word>(in);
-   }
-
-   //
-   // ReadData
-   //
-   template<typename T>
-   static void ReadData(std::istream &in, T *&out)
-   {
-      if(in.get())
-      {
-         if(!out) out = new T[1]{};
-
-         for(auto &itr : *out)
-            ReadData(in, itr);
-      }
-      else
-         FreeData(out);
-   }
-
-   //
    // RefStringsData (Word)
    //
    static void RefStringsData(Environment *env, Word const &data, void (*ref)(String *))
@@ -89,28 +64,26 @@ namespace ACSVM
    }
 
    //
-   // WriteData (Word)
+   // WritePage
    //
-   static void WriteData(std::ostream &out, Word const &in)
+   static void WritePage(Serial &out, Word const *page, std::size_t pageC, std::size_t idx)
    {
-      WriteVLN(out, in);
-   }
+      std::size_t pageEnd = pageC, pageIdx = 0;
 
-   //
-   // WriteData
-   //
-   template<typename T>
-   static void WriteData(std::ostream &out, T *const &in)
-   {
-      if(in)
-      {
-         out.put('\1');
+      // Skip trailing 0 elements.
+      while(pageEnd && !page[pageEnd - 1])
+         --pageEnd;
 
-         for(auto &itr : *in)
-            WriteData(out, itr);
-      }
-      else
-         out.put('\0');
+      if(!pageEnd) return;
+
+      // Skip leading 0 elements.
+      while(!page[pageIdx])
+         ++pageIdx;
+
+      WriteVLN(out, idx + pageIdx);
+      WriteVLN(out, pageEnd - pageIdx);
+      while(pageIdx != pageEnd)
+         WriteVLN(out, page[pageIdx++]);
    }
 }
 
@@ -166,12 +139,57 @@ namespace ACSVM
    }
 
    //
+   // Array::empty
+   //
+   bool Array::empty() const
+   {
+      return data;
+   }
+
+   //
    // Array::loadState
    //
    void Array::loadState(Serial &in)
    {
+      clear();
+
       in.readSign(Signature::Array);
-      ReadData(in, data);
+
+      if(in.version == 0)
+      {
+         if(in.readByte()) for(std::size_t bankIdx = 0; bankIdx != 256; ++bankIdx)
+         {
+            if(in.readByte()) for(std::size_t segmIdx = 0; segmIdx != 256; ++segmIdx)
+            {
+               if(in.readByte()) for(std::size_t pageIdx = 0; pageIdx != 256; ++pageIdx)
+               {
+                  if(in.readByte())
+                  {
+                     std::size_t idx = bankIdx * 256*256*256 + segmIdx * 256*256 + pageIdx * 256;
+                     std::size_t len = 256;
+
+                     while(len--)
+                        (*this)[idx++] = ReadVLN<Word>(in);
+                  }
+               }
+            }
+         }
+      }
+      else
+      {
+         while(true)
+         {
+            std::size_t idx = ReadVLN<std::size_t>(in);
+            std::size_t len = ReadVLN<std::size_t>(in);
+
+            if(idx == 0 && len == 0)
+               break;
+
+            while(len--)
+               (*this)[idx++] = ReadVLN<Word>(in);
+         }
+      }
+
       in.readSign(~Signature::Array);
    }
 
@@ -197,7 +215,29 @@ namespace ACSVM
    void Array::saveState(Serial &out) const
    {
       out.writeSign(Signature::Array);
-      WriteData(out, data);
+
+      std::size_t idx = 0;
+      if(data) for(auto const &bank : *data)
+      {
+         if(bank) for(auto const &segm : *bank)
+         {
+            if(segm) for(auto const &page : *segm)
+            {
+               if(page)
+                  WritePage(out, *page, PageSize, idx);
+
+               idx += PageSize;
+            }
+            else
+               idx += SegmSize * PageSize;
+         }
+         else
+            idx += BankSize * SegmSize * PageSize;
+      }
+
+      out.writeByte(0);
+      out.writeByte(0);
+
       out.writeSign(~Signature::Array);
    }
 

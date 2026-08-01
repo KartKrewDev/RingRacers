@@ -35,6 +35,7 @@
 #include <ACSVM/Scope.hpp>
 #include <ACSVM/Script.hpp>
 #include <ACSVM/Serial.hpp>
+#include <ACSVM/SerialSTD.hpp>
 #include <ACSVM/Stack.hpp>
 #include <ACSVM/Store.hpp>
 #include <ACSVM/String.hpp>

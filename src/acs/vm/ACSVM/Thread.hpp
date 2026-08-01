@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2026 David Hill
 //
 // See COPYING for license information.
 //
@@ -34,8 +34,10 @@ namespace ACSVM
    {
    public:
       Word  const *codePtr;
+      Function    *function;
       Module      *module;
       ModuleScope *scopeMod;
+      ProfileTime  ptStart;
       std::size_t  locArrC;
       std::size_t  locRegC;
    };
@@ -132,15 +134,16 @@ namespace ACSVM
       PrintBuf         printBuf;
       ThreadState      state;
 
-      Word  const *codePtr; // Instruction pointer.
-      Module      *module;  // Current execution Module.
+      Word  const *codePtr;  // Instruction pointer.
+      Function    *function; // Current execution function (if any).
+      Module      *module;   // Current execution Module.
       GlobalScope *scopeGbl;
       HubScope    *scopeHub;
       MapScope    *scopeMap;
       ModuleScope *scopeMod;
-      Script      *script;  // Current execution Script.
-      Word         delay;   // Execution delay tics.
-      Word         result;  // Code-defined thread result.
+      Script      *script;   // Current execution Script.
+      Word         delay;    // Execution delay tics.
+      Word         result;   // Code-defined thread result.
 
 
       static constexpr std::size_t CallStkSize =   8;

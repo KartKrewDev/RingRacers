@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015 David Hill
+// Copyright (C) 2015-2026 David Hill
 //
 // See COPYING for license information.
 //
@@ -41,9 +41,10 @@ namespace ACSVM
          Elem *next;
       };
 
-      using iterator   = Elem *;
-      using size_type  = std::size_t;
-      using value_type = Elem;
+      using const_iterator = Elem const *;
+      using iterator       = Elem *;
+      using size_type      = std::size_t;
+      using value_type     = Elem;
 
 
       HashMapFixed() : hasher{}, table{nullptr}, elemV{nullptr}, elemC{0} {}
@@ -65,7 +66,8 @@ namespace ACSVM
       }
 
       // begin
-      iterator begin() {return elemV;}
+            iterator begin()       {return elemV;}
+      const_iterator begin() const {return elemV;}
 
       //
       // build
@@ -80,10 +82,13 @@ namespace ACSVM
          // Insert elements.
          for(Elem &elem : *this)
          {
-            size_type hash = hasher(elem.key) % elemC;
+            Elem **chain = &table[hasher(elem.key) % elemC];
 
-            elem.next = table[hash];
-            table[hash] = &elem;
+            // Walk to the end of the chain.
+            while(*chain) chain = &(*chain)->next;
+
+            // Insert new element.
+            (*chain = &elem)->next = nullptr;
          }
       }
 
@@ -91,7 +96,8 @@ namespace ACSVM
       bool empty() const {return !elemC;}
 
       // end
-      iterator end() {return elemV + elemC;}
+            iterator end()       {return elemV + elemC;}
+      const_iterator end() const {return elemV + elemC;}
 
       //
       // find

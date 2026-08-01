@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2026 David Hill
 //
 // See COPYING for license information.
 //
@@ -272,34 +272,35 @@ namespace ACSVM
          return;
 
       auto branches = env->branchLimit;
+      ProfileTime ptStart = 0;
 
    exec_intr:
       switch(state.state)
       {
-      case ThreadState::Inactive: return;
+      case ThreadState::Inactive: goto thread_hold;
       case ThreadState::Stopped:  goto thread_stop;
-      case ThreadState::Paused:   return;
+      case ThreadState::Paused:   goto thread_hold;
 
       case ThreadState::Running:
          if(delay)
-            return;
+            goto thread_hold;
          break;
 
       case ThreadState::WaitScrI:
          if(scopeMap->isScriptActive(scopeMap->findScript(state.data)))
-            return;
+            goto thread_hold;
          state = ThreadState::Running;
          break;
 
       case ThreadState::WaitScrS:
          if(scopeMap->isScriptActive(scopeMap->findScript(scopeMap->getString(state.data))))
-            return;
+            goto thread_hold;
          state = ThreadState::Running;
          break;
 
       case ThreadState::WaitTag:
          if(!module->env->checkTag(state.type, state.data))
-            return;
+            goto thread_hold;
          state = ThreadState::Running;
          break;
       }
@@ -311,6 +312,14 @@ namespace ACSVM
          #include "CodeList.hpp"
       };
       #endif
+
+      // Poll starting profile time.
+      if(!ptStart && (ptStart = env->getProfileTime()))
+      {
+         // Reset profile times on the call stack.
+         for(auto &frame : callStk)
+            frame.ptStart = ptStart;
+      }
 
       #if ACSVM_DynamicGoto
       NextCase();
@@ -380,18 +389,22 @@ namespace ACSVM
             dataStk.reserve(DataStkSize);
 
             // Push call frame.
-            callStk.push({codePtr, module, scopeMod, localArr.size(), localReg.size()});
+            callStk.push({codePtr, function, module, scopeMod, ptStart, localArr.size(), localReg.size()});
 
             // Apply function data.
             codePtr      = &func->module->codeV[func->codeIdx];
+            function     = func;
             module       = func->module;
             scopeMod     = scopeMap->getModuleScope(module);
             localArr.alloc(func->locArrC);
-            localReg.alloc(func->locRegC);
+            localReg.alloc(func->locRegC + func->argC);
 
             // Read arguments.
             dataStk.drop(func->argC);
             memcpy(&localReg[0], &dataStk[0], func->argC * sizeof(Word));
+
+            // Poll profiling.
+            ptStart = env->getProfileTime();
 
             NextCase();
 
@@ -455,8 +468,14 @@ namespace ACSVM
          if(callStk.empty())
             goto thread_stop;
 
+         // Apply profiling.
+         if(ptStart)
+            scopeMap->addProfileCall(function, env->getProfileTime() - ptStart);
+
          // Apply call frame.
          codePtr     = callStk[1].codePtr;
+         ptStart     = callStk[1].ptStart;
+         function    = callStk[1].function;
          module      = callStk[1].module;
          scopeMod    = callStk[1].scopeMod;
          localArr.free(callStk[1].locArrC);
@@ -566,11 +585,11 @@ namespace ACSVM
 
       DeclCase(ScrDelay):
          dataStk.drop();
-         delay = dataStk[0];
+         delay = dataStk[0] + env->longDelay;
          goto exec_intr;
 
       DeclCase(ScrDelay_Lit):
-         delay = *codePtr++;
+         delay = *codePtr++ + env->longDelay;
          goto exec_intr;
 
       DeclCase(ScrHalt):
@@ -635,7 +654,57 @@ namespace ACSVM
       }
 
    thread_stop:
+      if(ptStart)
+      {
+         auto ptEnd = env->getProfileTime();
+
+         // If in a function, apply latent times for the call stack.
+         if(function)
+         {
+            scopeMap->addProfileCall(function, ptEnd - ptStart);
+
+            for(auto &frame : callStk)
+            {
+               if(frame.function)
+                  scopeMap->addProfileCall(frame.function, ptEnd - frame.ptStart);
+               else
+                  scopeMap->addProfileCall(script, ptEnd - frame.ptStart);
+               frame.ptStart = 0;
+            }
+         }
+         // Otherwise, just apply the running time to the script.
+         else
+            scopeMap->addProfileCall(script, ptEnd - ptStart);
+      }
+
       stop();
+      return;
+
+   thread_hold:
+      if(ptStart)
+      {
+         auto ptEnd = env->getProfileTime();
+
+         // If in a function, apply latent times for the call stack.
+         if(function)
+         {
+            scopeMap->addProfileTime(function, ptEnd - ptStart);
+
+            for(auto &frame : callStk)
+            {
+               if(frame.function)
+                  scopeMap->addProfileTime(frame.function, ptEnd - frame.ptStart);
+               else
+                  scopeMap->addProfileTime(script, ptEnd - frame.ptStart);
+               frame.ptStart = 0;
+            }
+         }
+         // Otherwise, just apply the running time to the script.
+         else
+            scopeMap->addProfileTime(script, ptEnd - ptStart);
+      }
+
+      return;
    }
 }
 

@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2026 David Hill
 //
 // See COPYING for license information.
 //
@@ -113,6 +113,7 @@ namespace ACSVM
    Environment::Environment() :
       branchLimit  {0},
       scriptLocRegC{ScriptLocRegCDefault},
+      longDelay{false},
 
       funcV{nullptr},
       funcC{0},
@@ -480,6 +481,22 @@ namespace ACSVM
    }
 
    //
+   // Environment::getProfileTime
+   //
+   ProfileTime Environment::getProfileTime() const
+   {
+      return 0;
+   }
+
+   //
+   // Environment::getScopeID
+   //
+   ScopeID Environment::getScopeID(Word mapnum) const
+   {
+      return {0, 0, mapnum};
+   }
+
+   //
    // Environment::hasActiveThread
    //
    bool Environment::hasActiveThread() const
@@ -592,12 +609,20 @@ namespace ACSVM
    }
 
    //
+   // Environment::readFunction
+   //
+   Function *Environment::readFunction(Serial &in) const
+   {
+      return getFunction(in.readVLN<Word>());
+   }
+
+   //
    // Environment::readModuleName
    //
    ModuleName Environment::readModuleName(Serial &in) const
    {
       auto s = readString(in);
-      size_t i = ReadVLN<std::size_t>(in);
+      auto i = ReadVLN<std::size_t>(in);
 
       if ((i = W_LumpFromNetSave(i)) == LUMPERROR)
       {
@@ -656,7 +681,7 @@ namespace ACSVM
    //
    ScriptName Environment::readScriptName(Serial &in) const
    {
-      String *s = in.in->get() ? &stringTable[ReadVLN<Word>(in)] : nullptr;
+      String *s = in.readByte() ? &stringTable[ReadVLN<Word>(in)] : nullptr;
       Word    i = ReadVLN<Word>(in);
       return {s, i};
    }
@@ -706,6 +731,15 @@ namespace ACSVM
 
       for(auto &module : pd->modules)
          module.resetStrings();
+   }
+
+   //
+   // Environment::resetProfileData
+   //
+   void Environment::resetProfileData()
+   {
+      for(auto &scope : pd->scopes)
+         scope.resetProfileData();
    }
 
    //
@@ -769,6 +803,17 @@ namespace ACSVM
    }
 
    //
+   // Environment::writeFunction
+   //
+   void Environment::writeFunction(Serial &out, Function *in) const
+   {
+      if(in)
+         out.writeVLN(in->idx);
+      else
+         out.writeByte(0);
+   }
+
+   //
    // Environment::writeModuleName
    //
    void Environment::writeModuleName(Serial &out, ModuleName const &in) const
@@ -823,11 +868,11 @@ namespace ACSVM
    {
       if(in.s)
       {
-         out.out->put('\1');
+         out.writeByte(1);
          WriteVLN(out, in.s->idx);
       }
       else
-         out.out->put('\0');
+         out.writeByte(0);
 
       WriteVLN(out, in.i);
    }

@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2017 David Hill
+// Copyright (C) 2017-2025 David Hill
 //
 // See COPYING for license information.
 //
@@ -41,14 +41,6 @@ namespace ACSVM
       for(int i = 8; i--;) buf[Got + i] = "0123456789ABCDEF"[got & 0xF], got >>= 4;
 
       msg = buf;
-   }
-
-   //
-   // SerialSignError destructor
-   //
-   SerialSignError::~SerialSignError()
-   {
-      delete[] msg;
    }
 }
 

@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2025 David Hill
 //
 // See COPYING for license information.
 //
@@ -38,6 +38,8 @@ namespace ACSVM
       Word &operator [] (Word idx);
 
       void clear();
+
+      bool empty() const;
 
       // If idx is allocated, returns that Word. Otherwise, returns 0.
       Word find(Word idx) const;

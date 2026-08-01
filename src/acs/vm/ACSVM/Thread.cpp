@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2026 David Hill
 //
 // See COPYING for license information.
 //
@@ -75,6 +75,7 @@ namespace ACSVM
 
       module   = env->getModule(env->readModuleName(in));
       codePtr  = &module->codeV[ReadVLN<std::size_t>(in)];
+      function = in.version >= 2 ? env->readFunction(in) : nullptr;
       scopeGbl = env->getGlobalScope(ReadVLN<Word>(in));
       scopeHub = scopeGbl->getHubScope(ReadVLN<Word>(in));
       scopeMap = scopeHub->getMapScope(ReadVLN<Word>(in));
@@ -107,7 +108,7 @@ namespace ACSVM
 
       countFull = ReadVLN<std::size_t>(in);
       count     = ReadVLN<std::size_t>(in);
-      in.in->read(printBuf.getLoadBuf(countFull, count), countFull);
+      in.read(printBuf.getLoadBuf(countFull, count), countFull);
 
       state.state = static_cast<ThreadState::State>(ReadVLN<int>(in));
       state.data = ReadVLN<Word>(in);
@@ -144,6 +145,8 @@ namespace ACSVM
       out.module   = env->getModule(env->readModuleName(in));
       out.scopeMod = scopeMap->getModuleScope(out.module);
       out.codePtr  = &out.module->codeV[ReadVLN<std::size_t>(in)];
+      out.function = in.version >= 2 ? env->readFunction(in) : nullptr;
+      out.ptStart  = 0; // Do not serialize ptStart.
       out.locArrC  = ReadVLN<std::size_t>(in);
       out.locRegC  = ReadVLN<std::size_t>(in);
 
@@ -177,6 +180,7 @@ namespace ACSVM
 
       env->writeModuleName(out, module->name);
       WriteVLN(out, codePtr - module->codeV.data());
+      env->writeFunction(out, function);
       WriteVLN(out, scopeGbl->id);
       WriteVLN(out, scopeHub->id);
       WriteVLN(out, scopeMap->id);
@@ -204,7 +208,7 @@ namespace ACSVM
 
       WriteVLN(out, printBuf.sizeFull());
       WriteVLN(out, printBuf.size());
-      out.out->write(printBuf.dataFull(), printBuf.sizeFull());
+      out.write(printBuf.dataFull(), printBuf.sizeFull());
 
       WriteVLN<int>(out, state.state);
       WriteVLN(out, state.data);
@@ -221,9 +225,10 @@ namespace ACSVM
    {
       link.insert(&map->threadActive);
 
-      script  = script_;
-      module  = script->module;
-      codePtr = &module->codeV[script->codeIdx];
+      script   = script_;
+      module   = script->module;
+      codePtr  = &module->codeV[script->codeIdx];
+      function = nullptr;
 
       scopeMod = map->getModuleScope(module);
       scopeMap = map;
@@ -283,6 +288,8 @@ namespace ACSVM
    {
       env->writeModuleName(out, in.module->name);
       WriteVLN(out, in.codePtr - in.module->codeV.data());
+      env->writeFunction(out, in.function);
+      // Do not serialize ptStart.
       WriteVLN(out, in.locArrC);
       WriteVLN(out, in.locRegC);
    }

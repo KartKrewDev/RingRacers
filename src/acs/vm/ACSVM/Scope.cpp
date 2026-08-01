@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2020 David Hill
+// Copyright (C) 2015-2026 David Hill
 //
 // See COPYING for license information.
 //
@@ -15,10 +15,13 @@
 #include "Action.hpp"
 #include "BinaryIO.hpp"
 #include "Environment.hpp"
+#include "Error.hpp"
+#include "Function.hpp"
 #include "HashMap.hpp"
 #include "HashMapFixed.hpp"
 #include "Init.hpp"
 #include "Module.hpp"
+#include "ProfileData.hpp"
 #include "Script.hpp"
 #include "Serial.hpp"
 #include "Thread.hpp"
@@ -133,7 +136,7 @@ namespace ACSVM
       // Delegate deferred script actions.
       for(auto itr = scriptAction.begin(), end = scriptAction.end(); itr != end;)
       {
-         auto scope = pd->scopes.find(itr->id.global);
+         auto scope = pd->scopes.find(itr->id.hub);
          if(scope && scope->active)
             itr++->link.relink(&scope->scriptAction);
          else
@@ -192,15 +195,12 @@ namespace ACSVM
 
       in.readSign(Signature::GlobalScope);
 
-      for(auto &arr : arrV)
-         arr.loadState(in);
-
-      for(auto &reg : regV)
-         reg = ReadVLN<Word>(in);
+      LoadArrV(in, arrV, ArrC);
+      LoadRegV(in, regV, RegC);
 
       env->readScriptActions(in, scriptAction);
 
-      active = in.in->get() != '\0';
+      active = in.readByte();
 
       for(auto n = ReadVLN<std::size_t>(in); n--;)
          getHubScope(ReadVLN<Word>(in))->loadState(in);
@@ -243,10 +243,24 @@ namespace ACSVM
    //
    void GlobalScope::reset()
    {
+      for(auto &arr : arrV) arr.clear();
+      for(auto &reg : regV) reg = 0;
+
       while(scriptAction.next->obj)
          delete scriptAction.next->obj;
 
+      active = false;
+
       pd->scopes.free();
+   }
+
+   //
+   // GlobalScope::resetProfileData
+   //
+   void GlobalScope::resetProfileData()
+   {
+      for(auto &scope : pd->scopes)
+         scope.resetProfileData();
    }
 
    //
@@ -256,15 +270,12 @@ namespace ACSVM
    {
       out.writeSign(Signature::GlobalScope);
 
-      for(auto &arr : arrV)
-         arr.saveState(out);
-
-      for(auto &reg : regV)
-         WriteVLN(out, reg);
+      SaveArrV(out, arrV, ArrC);
+      SaveRegV(out, regV, RegC);
 
       env->writeScriptActions(out, scriptAction);
 
-      out.out->put(active ? '\1' : '\0');
+      out.writeByte(active);
 
       WriteVLN(out, pd->scopes.size());
       for(auto &scope : pd->scopes)
@@ -289,6 +300,62 @@ namespace ACSVM
 
       for(auto &scope : pd->scopes)
          scope.unlockStrings();
+   }
+
+   //
+   // GlobalScope::LoadArrV
+   //
+   void GlobalScope::LoadArrV(Serial &in, Array *arrV, std::size_t arrC)
+   {
+      std::size_t inC = in.version == 0 ? 256 : ReadVLN<std::size_t>(in);
+
+      if(inC > arrC)
+         throw SerialError("too many arrays");
+
+      while(inC--)
+         arrV++->loadState(in);
+   }
+
+   //
+   // GlobalScope::LoadRegV
+   //
+   void GlobalScope::LoadRegV(Serial &in, Word *regV, std::size_t regC)
+   {
+      std::size_t inC = in.version == 0 ? 256 : ReadVLN<std::size_t>(in);
+
+      if(inC > regC)
+         throw SerialError("too many registers");
+
+      while(inC--)
+         *regV++ = ReadVLN<Word>(in);
+   }
+
+   //
+   // GlobalScope::SaveArrV
+   //
+   void GlobalScope::SaveArrV(Serial &out, Array const *arrV, std::size_t arrC)
+   {
+      // Skip trailing empty arrays.
+      while(arrC && !arrV[arrC - 1].empty())
+         --arrC;
+
+      WriteVLN(out, arrC);
+      while(arrC--)
+         arrV++->saveState(out);
+   }
+
+   //
+   // GlobalScope::SaveRegV
+   //
+   void GlobalScope::SaveRegV(Serial &out, Word const *regV, std::size_t regC)
+   {
+      // Skip trailing 0 registers.
+      while(regC && !regV[regC - 1])
+         --regC;
+
+      WriteVLN(out, regC);
+      while(regC--)
+         WriteVLN(out, *regV++);
    }
 
    //
@@ -343,7 +410,7 @@ namespace ACSVM
       // Delegate deferred script actions.
       for(auto itr = scriptAction.begin(), end = scriptAction.end(); itr != end;)
       {
-         auto scope = pd->scopes.find(itr->id.global);
+         auto scope = pd->scopes.find(itr->id.map);
          if(scope && scope->active)
             itr++->link.relink(&scope->scriptAction);
          else
@@ -402,15 +469,12 @@ namespace ACSVM
 
       in.readSign(Signature::HubScope);
 
-      for(auto &arr : arrV)
-         arr.loadState(in);
-
-      for(auto &reg : regV)
-         reg = ReadVLN<Word>(in);
+      GlobalScope::LoadArrV(in, arrV, ArrC);
+      GlobalScope::LoadRegV(in, regV, RegC);
 
       env->readScriptActions(in, scriptAction);
 
-      active = in.in->get() != '\0';
+      active = in.readByte();
 
       for(auto n = ReadVLN<std::size_t>(in); n--;)
          getMapScope(ReadVLN<Word>(in))->loadState(in);
@@ -453,10 +517,24 @@ namespace ACSVM
    //
    void HubScope::reset()
    {
+      for(auto &arr : arrV) arr.clear();
+      for(auto &reg : regV) reg = 0;
+
       while(scriptAction.next->obj)
          delete scriptAction.next->obj;
 
+      active = false;
+
       pd->scopes.free();
+   }
+
+   //
+   // HubScope::resetProfileData
+   //
+   void HubScope::resetProfileData()
+   {
+      for(auto &scope : pd->scopes)
+         scope.resetProfileData();
    }
 
    //
@@ -466,15 +544,12 @@ namespace ACSVM
    {
       out.writeSign(Signature::HubScope);
 
-      for(auto &arr : arrV)
-         arr.saveState(out);
-
-      for(auto &reg : regV)
-         WriteVLN(out, reg);
+      GlobalScope::SaveArrV(out, arrV, ArrC);
+      GlobalScope::SaveRegV(out, regV, RegC);
 
       env->writeScriptActions(out, scriptAction);
 
-      out.out->put(active ? '\1' : '\0');
+      out.writeByte(active);
 
       WriteVLN(out, pd->scopes.size());
       for(auto &scope : pd->scopes)
@@ -556,17 +631,22 @@ namespace ACSVM
       for(auto itr = moduleV, end = itr + moduleC; itr != end; ++itr)
          modules.add(*itr);
 
-      // Count scripts.
+      // Count functions and scripts.
 
-      std::size_t scriptThrC = 0;
+      std::size_t funcC      = 0;
+      std::size_t scriptC    = 0;
       std::size_t scriptIntC = 0;
       std::size_t scriptStrC = 0;
 
       for(auto &module : modules.vec)
       {
+         for(auto &func : module->functionV)
+            if(func->module == module)
+               ++funcC;
+
          for(auto &script : module->scriptV)
          {
-            ++scriptThrC;
+            ++scriptC;
             if(script.name.s)
                ++scriptStrC;
             else
@@ -576,10 +656,16 @@ namespace ACSVM
 
       // Create lookup tables.
 
+      profileFunction.alloc(funcC);
+      profileScript.alloc(scriptC);
+
       pd->scopes.alloc(modules.vec.size());
       pd->scriptInt.alloc(scriptIntC);
       pd->scriptStr.alloc(scriptStrC);
-      pd->scriptThread.alloc(scriptThrC);
+      pd->scriptThread.alloc(scriptC);
+
+      auto profFuncItr = profileFunction.begin();
+      auto profScrItr  = profileScript.begin();
 
       auto scopeItr     = pd->scopes.begin();
       auto scriptIntItr = pd->scriptInt.begin();
@@ -592,11 +678,22 @@ namespace ACSVM
 
          new(scopeItr++) ElemScope{module, {this, module}, nullptr};
 
+         for(auto &func : module->functionV)
+         {
+            using ElemPF = HashMapFixed<Function *, ProfileData>::Elem;
+
+            if(func->module == module)
+               new(profFuncItr++) ElemPF{func, {}, nullptr};
+         }
+
          for(auto &script : module->scriptV)
          {
             using ElemInt = HashMapFixed<Word,     Script *>::Elem;
+            using ElemPS  = HashMapFixed<Script *, ProfileData>::Elem;
             using ElemStr = HashMapFixed<String *, Script *>::Elem;
             using ElemThr = HashMapFixed<Script *, Thread *>::Elem;
+
+            new(profScrItr++) ElemPS{&script, {}, nullptr};
 
             new(scriptThrItr++) ElemThr{&script, nullptr, nullptr};
 
@@ -607,6 +704,9 @@ namespace ACSVM
          }
       }
 
+      profileFunction.build();
+      profileScript.build();
+
       pd->scopes.build();
       pd->scriptInt.build();
       pd->scriptStr.build();
@@ -614,6 +714,48 @@ namespace ACSVM
 
       for(auto &scope : pd->scopes)
          scope.val.import();
+   }
+
+   //
+   // MapScope::addProfileCall Function
+   //
+   void MapScope::addProfileCall(Function *func, ProfileTime pt)
+   {
+      if(auto lookup = profileFunction.find(func))
+      {
+         lookup->addTime(pt);
+         lookup->addCall();
+      }
+   }
+
+   //
+   // MapScope::addProfileCall Script
+   //
+   void MapScope::addProfileCall(Script *script, ProfileTime pt)
+   {
+      if(auto lookup = profileScript.find(script))
+      {
+         lookup->addTime(pt);
+         lookup->addCall();
+      }
+   }
+
+   //
+   // MapScope::addProfileTime Function
+   //
+   void MapScope::addProfileTime(Function *func, ProfileTime pt)
+   {
+      if(auto lookup = profileFunction.find(func))
+         lookup->addTime(pt);
+   }
+
+   //
+   // MapScope::addProfileTime Script
+   //
+   void MapScope::addProfileTime(Script *script, ProfileTime pt)
+   {
+      if(auto lookup = profileScript.find(script))
+         lookup->addTime(pt);
    }
 
    //
@@ -638,11 +780,13 @@ namespace ACSVM
          if(script) switch(action->action)
          {
          case ScriptAction::Start:
-            scriptStart(script, {action->argV.data(), action->argV.size()});
+            scriptStart(script, {action->argV.data(), action->argV.size(),
+               nullptr, env->funcScriptStartDeferred});
             break;
 
          case ScriptAction::StartForced:
-            scriptStartForced(script, {action->argV.data(), action->argV.size()});
+            scriptStartForced(script, {action->argV.data(), action->argV.size(),
+               nullptr, env->funcScriptStartForcedDeferred});
             break;
 
          case ScriptAction::Stop:
@@ -782,6 +926,32 @@ namespace ACSVM
    }
 
    //
+   // MapScope::loadProfileData
+   //
+   void MapScope::loadProfileData(Serial &in)
+   {
+      ProfileData dummy;
+
+      // Load function profiling.
+      for(auto c = in.readVLN<std::size_t>(); c--;)
+      {
+         if(auto lookup = profileFunction.find(env->readFunction(in)))
+            lookup->loadState(in);
+         else
+            dummy.loadState(in);
+      }
+
+      // Load script profiling.
+      for(auto c = in.readVLN<std::size_t>(); c--;)
+      {
+         if(auto lookup = profileScript.find(env->readScript(in)))
+            lookup->loadState(in);
+         else
+            dummy.loadState(in);
+      }
+   }
+
+   //
    // MapScope::loadState
    //
    void MapScope::loadState(Serial &in)
@@ -791,8 +961,10 @@ namespace ACSVM
       in.readSign(Signature::MapScope);
 
       env->readScriptActions(in, scriptAction);
-      active = in.in->get() != '\0';
+      active = in.readByte();
       loadModules(in);
+      if(in.version >= 2)
+         loadProfileData(in);
       loadThreads(in);
 
       in.readSign(~Signature::MapScope);
@@ -809,7 +981,7 @@ namespace ACSVM
          thread->link.insert(&threadActive);
          thread->loadState(in);
 
-         if(in.in->get())
+         if(in.readByte())
          {
             auto scrThread = pd->scriptThread.find(thread->script);
             if(scrThread)
@@ -865,11 +1037,26 @@ namespace ACSVM
 
       active = false;
 
+      profileFunction.free();
+      profileScript.free();
+
       pd->scopes.free();
 
       pd->scriptInt.free();
       pd->scriptStr.free();
       pd->scriptThread.free();
+   }
+
+   //
+   // MapScope::resetProfileData
+   //
+   void MapScope::resetProfileData()
+   {
+      for(auto &prof : profileFunction)
+         prof.val.reset();
+
+      for(auto &prof : profileScript)
+         prof.val.reset();
    }
 
    //
@@ -887,6 +1074,42 @@ namespace ACSVM
    }
 
    //
+   // MapScope::saveProfileData
+   //
+   void MapScope::saveProfileData(Serial &out) const
+   {
+      // Save function profiling.
+      std::size_t count = 0;
+      for(auto &prof : profileFunction)
+         if(prof.val) ++count;
+
+      out.writeVLN(count);
+
+      for(auto &prof : profileFunction)
+      {
+         if(!prof.val) continue;
+
+         env->writeFunction(out, prof.key);
+         prof.val.saveState(out);
+      }
+
+      // Save script profiling.
+      count = 0;
+      for(auto &prof : profileScript)
+         if(prof.val) ++count;
+
+      out.writeVLN(count);
+
+      for(auto &prof : profileScript)
+      {
+         if(!prof.val) continue;
+
+         env->writeScript(out, prof.key);
+         prof.val.saveState(out);
+      }
+   }
+
+   //
    // MapScope::saveState
    //
    void MapScope::saveState(Serial &out) const
@@ -894,8 +1117,9 @@ namespace ACSVM
       out.writeSign(Signature::MapScope);
 
       env->writeScriptActions(out, scriptAction);
-      out.out->put(active ? '\1' : '\0');
+      out.writeByte(active);
       saveModules(out);
+      saveProfileData(out);
       saveThreads(out);
 
       out.writeSign(~Signature::MapScope);
@@ -912,7 +1136,7 @@ namespace ACSVM
          thread.saveState(out);
 
          auto scrThread = pd->scriptThread.find(thread.script);
-         out.out->put(scrThread && *scrThread == &thread ? '\1' : '\0');
+         out.writeByte(scrThread && *scrThread == &thread);
       }
    }
 
@@ -981,7 +1205,6 @@ namespace ACSVM
          thread = env->getFreeThread();
          thread->start(script, this, info.info, info.argV, info.argC);
          if(info.func) info.func(thread);
-         if(info.funcc) info.funcc(thread);
          return true;
       }
    }
@@ -1012,7 +1235,6 @@ namespace ACSVM
 
       thread->start(script, this, info.info, info.argV, info.argC);
       if(info.func) info.func(thread);
-      if(info.funcc) info.funcc(thread);
       return true;
    }
 
@@ -1042,7 +1264,6 @@ namespace ACSVM
 
       thread->start(script, this, info.info, info.argV, info.argC);
       if(info.func) info.func(thread);
-      if(info.funcc) info.funcc(thread);
       thread->exec();
 
       Word result = thread->result;
@@ -1242,11 +1463,8 @@ namespace ACSVM
    {
       in.readSign(Signature::ModuleScope);
 
-      for(auto &arr : selfArrV)
-         arr.loadState(in);
-
-      for(auto &reg : selfRegV)
-         reg = ReadVLN<Word>(in);
+      GlobalScope::LoadArrV(in, selfArrV, ArrC);
+      GlobalScope::LoadRegV(in, selfRegV, RegC);
 
       in.readSign(~Signature::ModuleScope);
    }
@@ -1276,11 +1494,8 @@ namespace ACSVM
    {
       out.writeSign(Signature::ModuleScope);
 
-      for(auto &arr : selfArrV)
-         arr.saveState(out);
-
-      for(auto &reg : selfRegV)
-         WriteVLN(out, reg);
+      GlobalScope::SaveArrV(out, selfArrV, ArrC);
+      GlobalScope::SaveRegV(out, selfRegV, RegC);
 
       out.writeSign(~Signature::ModuleScope);
    }

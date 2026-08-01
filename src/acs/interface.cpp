@@ -567,7 +567,7 @@ void ACS_Archive(savebuffer_t *save)
 
 	SaveBuffer buffer{save};
 	std::ostream stream{&buffer};
-	ACSVM::Serial serial{stream};
+	ACSVM::SerialSTD serial{stream};
 
 #if 0
 	// Enable debug signatures.
@@ -597,7 +597,7 @@ void ACS_UnArchive(savebuffer_t *save)
 
 	SaveBuffer buffer{save};
 	std::istream stream{&buffer};
-	ACSVM::Serial serial{stream};
+	ACSVM::SerialSTD serial{stream};
 
 	try
 	{

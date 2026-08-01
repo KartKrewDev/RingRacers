@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2026 David Hill
 //
 // See COPYING for license information.
 //
@@ -14,6 +14,7 @@
 #define ACSVM__Scope_H__
 
 #include "Array.hpp"
+#include "HashMapFixed.hpp"
 #include "List.hpp"
 
 
@@ -23,8 +24,6 @@
 
 namespace ACSVM
 {
-   extern "C" using MapScope_ScriptStartFuncC = void (*)(void *);
-
    //
    // GlobalScope
    //
@@ -56,6 +55,7 @@ namespace ACSVM
       void refStrings() const;
 
       void reset();
+      void resetProfileData();
 
       void saveState(Serial &out) const;
 
@@ -71,6 +71,13 @@ namespace ACSVM
       ListLink<ScriptAction> scriptAction;
 
       bool active;
+
+
+      static void LoadArrV(Serial &in, Array *arrV, std::size_t arrC);
+      static void LoadRegV(Serial &in, Word *regV, std::size_t regC);
+
+      static void SaveArrV(Serial &out, Array const *arrV, std::size_t arrC);
+      static void SaveRegV(Serial &out, Word const *regV, std::size_t regC);
 
    private:
       struct PrivData;
@@ -109,6 +116,7 @@ namespace ACSVM
       void refStrings() const;
 
       void reset();
+      void resetProfileData();
 
       void saveState(Serial &out) const;
 
@@ -138,9 +146,6 @@ namespace ACSVM
    class MapScope
    {
    public:
-      using ScriptStartFunc = void (*)(Thread *);
-      using ScriptStartFuncC = MapScope_ScriptStartFuncC;
-
       //
       // ScriptStartInfo
       //
@@ -148,17 +153,13 @@ namespace ACSVM
       {
       public:
          ScriptStartInfo() :
-            argV{nullptr}, func{nullptr}, funcc{nullptr}, info{nullptr}, argC{0} {}
+            argV{nullptr}, func{nullptr}, info{nullptr}, argC{0} {}
          ScriptStartInfo(Word const *argV_, std::size_t argC_,
             ThreadInfo const *info_ = nullptr, ScriptStartFunc func_ = nullptr) :
-            argV{argV_}, func{func_}, funcc{nullptr}, info{info_}, argC{argC_} {}
-         ScriptStartInfo(Word const *argV_, std::size_t argC_,
-            ThreadInfo const *info_, ScriptStartFuncC func_) :
-            argV{argV_}, func{nullptr}, funcc{func_}, info{info_}, argC{argC_} {}
+            argV{argV_}, func{func_}, info{info_}, argC{argC_} {}
 
          Word       const *argV;
          ScriptStartFunc   func;
-         ScriptStartFuncC  funcc;
          ThreadInfo const *info;
          std::size_t       argC;
       };
@@ -169,6 +170,12 @@ namespace ACSVM
       ~MapScope();
 
       void addModules(Module *const *moduleV, std::size_t moduleC);
+
+      void addProfileCall(Function *func, ProfileTime pt);
+      void addProfileCall(Script *script, ProfileTime pt);
+
+      void addProfileTime(Function *func, ProfileTime pt);
+      void addProfileTime(Script *script, ProfileTime pt);
 
       std::size_t countActiveThread() const;
 
@@ -195,6 +202,7 @@ namespace ACSVM
       void refStrings() const;
 
       void reset();
+      void resetProfileData();
 
       void saveState(Serial &out) const;
 
@@ -217,6 +225,9 @@ namespace ACSVM
       HubScope    *const hub;
       Word         const id;
 
+      HashMapFixed<Function *, ProfileData> profileFunction;
+      HashMapFixed<Script   *, ProfileData> profileScript;
+
       ListLink<MapScope>     hashLink;
       ListLink<ScriptAction> scriptAction;
       ListLink<Thread>       threadActive;
@@ -234,9 +245,11 @@ namespace ACSVM
       struct PrivData;
 
       void loadModules(Serial &in);
+      void loadProfileData(Serial &in);
       void loadThreads(Serial &in);
 
       void saveModules(Serial &out) const;
+      void saveProfileData(Serial &out) const;
       void saveThreads(Serial &out) const;
 
       PrivData *pd;

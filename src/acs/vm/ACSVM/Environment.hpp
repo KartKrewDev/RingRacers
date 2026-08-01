@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2026 David Hill
 //
 // See COPYING for license information.
 //
@@ -76,7 +76,7 @@ namespace ACSVM
 
       Thread *getFreeThread();
 
-      Function *getFunction(Word idx) {return idx < funcC ? funcV[idx] : nullptr;}
+      Function *getFunction(Word idx) const {return idx < funcC ? funcV[idx] : nullptr;}
 
       Function *getFunction(Module *module, String *name);
 
@@ -87,6 +87,14 @@ namespace ACSVM
 
       ModuleName getModuleName(char const *str);
       virtual ModuleName getModuleName(char const *str, std::size_t len);
+
+      // Gets the current time for profiling in seconds.
+      // Default behavior is to return 0 to disable profiling.
+      virtual ProfileTime getProfileTime() const;
+
+      // Used to map from a single map number to a scope-id.
+      // Default behavior is to return {0, 0, mapnum}.
+      virtual ScopeID getScopeID(Word mapnum) const;
 
       // Called to translate script type from ACS0 script number.
       // Default behavior is to modulus 1000 the name.
@@ -123,6 +131,8 @@ namespace ACSVM
       // message to stderr.
       virtual void printKill(Thread *thread, Word type, Word data);
 
+      Function *readFunction(Serial &in) const;
+
       // Deserializes a ModuleName. Default behavior is to load s and i.
       virtual ModuleName readModuleName(Serial &in) const;
 
@@ -136,7 +146,11 @@ namespace ACSVM
 
       virtual void resetStrings();
 
+      void resetProfileData();
+
       virtual void saveState(Serial &out) const;
+
+      void writeFunction(Serial &out, Function *in) const;
 
       // Serializes a ModuleName. Default behavior is to save s and i.
       virtual void writeModuleName(Serial &out, ModuleName const &name) const;
@@ -149,12 +163,21 @@ namespace ACSVM
 
       StringTable stringTable;
 
+      // Used when a deferred script is started. Default is null.
+      ScriptStartFunc funcScriptStartDeferred;
+
+      // Used when a deferred forced script is started. Default is null.
+      ScriptStartFunc funcScriptStartForcedDeferred;
+
       // Number of branches allowed per call to Thread::exec. Default of 0
       // means no limit.
       Word branchLimit;
 
       // Default number of script variables. Default is 20.
       Word scriptLocRegC;
+
+      // If true, delays last an extra tic as in Hexen. Default is false.
+      bool longDelay : 1;
 
 
       // Prints an array to a print buffer, truncating elements of the array to

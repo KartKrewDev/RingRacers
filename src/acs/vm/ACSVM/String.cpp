@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015 David Hill
+// Copyright (C) 2015-2025 David Hill
 //
 // See COPYING for license information.
 //
@@ -14,6 +14,7 @@
 
 #include "BinaryIO.hpp"
 #include "HashMap.hpp"
+#include "Serial.hpp"
 
 #include <new>
 #include <vector>
@@ -85,7 +86,7 @@ namespace ACSVM
    //
    // String::Read
    //
-   String *String::Read(std::istream &in, Word idx)
+   String *String::Read(Serial &in, Word idx)
    {
       std::size_t len = ReadVLN<std::size_t>(in);
 
@@ -101,7 +102,7 @@ namespace ACSVM
    //
    // String::Write
    //
-   void String::Write(std::ostream &out, String *in)
+   void String::Write(Serial &out, String *in)
    {
       WriteVLN(out, in->len);
       out.write(in->str, in->len);
@@ -239,7 +240,7 @@ namespace ACSVM
    //
    // StringTable::loadState
    //
-   void StringTable::loadState(std::istream &in)
+   void StringTable::loadState(Serial &in)
    {
       if(pd)
       {
@@ -259,7 +260,7 @@ namespace ACSVM
 
       for(std::size_t idx = 0; idx != count; ++idx)
       {
-         if(in.get())
+         if(in.readByte())
          {
             String *str = String::Read(in, idx);
             str->lock = ReadVLN<std::size_t>(in);
@@ -277,7 +278,7 @@ namespace ACSVM
    //
    // StringTable::saveState
    //
-   void StringTable::saveState(std::ostream &out) const
+   void StringTable::saveState(Serial &out) const
    {
       WriteVLN(out, pd->stringByIdx.size());
 
@@ -285,13 +286,13 @@ namespace ACSVM
       {
          if(str != strNone)
          {
-            out << '\1';
+            out.writeByte(1);
 
             String::Write(out, str);
             WriteVLN(out, str->lock);
          }
          else
-            out << '\0';
+            out.writeByte(0);
       }
    }
 

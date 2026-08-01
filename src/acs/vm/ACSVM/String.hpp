@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015 David Hill
+// Copyright (C) 2015-2025 David Hill
 //
 // See COPYING for license information.
 //
@@ -84,9 +84,9 @@ namespace ACSVM
 
       static String *New(StringData const &data, Word idx);
 
-      static String *Read(std::istream &in, Word idx);
+      static String *Read(Serial &in, Word idx);
 
-      static void Write(std::ostream &out, String *in);
+      static void Write(Serial &out, String *in);
    };
 
    //
@@ -110,9 +110,9 @@ namespace ACSVM
 
       String &getNone() {return *strNone;}
 
-      void loadState(std::istream &in);
+      void loadState(Serial &in);
 
-      void saveState(std::ostream &out) const;
+      void saveState(Serial &out) const;
 
       std::size_t size() const;
 

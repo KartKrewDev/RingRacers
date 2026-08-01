@@ -6,7 +6,7 @@
 ##
 ##-----------------------------------------------------------------------------
 ##
-## CMake file for acsvm-util.
+## CMake file for acsvm-exec.
 ##
 ##-----------------------------------------------------------------------------
 
@@ -19,29 +19,19 @@ include_directories(.)
 
 
 ##----------------------------------------------------------------------------|
-## Variables                                                                  |
-##
-
-set(ACSVM_Util_H
-   Floats.hpp
-)
-
-
-##----------------------------------------------------------------------------|
 ## Targets                                                                    |
 ##
 
 ##
-## acsvm-capi
+## acsvm-exec
 ##
-add_library(acsvm-util ${ACSVM_SHARED_DECL}
-   ${ACSVM_Util_H}
-   Floats.cpp
+add_executable(acsvm-exec
+   main_exec.cpp
 )
 
-target_link_libraries(acsvm-util acsvm)
+target_link_libraries(acsvm-exec acsvm-util)
 
-ACSVM_INSTALL_LIB(acsvm-util Util Util)
+ACSVM_INSTALL_EXE(acsvm-exec)
 
 ## EOF
 

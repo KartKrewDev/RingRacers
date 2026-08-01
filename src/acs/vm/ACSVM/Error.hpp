@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015-2017 David Hill
+// Copyright (C) 2015-2025 David Hill
 //
 // See COPYING for license information.
 //
@@ -66,7 +66,6 @@ namespace ACSVM
    {
    public:
       SerialSignError(Signature sig, Signature got);
-      ~SerialSignError();
 
    private:
       static constexpr std::size_t Sig = 29, SigS = 39;

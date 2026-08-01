@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2015 David Hill
+// Copyright (C) 2015-2024 David Hill
 //
 // See COPYING for license information.
 //
@@ -252,9 +252,8 @@ namespace ACSVM
    //
    bool CallFunc_Func_ScrPauseS(Thread *thread, Word const *argV, Word)
    {
-      String *name = thread->scopeMap->getString(argV[0]);
-      ScopeID scope{thread->scopeGbl->id, thread->scopeHub->id, argV[1]};
-      if(!scope.map) scope.map = thread->scopeMap->id;
+      String *name  = thread->scopeMap->getString(argV[0]);
+      ScopeID scope = thread->env->getScopeID(argV[1]);
 
       thread->dataStk.push(thread->scopeMap->scriptPause(name, scope));
       return false;
@@ -265,11 +264,11 @@ namespace ACSVM
    //
    bool CallFunc_Func_ScrStartS(Thread *thread, Word const *argV, Word argC)
    {
-      String *name = thread->scopeMap->getString(argV[0]);
-      ScopeID scope{thread->scopeGbl->id, thread->scopeHub->id, argV[1]};
-      if(!scope.map) scope.map = thread->scopeMap->id;
+      String *name  = thread->scopeMap->getString(argV[0]);
+      ScopeID scope = thread->env->getScopeID(argV[1]);
 
-      thread->dataStk.push(thread->scopeMap->scriptStart(name, scope, {argV+2, argC-2}));
+      thread->dataStk.push(thread->scopeMap->scriptStart(
+         name, scope, {argV+2, argC-2, thread->getInfo()}));
       return false;
    }
 
@@ -292,11 +291,11 @@ namespace ACSVM
    //
    bool CallFunc_Func_ScrStartSF(Thread *thread, Word const *argV, Word argC)
    {
-      String *name = thread->scopeMap->getString(argV[0]);
-      ScopeID scope{thread->scopeGbl->id, thread->scopeHub->id, argV[1]};
-      if(!scope.map) scope.map = thread->scopeMap->id;
+      String *name  = thread->scopeMap->getString(argV[0]);
+      ScopeID scope = thread->env->getScopeID(argV[1]);
 
-      thread->dataStk.push(thread->scopeMap->scriptStartForced(name, scope, {argV+2, argC-2}));
+      thread->dataStk.push(thread->scopeMap->scriptStartForced(
+         name, scope, {argV+2, argC-2, thread->getInfo()}));
       return false;
    }
 
@@ -321,7 +320,8 @@ namespace ACSVM
    {
       String *name = thread->scopeMap->getString(argV[0]);
 
-      thread->dataStk.push(thread->scopeMap->scriptStartResult(name, {argV+1, argC-1}));
+      thread->dataStk.push(thread->scopeMap->scriptStartResult(
+         name, {argV+1, argC-1, thread->getInfo()}));
       return false;
    }
 
@@ -330,9 +330,8 @@ namespace ACSVM
    //
    bool CallFunc_Func_ScrStopS(Thread *thread, Word const *argV, Word)
    {
-      String *name = thread->scopeMap->getString(argV[0]);
-      ScopeID scope{thread->scopeGbl->id, thread->scopeHub->id, argV[1]};
-      if(!scope.map) scope.map = thread->scopeMap->id;
+      String *name  = thread->scopeMap->getString(argV[0]);
+      ScopeID scope = thread->env->getScopeID(argV[1]);
 
       thread->dataStk.push(thread->scopeMap->scriptStop(name, scope));
       return false;
