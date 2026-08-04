@@ -1,5 +1,6 @@
 {
-	"version": 3,
+	"$schema": "https://cmake.org/cmake/help/v3.28/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+	"version": 8,
 	"configurePresets": [
 		{
 			"name": "easymode",
@@ -7,7 +8,7 @@
 			"description": "Compile for Windows x86_64 by automatically downloading llvm-mingw64 and the Ring Racers SDK via FetchContent.",
 			"generator": "Ninja Multi-Config",
 			"toolchainFile": "scripts/rrsdk-toolchain.cmake",
-			"binaryDir": "build/${presetName}",
+			"binaryDir": "build/easymode",
 			"cacheVariables": {
 				"CMAKE_COLOR_DIAGNOSTICS": "ON",
 				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
@@ -22,6 +23,15 @@
 				"CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "-Wl,--pdb= -Wl,-s",
 				"FETCHCONTENT_QUIET": "OFF",
 				"SRB2_CONFIG_DEV_BUILD": "ON"
+			}
+		},
+		{
+			"name": "easymode-release",
+			"hidden": false,
+			"description": "Easy Mode, but turns off dev build",
+			"inherits": [ "easymode" ],
+			"cacheVariables": {
+				"SRB2_CONFIG_DEV_BUILD": "OFF"
 			}
 		},
 
@@ -345,6 +355,28 @@
 		{
 			"name": "ninja-arm64_osx_vcpkg-release",
 			"configurePreset": "ninja-arm64_osx_vcpkg-release"
+		},
+		{
+			"name": "easymode-RelWithDebInfo",
+			"description": "Easy Mode, release optimizations",
+			"configurePreset": "easymode",
+			"configuration": "RelWithDebInfo"
+		},
+		{
+			"name": "easymode-Debug",
+			"description": "Easy Mode, debug build",
+			"configurePreset": "easymode",
+			"configuration": "Debug"
+		}
+	],
+	"workflowPresets": [
+		{
+			"name": "easymode",
+			"description": "Full Easy Mode configuration and build",
+			"steps": [
+				{ "type": "configure", "name": "easymode" },
+				{ "type": "build", "name": "easymode-RelWithDebInfo" }
+			]
 		}
 	]
 }
