@@ -60,7 +60,7 @@ struct texture_t
 	UINT32 hash;
 	UINT8 type; // TEXTURETYPE_
 	INT16 width, height;
-	boolean holes;
+	dboolean holes;
 	UINT8 flip; // 1 = flipx, 2 = flipy, 3 = both
 	void *flat; // The texture, as a flat.
 	size_t terrainID;
@@ -91,10 +91,10 @@ UINT8 *R_GenerateTextureAsFlat(size_t texnum);
 UINT8 *R_GenerateTextureBrightmap(size_t texnum);
 INT32 R_GetTextureNum(INT32 texnum);
 INT32 R_GetTextureBrightmap(INT32 texnum);
-boolean R_TextureHasBrightmap(INT32 texnum);
-boolean R_TextureCanRemap(INT32 texnum);
+dboolean R_TextureHasBrightmap(INT32 texnum);
+dboolean R_TextureCanRemap(INT32 texnum);
 void R_CheckTextureCache(INT32 tex);
-void R_ClearTextureNumCache(boolean btell);
+void R_ClearTextureNumCache(dboolean btell);
 
 // Retrieve texture data.
 void *R_GetLevelFlat(drawspandata_t* ds, levelflat_t *levelflat);
@@ -102,7 +102,7 @@ UINT8 *R_GetColumn(fixed_t tex, INT32 col);
 UINT8 *R_GetBrightmapColumn(fixed_t tex, INT32 col);
 void *R_GetFlat(lumpnum_t flatnum);
 
-boolean R_CheckPowersOfTwo(drawspandata_t* ds);
+dboolean R_CheckPowersOfTwo(drawspandata_t* ds);
 void R_CheckFlatLength(drawspandata_t* ds, size_t size);
 
 void R_UpdateTextureBrightmap(INT32 tx, INT32 bm);

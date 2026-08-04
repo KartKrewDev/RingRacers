@@ -263,7 +263,7 @@ static void R_InstallSpriteLump(UINT16 wad,            // graphics patch
 //
 // Returns true if the sprite was succesfully added
 //
-boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16 wadnum, UINT16 startlump, UINT16 endlump)
+dboolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16 wadnum, UINT16 startlump, UINT16 endlump)
 {
 	UINT16 l;
 	UINT8 frame;
@@ -302,7 +302,7 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 			INT32 width, height;
 			INT16 topoffset, leftoffset;
 #ifndef NO_PNG_LUMPS
-			boolean isPNG = false;
+			dboolean isPNG = false;
 #endif
 
 			frame = R_Char2Frame(lumpinfo[l].name[4]);
@@ -811,14 +811,14 @@ void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t 
 	dc->texturemid = basetexturemid;
 }
 
-static boolean hitlag_is_flashing(mobj_t *thing)
+static dboolean hitlag_is_flashing(mobj_t *thing)
 {
 	return
 		(thing->hitlag > 0) &&
 		(thing->eflags & (MFE_DAMAGEHITLAG));
 }
 
-static boolean baddie_is_flashing(mobj_t *thing)
+static dboolean baddie_is_flashing(mobj_t *thing)
 {
 	return
 		(thing->flags & (MF_ENEMY|MF_BOSS)) &&
@@ -826,7 +826,7 @@ static boolean baddie_is_flashing(mobj_t *thing)
 		!(thing->flags & MF_GRENADEBOUNCE);
 }
 
-boolean R_ThingIsFlashing(mobj_t *thing)
+dboolean R_ThingIsFlashing(mobj_t *thing)
 {
 	return
 		(thing->frame & FF_INVERT) ||
@@ -834,7 +834,7 @@ boolean R_ThingIsFlashing(mobj_t *thing)
 		baddie_is_flashing(thing);
 }
 
-boolean R_ThingIsUsingBakedOffsets(mobj_t* thing)
+dboolean R_ThingIsUsingBakedOffsets(mobj_t* thing)
 {
 	return ((thing->bakexoff) || (thing->bakeyoff) || (thing->bakezoff) ||
 			(thing->bakexpiv) || (thing->bakeypiv) || (thing->bakezpiv));
@@ -1318,7 +1318,7 @@ fixed_t R_GetShadowZ(
 	mobj_t *thing, pslope_t **shadowslope)
 {
 	fixed_t halfHeight;
-	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
+	dboolean isflipped = thing->eflags & MFE_VERTICALFLIP;
 	fixed_t floorz;
 	fixed_t ceilingz;
 	fixed_t z, groundz = isflipped ? INT32_MAX : INT32_MIN;
@@ -1730,9 +1730,9 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	size_t frame, rot;
 	UINT16 flip;
-	boolean vflip = (!(thing->eflags & MFE_VERTICALFLIP) != !R_ThingVerticallyFlipped(thing));
-	boolean mirrored = thing->mirrored;
-	boolean hflip = (!R_ThingHorizontallyFlipped(thing) != !mirrored);
+	dboolean vflip = (!(thing->eflags & MFE_VERTICALFLIP) != !R_ThingVerticallyFlipped(thing));
+	dboolean mirrored = thing->mirrored;
+	dboolean hflip = (!R_ThingHorizontallyFlipped(thing) != !mirrored);
 
 	INT32 lindex;
 	UINT32 blendmode;
@@ -1752,9 +1752,9 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t shadowscale = FRACUNIT;
 	fixed_t basetx, basetz; // drop shadows
 
-	boolean shadowdraw, shadoweffects, shadowskew;
-	boolean splat = R_ThingIsFloorSprite(thing);
-	boolean papersprite = (R_ThingIsPaperSprite(thing) && !splat);
+	dboolean shadowdraw, shadoweffects, shadowskew;
+	dboolean splat = R_ThingIsFloorSprite(thing);
+	dboolean papersprite = (R_ThingIsPaperSprite(thing) && !splat);
 	fixed_t paperoffset = 0, paperdistance = 0;
 	angle_t centerangle = 0;
 
@@ -2308,7 +2308,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (shadowdraw || shadoweffects)
 	{
 		fixed_t groundz = R_GetShadowZ(thing, NULL);
-		boolean isflipped = (thing->eflags & MFE_VERTICALFLIP);
+		dboolean isflipped = (thing->eflags & MFE_VERTICALFLIP);
 
 		if (shadoweffects)
 		{
@@ -3080,7 +3080,7 @@ static drawnode_t *R_CreateDrawNode(drawnode_t *link);
 
 static drawnode_t nodebankhead;
 
-static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean tempskip)
+static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, dboolean tempskip)
 {
 	drawnode_t *entry;
 	drawseg_t *ds;
@@ -3196,7 +3196,7 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 
 	for (rover = vsprsortedhead.prev; rover != &vsprsortedhead; rover = rover->prev)
 	{
-		const boolean alwaysontop = cv_debugrender_spriteclip.value || (rover->renderflags & RF_ALWAYSONTOP);
+		const dboolean alwaysontop = cv_debugrender_spriteclip.value || (rover->renderflags & RF_ALWAYSONTOP);
 		const INT32 ontopflag = cv_debugrender_spriteclip.value ? 0 : (rover->renderflags & RF_ALWAYSONTOP);
 
 		if (rover->szt > vid.height || rover->sz < 0)
@@ -3332,14 +3332,14 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 			}
 			else if (r2->sprite)
 			{
-				boolean infront = (r2->sprite->sortscale > rover->sortscale
+				dboolean infront = (r2->sprite->sortscale > rover->sortscale
 								|| (r2->sprite->sortscale == rover->sortscale && r2->sprite->dispoffset > rover->dispoffset));
 
 				if (rover->cut & SC_SPLAT || r2->sprite->cut & SC_SPLAT)
 				{
 					fixed_t scale1 = (rover->cut & SC_SPLAT ? rover->sortsplat : rover->sortscale);
 					fixed_t scale2 = (r2->sprite->cut & SC_SPLAT ? r2->sprite->sortsplat : r2->sprite->sortscale);
-					boolean behind = (scale2 > scale1 || (scale2 == scale1 && r2->sprite->dispoffset > rover->dispoffset));
+					dboolean behind = (scale2 > scale1 || (scale2 == scale1 && r2->sprite->dispoffset > rover->dispoffset));
 
 					if (!behind)
 					{
@@ -3805,18 +3805,18 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 	}
 }
 
-boolean R_DrawPickups(void)
+dboolean R_DrawPickups(void)
 {
 	if (g_takemapthumbnail != TMT_NO)
 	{
 		return false;
 	}
 
-	return (boolean)cv_drawpickups.value;
+	return (dboolean)cv_drawpickups.value;
 }
 
 /* Check if thing may be drawn from our current view. */
-boolean R_ThingVisible (mobj_t *thing)
+dboolean R_ThingVisible (mobj_t *thing)
 {
 	if (thing->sprite == SPR_NULL)
 		return false;
@@ -3885,7 +3885,7 @@ boolean R_ThingVisible (mobj_t *thing)
 	return true;
 }
 
-boolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist)
+dboolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist)
 {
 	const fixed_t dist = R_PointToDist(thing->x, thing->y);
 
@@ -3902,7 +3902,7 @@ boolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist)
 }
 
 /* Check if precipitation may be drawn from our current view. */
-boolean R_PrecipThingVisible (precipmobj_t *precipthing)
+dboolean R_PrecipThingVisible (precipmobj_t *precipthing)
 {
 	if (( precipthing->precipflags & PCF_INVISIBLE ))
 		return false;
@@ -3910,48 +3910,48 @@ boolean R_PrecipThingVisible (precipmobj_t *precipthing)
 	return true;
 }
 
-boolean R_ThingHorizontallyFlipped(mobj_t *thing)
+dboolean R_ThingHorizontallyFlipped(mobj_t *thing)
 {
 	return (thing->frame & FF_HORIZONTALFLIP || thing->renderflags & RF_HORIZONTALFLIP);
 }
 
-boolean R_ThingVerticallyFlipped(mobj_t *thing)
+dboolean R_ThingVerticallyFlipped(mobj_t *thing)
 {
 	return (thing->frame & FF_VERTICALFLIP || thing->renderflags & RF_VERTICALFLIP);
 }
 
-boolean R_ThingIsPaperSprite(mobj_t *thing)
+dboolean R_ThingIsPaperSprite(mobj_t *thing)
 {
 	return (thing->frame & FF_PAPERSPRITE || thing->renderflags & RF_PAPERSPRITE);
 }
 
-boolean R_ThingIsFloorSprite(mobj_t *thing)
+dboolean R_ThingIsFloorSprite(mobj_t *thing)
 {
 	return (thing->flags2 & MF2_SPLAT || thing->frame & FF_FLOORSPRITE || thing->renderflags & RF_FLOORSPRITE);
 }
 
-boolean R_ThingIsFullBright(mobj_t *thing)
+dboolean R_ThingIsFullBright(mobj_t *thing)
 {
 	if (thing->renderflags & RF_BRIGHTMASK)
 		return ((thing->renderflags & RF_BRIGHTMASK) == RF_FULLBRIGHT);
 	return ((thing->frame & FF_BRIGHTMASK) == FF_FULLBRIGHT);
 }
 
-boolean R_ThingIsSemiBright(mobj_t *thing)
+dboolean R_ThingIsSemiBright(mobj_t *thing)
 {
 	if (thing->renderflags & RF_BRIGHTMASK)
 		return ((thing->renderflags & RF_BRIGHTMASK) == RF_SEMIBRIGHT);
 	return ((thing->frame & FF_BRIGHTMASK) == FF_SEMIBRIGHT);
 }
 
-boolean R_ThingIsFullDark(mobj_t *thing)
+dboolean R_ThingIsFullDark(mobj_t *thing)
 {
 	if (thing->renderflags & RF_BRIGHTMASK)
 		return ((thing->renderflags & RF_BRIGHTMASK) == RF_FULLDARK);
 	return ((thing->frame & FF_BRIGHTMASK) == FF_FULLDARK);
 }
 
-boolean R_ThingModelUsesDirectionalLighting(mobj_t *thing)
+dboolean R_ThingModelUsesDirectionalLighting(mobj_t *thing)
 {
 	switch (thing->type)
 	{

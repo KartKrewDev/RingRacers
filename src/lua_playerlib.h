@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-extern boolean constplayer;
+extern dboolean constplayer;
 
 #ifdef __cplusplus
 } // extern "C"

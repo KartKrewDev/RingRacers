@@ -94,7 +94,7 @@ void M_JoinIP(const char *ipa)
 	M_PleaseWait();
 }
 
-boolean M_JoinIPInputs(INT32 ch)
+dboolean M_JoinIPInputs(INT32 ch)
 {
 
 	const UINT8 pid = 0;

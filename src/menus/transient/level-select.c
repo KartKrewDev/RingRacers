@@ -56,7 +56,7 @@ levellist_t restorelevellist;
 //
 // Determines whether to show a given map in the various level-select lists.
 //
-boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
+dboolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 {
 	if (!levelsearch)
 		return false;
@@ -252,11 +252,11 @@ void M_LevelSelectScrollDest(void)
 
 // Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
 // A gt of -1 means the menu is being restored.
-boolean M_LevelListFromGametype(INT16 gt)
+dboolean M_LevelListFromGametype(INT16 gt)
 {
-	static boolean first = true;
+	static dboolean first = true;
 	UINT8 temp = 0;
-	boolean invalidatedcursor = false;
+	dboolean invalidatedcursor = false;
 
 	if (gt != -1)
 	{
@@ -349,7 +349,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 	{
 		PLAY_CupSelectDef.transitionID = PLAY_LevelSelectDef.transitionID;
 
-		const boolean secondrowlocked = M_CupSecondRowLocked();
+		const dboolean secondrowlocked = M_CupSecondRowLocked();
 		if (cupgrid.cache_secondrowlocked != secondrowlocked)
 		{
 			cupgrid.cache_secondrowlocked = secondrowlocked;
@@ -363,7 +363,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
 		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
-		boolean foundany = false, currentvalid = false;
+		dboolean foundany = false, currentvalid = false;
 		size_t deltaid = 0;
 
 		G_GetBackupCupData(
@@ -422,10 +422,10 @@ boolean M_LevelListFromGametype(INT16 gt)
 			memset(&cupgrid.builtgrid[currentid], 0, pagelen); \
 			deltaid = 0;
 
-		boolean lostandfoundready = true;
+		dboolean lostandfoundready = true;
 		// foundanythispage SHOULD start out as false... but if
 		// nothing is unlocked, the first page should never be wiped!
-		boolean foundanythispage = true;
+		dboolean foundanythispage = true;
 
 		templevelsearch.cup = kartcupheaders;
 		while (true)
@@ -710,7 +710,7 @@ void M_LevelSelectInit(INT32 choice)
 	}
 }
 
-void M_MenuToLevelPreamble(UINT8 ssplayers, boolean nowipe)
+void M_MenuToLevelPreamble(UINT8 ssplayers, dboolean nowipe)
 {
 	cht_debug = 0;
 
@@ -764,7 +764,7 @@ INT16 M_LevelFromScrolledList(INT16 add)
 	return map;
 }
 
-void M_LevelSelected(INT16 add, boolean menuupdate)
+void M_LevelSelected(INT16 add, dboolean menuupdate)
 {
 	INT16 map = M_LevelFromScrolledList(add);
 
@@ -993,7 +993,7 @@ void M_CupQueueHandler(cupheader_t *cup)
 	}
 }
 
-boolean M_LevelSelectCupSwitch(boolean next, boolean skipones)
+dboolean M_LevelSelectCupSwitch(dboolean next, dboolean skipones)
 {
 	levelsearch_t templevelsearch = levellist.levelsearch;
 

@@ -74,19 +74,19 @@ INT32 net_bandwidth;
 /// \brief max length per packet
 INT16 hardware_MAXPACKETLENGTH;
 
-boolean (*I_NetGet)(void) = NULL;
+dboolean (*I_NetGet)(void) = NULL;
 void (*I_NetSend)(void) = NULL;
-boolean (*I_NetCanSend)(void) = NULL;
-boolean (*I_NetCanGet)(void) = NULL;
+dboolean (*I_NetCanSend)(void) = NULL;
+dboolean (*I_NetCanGet)(void) = NULL;
 void (*I_NetCloseSocket)(void) = NULL;
 void (*I_NetFreeNodenum)(INT32 nodenum) = NULL;
 SINT8 (*I_NetMakeNodewPort)(const char *address, const char* port) = NULL;
 void (*I_NetRequestHolePunch)(INT32 node) = NULL;
 void (*I_NetRegisterHolePunch)(void) = NULL;
-boolean (*I_NetOpenSocket)(void) = NULL;
+dboolean (*I_NetOpenSocket)(void) = NULL;
 const char *(*I_GetNodeAddress) (INT32 node) = NULL;
 UINT32 (*I_GetNodeAddressInt) (INT32 node) = NULL;
-boolean (*I_IsExternalAddress) (const void *p) = NULL;
+dboolean (*I_IsExternalAddress) (const void *p) = NULL;
 bannednode_t *bannednode = NULL;
 
 
@@ -98,14 +98,14 @@ static INT32 retransmit = 0, duppacket = 0;
 static INT32 sendackpacket = 0, getackpacket = 0;
 INT32 ticruned = 0, ticmiss = 0;
 
-boolean packetloss[MAXPLAYERS][PACKETMEASUREWINDOW];
+dboolean packetloss[MAXPLAYERS][PACKETMEASUREWINDOW];
 
 // globals
 INT32 getbps, sendbps;
 float lostpercent, duppercent, gamelostpercent;
 INT32 packetheaderlength;
 
-boolean Net_GetNetStat(void)
+dboolean Net_GetNetStat(void)
 {
 	const tic_t t = I_GetTime();
 	static INT64 oldsendbyte = 0;
@@ -215,7 +215,7 @@ FUNCMATH static INT32 cmpack(UINT8 a, UINT8 b)
   * \param lowtimer ???
   * \return True if a free acknum was found
   */
-static boolean GetFreeAcknum(UINT8 *freeack, boolean lowtimer)
+static dboolean GetFreeAcknum(UINT8 *freeack, dboolean lowtimer)
 {
 	netnode_t *node = &nodes[doomcom->remotenode];
 	INT32 i, numfreeslot = 0;
@@ -281,7 +281,7 @@ static boolean GetFreeAcknum(UINT8 *freeack, boolean lowtimer)
   * \return The number of free acks
   *
   */
-INT32 Net_GetFreeAcks(boolean urgent)
+INT32 Net_GetFreeAcks(dboolean urgent)
 {
 	INT32 i, numfreeslot = 0;
 	INT32 n = 0; // Number of free acks found
@@ -320,10 +320,10 @@ static void RemoveAck(INT32 i)
 }
 
 // We have got a packet, proceed the ack request and ack return
-static boolean Processackpak(void)
+static dboolean Processackpak(void)
 {
 	INT32 i;
-	boolean goodpacket = true;
+	dboolean goodpacket = true;
 	netnode_t *node = &nodes[doomcom->remotenode];
 
 	// Received an ack return, so remove the ack in the list
@@ -372,7 +372,7 @@ static boolean Processackpak(void)
 				if (ack == nextfirstack)
 				{
 					UINT8 hm1; // head - 1
-					boolean change = true;
+					dboolean change = true;
 
 					node->firstacktosend = nextfirstack++;
 					if (!nextfirstack)
@@ -576,7 +576,7 @@ void Net_UnAcknowledgePacket(INT32 node)
   * \return True if all acks have been received
   *
   */
-static boolean Net_AllAcksReceived(void)
+static dboolean Net_AllAcksReceived(void)
 {
 	INT32 i;
 
@@ -660,7 +660,7 @@ void Net_AbortPacketType(UINT8 packettype)
 void Net_CloseConnection(INT32 node)
 {
 	INT32 i;
-	boolean forceclose = (node & FORCECLOSE) != 0;
+	dboolean forceclose = (node & FORCECLOSE) != 0;
 
 	if (node == -1)
 	{
@@ -1009,7 +1009,7 @@ void Command_Droprate(void)
 	packetdroprate = droprate;
 }
 
-static boolean ShouldDropPacket(void)
+static dboolean ShouldDropPacket(void)
 {
 	return (packetdropquantity[netbuffer->packettype])
 		|| (packetdroprate != 0 && rand() < ((double)RAND_MAX * (packetdroprate / 100.f))) || packetdroprate == 100;
@@ -1018,7 +1018,7 @@ static boolean ShouldDropPacket(void)
 
 // Unused because Eidolon correctly pointed out that +512b on every packet was scary.
 #ifdef SIGNGAMETRAFFIC
-	boolean IsPacketSigned(int packettype)
+	dboolean IsPacketSigned(int packettype)
 	{
 		switch (packettype)
 		{
@@ -1048,7 +1048,7 @@ static boolean ShouldDropPacket(void)
 //
 // HSendPacket
 //
-boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlength)
+dboolean HSendPacket(INT32 node, dboolean reliable, UINT8 acknum, size_t packetlength)
 {
 	doomcom->datalength = (INT16)(packetlength + BASEPACKETSIZE);
 
@@ -1178,9 +1178,9 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlen
 // Returns false if no packet is waiting
 // Check Datalength and checksum
 //
-boolean HGetPacket(void)
+dboolean HGetPacket(void)
 {
-	//boolean nodejustjoined;
+	//dboolean nodejustjoined;
 
 	// Get a packet from self
 	if (rebound_tail != rebound_head)
@@ -1266,7 +1266,7 @@ boolean HGetPacket(void)
 	return true;
 }
 
-static boolean Internal_Get(void)
+static dboolean Internal_Get(void)
 {
 	doomcom->remotenode = -1;
 	return false;
@@ -1322,9 +1322,9 @@ void D_SetDoomcom(void)
 // D_CheckNetGame
 // Works out player numbers among the net participants
 //
-boolean D_CheckNetGame(void)
+dboolean D_CheckNetGame(void)
 {
-	boolean ret = false;
+	dboolean ret = false;
 
 	InitAck();
 	rebound_tail = rebound_head = 0;

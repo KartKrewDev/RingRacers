@@ -33,7 +33,7 @@ typedef enum
 } undotype_f;
 
 void DEH_LoadDehackedLump(lumpnum_t lumpnum);
-void DEH_LoadDehackedLumpPwad(UINT16 wad, UINT16 lump, boolean mainfile);
+void DEH_LoadDehackedLumpPwad(UINT16 wad, UINT16 lump, dboolean mainfile);
 
 // SRB2Kart
 extern int freeslotusage[2][2];
@@ -45,11 +45,11 @@ fixed_t get_number(const char *word);
 FUNCPRINTF void deh_warning(const char *first, ...);
 void deh_strlcpy(char *dst, const char *src, size_t size, const char *warntext);
 
-extern boolean deh_loaded;
+extern dboolean deh_loaded;
 
-extern boolean gamedataadded;
-extern boolean titlechanged;
-extern boolean introchanged;
+extern dboolean gamedataadded;
+extern dboolean titlechanged;
+extern dboolean introchanged;
 
 #define MAXRECURSION 30
 extern const char *superactions[MAXRECURSION];

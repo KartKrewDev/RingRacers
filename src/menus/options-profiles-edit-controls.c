@@ -155,7 +155,7 @@ static void SetDeviceOnPress(void)
 }
 */
 
-static boolean M_ClearCurrentControl(void)
+static dboolean M_ClearCurrentControl(void)
 {
 	// check if we're on a valid menu option...
 	if (currentMenu->menuitems[itemOn].mvar1)
@@ -294,7 +294,7 @@ void M_ProfileControlsConfirm(INT32 choice)
 	}
 }
 
-boolean M_ProfileControlsInputs(INT32 ch)
+dboolean M_ProfileControlsInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
 	(void)ch;
@@ -457,7 +457,7 @@ void M_MapProfileControl(event_t *ev)
 		return;
 
 	// Find every held button.
-	boolean noinput = true;
+	dboolean noinput = true;
 	for (INT32 c = 1; c < NUMINPUTS; ++c)
 	{
 		if (DeviceGameKeyDownArray[c] < 3*JOYAXISRANGE/4)

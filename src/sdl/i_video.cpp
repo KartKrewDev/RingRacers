@@ -100,7 +100,7 @@ rendermode_t chosenrendermode = render_none; // set by command line arguments
 UINT8 graphics_started = 0; // Is used in console.c and screen.c
 
 // To disable fullscreen at startup; is set in VID_PrepareModeList
-boolean allow_fullscreen = false;
+dboolean allow_fullscreen = false;
 static bool disable_fullscreen = false;
 #define USE_FULLSCREEN (disable_fullscreen||!allow_fullscreen)?0:cv_fullscreen.value
 static bool disable_mouse = false;
@@ -345,7 +345,7 @@ static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 
 extern "C" consvar_t cv_alwaysgrabmouse;
 
-static boolean IgnoreMouse(void)
+static dboolean IgnoreMouse(void)
 {
 	if (cv_alwaysgrabmouse.value)
 		return false;
@@ -1340,9 +1340,9 @@ void VID_CheckGLLoaded(rendermode_t oldrender)
 	(void)oldrender;
 }
 
-boolean VID_CheckRenderer(void)
+dboolean VID_CheckRenderer(void)
 {
-	boolean rendererchanged = false;
+	dboolean rendererchanged = false;
 
 	if (dedicated)
 		return false;
@@ -1609,7 +1609,7 @@ void I_StartupGraphics(void)
 void VID_StartupOpenGL(void)
 {
 #ifdef HWRENDER
-	static boolean glstartup = false;
+	static dboolean glstartup = false;
 	if (!glstartup)
 	{
 		CONS_Printf("VID_StartupOpenGL()...\n");

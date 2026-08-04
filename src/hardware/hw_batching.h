@@ -31,12 +31,12 @@ typedef struct
 	GLMipmap_t *brightmap;
 	int shader;
 	// this tells batching that the plane belongs to a horizon line and must be drawn in correct order with the skywalls
-	boolean horizonSpecial;
+	dboolean horizonSpecial;
 } PolygonArrayEntry;
 
 void HWR_StartBatching(void);
 void HWR_SetCurrentTexture(GLMipmap_t *texture);
-void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader, boolean horizonSpecial);
+void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader, dboolean horizonSpecial);
 void HWR_RenderBatches(void);
 
 #ifdef __cplusplus

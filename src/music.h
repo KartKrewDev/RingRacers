@@ -91,7 +91,7 @@ void Music_SetFadeOut(const char* id, int fade_out);
 
 // Set fade in duration. Done for parity with the BLUA music
 // functions.
-void Music_SetFadeIn(const char* id, int fade_in, boolean resume);
+void Music_SetFadeIn(const char* id, int fade_in, dboolean resume);
 
 // Postpone the end of this tune until N tics from now. The
 // tune should already be playing before calling this.
@@ -131,7 +131,7 @@ void Music_Seek(const char *id, UINT32 set);
 void Music_Remap(const char *id, const char *song);
 
 // Set whether a tune should loop.
-void Music_Loop(const char *id, boolean loop);
+void Music_Loop(const char *id, dboolean loop);
 
 // Temporarily exemplify a tune from batch operations, such
 // as Music_StopAll.
@@ -151,25 +151,25 @@ void Music_ResetLevelVolume(void);
 //
 
 // Returns true if the tune exists.
-boolean Music_TuneExists(const char* id);
+dboolean Music_TuneExists(const char* id);
 
 // Returns true if the tune is configured to loop.
-boolean Music_CanLoop(const char *id);
+dboolean Music_CanLoop(const char *id);
 
 // Returns true if the tune does not play indefinitely, i.e.
 // has a limited duration.
-boolean Music_CanEnd(const char *id);
+dboolean Music_CanEnd(const char *id);
 
 // Returns true if the tune is playing. This does not
 // necessarily mean it is audible, because it has to be at the
 // highest priority to be heard.
-boolean Music_Playing(const char *id);
+dboolean Music_Playing(const char *id);
 
 // Returns true if the tune is paused.
-boolean Music_Paused(const char *id);
+dboolean Music_Paused(const char *id);
 
 // Returns true if the tune is suspended.
-boolean Music_Suspended(const char *id);
+dboolean Music_Suspended(const char *id);
 
 // Returns the number of tics elapsed since the start of the
 // tune.

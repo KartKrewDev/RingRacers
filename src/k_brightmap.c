@@ -86,7 +86,7 @@ static brightmapStorage_t *K_GetBrightmapStorageByTextureName(const char *checkN
 }
 
 /*--------------------------------------------------
-	static boolean K_BRIGHTLumpParser(char *data, size_t size)
+	static dboolean K_BRIGHTLumpParser(char *data, size_t size)
 
 		Parses inputted lump data as a BRIGHT lump.
 
@@ -97,14 +97,14 @@ static brightmapStorage_t *K_GetBrightmapStorageByTextureName(const char *checkN
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_BRIGHTLumpParser(char *data, size_t size)
+static dboolean K_BRIGHTLumpParser(char *data, size_t size)
 {
 	char *tkn = M_GetToken((char *)data);
 	size_t pos = 0;
 
 	while (tkn && (pos = M_GetTokenPos()) < size)
 	{
-		boolean valid = true;
+		dboolean valid = true;
 
 		if (stricmp(tkn, "texture") == 0)
 		{

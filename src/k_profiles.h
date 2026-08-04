@@ -163,13 +163,13 @@ struct profile_t
 
 	// Player-specific consvars.
 	// @TODO: List all of those
-	boolean kickstartaccel;				// cv_kickstartaccel
-	boolean autoroulette;				// cv_autoroulette
-	boolean litesteer;					// cv_litesteer
-	boolean strictfastfall;				// cv_strictfastfall
+	dboolean kickstartaccel;				// cv_kickstartaccel
+	dboolean autoroulette;				// cv_autoroulette
+	dboolean litesteer;					// cv_litesteer
+	dboolean strictfastfall;				// cv_strictfastfall
 	UINT8 descriptiveinput;				// cv_descriptiveinput
-	boolean autoring;					// cv_autoring
-	boolean rumble;						// cv_rumble
+	dboolean autoring;					// cv_autoring
+	dboolean rumble;						// cv_rumble
 	UINT8 fov;							// cv_fov
 
 	// Finally, control data itself
@@ -191,7 +191,7 @@ profile_t* PR_MakeProfile(
 	const char *sname, const UINT16 col,
 	const char *fname, const UINT16 fcol,
 	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
-	boolean guest
+	dboolean guest
 );
 
 // PR_MakeProfileFromPlayer
@@ -202,7 +202,7 @@ profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const
 // PR_AddProfile(profile_t p)
 // Adds a profile to profilesList and increments numprofiles.
 // Returns true if succesful, false if not.
-boolean PR_AddProfile(profile_t *p);
+dboolean PR_AddProfile(profile_t *p);
 
 // PR_GetProfile(INT32 num)
 // Returns a pointer to the profile you're asking for or NULL if the profile is uninitialized.
@@ -211,7 +211,7 @@ profile_t* PR_GetProfile(INT32 num);
 // PR_DeleteProfile(INT32 n)
 // Deletes the specified profile. n cannot be 0. Returns false if the profile couldn't be deleted, true otherwise.
 // This will also move every profile back accordingly to ensure the table has no empty profiles inbetween two valid profiles.
-boolean PR_DeleteProfile(INT32 n);
+dboolean PR_DeleteProfile(INT32 n);
 
 // PR_InitNewProfile(void)
 // Initializes the first new profile
@@ -259,12 +259,12 @@ profile_t *PR_GetPlayerProfile(player_t *player);
 
 profile_t *PR_GetLocalPlayerProfile(INT32 player);
 
-boolean PR_IsLocalPlayerGuest(INT32 player);
+dboolean PR_IsLocalPlayerGuest(INT32 player);
 
-char *GetPrettyRRID(const unsigned char *bin, boolean brief);
+char *GetPrettyRRID(const unsigned char *bin, dboolean brief);
 unsigned char *FromPrettyRRID(unsigned char *bin, const char *text);
 
-boolean PR_IsKeyGuest(uint8_t *key);
+dboolean PR_IsKeyGuest(uint8_t *key);
 
 #ifdef __cplusplus
 } // extern "C"

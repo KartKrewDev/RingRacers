@@ -47,7 +47,7 @@ Obj_SpawnBrolyKi
 	return Obj_SpawnCustomBrolyKi(source, duration, 64 * mapobjectscale, 0);
 }
 
-boolean
+dboolean
 Obj_BrolyKiThink (mobj_t *x)
 {
 	return static_cast<Broly*>(x)->think();

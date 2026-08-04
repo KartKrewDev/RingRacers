@@ -23,7 +23,7 @@ struct gpRank_level_perplayer_t
 	UINT8 rings;
 	UINT16 exp;
 	UINT16 prisons;
-	boolean gotSpecialPrize;
+	dboolean gotSpecialPrize;
 	gp_rank_e grade;
 };
 
@@ -61,7 +61,7 @@ struct gpRank_t
 	UINT32 rings;
 	UINT32 totalRings;
 
-	boolean specialWon;
+	dboolean specialWon;
 
 	INT32 scorePosition;
 	INT32 scoreGPPoints;

@@ -85,8 +85,8 @@ menu_t OPTIONS_GameplayItemsDef = {
 	NULL,
 };
 
-boolean M_AnyItemsEnabled(void);
-boolean M_AnyItemsEnabled(void)
+dboolean M_AnyItemsEnabled(void);
+dboolean M_AnyItemsEnabled(void)
 {
 	INT32 i;
 	for (i = 0; i < NUMKARTRESULTS-1; i++)
@@ -128,14 +128,14 @@ void M_HandleItemToggles(INT32 choice)
 	INT32 column = itemOn/height, row = itemOn%height;
 	INT16 next;
 	UINT8 i;
-	boolean exitmenu = false;
+	dboolean exitmenu = false;
 	const UINT8 pid = 0;
 
 	(void) choice;
 
 	if (M_MenuExtraPressed(pid))
 	{
-		const boolean check = !M_AnyItemsEnabled();
+		const dboolean check = !M_AnyItemsEnabled();
 		for (i = 0; i < NUMKARTRESULTS-1; i++)
 		{
 			if (cv_items[i].value != check)

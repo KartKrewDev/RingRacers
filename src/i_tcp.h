@@ -26,13 +26,13 @@ extern UINT16 current_port;
 
 	\return	true if going or in a netgame, else it's false
 */
-boolean I_InitTcpNetwork(void);
+dboolean I_InitTcpNetwork(void);
 
 /**	\brief	The I_InitTcpNetwork function
 
 	\return	true if TCP/IP stack was initilized, else it's false
 */
-boolean I_InitTcpDriver(void);
+dboolean I_InitTcpDriver(void);
 void I_ShutdownTcpDriver(void);
 
 #ifdef __cplusplus

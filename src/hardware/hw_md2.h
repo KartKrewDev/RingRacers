@@ -33,12 +33,12 @@ typedef struct
 	float       offset;
 	model_t     *model;
 	void        *grpatch;
-	boolean     notexturefile; // true if texture file was not found
+	dboolean     notexturefile; // true if texture file was not found
 	void        *blendgrpatch;
-	boolean     noblendfile; // true if blend texture file was not found
-	boolean     notfound;
+	dboolean     noblendfile; // true if blend texture file was not found
+	dboolean     notfound;
 	INT32       skin;
-	boolean     error;
+	dboolean     error;
 } md2_t;
 
 extern md2_t md2_models[NUMSPRITES];
@@ -47,7 +47,7 @@ extern md2_t md2_playermodels[MAXSKINS];
 void HWR_InitModels(void);
 void HWR_AddPlayerModel(INT32 skin);
 void HWR_AddSpriteModel(size_t spritenum);
-boolean HWR_DrawModel(gl_vissprite_t *spr);
+dboolean HWR_DrawModel(gl_vissprite_t *spr);
 
 #define PLAYERMODELPREFIX "PLAYER"
 

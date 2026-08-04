@@ -17,9 +17,9 @@
 rendermode_t rendermode = render_none;
 rendermode_t chosenrendermode = render_none;
 
-boolean highcolor = false;
+dboolean highcolor = false;
 
-boolean allow_fullscreen = false;
+dboolean allow_fullscreen = false;
 
 consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE, CV_OnOff, NULL);
 
@@ -53,7 +53,7 @@ INT32 VID_SetMode(INT32 modenum)
 	return 0;
 }
 
-boolean VID_CheckRenderer(void)
+dboolean VID_CheckRenderer(void)
 {
 	return false;
 }

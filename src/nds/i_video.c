@@ -23,9 +23,9 @@
 
 rendermode_t rendermode = render_opengl;
 
-boolean highcolor = false;
+dboolean highcolor = false;
 
-boolean allow_fullscreen = false;
+dboolean allow_fullscreen = false;
 
 consvar_t cv_vidwait = {"vid_wait", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 

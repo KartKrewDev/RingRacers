@@ -33,7 +33,7 @@ fixed_t interval(tic_t t, tic_t s, tic_t d)
 
 }; // namespace
 
-void K_drawEmeraldWin(boolean overlay)
+void K_drawEmeraldWin(dboolean overlay)
 {
 	if (leveltime < g_emeraldWin)
 	{

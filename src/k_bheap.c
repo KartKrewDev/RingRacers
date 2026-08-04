@@ -15,7 +15,7 @@
 #include "z_zone.h"
 
 /*--------------------------------------------------
-	static boolean K_BHeapItemValidate(bheap_t *heap, bheapitem_t *item)
+	static dboolean K_BHeapItemValidate(bheap_t *heap, bheapitem_t *item)
 
 		Validates an item on a heap to ensure it is correct and on that heap.
 
@@ -26,9 +26,9 @@
 	Return:-
 		True if the item is valid, false if it isn't.
 --------------------------------------------------*/
-static boolean K_BHeapItemValidate(bheap_t *heap, bheapitem_t *item)
+static dboolean K_BHeapItemValidate(bheap_t *heap, bheapitem_t *item)
 {
-	boolean heapitemvalid = false;
+	dboolean heapitemvalid = false;
 
 	I_Assert(heap != NULL);
 	I_Assert(item != NULL);
@@ -258,7 +258,7 @@ static void K_BHeapSortDown(bheap_t *heap, bheapitem_t *item)
 		bheapitem_t *leftchild      = NULL;
 		bheapitem_t *rightchild     = NULL;
 		bheapitem_t *swapchild      = NULL;
-		boolean     noswapneeded    = false;
+		dboolean     noswapneeded    = false;
 
 		do
 		{
@@ -304,13 +304,13 @@ static void K_BHeapSortDown(bheap_t *heap, bheapitem_t *item)
 }
 
 /*--------------------------------------------------
-	boolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity)
+	dboolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity)
+dboolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity)
 {
-	boolean initsuccess = false;
+	dboolean initsuccess = false;
 
 	if (heap == NULL)
 	{
@@ -339,13 +339,13 @@ boolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity)
 }
 
 /*--------------------------------------------------
-	boolean K_BHeapValid(bheap_t *const heap)
+	dboolean K_BHeapValid(bheap_t *const heap)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BHeapValid(bheap_t *const heap)
+dboolean K_BHeapValid(bheap_t *const heap)
 {
-	boolean heapvalid = false;
+	dboolean heapvalid = false;
 
 	if (heap == NULL)
 	{
@@ -363,13 +363,13 @@ boolean K_BHeapValid(bheap_t *const heap)
 }
 
 /*--------------------------------------------------
-	boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback)
+	dboolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback)
+dboolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback)
 {
-	boolean pushsuccess = false;
+	dboolean pushsuccess = false;
 	if (heap == NULL)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapPush.\n");
@@ -428,13 +428,13 @@ boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updatei
 }
 
 /*--------------------------------------------------
-	boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
+	dboolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
+dboolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 {
-	boolean popsuccess = false;
+	dboolean popsuccess = false;
 	if (heap == NULL)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL heap in K_BHeapPop.\n");
@@ -482,13 +482,13 @@ boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 }
 
 /*--------------------------------------------------
-	boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+	dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
 {
-	boolean updatevaluesuccess = false;
+	dboolean updatevaluesuccess = false;
 	if (item == NULL)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "NULL item in K_UpdateHeapItemValue.\n");
@@ -574,9 +574,9 @@ size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index)
 	return heapindexwithdata;
 }
 
-boolean K_BHeapFree(bheap_t *const heap)
+dboolean K_BHeapFree(bheap_t *const heap)
 {
-	boolean freesuccess = false;
+	dboolean freesuccess = false;
 
 	if (heap == NULL)
 	{

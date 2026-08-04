@@ -60,7 +60,7 @@ return luaL_error(L, "HUD rendering code should not call this function!");\
 else if (hook_cmd_running)\
 return luaL_error(L, "CMD building code should not call this function!");
 
-boolean luaL_checkboolean(lua_State *L, int narg) {
+dboolean luaL_checkboolean(lua_State *L, int narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);
 	return lua_toboolean(L, narg);
 }
@@ -121,7 +121,7 @@ static int lib_print(lua_State *L)
 static int lib_chatprint(lua_State *L)
 {
 	const char *str = luaL_checkstring(L, 1);	// retrieve string
-	boolean sound = lua_optboolean(L, 2);	// retrieve sound boolean
+	dboolean sound = lua_optboolean(L, 2);	// retrieve sound boolean
 	int len = strlen(str);
 
 	if (str == NULL)	// error if we don't have a string!
@@ -139,7 +139,7 @@ static int lib_chatprintf(lua_State *L)
 {
 	int n = lua_gettop(L);  /* number of arguments */
 	const char *str = luaL_checkstring(L, 2);	// retrieve string
-	boolean sound = lua_optboolean(L, 3);	// sound?
+	dboolean sound = lua_optboolean(L, 3);	// sound?
 	int len = strlen(str);
 	player_t *plr;
 
@@ -244,11 +244,11 @@ static const struct {
 	{META_FOOTSTEP,     "t_footstep_t"},
 	{META_OVERLAY,      "t_overlay_t"},
 	{META_TERRAIN,      "terrain_t"},
-	
+
 	{META_POWERUPVARS,	"powerupvars_t"},
 	{META_ICECUBEVARS,	"icecubevars_t"},
 	{META_SKYBOX,		"skybox_t"},
-	
+
 	{META_CUP,     					"cupheader_t"},
 	{META_GPRANK,	  	  			"gprank_t"},
 	{META_GPRANKLEVEL,	  			"gprank_level_t"},
@@ -353,7 +353,7 @@ static int lib_isPlayerAdmin(lua_State *L)
 
 static int lib_reserveLuabanks(lua_State *L)
 {
-	static boolean reserved = false;
+	static dboolean reserved = false;
 	if (!lua_lumploading)
 		return luaL_error(L, "luabanks[] cannot be reserved from within a hook or coroutine!");
 	if (reserved)
@@ -478,7 +478,7 @@ static int lib_mMusicRemap(lua_State *L)
 	{
 		return LUA_ErrNoTune(L, tune_id);
 	}
-	
+
 	// Do not allow Lua to remap Stereo Mode tunes.
 	if (strlen(tune_id) > 5
 	    && toupper(tune_id[0]) == 'S' && toupper(tune_id[1]) == 'T' && toupper(tune_id[2]) == 'E' && toupper(tune_id[3]) == 'R' && toupper(tune_id[4]) == 'E')
@@ -546,7 +546,7 @@ static int lib_mMusicSetFadeIn(lua_State *L)
 
 	const char *tune_id = luaL_checkstring(L, 1);
 	fadeinms = (UINT32)luaL_optinteger(L, 2, 0);
-	boolean resumefade = lua_optboolean(L, 3);
+	dboolean resumefade = lua_optboolean(L, 3);
 
 	player_t *player = NULL;
 
@@ -738,7 +738,7 @@ static int lib_mMusicUnSuspend(lua_State *L)
 static int lib_mMusicLoop(lua_State *L)
 {
 	const char *tune_id = luaL_checkstring(L, 1);
-	boolean loop = lua_optboolean(L, 2);
+	dboolean loop = lua_optboolean(L, 2);
 	player_t *player = NULL;
 
 	//NOHUD
@@ -1017,8 +1017,8 @@ static int lib_pLookForPlayers(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t dist = (fixed_t)luaL_optinteger(L, 2, 0);
-	boolean allaround = lua_optboolean(L, 3);
-	boolean tracer = lua_optboolean(L, 4);
+	dboolean allaround = lua_optboolean(L, 3);
+	dboolean tracer = lua_optboolean(L, 4);
 	NOHUD
 	INLEVEL
 	if (!actor)
@@ -1307,7 +1307,7 @@ static int lib_pSpawnParaloop(lua_State *L)
 	mobjtype_t type = luaL_checkinteger(L, 6);
 	angle_t rotangle = luaL_checkangle(L, 7);
 	statenum_t nstate = luaL_optinteger(L, 8, S_NULL);
-	boolean spawncenter = lua_optboolean(L, 9);
+	dboolean spawncenter = lua_optboolean(L, 9);
 	NOHUD
 	INLEVEL
 	if (type >= NUMMOBJTYPES)
@@ -1321,7 +1321,7 @@ static int lib_pSpawnParaloop(lua_State *L)
 static int lib_pBossTargetPlayer(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	boolean closest = lua_optboolean(L, 2);
+	dboolean closest = lua_optboolean(L, 2);
 	NOHUD
 	INLEVEL
 	if (!actor)
@@ -1549,7 +1549,7 @@ static int lib_pLevelIsFrozen(lua_State *L)
 
 static int lib_pSetFreezeLevel(lua_State *L)
 {
-	boolean value = luaL_checkboolean(L, 1);
+	dboolean value = luaL_checkboolean(L, 1);
 	NOHUD
 	INLEVEL
 	P_SetFreezeLevel(value);
@@ -1653,7 +1653,7 @@ static int lib_pSetObjectMomZ(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t value = luaL_checkfixed(L, 2);
-	boolean relative = lua_optboolean(L, 3);
+	dboolean relative = lua_optboolean(L, 3);
 	NOHUD
 	INLEVEL
 	if (!mo)
@@ -1749,7 +1749,7 @@ static int lib_pDoPlayerExit(lua_State *L)
 static int lib_pDoAllPlayersExit(lua_State *L)
 {
 	pflags_t flags = luaL_checkinteger(L, 1);
-	boolean trygivelife = lua_optboolean(L, 2);
+	dboolean trygivelife = lua_optboolean(L, 2);
 	NOHUD
 	INLEVEL
 	P_DoAllPlayersExit(flags, trygivelife);
@@ -1857,7 +1857,7 @@ static int lib_pTryMove(lua_State *L)
 	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t x = luaL_checkfixed(L, 2);
 	fixed_t y = luaL_checkfixed(L, 3);
-	boolean allowdropoff = lua_optboolean(L, 4);
+	dboolean allowdropoff = lua_optboolean(L, 4);
 	NOHUD
 	INLEVEL
 	if (!thing)
@@ -2050,7 +2050,7 @@ static int lib_pRadiusAttack(lua_State *L)
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	fixed_t damagedist = luaL_checkfixed(L, 3);
 	UINT8 damagetype = luaL_optinteger(L, 4, 0);
-	boolean sightcheck = lua_opttrueboolean(L, 5);
+	dboolean sightcheck = lua_opttrueboolean(L, 5);
 	NOHUD
 	INLEVEL
 	if (!spot || !source)
@@ -2439,9 +2439,9 @@ static int lib_pFadeLight(lua_State *L)
 	INT16 tag = (INT16)luaL_checkinteger(L, 1);
 	INT32 destvalue = (INT32)luaL_checkinteger(L, 2);
 	INT32 speed = (INT32)luaL_checkinteger(L, 3);
-	boolean ticbased = lua_optboolean(L, 4);
-	boolean force = lua_optboolean(L, 5);
-	boolean relative = lua_optboolean(L, 6);
+	dboolean ticbased = lua_optboolean(L, 4);
+	dboolean force = lua_optboolean(L, 5);
+	dboolean relative = lua_optboolean(L, 6);
 	NOHUD
 	INLEVEL
 	P_FadeLight(tag, destvalue, speed, ticbased, force, relative);
@@ -2523,7 +2523,7 @@ static int lib_pStartQuake(lua_State *L)
 	fixed_t q_radius = luaL_optinteger(L, 3, 512*FRACUNIT);
 
 	static mappoint_t q_epicenter = {0,0,0};
-	boolean q_epicenter_set = false;
+	dboolean q_epicenter_set = false;
 
 	NOHUD
 	INLEVEL
@@ -2615,10 +2615,10 @@ static int lib_evStartCrumble(lua_State *L)
 {
 	sector_t *sec = *((sector_t **)luaL_checkudata(L, 1, META_SECTOR));
 	ffloor_t *rover = *((ffloor_t **)luaL_checkudata(L, 2, META_FFLOOR));
-	boolean floating = lua_optboolean(L, 3);
+	dboolean floating = lua_optboolean(L, 3);
 	player_t *player = NULL;
 	fixed_t origalpha;
-	boolean crumblereturn = lua_optboolean(L, 6);
+	dboolean crumblereturn = lua_optboolean(L, 6);
 	NOHUD
 	if (!sec)
 		return LUA_ErrInvalid(L, "sector_t");
@@ -3472,7 +3472,7 @@ static int lib_gTicsToHours(lua_State *L)
 static int lib_gTicsToMinutes(lua_State *L)
 {
 	tic_t rtic = luaL_checkinteger(L, 1);
-	boolean rfull = lua_optboolean(L, 2);
+	dboolean rfull = lua_optboolean(L, 2);
 	//HUDSAFE
 	lua_pushinteger(L, G_TicsToMinutes(rtic, rfull));
 	return 1;
@@ -3532,8 +3532,8 @@ static int lib_kEndCameraIsFreezing(lua_State *L)
 static int lib_kAddMessage(lua_State *L)
 {
 	const char *msg = luaL_checkstring(L, 1);
-	boolean interrupt = lua_optboolean(L, 2);
-	boolean persist = lua_optboolean(L, 3);
+	dboolean interrupt = lua_optboolean(L, 2);
+	dboolean persist = lua_optboolean(L, 3);
 	INLEVEL
 	if (msg == NULL)
 		return luaL_error(L, "argument #1 not given (expected string)");
@@ -3545,8 +3545,8 @@ static int lib_kAddMessageForPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	const char *msg = luaL_checkstring(L, 2);
-	boolean interrupt = lua_optboolean(L, 3);
-	boolean persist = lua_optboolean(L, 4);
+	dboolean interrupt = lua_optboolean(L, 3);
+	dboolean persist = lua_optboolean(L, 4);
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -3867,7 +3867,7 @@ static int lib_kAwardPlayerRings(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	UINT16 rings = luaL_checkinteger(L, 2);
-	boolean overload = lua_opttrueboolean(L, 3);
+	dboolean overload = lua_opttrueboolean(L, 3);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -3997,7 +3997,7 @@ static int lib_kMomentumAngle(lua_State *L)
 }
 
 static int lib_kPvPAmpReward(lua_State *L)
-{	
+{
 	UINT32 award = luaL_checkinteger(L, 1);
 	player_t *attacker = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
 	player_t *defender = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
@@ -4183,7 +4183,7 @@ static int lib_kTumblePlayer(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	mobj_t *inflictor = NULL;
 	mobj_t *source = NULL;
-	boolean soften = false;
+	dboolean soften = false;
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4231,7 +4231,7 @@ static int lib_kCheckStumble(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	angle_t oldPitch = luaL_checkangle(L, 2);
 	angle_t oldRoll = luaL_checkangle(L, 3);
-	boolean fromAir = lua_optboolean(L, 4);
+	dboolean fromAir = lua_optboolean(L, 4);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -4439,7 +4439,7 @@ static int lib_kThrowKartItem(lua_State *L)
 {
 	tm_t ptm = g_tm;
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean missile = luaL_checkboolean(L, 2);
+	dboolean missile = luaL_checkboolean(L, 2);
 	mobjtype_t mapthing = luaL_checkinteger(L, 3);
 	INT32 defaultDir = luaL_optinteger(L, 4, 0);
 	INT32 altthrow = luaL_optinteger(L, 5, 0);
@@ -4546,7 +4546,7 @@ static int lib_kCheckPlayersRespawnColliding(lua_State *L)
 static int lib_kGetKartRingPower(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean boosted = lua_opttrueboolean(L, 2);
+	dboolean boosted = lua_opttrueboolean(L, 2);
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4620,7 +4620,7 @@ static int lib_kSpawnDriftElectricSparks(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	skincolornum_t color = luaL_checkinteger(L, 2);
-	boolean shockwave = lua_optboolean(L, 3);
+	dboolean shockwave = lua_optboolean(L, 3);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -4976,8 +4976,8 @@ static int lib_kApplyTripwire(lua_State *L)
 static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean doboostpower = lua_optboolean(L, 2);
-	boolean dorubberbanding = lua_optboolean(L, 3);
+	dboolean doboostpower = lua_optboolean(L, 2);
+	dboolean dorubberbanding = lua_optboolean(L, 3);
 	//HUDSAFE
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -5068,7 +5068,7 @@ static int lib_k3dKartMovement(lua_State *L)
 static int lib_kGetItemPatch(lua_State *L)
 {
 	UINT8 item = (UINT8)luaL_optinteger(L, 1, KITEM_NONE);
-	boolean tiny = lua_optboolean(L, 2);
+	dboolean tiny = lua_optboolean(L, 2);
 	//HUDSAFE
 	lua_pushstring(L, K_GetItemPatch(item, tiny));
 	return 1;
@@ -5368,7 +5368,7 @@ static int lib_kGetGradingFactorAdjustment(lua_State *L)
 static int lib_kGetGradingFactorMinMax(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean max = luaL_checkboolean(L, 2);
+	dboolean max = luaL_checkboolean(L, 2);
 	INLEVEL
 	NOHUD
 	if (!player)
@@ -5461,7 +5461,7 @@ static int lib_kAddHitLag(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	tic_t tics = (tic_t)luaL_checkinteger(L, 2);
-	boolean fromdamage = lua_opttrueboolean(L, 3);
+	dboolean fromdamage = lua_opttrueboolean(L, 3);
 	NOHUD
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
@@ -5475,7 +5475,7 @@ static int lib_kSetHitLagForObjects(lua_State *L)
 	mobj_t *inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 	tic_t tics = (tic_t)luaL_checkinteger(L, 4);
-	boolean fromdamage = lua_opttrueboolean(L, 5);
+	dboolean fromdamage = lua_opttrueboolean(L, 5);
 	INLEVEL
 	NOHUD
 	if (!victim || !inflictor || !source)
@@ -5544,7 +5544,7 @@ static int lib_kDeclareWeakspot(lua_State *L)
 	mobj_t *spot = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	spottype_t spottype = luaL_checkinteger(L, 2);
 	UINT16 color = luaL_checkinteger(L, 3);
-	boolean minimap = lua_optboolean(L, 4);
+	dboolean minimap = lua_optboolean(L, 4);
 	NOHUD
 	if (!spot)
 		return LUA_ErrInvalid(L, "mobj_t");
@@ -5573,7 +5573,7 @@ static int lib_vsPredictAroundArena(lua_State *L)
 	fixed_t magnitude = luaL_checkfixed(L, 3);
 	fixed_t mompoint = luaL_checkangle(L, 4);
 	fixed_t radiussubtract = luaL_checkfixed(L, 5);
-	boolean forcegoaround = lua_optboolean(L, 6);
+	dboolean forcegoaround = lua_optboolean(L, 6);
 	fixed_t radiusdeltafactor = luaL_optinteger(L, 7, FRACUNIT); //optfixed?
 	NOHUD
 	if (!arena || !movingobject)
@@ -5708,7 +5708,7 @@ static int lib_kPushToRouletteItemList(lua_State *L)
 static int lib_kStartItemRoulette(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean ringbox = lua_optboolean(L, 2);
+	dboolean ringbox = lua_optboolean(L, 2);
 
 	NOHUD
 	INLEVEL
@@ -5777,7 +5777,7 @@ static int lib_kFillItemRouletteData(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	itemroulette_t *itemRoulette = NULL;
 
-	boolean ringbox = lua_optboolean(L, 2);
+	dboolean ringbox = lua_optboolean(L, 2);
 
 	NOHUD
 	INLEVEL
@@ -5904,7 +5904,7 @@ static int lib_kSetItemInReelByIndex(lua_State *L)
 	return 0;
 }
 
-static void AddOrPushToItemReel(player_t *player, itemroulette_t *roulette, kartitems_t item, boolean addRings)
+static void AddOrPushToItemReel(player_t *player, itemroulette_t *roulette, kartitems_t item, dboolean addRings)
 {
 	if (addRings)
 		K_AddItemToReel(player, roulette, item);
@@ -5919,7 +5919,7 @@ static int lib_kAddItemToReelByIndex(lua_State *L)
 
 	size_t index = luaL_checkinteger(L, 2) - 1;
 	kartitems_t item = luaL_checkinteger(L, 3);
-	boolean addRings = lua_optboolean(L, 4);
+	dboolean addRings = lua_optboolean(L, 4);
 
 	NOHUD
 	INLEVEL
@@ -6121,7 +6121,7 @@ static int lib_kAddBot(lua_State *L)
 
 	INLEVEL
 
-	boolean success = K_AddBot(skinid, difficulty, style, &newplayernum);
+	dboolean success = K_AddBot(skinid, difficulty, style, &newplayernum);
 	lua_pushboolean(L, success);
 	if (success)
 		LUA_PushUserdata(L, &players[newplayernum - 1], META_PLAYER);
@@ -6146,7 +6146,7 @@ static int lib_kSetNameForBot(lua_State *L)
 
 	if (!IsPlayerNameGood(modifiedname))
 		return luaL_error(L, "Invalid bot name - it must be between %d and %d characters of length, "
-			"not start with a space, @ or ~ characters, and it must be composed of valid ASCII characters.", 1, MAXPLAYERNAME);	
+			"not start with a space, @ or ~ characters, and it must be composed of valid ASCII characters.", 1, MAXPLAYERNAME);
 
 	K_SetNameForBot(player-players, modifiedname);
 
@@ -6170,7 +6170,7 @@ static int lib_kRemoveBot(lua_State *L)
 static int lib_kRespawnOffset(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	boolean flip = lua_optboolean(L, 2);
+	dboolean flip = lua_optboolean(L, 2);
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -6283,7 +6283,7 @@ static int lib_kGetWaypointIsEnabled(lua_State *L)
 static int lib_kSetWaypointIsEnabled(lua_State *L)
 {
 	waypoint_t *waypoint = *((waypoint_t **)luaL_checkudata(L, 1, META_WAYPOINT));
-	boolean enabled = luaL_checkboolean(L, 2);
+	dboolean enabled = luaL_checkboolean(L, 2);
 	INLEVEL
 
 	if (!waypoint)
@@ -6440,15 +6440,15 @@ static int lib_kPathfindToWaypoint(lua_State *L)
 {
 	waypoint_t *sourcewaypoint = *((waypoint_t **)luaL_checkudata(L, 1, META_WAYPOINT));
 	waypoint_t *destinationwaypoint = *((waypoint_t **)luaL_checkudata(L, 2, META_WAYPOINT));
-	boolean useshortcuts = lua_optboolean(L, 3);
-	boolean huntbackwards = lua_optboolean(L, 4);
+	dboolean useshortcuts = lua_optboolean(L, 3);
+	dboolean huntbackwards = lua_optboolean(L, 4);
 
 	INLEVEL
 	if (!sourcewaypoint || !destinationwaypoint)
 		return LUA_ErrInvalid(L, "waypoint_t");
 
 	path_t returnpath = {0};
-	boolean success = K_PathfindToWaypoint(sourcewaypoint, destinationwaypoint, &returnpath, useshortcuts, huntbackwards);
+	dboolean success = K_PathfindToWaypoint(sourcewaypoint, destinationwaypoint, &returnpath, useshortcuts, huntbackwards);
 
 	lua_pushboolean(L, success);
 	if (success)
@@ -6466,15 +6466,15 @@ static int lib_kPathfindThruCircuit(lua_State *L)
 {
 	waypoint_t *sourcewaypoint = *((waypoint_t **)luaL_checkudata(L, 1, META_WAYPOINT));
 	fixed_t traveldistance = luaL_checkfixed(L, 2);
-	boolean useshortcuts = lua_optboolean(L, 3);
-	boolean huntbackwards = lua_optboolean(L, 4);
+	dboolean useshortcuts = lua_optboolean(L, 3);
+	dboolean huntbackwards = lua_optboolean(L, 4);
 
 	INLEVEL
 	if (!sourcewaypoint)
 		return LUA_ErrInvalid(L, "waypoint_t");
 
 	path_t returnpath = {0};
-	boolean success = K_PathfindThruCircuit(sourcewaypoint, traveldistance, &returnpath, useshortcuts, huntbackwards);
+	dboolean success = K_PathfindThruCircuit(sourcewaypoint, traveldistance, &returnpath, useshortcuts, huntbackwards);
 
 	lua_pushboolean(L, success);
 	if (success)
@@ -6492,15 +6492,15 @@ static int lib_kPathfindThruCircuitSpawnable(lua_State *L)
 {
 	waypoint_t *sourcewaypoint = *((waypoint_t **)luaL_checkudata(L, 1, META_WAYPOINT));
 	fixed_t traveldistance = luaL_checkfixed(L, 2);
-	boolean useshortcuts = lua_optboolean(L, 3);
-	boolean huntbackwards = lua_optboolean(L, 4);
+	dboolean useshortcuts = lua_optboolean(L, 3);
+	dboolean huntbackwards = lua_optboolean(L, 4);
 
 	INLEVEL
 	if (!sourcewaypoint)
 		return LUA_ErrInvalid(L, "waypoint_t");
 
 	path_t returnpath = {0};
-	boolean success = K_PathfindThruCircuitSpawnable(sourcewaypoint, traveldistance, &returnpath, useshortcuts, huntbackwards);
+	dboolean success = K_PathfindThruCircuitSpawnable(sourcewaypoint, traveldistance, &returnpath, useshortcuts, huntbackwards);
 
 	lua_pushboolean(L, success);
 	if (success)
@@ -6518,8 +6518,8 @@ static int lib_kGetNextWaypointToDestination(lua_State *L)
 {
 	waypoint_t *sourcewaypoint = *((waypoint_t **)luaL_checkudata(L, 1, META_WAYPOINT));
 	waypoint_t *destinationwaypoint = *((waypoint_t **)luaL_checkudata(L, 2, META_WAYPOINT));
-	boolean useshortcuts = lua_optboolean(L, 3);
-	boolean huntbackwards = lua_optboolean(L, 4);
+	dboolean useshortcuts = lua_optboolean(L, 3);
+	dboolean huntbackwards = lua_optboolean(L, 4);
 
 	INLEVEL
 	if (!sourcewaypoint || !destinationwaypoint)
@@ -6563,7 +6563,7 @@ static int lib_startTitlecardCecho(lua_State *L)
 {
 	player_t *player = lua_isnil(L, 1) ? NULL : *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	const char *str = luaL_checkstring(L, 2);
-	boolean interrupt = lua_optboolean(L, 3);
+	dboolean interrupt = lua_optboolean(L, 3);
 
 	HU_DoTitlecardCEcho(player, str, interrupt);
 
@@ -6664,7 +6664,7 @@ static int lib_kUpdateTerrainOverlay(lua_State *L)
 static int lib_kTerrainHasAffect(lua_State *L)
 {
 	terrain_t *terrain = *((terrain_t **)luaL_checkudata(L, 1, META_TERRAIN));
-	boolean badonly = lua_optboolean(L, 2);
+	dboolean badonly = lua_optboolean(L, 2);
 
 	NOHUD
 	INLEVEL

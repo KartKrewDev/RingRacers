@@ -30,14 +30,14 @@ void M_DrawEggTV()
 	g_egg_tv->draw();
 }
 
-boolean M_QuitEggTV()
+dboolean M_QuitEggTV()
 {
 	g_egg_tv = {};
 
 	return true;
 }
 
-boolean M_HandleEggTV(INT32 choice)
+dboolean M_HandleEggTV(INT32 choice)
 {
 	(void)choice;
 

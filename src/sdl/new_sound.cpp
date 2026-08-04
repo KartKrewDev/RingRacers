@@ -516,7 +516,7 @@ void I_StopSound(INT32 handle)
 	sound_effect_channels[index]->reset();
 }
 
-boolean I_SoundIsPlaying(INT32 handle)
+dboolean I_SoundIsPlaying(INT32 handle)
 {
 	SdlAudioLockHandle _;
 
@@ -646,7 +646,7 @@ const char* I_SongType(void)
 	}
 }
 
-boolean I_SongPlaying(void)
+dboolean I_SongPlaying(void)
 {
 	if (!music_player)
 		return false;
@@ -656,7 +656,7 @@ boolean I_SongPlaying(void)
 	return music_player->music_type().has_value();
 }
 
-boolean I_SongPaused(void)
+dboolean I_SongPaused(void)
 {
 	if (!music_player)
 		return false;
@@ -670,7 +670,7 @@ boolean I_SongPaused(void)
 //  MUSIC EFFECTS
 /// ------------------------
 
-boolean I_SetSongSpeed(float speed)
+dboolean I_SetSongSpeed(float speed)
 {
 	if (resample_music_player)
 	{
@@ -700,7 +700,7 @@ UINT32 I_GetSongLength(void)
 	return static_cast<UINT32>(std::round(*duration * 1000.f));
 }
 
-boolean I_SetSongLoopPoint(UINT32 looppoint)
+dboolean I_SetSongLoopPoint(UINT32 looppoint)
 {
 	if (!music_player)
 		return 0;
@@ -731,7 +731,7 @@ UINT32 I_GetSongLoopPoint(void)
 	return static_cast<UINT32>(std::round(*loop_point_seconds * 1000.f));
 }
 
-boolean I_SetSongPosition(UINT32 position)
+dboolean I_SetSongPosition(UINT32 position)
 {
 	if (!music_player)
 		return false;
@@ -798,7 +798,7 @@ void print_ex(const std::exception& ex)
 }
 } // namespace
 
-boolean I_LoadSong(char* data, size_t len)
+dboolean I_LoadSong(char* data, size_t len)
 {
 	if (!music_player)
 		return false;
@@ -860,7 +860,7 @@ void I_UnloadSong(void)
 	*music_player = audio::MusicPlayer();
 }
 
-boolean I_PlaySong(boolean looping)
+dboolean I_PlaySong(dboolean looping)
 {
 	if (!music_player)
 		return false;
@@ -925,7 +925,7 @@ void I_SetCurrentSongVolume(int volume)
 	}
 }
 
-boolean I_SetSongTrack(int track)
+dboolean I_SetSongTrack(int track)
 {
 	(void) track;
 	return false;
@@ -956,7 +956,7 @@ void I_StopFadingSong(void)
 	music_player->stop_fade();
 }
 
-boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void))
+dboolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void))
 {
 	if (!music_player)
 		return false;
@@ -976,7 +976,7 @@ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms
 	return true;
 }
 
-boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void))
+dboolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void))
 {
 	if (!music_player)
 		return false;
@@ -1005,12 +1005,12 @@ static void stop_song_cb(void)
 	music_player->stop();
 }
 
-boolean I_FadeOutStopSong(UINT32 ms)
+dboolean I_FadeOutStopSong(UINT32 ms)
 {
 	return I_FadeSong(0.f, ms, stop_song_cb);
 }
 
-boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
+dboolean I_FadeInPlaySong(UINT32 ms, dboolean looping)
 {
 	if (I_PlaySong(looping))
 		return I_FadeSongFromVolume(100, 0, ms, nullptr);
@@ -1028,10 +1028,10 @@ void I_UpdateAudioRecorder(void)
 #endif
 }
 
-boolean I_SoundInputIsEnabled(void)
+dboolean I_SoundInputIsEnabled(void)
 {
 	SDL_LockMutex(microphone_mutex);
-	boolean ret = g_input_stream != nullptr;
+	dboolean ret = g_input_stream != nullptr;
 	SDL_UnlockMutex(microphone_mutex);
 	return ret;
 }
@@ -1054,7 +1054,7 @@ static int microphone_opener(void* data)
 	return 0;
 }
 
-boolean I_SoundInputSetEnabled(boolean enabled)
+dboolean I_SoundInputSetEnabled(dboolean enabled)
 {
 	SDL_LockMutex(microphone_mutex);
 
@@ -1113,7 +1113,7 @@ UINT32 I_SoundInputRemainingSamples(void)
 	return avail / sizeof(float);
 }
 
-void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal)
+void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, dboolean terminal)
 {
 	if (!sound_started)
 	{

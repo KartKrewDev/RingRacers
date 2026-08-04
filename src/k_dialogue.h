@@ -25,7 +25,7 @@ void K_UnsetDialogue(void);
 void K_DrawDialogue(void);
 void K_TickDialogue(void);
 
-boolean K_DialogueFreeze(void);
+dboolean K_DialogueFreeze(void);
 INT32 K_GetDialogueSlide(fixed_t multiplier);
 INT32 K_GetDialogueFade(void);
 

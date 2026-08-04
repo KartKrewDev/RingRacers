@@ -460,11 +460,11 @@ static std::vector<ACSVM::Word> ACS_MixArgs(std::span<const INT32> args, std::sp
 }
 
 /*--------------------------------------------------
-	boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+	dboolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+dboolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 {
 	Environment *env = &ACSEnv;
 
@@ -481,11 +481,11 @@ boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const c
 }
 
 /*--------------------------------------------------
-	boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+	dboolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+dboolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 {
 	Environment *env = &ACSEnv;
 
@@ -502,11 +502,11 @@ boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, c
 }
 
 /*--------------------------------------------------
-	boolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+	dboolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+dboolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
 {
 	Environment *env = &ACSEnv;
 
@@ -521,11 +521,11 @@ boolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, a
 }
 
 /*--------------------------------------------------
-	boolean ACS_Suspend(const char *name)
+	dboolean ACS_Suspend(const char *name)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean ACS_Suspend(const char *name)
+dboolean ACS_Suspend(const char *name)
 {
 	Environment *env = &ACSEnv;
 
@@ -539,11 +539,11 @@ boolean ACS_Suspend(const char *name)
 }
 
 /*--------------------------------------------------
-	boolean ACS_Terminate(const char *name)
+	dboolean ACS_Terminate(const char *name)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean ACS_Terminate(const char *name)
+dboolean ACS_Terminate(const char *name)
 {
 	Environment *env = &ACSEnv;
 

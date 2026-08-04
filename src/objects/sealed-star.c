@@ -289,7 +289,7 @@ static fixed_t srng_RandomFixed(void)
 	return (fixed_t)(srng_RandomRange(0, FRACUNIT));
 }
 
-static boolean srng_RandomChance(INT32 chance)
+static dboolean srng_RandomChance(INT32 chance)
 {
 	return srng_RandomFixed() < chance;
 }
@@ -310,7 +310,7 @@ static boolean srng_RandomChance(INT32 chance)
 // with a statistical distribution instead of a linear search,
 // but this was hardcoded to copy the exact behavior of the Lua
 
-static boolean cloud_CheckDistribution(mobj_t **coins, INT32 coin_count, fixed_t x, fixed_t y, fixed_t z, fixed_t scale)
+static dboolean cloud_CheckDistribution(mobj_t **coins, INT32 coin_count, fixed_t x, fixed_t y, fixed_t z, fixed_t scale)
 {
 	fixed_t spacing = FixedMul(MIN_SPACING, scale);
 	int i;
@@ -588,7 +588,7 @@ void Obj_SSCabotronMobjThink(mobj_t* mo)
 {
 	angle_t xdir = FSIN(mo->angle - ANGLE_90);
 	angle_t ydir = FCOS(mo->angle + ANGLE_90);
-	boolean didMove;
+	dboolean didMove;
 
 	didMove = P_TryMove(mo, mo->x - (xdir * mo->info->speed), mo->y - (ydir * mo->info->speed), false, NULL);
 	if (!didMove)

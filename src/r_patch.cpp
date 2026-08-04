@@ -63,7 +63,7 @@ patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest)
 	return patch;
 }
 
-static boolean g_patch_was_freed_this_frame = false;
+static dboolean g_patch_was_freed_this_frame = false;
 
 //
 // Frees a patch from memory.
@@ -114,7 +114,7 @@ void Patch_Free(patch_t *patch)
 	Z_Free(patch);
 }
 
-boolean Patch_WasFreedThisFrame(void)
+dboolean Patch_WasFreedThisFrame(void)
 {
 	return g_patch_was_freed_this_frame;
 }
@@ -128,7 +128,7 @@ void Patch_ResetFreedThisFrame(void)
 // Frees patches with a tag range.
 //
 
-static boolean Patch_FreeTagsCallback(void *mem)
+static dboolean Patch_FreeTagsCallback(void *mem)
 {
 	patch_t *patch = (patch_t *)mem;
 	Patch_FreeData(patch);

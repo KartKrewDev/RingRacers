@@ -109,27 +109,27 @@ extern CV_PossibleValue_t Forceskin_cons_t[];
 
 // Loading
 void R_InitSkins(void);
-void R_AddSkins(UINT16 wadnum, boolean mainfile);
-void R_PatchSkins(UINT16 wadnum, boolean mainfile);
+void R_AddSkins(UINT16 wadnum, dboolean mainfile);
+void R_PatchSkins(UINT16 wadnum, dboolean mainfile);
 
 // Access
 INT32 R_SkinAvailable(const char *name);
-INT32 R_SkinAvailableEx(const char *name, boolean demoskins);
-boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
-UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter);
-boolean R_CanShowSkinInDemo(INT32 skinnum);
+INT32 R_SkinAvailableEx(const char *name, dboolean demoskins);
+dboolean R_SkinUsable(INT32 playernum, INT32 skinnum, dboolean demoskins);
+UINT8 *R_GetSkinAvailabilities(dboolean demolock, INT32 botforcecharacter);
+dboolean R_CanShowSkinInDemo(INT32 skinnum);
 
 // Setting
 void SetPlayerSkin(INT32 playernum,const char *skinname);
 void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
 
 // Set backup
-INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock);
+INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, dboolean unlock);
 UINT16 R_BotDefaultSkin(void);
 
 // Heavy Magician
 void SetFakePlayerSkin(player_t* player, INT32 skinnum);
-void SetRandomFakePlayerSkin(player_t* player, boolean fast, boolean instant);
+void SetRandomFakePlayerSkin(player_t* player, dboolean fast, dboolean instant);
 void ClearFakePlayerSkin(player_t* player);
 
 // Visual flair

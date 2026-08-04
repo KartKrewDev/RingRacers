@@ -56,34 +56,34 @@
 #include "deh_tables.h" // MOBJTYPE_LIST
 
 tic_t leveltime;
-boolean thinkersCompleted;
+dboolean thinkersCompleted;
 
 UINT32 thinker_era = 0;
 
-static boolean g_freezeCheat;
-static boolean g_freezeLevel;
+static dboolean g_freezeCheat;
+static dboolean g_freezeLevel;
 
-boolean P_LevelIsFrozen(void)
+dboolean P_LevelIsFrozen(void)
 {
 	return (g_freezeLevel || g_freezeCheat || K_EndCameraIsFreezing());
 }
 
-boolean P_FreezeCheat(void)
+dboolean P_FreezeCheat(void)
 {
 	return (g_freezeLevel || g_freezeCheat || K_EndCameraIsFreezing());
 }
 
-void P_SetFreezeCheat(boolean value)
+void P_SetFreezeCheat(dboolean value)
 {
 	g_freezeCheat = value;
 }
 
-void P_SetFreezeLevel(boolean value)
+void P_SetFreezeLevel(dboolean value)
 {
 	g_freezeLevel = value;
 }
 
-boolean P_MobjIsFrozen(mobj_t *mobj)
+dboolean P_MobjIsFrozen(mobj_t *mobj)
 {
 	if (g_freezeCheat == true)
 	{
@@ -715,7 +715,7 @@ static void P_StartLevelMusic(void)
 //
 // P_Ticker
 //
-void P_Ticker(boolean run)
+void P_Ticker(dboolean run)
 {
 	quake_t *quake = NULL;
 	INT32 i;
@@ -1100,7 +1100,7 @@ void P_Ticker(boolean run)
 
 		if (exitcountdown >= 1)
 		{
-			boolean run_exit_countdown = true;
+			dboolean run_exit_countdown = true;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] == false)
@@ -1240,7 +1240,7 @@ void P_Ticker(boolean run)
 				player_t *player = &players[displayplayers[i]];
 				if (!player->mo)
 					continue;
-				const boolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on
+				const dboolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on
 				if (skybox)
 				{
 					R_SkyboxFrame(i);

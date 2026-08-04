@@ -37,7 +37,7 @@ menu_t MISC_ManualDef = IMAGEDEF(MISC_Manual);
 void M_HandleImageDef(INT32 choice)
 {
 	const UINT8 pid = 0;
-	boolean exitmenu = false;
+	dboolean exitmenu = false;
 	(void) choice;
 
 	if (menucmd[pid].dpad_lr > 0)

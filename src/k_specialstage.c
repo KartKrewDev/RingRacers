@@ -162,11 +162,11 @@ mobj_t *K_GetPossibleSpecialTarget(void)
 }
 
 /*--------------------------------------------------
-	boolean K_PlayerIsEmptyHandedInSpecial(void)
+	dboolean K_PlayerIsEmptyHandedInSpecial(void)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PlayerIsEmptyHandedInSpecial(player_t *player)
+dboolean K_PlayerIsEmptyHandedInSpecial(player_t *player)
 {
 	if (specialstageinfo.valid == false)
 		return false; // Not Sealed Star

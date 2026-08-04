@@ -136,7 +136,7 @@ void M_OptionsChangeBGColour(INT16 newcolour)
 	optionsmenu.currcolour = newcolour;
 }
 
-boolean M_OptionsQuit(void)
+dboolean M_OptionsQuit(void)
 {
 	optionsmenu.toptx = 140;
 	optionsmenu.topty = 70;
@@ -154,7 +154,7 @@ boolean M_OptionsQuit(void)
 
 void M_OptionsTick(void)
 {
-	boolean instanttransmission = optionsmenu.ticker == 0 && menuwipe;
+	dboolean instanttransmission = optionsmenu.ticker == 0 && menuwipe;
 
 	optionsmenu.ticker++;
 
@@ -267,7 +267,7 @@ void M_ServerOptions(INT32 choice)
 	OPTIONS_MainDef.lastOn = mopt_server;
 }
 
-boolean M_OptionsInputs(INT32 ch)
+dboolean M_OptionsInputs(INT32 ch)
 {
 
 	const UINT8 pid = 0;

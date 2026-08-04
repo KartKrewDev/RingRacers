@@ -33,7 +33,7 @@ extern char  player_names[MAXPLAYERS][MAXPLAYERNAME+1];
 extern INT32 player_name_changes[MAXPLAYERS];
 
 extern player_t players[MAXPLAYERS];
-extern boolean playeringame[MAXPLAYERS];
+extern dboolean playeringame[MAXPLAYERS];
 
 // gametic at level start
 extern tic_t levelstarttic;
@@ -59,9 +59,9 @@ struct roundentry_t
 {
 	UINT16 mapnum;				// Map number at this position
 	UINT16 gametype;			// Gametype we want to play this in
-	boolean encore;				// Whether this will be flipped
-	boolean rankrestricted;		// For grand prix progression
-	boolean overridden;			// For nextmapoverride
+	dboolean encore;				// Whether this will be flipped
+	dboolean rankrestricted;		// For grand prix progression
+	dboolean overridden;			// For nextmapoverride
 };
 
 extern struct roundqueue
@@ -69,9 +69,9 @@ extern struct roundqueue
 	UINT8 roundnum;							// Visible number on HUD
 	UINT8 position;							// Head position in the round queue
 	UINT8 size;								// Number of entries in the round queue
-	boolean netcommunicate;					// As server, should we net-communicate this in XD_MAP?
-	boolean writetextmap;					// This queue is for automated map conversion
-	boolean snapshotmaps;					// This queue is for automated map thumbnails
+	dboolean netcommunicate;					// As server, should we net-communicate this in XD_MAP?
+	dboolean writetextmap;					// This queue is for automated map conversion
+	dboolean snapshotmaps;					// This queue is for automated map thumbnails
 	roundentry_t entries[ROUNDQUEUE_MAX];	// Entries in the round queue
 } roundqueue;
 
@@ -81,24 +81,24 @@ extern struct menuqueue
 	UINT8 size;
 	UINT8 sending;
 	UINT8 anchor;
-	boolean clearing;
-	boolean cupqueue;
+	dboolean clearing;
+	dboolean cupqueue;
 	roundentry_t entries[ROUNDQUEUE_MAX];
 } menuqueue;
 
-void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted);
-void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted);
-void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencore);
+void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, dboolean setencore, dboolean rankrestricted);
+void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, dboolean setencore, dboolean rankrestricted);
+void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, dboolean setencore);
 
 extern INT32 gameovertics;
 extern UINT8 ammoremovaltics;
 extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 extern INT32 pausedelay;
-extern boolean pausebreakkey;
+extern dboolean pausebreakkey;
 
-extern boolean usedTourney;
+extern dboolean usedTourney;
 
-extern boolean promptactive;
+extern dboolean promptactive;
 
 extern consvar_t cv_tutorialprompt;
 
@@ -139,23 +139,23 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
 // clip the console player aiming to the view
 INT32 G_ClipAimingPitch(INT32 *aiming);
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming);
-void G_FinalClipAimingPitch(INT32 *aiming, player_t *player, boolean skybox);
+void G_FinalClipAimingPitch(INT32 *aiming, player_t *player, dboolean skybox);
 
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
 extern INT32 localsteering[MAXSPLITSCREENPLAYERS];
 
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers);
-boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers);
+dboolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers);
 
 //
 // GAME
 //
 void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo);
 void G_DoReborn(INT32 playernum);
-void G_PlayerReborn(INT32 player, boolean betweenmaps);
-void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer,
-	boolean skipprecutscene);
+void G_PlayerReborn(INT32 player, dboolean betweenmaps);
+void G_InitNew(UINT8 pencoremode, INT32 map, dboolean resetplayer,
+	dboolean skipprecutscene);
 char *G_BuildMapTitle(INT32 mapnum);
 
 struct searchdim
@@ -192,19 +192,19 @@ void G_SpawnPlayer(INT32 playernum);
 
 // Can be called by the startup code or M_Responder.
 // A normal game starts at map 1, but a warp test can start elsewhere
-void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar,
-	UINT8 ssplayers, boolean FLS);
-void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate);
-void G_DoLoadLevel(boolean resetplayer);
+void G_DeferedInitNew(dboolean pencoremode, INT32 map, INT32 pickedchar,
+	UINT8 ssplayers, dboolean FLS);
+void G_DoLoadLevelEx(dboolean resetplayer, gamestate_t newstate);
+void G_DoLoadLevel(dboolean resetplayer);
 
 void G_StartTitleCard(void);
 void G_PreLevelTitleCard(void);
-boolean G_IsTitleCardAvailable(void);
+dboolean G_IsTitleCardAvailable(void);
 
-void G_HandleSaveLevel(boolean removecondition);
+void G_HandleSaveLevel(dboolean removecondition);
 void G_SaveGame(void);
 void G_LoadGame(void);
-void G_GetBackupCupData(boolean actuallygetdata);
+void G_GetBackupCupData(dboolean actuallygetdata);
 
 void G_SaveGameData(void);
 void G_DirtyGameData(void);
@@ -215,10 +215,10 @@ void G_AddTOL(UINT32 newtol, const char *tolname);
 INT32 G_GetGametypeByName(const char *gametypestr);
 INT32 G_GuessGametypeByTOL(UINT32 tol);
 
-boolean G_GametypeUsesLives(void);
-boolean G_GametypeAllowsRetrying(void);
-boolean G_GametypeHasTeams(void);
-boolean G_GametypeHasSpectators(void);
+dboolean G_GametypeUsesLives(void);
+dboolean G_GametypeAllowsRetrying(void);
+dboolean G_GametypeHasTeams(void);
+dboolean G_GametypeHasSpectators(void);
 INT16 G_SometimesGetDifferentEncore(void);
 void G_BeginLevelExit(void);
 void G_FinishExitLevel(void);
@@ -235,32 +235,32 @@ extern struct stickermedalinfo
 	UINT8 visiblecount;
 	UINT8 platinumcount;
 	UINT8 jitter;
-	boolean norecord;
+	dboolean norecord;
 	tic_t timetoreach;
 	emblem_t *emblems[MAXMEDALVISIBLECOUNT];
 	emblem_t *regenemblem;
 	char targettext[9];
 } stickermedalinfo;
 
-void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord);
+void G_UpdateTimeStickerMedals(UINT16 map, dboolean showownrecord);
 void G_TickTimeStickerMedals(void);
 void G_UpdateRecords(void);
 
 void G_UpdatePlayerPreferences(player_t *const player);
 void G_UpdateAllPlayerPreferences(void);
 
-void G_Ticker(boolean run);
-boolean G_Responder(event_t *ev);
+void G_Ticker(dboolean run);
+dboolean G_Responder(event_t *ev);
 
-boolean G_CouldView(INT32 playernum);
-boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive);
+dboolean G_CouldView(INT32 playernum);
+dboolean G_CanView(INT32 playernum, UINT8 viewnum, dboolean onlyactive);
 
-INT32 G_FindView(INT32 startview, UINT8 viewnum, boolean onlyactive, boolean reverse);
-INT32 G_CountPlayersPotentiallyViewable(boolean active);
+INT32 G_FindView(INT32 startview, UINT8 viewnum, dboolean onlyactive, dboolean reverse);
+INT32 G_CountPlayersPotentiallyViewable(dboolean active);
 
 void G_ResetViews(void);
-void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive);
-void G_AdjustView(UINT8 viewnum, INT32 offset, boolean onlyactive);
+void G_ResetView(UINT8 viewnum, INT32 playernum, dboolean onlyactive);
+void G_AdjustView(UINT8 viewnum, INT32 offset, dboolean onlyactive);
 void G_FixCamera(UINT8 viewnum);
 
 void G_AddPlayer(INT32 playernum, INT32 console);
@@ -268,21 +268,21 @@ void G_SpectatePlayerOnJoin(INT32 playernum);
 
 void G_SetExitGameFlag(void);
 void G_ClearExitGameFlag(void);
-boolean G_GetExitGameFlag(void);
+dboolean G_GetExitGameFlag(void);
 
 void G_SetRetryFlag(void);
 void G_ClearRetryFlag(void);
-boolean G_GetRetryFlag(void);
+dboolean G_GetRetryFlag(void);
 
-boolean G_IsModeAttackRetrying(void);
+dboolean G_IsModeAttackRetrying(void);
 
 void G_LoadGameData(void);
 void G_LoadGameSettings(void);
 
-void G_SetGameModified(boolean silent, boolean major);
+void G_SetGameModified(dboolean silent, dboolean major);
 void G_SetUsedCheats(void);
 
-boolean G_TimeAttackStart(void);
+dboolean G_TimeAttackStart(void);
 
 // Gamedata record shit
 void G_ClearRecords(void);
@@ -290,7 +290,7 @@ void G_ClearRecords(void);
 tic_t G_GetBestTime(INT16 map);
 
 FUNCMATH INT32 G_TicsToHours(tic_t tics);
-FUNCMATH INT32 G_TicsToMinutes(tic_t tics, boolean full);
+FUNCMATH INT32 G_TicsToMinutes(tic_t tics, dboolean full);
 FUNCMATH INT32 G_TicsToSeconds(tic_t tics);
 FUNCMATH INT32 G_TicsToCentiseconds(tic_t tics);
 FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
@@ -299,13 +299,13 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 UINT32 G_TOLFlag(INT32 pgametype);
 UINT16 G_GetFirstMapOfGametype(UINT16 pgametype);
 
-UINT16 G_RandMapPerPlayerCount(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer, UINT8 numPlayers);
-UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer);
+UINT16 G_RandMapPerPlayerCount(UINT32 tolflags, UINT16 pprevmap, dboolean ignoreBuffers, dboolean callAgainSoon, UINT16 *extBuffer, UINT8 numPlayers);
+UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, dboolean ignoreBuffers, dboolean callAgainSoon, UINT16 *extBuffer);
 void G_AddMapToBuffer(UINT16 map);
 
 void G_UpdateVisited(void);
 
-boolean G_SameTeam(const player_t *a, const player_t *b);
+dboolean G_SameTeam(const player_t *a, const player_t *b);
 UINT8 G_CountTeam(UINT8 team);
 void G_AssignTeam(player_t *const p, UINT8 new_team);
 void G_AutoAssignTeam(player_t *const p);

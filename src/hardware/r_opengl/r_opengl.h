@@ -72,9 +72,9 @@ extern FILE             *gllogstream;
 //                                                                     PROTOS
 // ==========================================================================
 
-boolean LoadGL(void);
+dboolean LoadGL(void);
 void *GetGLFunc(const char *proc);
-boolean SetupGLfunc(void);
+dboolean SetupGLfunc(void);
 void SetupGLFunc4(void);
 void Flush(void);
 INT32 isExtAvailable(const char *extension, const GLubyte *start);

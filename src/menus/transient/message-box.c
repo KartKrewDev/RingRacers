@@ -123,7 +123,7 @@ void M_StopMessage(INT32 choice)
 	M_SetMenuDelay(pid);
 }
 
-boolean M_MenuMessageTick(void)
+dboolean M_MenuMessageTick(void)
 {
 	if (menuwipe)
 		return false;
@@ -172,8 +172,8 @@ void M_HandleMenuMessage(void)
 		return;
 
 	const UINT8 pid = 0;
-	boolean btok = M_MenuConfirmPressed(pid);
-	boolean btnok = M_MenuBackPressed(pid);
+	dboolean btok = M_MenuConfirmPressed(pid);
+	dboolean btnok = M_MenuBackPressed(pid);
 
 	switch (menumessage.flags)
 	{

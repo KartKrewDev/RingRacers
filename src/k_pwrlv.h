@@ -47,12 +47,12 @@ SINT8 K_UsingPowerLevels(void);
 void K_ClearClientPowerLevels(void);
 INT16 K_PowerLevelPlacementScore(player_t *player);
 INT16 K_CalculatePowerLevelAvg(void);
-void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit);
-void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit);
+void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, dboolean forfeit);
+void K_UpdatePowerLevelsFinalize(player_t *player, dboolean onForfeit);
 INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 increment);
 void K_CashInPowerLevels(void);
 void K_SetPowerLevelScrambles(SINT8 powertype);
-void K_PlayerForfeit(UINT8 playernum, boolean nopointloss);
+void K_PlayerForfeit(UINT8 playernum, dboolean nopointloss);
 
 #ifdef __cplusplus
 } // extern "C"

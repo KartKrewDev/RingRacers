@@ -38,13 +38,13 @@ extern struct battleufo
 	tic_t due;
 } g_battleufo;
 
-extern boolean battleprisons;
+extern dboolean battleprisons;
 extern INT32 nummapboxes, numgotboxes; // keep track of spawned battle mode items
 extern UINT8 maptargets, numtargets;
 extern tic_t g_emeraldWin;
 
 INT32 K_StartingBumperCount(void);
-boolean K_IsPlayerWanted(player_t *player);
+dboolean K_IsPlayerWanted(player_t *player);
 #define K_CalculateBattleWanted() (void)0 // not nulled out so we know where we need to recalculate some other form of battle mode importance
 void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount);
 void K_CheckBumpers(void);
@@ -59,11 +59,11 @@ void K_SpawnOvertimeBarrier(void);
 void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
 void K_SpawnPlayerBattleBumpers(player_t *p);
-void K_BattleInit(boolean singleplayercontext);
+void K_BattleInit(dboolean singleplayercontext);
 UINT8 K_Bumpers(player_t *player);
 INT32 K_BumpersToHealth(UINT8 bumpers);
-boolean K_BattleOvertimeKiller(mobj_t *mobj);
-boolean K_EndBattleRound(player_t *victor);
+dboolean K_BattleOvertimeKiller(mobj_t *mobj);
+dboolean K_EndBattleRound(player_t *victor);
 
 #ifdef __cplusplus
 } // extern "C"

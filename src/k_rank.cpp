@@ -37,7 +37,7 @@
 // myself. So here's code duplication hell instead.
 static UINT32 g_rankCapsules_mapthingsPos[UINT16_MAX];
 static size_t g_rankCapsules_nummapthings = 0;
-static boolean g_rankCapsules_udmf = false;
+static dboolean g_rankCapsules_udmf = false;
 static UINT32 g_rankCapsules_count = 0;
 
 /*--------------------------------------------------
@@ -181,7 +181,7 @@ static void RankCapsules_LoadThingsLump(UINT8 *data)
 #endif
 
 /*--------------------------------------------------
-	static boolean RankCapsules_LoadMapData(const virtres_t *virt)
+	static dboolean RankCapsules_LoadMapData(const virtres_t *virt)
 
 		Loads either UDMF or binary map data, for the
 		result of RankCapsules_CountFromMap.
@@ -193,7 +193,7 @@ static void RankCapsules_LoadThingsLump(UINT8 *data)
 		true if we could successfully load the map data,
 		otherwise false.
 --------------------------------------------------*/
-static boolean RankCapsules_LoadMapData(const virtres_t *virt)
+static dboolean RankCapsules_LoadMapData(const virtres_t *virt)
 {
 	virtlump_t *virtthings = NULL;
 

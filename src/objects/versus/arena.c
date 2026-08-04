@@ -16,7 +16,7 @@
 #include "../../k_boss.h"
 #include "../../r_main.h" // R_PointToAngle2, R_PointToDist2
 
-boolean VS_ArenaCenterInit(mobj_t *mobj, mapthing_t *mthing)
+dboolean VS_ArenaCenterInit(mobj_t *mobj, mapthing_t *mthing)
 {
 	INT32 dist1 = mthing->thing_args[1]*FRACUNIT;
 	INT32 dist2 = mthing->thing_args[2]*FRACUNIT;
@@ -61,7 +61,7 @@ mobj_t *VS_GetArena(INT32 bossindex)
 	return NULL;
 }
 
-fixed_t *VS_PredictAroundArena(mobj_t *arena, mobj_t *movingobject, fixed_t magnitude, angle_t mompoint, fixed_t radiussubtract, boolean forcegoaround, fixed_t radiusdeltafactor)
+fixed_t *VS_PredictAroundArena(mobj_t *arena, mobj_t *movingobject, fixed_t magnitude, angle_t mompoint, fixed_t radiussubtract, dboolean forcegoaround, fixed_t radiusdeltafactor)
 {
 	static fixed_t dest[2] = {0, 0};
 
@@ -88,7 +88,7 @@ fixed_t *VS_PredictAroundArena(mobj_t *arena, mobj_t *movingobject, fixed_t magn
 
 	if (radiusdeltafactor > 0) // for kneecapping the prediction
 	{
-		boolean clipped = false;
+		dboolean clipped = false;
 
 		// Add radius so we can compare against the arena size.
 		radiusdelta = radius + P_ReturnThrustX(arena, mompoint, magnitude);

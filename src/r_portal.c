@@ -22,7 +22,7 @@
 #include "r_sky.h"
 
 UINT8 portalrender;			/**< When rendering a portal, it establishes the depth of the current BSP traversal. */
-boolean portalskipprecipmobjs = false;
+dboolean portalskipprecipmobjs = false;
 
 // Linked list for portals.
 portal_t *portal_base, *portal_cap;
@@ -193,7 +193,7 @@ static void Portal_ClipVisplane (const visplane_t* plane, portal_t* portal)
 
 extern INT32 viewwidth;
 
-static boolean TrimVisplaneBounds (const visplane_t* plane, INT16* start, INT16* end)
+static dboolean TrimVisplaneBounds (const visplane_t* plane, INT16* start, INT16* end)
 {
 	*start = plane->minx;
 	*end = plane->maxx + 1;

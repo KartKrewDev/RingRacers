@@ -132,10 +132,10 @@ static initmultiplefilesentry_t startupiwads[MAX_WADFILES];
 static size_t num_startuppwads = 0;
 static initmultiplefilesentry_t startuppwads[MAX_WADFILES];
 
-boolean devparm = false; // started game with -devparm
+dboolean devparm = false; // started game with -devparm
 
-boolean g_singletics = false; // timedemo
-boolean lastdraw = false;
+dboolean g_singletics = false; // timedemo
+dboolean lastdraw = false;
 
 tic_t g_fast_forward = 0;
 tic_t g_fast_forward_clock_stop = INFTICS;
@@ -147,9 +147,9 @@ INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 // whether the respective sound system is disabled
 // or they're init'ed, but the player just toggled them
 
-boolean sound_disabled = false;
-boolean digital_disabled = false;
-boolean g_voice_disabled = false;
+dboolean sound_disabled = false;
+dboolean digital_disabled = false;
+dboolean g_voice_disabled = false;
 
 #ifdef DEBUGFILE
 INT32 debugload = 0;
@@ -163,7 +163,7 @@ char gpbackup[256];
 
 char srb2home[256] = ".";
 char srb2path[256] = ".";
-boolean usehome = true;
+dboolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
 const char *spandf = "%s" PATHSEP "%s" PATHSEP "%s"; // subdirs wooo
 char addonsdir[MAX_WADPATH];
@@ -179,7 +179,7 @@ char downloaddir[sizeof addonsdir + sizeof DOWNLOADDIR_PART] = "DOWNLOAD";
 event_t events[MAXEVENTS];
 INT32 eventhead, eventtail;
 
-boolean dedicated = false;
+dboolean dedicated = false;
 
 //
 // D_PostEvent
@@ -196,7 +196,7 @@ void D_PostEvent(const event_t *ev)
 UINT8 shiftdown = 0; // 0x1 left, 0x2 right
 UINT8 ctrldown = 0; // 0x1 left, 0x2 right
 UINT8 altdown = 0; // 0x1 left, 0x2 right
-boolean capslock = 0;	// gee i wonder what this does.
+dboolean capslock = 0;	// gee i wonder what this does.
 
 static void HandleGamepadDeviceAdded(event_t *ev)
 {
@@ -219,7 +219,7 @@ static void HandleGamepadDeviceRemoved(event_t *ev)
 	I_Assert(ev->type == ev_gamepad_device_removed);
 	CONS_Alert(CONS_NOTICE, "Gamepad device %d disconnected\n", ev->device);
 
-	boolean playerinterrupted = false;
+	dboolean playerinterrupted = false;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -262,12 +262,12 @@ void HandleGamepadDeviceEvents(event_t *ev)
 // D_ProcessEvents
 // Send all the events of the given timestamp down the responder chain
 //
-void D_ProcessEvents(boolean callresponders)
+void D_ProcessEvents(dboolean callresponders)
 {
 	event_t *ev;
 	int i;
 
-	boolean eaten;
+	dboolean eaten;
 
 	G_ResetAllDeviceResponding();
 
@@ -348,8 +348,8 @@ INT16 wipetypepost = -1;
 static bool D_Display(bool world)
 {
 	bool ranwipe = false;
-	boolean forcerefresh = false;
-	static boolean wipe = false;
+	dboolean forcerefresh = false;
+	static dboolean wipe = false;
 	INT32 wipedefindex = 0;
 	UINT8 i;
 
@@ -855,8 +855,8 @@ void D_SRB2Loop(void)
 	double deltatics = 0.0;
 	double deltasecs = 0.0;
 
-	boolean interp = false;
-	boolean doDisplay = false;
+	dboolean interp = false;
+	dboolean doDisplay = false;
 	int frameskip = 0;
 	bool skiplaggyworld = false;
 	double sincelastworld = 0.0;
@@ -1184,7 +1184,7 @@ void D_SRB2Loop(void)
 			INT64 elapsed = (INT64)(finishprecise - enterprecise);
 
 			// in the case of "match refresh rate" + vsync, don't sleep at all
-			const boolean vsync_with_match_refresh = cv_vidwait.value && cv_fpscap.value == 0;
+			const dboolean vsync_with_match_refresh = cv_vidwait.value && cv_fpscap.value == 0;
 
 			if (elapsed > 0 && (INT64)capbudget > elapsed && !vsync_with_match_refresh)
 			{
@@ -1276,7 +1276,7 @@ void D_ClearState(void)
 	demo.waitingfortally = false;
 }
 
-static boolean g_deferredtitle = false;
+static dboolean g_deferredtitle = false;
 
 //
 // D_StartTitle
@@ -1293,12 +1293,12 @@ void D_StartTitle(void)
 	g_deferredtitle = false;
 }
 
-void D_SetDeferredStartTitle(boolean deferred)
+void D_SetDeferredStartTitle(dboolean deferred)
 {
 	g_deferredtitle = deferred;
 }
 
-boolean D_IsDeferredStartTitle(void)
+dboolean D_IsDeferredStartTitle(void)
 {
 	return g_deferredtitle;
 }
@@ -1374,7 +1374,7 @@ static void ChangeDirForUrlHandler(void)
 // Identify the SRB2 version, and IWAD file to use.
 // ==========================================================================
 
-static boolean AddIWAD(void)
+static dboolean AddIWAD(void)
 {
 	char * path = va(pandf,srb2path,"bios.pk3");
 
@@ -1528,7 +1528,7 @@ void D_SRB2Main(void)
 #else
 	INT32 pstartmap = 0; // default to random map (0 is not a valid map number)
 #endif
-	boolean autostart = false;
+	dboolean autostart = false;
 	INT32 newgametype = -1;
 
 	/* break the version string into version numbers, for netplay */

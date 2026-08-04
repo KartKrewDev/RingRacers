@@ -28,7 +28,7 @@ struct mapUserProperty_t
 
 	mapUserPropertyType_e type;
 
-	boolean valueBool;
+	dboolean valueBool;
 	INT32 valueInt;
 	fixed_t valueFixed;
 	char *valueStr;

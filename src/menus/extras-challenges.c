@@ -164,11 +164,11 @@ static void M_UpdateChallengeGridVisuals(void)
 		medalheight - challengesmenu.unlockcount[CMC_MEDALFILLED];
 }
 
-static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
+static void M_ChallengesAutoFocus(UINT16 unlockid, dboolean fresh)
 {
 	UINT16 i;
 	INT16 work;
-	boolean posisvalid = false;
+	dboolean posisvalid = false;
 
 	if (unlockid >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
 		&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
@@ -187,7 +187,7 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 			UINT16 selection[MAXUNLOCKABLES];
 			UINT16 numunlocks = 0;
 
-			boolean triedrandomlevel = 0;
+			dboolean triedrandomlevel = 0;
 
 tryfreshrandom:
 
@@ -383,7 +383,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 	if (challengesmenu.pending || desiredmenu == &MISC_ChallengesDef)
 	{
-		static boolean firstopen = true;
+		static dboolean firstopen = true;
 
 		challengesmenu.ticker = 0;
 		challengesmenu.requestflip = false;
@@ -457,7 +457,7 @@ static void M_CloseChallenges(void)
 	challengesmenu.unlockcondition = NULL;
 }
 
-boolean M_CanKeyHiliTile(void)
+dboolean M_CanKeyHiliTile(void)
 {
 	// No tile data?
 	if (challengesmenu.extradata == NULL)
@@ -596,8 +596,8 @@ void M_ChallengesTick(void)
 	if (challengesmenu.extradata != NULL)
 	{
 		UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
-		boolean seeeveryone = challengesmenu.requestflip;
-		boolean allthewaythrough = allthewaythrough = (!seeeveryone && !challengesmenu.pending);
+		dboolean seeeveryone = challengesmenu.requestflip;
+		dboolean allthewaythrough = allthewaythrough = (!seeeveryone && !challengesmenu.pending);
 
 		UINT8 maxflip;
 
@@ -912,12 +912,12 @@ void M_ChallengesTick(void)
 	}
 }
 
-boolean M_ChallengesInputs(INT32 ch)
+dboolean M_ChallengesInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
 	UINT16 i;
-	const boolean start = M_MenuButtonPressed(pid, MBT_START);
-	const boolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
+	const dboolean start = M_MenuButtonPressed(pid, MBT_START);
+	const dboolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
 	(void) ch;
 
 	if (challengesmenu.fade || challengesmenu.chaokeyadd || challengesmenu.chaokeyhold)
@@ -1167,7 +1167,7 @@ boolean M_ChallengesInputs(INT32 ch)
 		{
 			unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
 
-			boolean forceflip = false;
+			dboolean forceflip = false;
 
 			switch (unlockables[challengesmenu.currentunlock].type)
 			{

@@ -50,7 +50,7 @@ UINT32 R_GetFramerateCap(void)
 	return cv_fpscap.value;
 }
 
-boolean R_UsingFrameInterpolation(void)
+dboolean R_UsingFrameInterpolation(void)
 {
 	return (R_GetFramerateCap() != TICRATE || I_GetTimeScale() < FRACUNIT);
 }
@@ -99,7 +99,7 @@ static vector3_t *R_LerpVector3(const vector3_t *from, const vector3_t *to, fixe
 // recalc necessary stuff for mouseaiming
 // slopes are already calculated for the full possible view (which is 4*viewheight).
 // 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
-static void R_SetupFreelook(player_t *player, boolean skybox)
+static void R_SetupFreelook(player_t *player, dboolean skybox)
 {
 	G_FinalClipAimingPitch((INT32 *)&aimingangle, player, skybox);
 
@@ -328,7 +328,7 @@ static levelinterpolator_t *CreateInterpolator(levelinterpolator_type_e type, th
 	return ret;
 }
 
-void R_CreateInterpolator_SectorPlane(thinker_t *thinker, sector_t *sector, boolean ceiling)
+void R_CreateInterpolator_SectorPlane(thinker_t *thinker, sector_t *sector, dboolean ceiling)
 {
 	levelinterpolator_t *interp = CreateInterpolator(LVLINTERP_SectorPlane, thinker);
 	interp->sectorplane.sector = sector;
@@ -343,7 +343,7 @@ void R_CreateInterpolator_SectorPlane(thinker_t *thinker, sector_t *sector, bool
 	}
 }
 
-void R_CreateInterpolator_SectorScroll(thinker_t *thinker, sector_t *sector, boolean ceiling)
+void R_CreateInterpolator_SectorScroll(thinker_t *thinker, sector_t *sector, dboolean ceiling)
 {
 	levelinterpolator_t *interp = CreateInterpolator(LVLINTERP_SectorScroll, thinker);
 	interp->sectorscroll.sector = sector;

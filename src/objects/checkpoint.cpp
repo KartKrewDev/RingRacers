@@ -202,7 +202,7 @@ struct Checkpoint : mobj_t
 		return pcount;
 	}
 
-	boolean top_half_has_passed()
+	dboolean top_half_has_passed()
 	{
 		INT32 winningpos = 1;
 
@@ -733,7 +733,7 @@ mobj_t* Obj_FindCheckpoint(INT32 id)
 	return g_checkpoints.find_checkpoint(id);
 }
 
-boolean Obj_GetCheckpointRespawnPosition(const mobj_t* mobj, vector3_t* return_pos)
+dboolean Obj_GetCheckpointRespawnPosition(const mobj_t* mobj, vector3_t* return_pos)
 {
 	auto chk = static_cast<const Checkpoint*>(mobj);
 

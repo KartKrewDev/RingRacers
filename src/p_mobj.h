@@ -371,12 +371,12 @@ struct mobj_t
 
 	pslope_t *standingslope; // The slope that the object is standing on (shouldn't need synced in savegames, right?)
 
-	boolean resetinterp; // if true, some fields should not be interpolated (see R_InterpolateMobjState implementation)
-	boolean colorized; // Whether the mobj uses the rainbow colormap
-	boolean mirrored; // The object's rotations will be mirrored left to right, e.g., see frame AL from the right and AR from the left
+	dboolean resetinterp; // if true, some fields should not be interpolated (see R_InterpolateMobjState implementation)
+	dboolean colorized; // Whether the mobj uses the rainbow colormap
+	dboolean mirrored; // The object's rotations will be mirrored left to right, e.g., see frame AL from the right and AR from the left
 
 	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
-	boolean whiteshadow; // Use white shadow, set to true by default for fullbright objects
+	dboolean whiteshadow; // Use white shadow, set to true by default for fullbright objects
 	UINT8 shadowcolor; // Palette index to use for rendering the shadow
 
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
@@ -398,7 +398,7 @@ struct mobj_t
 	INT32 script_args[NUM_SCRIPT_ARGS];
 	char *script_stringargs[NUM_SCRIPT_STRINGARGS];
 
-	boolean frozen;
+	dboolean frozen;
 
 	// Object was punted and is temporarily invisible and
 	// intangible. This is the leveltime that it will
@@ -486,7 +486,7 @@ struct precipmobj_t
 };
 
 // It's extremely important that all mobj_t*-reading code have access to this.
-boolean P_MobjWasRemoved(const mobj_t *th);
+dboolean P_MobjWasRemoved(const mobj_t *th);
 
 struct actioncache_t
 {
@@ -505,11 +505,11 @@ void P_InitCachedActions(void);
 void P_RunCachedActions(void);
 void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
 
-boolean P_IsKartItem(INT32 type);
-boolean P_IsKartFieldItem(INT32 type);
-boolean P_IsRelinkItem(INT32 type);
-boolean K_IsMissileOrKartItem(mobj_t *mo);
-boolean P_CanDeleteKartItem(INT32 type);
+dboolean P_IsKartItem(INT32 type);
+dboolean P_IsKartFieldItem(INT32 type);
+dboolean P_IsRelinkItem(INT32 type);
+dboolean K_IsMissileOrKartItem(mobj_t *mo);
+dboolean P_CanDeleteKartItem(INT32 type);
 
 // check mobj against water content, before movement code
 void P_MobjCheckWater(mobj_t *mobj);
@@ -520,7 +520,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing);
 void P_MovePlayerToCheatcheck(INT32 playernum);
 void P_AfterPlayerSpawn(INT32 playernum);
 
-fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const fixed_t y, const fixed_t dz, const fixed_t offset, const size_t layer, const boolean flip, const fixed_t scale);
+fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const fixed_t y, const fixed_t dz, const fixed_t offset, const size_t layer, const dboolean flip, const fixed_t scale);
 fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mthing, const fixed_t x, const fixed_t y);
 
 mobj_t *P_SpawnMapThing(mapthing_t *mthing);
@@ -531,23 +531,23 @@ void P_SpawnItemPattern(mapthing_t *mthing);
 void P_SpawnItemLine(mapthing_t *mt1, mapthing_t *mt2);
 void P_SpawnHoopOfSomething(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle);
 void P_SpawnPrecipitation(void);
-void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, statenum_t nstate, angle_t rotangle, boolean spawncenter);
+void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, statenum_t nstate, angle_t rotangle, dboolean spawncenter);
 void *P_CreateFloorSpriteSlope(mobj_t *mobj);
 void P_RemoveFloorSpriteSlope(mobj_t *mobj);
-boolean P_BossTargetPlayer(mobj_t *actor, boolean closest);
-boolean P_SupermanLook4Players(mobj_t *actor);
+dboolean P_BossTargetPlayer(mobj_t *actor, dboolean closest);
+dboolean P_SupermanLook4Players(mobj_t *actor);
 void P_DestroyRobots(void);
-boolean P_PrecipThinker(precipmobj_t *mobj);
+dboolean P_PrecipThinker(precipmobj_t *mobj);
 void P_NullPrecipThinker(precipmobj_t *mobj);
 void P_FreePrecipMobj(precipmobj_t *mobj);
 void P_SetScale(mobj_t *mobj, fixed_t newscale);
 void P_InstaScale(mobj_t *mobj, fixed_t newscale);
-boolean P_XYMovement(mobj_t *mo);
+dboolean P_XYMovement(mobj_t *mo);
 void P_RingXYMovement(mobj_t *mo);
 void P_SceneryXYMovement(mobj_t *mo);
-boolean P_ZMovement(mobj_t *mo);
+dboolean P_ZMovement(mobj_t *mo);
 void P_RingZMovement(mobj_t *mo);
-boolean P_SceneryZMovement(mobj_t *mo);
+dboolean P_SceneryZMovement(mobj_t *mo);
 void P_PlayerZMovement(mobj_t *mo);
 
 extern INT32 modulothing;
@@ -557,7 +557,7 @@ extern mapthing_t *huntemeralds[MAXHUNTEMERALDS];
 extern INT32 numhuntemeralds;
 extern INT32 numcheatchecks;
 extern UINT16 bossdisabled;
-extern boolean stoppedclock;
+extern dboolean stoppedclock;
 
 #define EDITOR_CAM_DOOMEDNUM (3328)
 

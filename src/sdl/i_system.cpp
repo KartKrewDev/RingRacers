@@ -219,7 +219,7 @@ bool consolevent = false;
 bool framebuffer = false;
 
 UINT8 keyboard_started = false;
-boolean g_in_exiting_signal_handler = false;
+dboolean g_in_exiting_signal_handler = false;
 
 #ifdef UNIXBACKTRACE
 #define STDERR_WRITE(string) if (fd != -1) I_OutputMsg("%s", string)
@@ -286,7 +286,7 @@ static void write_backtrace(INT32 signal)
 #undef CRASHLOG_STDERR_WRITE
 #endif // UNIXBACKTRACE
 
-static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dumpmade)
+static void I_ShowErrorMessageBox(const char *messagefordevelopers, dboolean dumpmade)
 {
 	static char finalmessage[2048];
 	size_t firstimpressionsline = 3; // "Dr Robotnik's Ring Racers" has encountered...
@@ -918,7 +918,7 @@ static BOOL I_ReadyConsole(HANDLE ci)
 	return (GetNumberOfConsoleInputEvents(ci, &gotinput) && gotinput);
 }
 
-static boolean entering_con_command = false;
+static dboolean entering_con_command = false;
 
 static void Impl_HandleKeyboardConsoleEvent(KEY_EVENT_RECORD evt, HANDLE co)
 {
@@ -1250,7 +1250,7 @@ I_CursedWindowMovement (int xd, int yd)
 	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
 }
 
-boolean I_HasOpenURL()
+dboolean I_HasOpenURL()
 {
 	return true;
 }
@@ -1928,7 +1928,7 @@ static INT32 errorcount = 0;
 
 /**	\brief recursive error detecting
 */
-static boolean shutdowning = false;
+static dboolean shutdowning = false;
 
 extern "C" consvar_t cv_fuzz;
 
@@ -2171,7 +2171,7 @@ void I_GetDiskFreeSpace(INT64 *freespace)
 #endif
 #elif defined (_WIN32)
 	static p_GetDiskFreeSpaceExA pfnGetDiskFreeSpaceEx = NULL;
-	static boolean testwin95 = false;
+	static dboolean testwin95 = false;
 	ULARGE_INTEGER usedbytes, lfreespace;
 
 	if (!testwin95)
@@ -2333,7 +2333,7 @@ const char *I_ClipboardPaste(void)
 
 
 */
-static boolean isWadPathOk(const char *path)
+static dboolean isWadPathOk(const char *path)
 {
 	char wad3path[256];
 

@@ -75,27 +75,27 @@ struct democharlist_t {
 	UINT8 kartspeed;
 	UINT8 kartweight;
 	UINT32 flags;
-	boolean unlockrequired;
+	dboolean unlockrequired;
 };
 
 // Publicly-accessible demo vars
 struct demovars_s {
 	char titlename[65];
-	boolean recording, playback, timing;
+	dboolean recording, playback, timing;
 	UINT16 version; // Current file format of the demo being played
 	UINT8 attract; // Attract demo can be cancelled by any key
 	UINT8 simplerewind;
 
-	boolean loadfiles, ignorefiles; // Demo file loading options
-	boolean quitafterplaying; // quit after playing a demo from cmdline
-	boolean deferstart; // don't start playing demo right away
-	boolean netgame; // multiplayer netgame
-	boolean waitingfortally; // demo ended but we're keeping the level open for the tally to finish
+	dboolean loadfiles, ignorefiles; // Demo file loading options
+	dboolean quitafterplaying; // quit after playing a demo from cmdline
+	dboolean deferstart; // don't start playing demo right away
+	dboolean netgame; // multiplayer netgame
+	dboolean waitingfortally; // demo ended but we're keeping the level open for the tally to finish
 
 	tic_t savebutton; // Used to determine when the local player can choose to save the replay while the race is still going
-	boolean willsave;
+	dboolean willsave;
 
-	boolean freecam;
+	dboolean freecam;
 
 	UINT16 numskins;
 	democharlist_t *skinlist;
@@ -170,11 +170,11 @@ extern UINT8 demo_writerng;
 
 #define MAXSPLITS (32)
 
-boolean G_CompatLevel(UINT16 level);
+dboolean G_CompatLevel(UINT16 level);
 
 // Record/playback tics
-boolean G_ConsiderEndingDemoRead(void);
-boolean G_ConsiderEndingDemoWrite(void);
+dboolean G_ConsiderEndingDemoRead(void);
+dboolean G_ConsiderEndingDemoWrite(void);
 void G_ReadDemoExtraData(void);
 void G_WriteDemoExtraData(void);
 void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum);
@@ -209,7 +209,7 @@ struct demoghost {
 	UINT16 numskins;
 	tic_t attackstart;
 	tic_t splits[MAXSPLITS];
-	boolean done;
+	dboolean done;
 	democharlist_t *skinlist;
 	mobj_t oldmo, *mo;
 	struct DemoBufferSizes sizes;
@@ -235,9 +235,9 @@ void G_FreeGhosts(void);
 void G_DoneLevelLoad(void);
 
 void G_StopDemo(void);
-boolean G_CheckDemoStatus(void);
+dboolean G_CheckDemoStatus(void);
 
-void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer);
+void G_LoadDemoInfo(menudemo_t *pdemo, dboolean allownonmultiplayer);
 void G_DeferedPlayDemo(const char *demo);
 
 void G_SaveDemo(void);
@@ -246,7 +246,7 @@ void G_ResetDemoRecording(void);
 void G_SetDemoAttackTiming(tic_t time);
 void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint);
 
-boolean G_CheckDemoTitleEntry(void);
+dboolean G_CheckDemoTitleEntry(void);
 
 typedef enum
 {

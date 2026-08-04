@@ -69,8 +69,8 @@ static INT32 g_gamekeydown_device0[NUMINPUTS];
 static INT32 g_available_gamepad_devices;
 static INT32 g_gamepad_device_ids[MAXGAMEPADS];
 static INT32* g_gamepad_gamekeydown[MAXGAMEPADS];
-static boolean g_device0_responding;
-static boolean g_gamepad_responding[MAXGAMEPADS];
+static dboolean g_device0_responding;
+static dboolean g_gamepad_responding[MAXGAMEPADS];
 static INT32 g_player_devices[MAXSPLITSCREENPLAYERS] = {-1, -1, -1, -1};
 
 void G_RegisterAvailableGamepad(INT32 device_id)
@@ -265,7 +265,7 @@ void G_ResetAllDeviceGameKeyDown(void)
 	}
 }
 
-boolean G_IsDeviceResponding(INT32 device)
+dboolean G_IsDeviceResponding(INT32 device)
 {
 	int i;
 
@@ -288,7 +288,7 @@ boolean G_IsDeviceResponding(INT32 device)
 	return false;
 }
 
-void G_SetDeviceResponding(INT32 device, boolean responding)
+void G_SetDeviceResponding(INT32 device, dboolean responding)
 {
 	int i;
 
@@ -395,11 +395,11 @@ void G_ResetAllDeviceRumbles(void)
 	}
 }
 
-static boolean AutomaticControllerReassignmentIsAllowed(INT32 device)
+static dboolean AutomaticControllerReassignmentIsAllowed(INT32 device)
 {
-	boolean device_is_gamepad = device > 0;
-	boolean device_is_unassigned = G_GetPlayerForDevice(device) == -1;
-	boolean gamestate_is_in_active_play = (gamestate == GS_LEVEL || gamestate == GS_VOTING);
+	dboolean device_is_gamepad = device > 0;
+	dboolean device_is_unassigned = G_GetPlayerForDevice(device) == -1;
+	dboolean gamestate_is_in_active_play = (gamestate == GS_LEVEL || gamestate == GS_VOTING);
 
 	return device_is_gamepad && device_is_unassigned && gamestate_is_in_active_play;
 }
@@ -916,7 +916,7 @@ static const char *gamecontrolname[num_gamecontrols] =
 #define NUMKEYNAMES (sizeof (keynames)/sizeof (keyname_t))
 
 // If keybind is necessary to navigate menus, it's on this list.
-boolean G_KeyBindIsNecessary(INT32 gc)
+dboolean G_KeyBindIsNecessary(INT32 gc)
 {
 	switch (gc)
 	{
@@ -936,9 +936,9 @@ boolean G_KeyBindIsNecessary(INT32 gc)
 }
 
 // Returns false if a key is deemed unreachable for this device.
-boolean G_KeyIsAvailable(INT32 key, INT32 deviceID)
+dboolean G_KeyIsAvailable(INT32 key, INT32 deviceID)
 {
-	boolean gamepad_key = false;
+	dboolean gamepad_key = false;
 
 	// Invalid key number.
 	if (key <= 0 || key >= NUMINPUTS)
@@ -1127,7 +1127,7 @@ void G_DefineDefaultControls(void)
 	menucontrolreserved[gc_start][0] = KEY_ESCAPE; // Handled special
 }
 
-static boolean G_ControlUsesAxis(INT32 map[MAXINPUTMAPPING])
+static dboolean G_ControlUsesAxis(INT32 map[MAXINPUTMAPPING])
 {
 	for (INT32 i = 0; i < MAXINPUTMAPPING; i++)
 	{
@@ -1241,7 +1241,7 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*
 	}
 }
 
-INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify)
+INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, dboolean modify)
 {
 	INT32 result = gc_null;
 

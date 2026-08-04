@@ -43,7 +43,7 @@ struct BallSwitch_Pad : mobj_t
 		renderflags |= RF_FLOORSPRITE|RF_NOSPLATBILLBOARD|RF_SLOPESPLAT|RF_NOSPLATROLLANGLE;
 	}
 
-	void Tick(boolean active)
+	void Tick(dboolean active)
 	{
 		if (active == true)
 		{
@@ -72,12 +72,12 @@ struct BallSwitch_Ball : mobj_t
 
 	INT32 Cooldown() const { return ball_cooldown(this); }
 	void Cooldown(INT32 n) { ball_cooldown(this) = n; }
-	boolean Active() const { return (ball_cooldown(this) != 0); }
+	dboolean Active() const { return (ball_cooldown(this) != 0); }
 
-	boolean DeferActivation() const { return ball_activedefer(this); }
+	dboolean DeferActivation() const { return ball_activedefer(this); }
 	mobj_t *Activator() const { return ball_activator(this); }
 
-	void DeferActivation(boolean n, mobj_t *src)
+	void DeferActivation(dboolean n, mobj_t *src)
 	{
 		ball_activedefer(this) = n;
 		P_SetTarget(&ball_activator(this), src);
@@ -149,9 +149,9 @@ struct BallSwitch_Ball : mobj_t
 			SINT8 ySign = IntSign(Pad()->y - this->y);
 			SINT8 zSign = IntSign(theirZ - ourZ);
 
-			boolean xAway = (IntSign(this->momx) == xSign);
-			boolean yAway = (IntSign(this->momy) == ySign);
-			boolean zAway = (IntSign(this->momz) == zSign);
+			dboolean xAway = (IntSign(this->momx) == xSign);
+			dboolean yAway = (IntSign(this->momy) == ySign);
+			dboolean zAway = (IntSign(this->momz) == zSign);
 
 			this->momx += FixedMul(accel[xAway], accelScale * this->scale) * xSign;
 			this->momy += FixedMul(accel[yAway], accelScale * this->scale) * ySign;

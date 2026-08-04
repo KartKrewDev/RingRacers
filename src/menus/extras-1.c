@@ -179,7 +179,7 @@ void M_InitExtras(INT32 choice)
 }
 
 // For statistics, will maybe remain unused for a while
-boolean M_ExtrasQuit(void)
+dboolean M_ExtrasQuit(void)
 {
 	extrasmenu.textx = 140-1;
 	extrasmenu.texty = 70+1;
@@ -237,7 +237,7 @@ void M_ExtrasTick(void)
 	}
 }
 
-boolean M_ExtrasInputs(INT32 ch)
+dboolean M_ExtrasInputs(INT32 ch)
 {
 
 	const UINT8 pid = 0;

@@ -47,7 +47,7 @@ void HWR_SetViewSize(void);
 void HWR_DrawPatch(patch_t *gpatch, INT32 x, INT32 y, INT32 option);
 void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap);
 void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
-void HWR_MakePatch(const patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap);
+void HWR_MakePatch(const patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, dboolean makebitmap);
 void HWR_CreatePlanePolygons(INT32 bspnum);
 void HWR_CreateStaticLightmaps(INT32 bspnum);
 void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color);
@@ -57,7 +57,7 @@ void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color);
 void HWR_DrawPic(INT32 x,INT32 y,lumpnum_t lumpnum);
 
 UINT8 *HWR_GetScreenshot(void);
-boolean HWR_Screenshot(const char *pathname);
+dboolean HWR_Screenshot(const char *pathname);
 
 void HWR_AddCommands(void);
 void HWR_AddSessionCommands(void);
@@ -73,8 +73,8 @@ void HWR_MakeScreenFinalTexture(void);
 void HWR_DrawScreenFinalTexture(int width, int height);
 
 // This stuff is put here so models can use them
-boolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel);
-void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap, const boolean directional);
+dboolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel);
+void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap, const dboolean directional);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
 UINT8 HWR_GetTranstableAlpha(INT32 transtablenum);
@@ -82,10 +82,10 @@ FBITFIELD HWR_GetBlendModeFlag(INT32 ast);
 FBITFIELD HWR_SurfaceBlend(INT32 style, INT32 transtablenum, FSurfaceInfo *pSurf);
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
 
-boolean HWR_CompileShaders(void);
+dboolean HWR_CompileShaders(void);
 
 void HWR_LoadAllCustomShaders(void);
-void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3);
+void HWR_LoadCustomShadersFromFile(UINT16 wadnum, dboolean PK3);
 const char *HWR_GetShaderName(INT32 shader);
 
 extern customshaderxlat_t shaderxlat[];
@@ -150,11 +150,11 @@ extern int ps_hw_numcolors;
 extern precise_t ps_hw_batchsorttime;
 extern precise_t ps_hw_batchdrawtime;
 
-extern boolean gl_init;
-extern boolean gl_maploaded;
-extern boolean gl_maptexturesloaded;
-extern boolean gl_sessioncommandsadded;
-extern boolean gl_shadersavailable;
+extern dboolean gl_init;
+extern dboolean gl_maploaded;
+extern dboolean gl_maptexturesloaded;
+extern dboolean gl_sessioncommandsadded;
+extern dboolean gl_shadersavailable;
 
 #ifdef __cplusplus
 } // extern "C"

@@ -102,11 +102,11 @@
 #define MAX_REASONLENGTH 30
 #define FORCECLOSE 0x8000
 
-boolean server = true; // true or false but !server == client
+dboolean server = true; // true or false but !server == client
 #define client (!server)
-boolean nodownload = false;
-boolean serverrunning = false;
-boolean connectedtodedicated = false;
+dboolean nodownload = false;
+dboolean serverrunning = false;
+dboolean connectedtodedicated = false;
 INT32 serverplayer = 0;
 char motd[254], server_context[8]; // Message of the Day, Unique Context (even without Mumble support)
 
@@ -118,8 +118,8 @@ UINT8 playernode[MAXPLAYERS];
 // Minimum timeout for sending the savegame
 // The actual timeout will be longer depending on the savegame length
 tic_t jointimeout = (3*TICRATE);
-static boolean sendingsavegame[MAXNETNODES]; // Are we sending the savegame?
-static boolean resendingsavegame[MAXNETNODES]; // Are we resending the savegame?
+static dboolean sendingsavegame[MAXNETNODES]; // Are we sending the savegame?
+static dboolean resendingsavegame[MAXNETNODES]; // Are we resending the savegame?
 static tic_t savegameresendcooldown[MAXNETNODES]; // How long before we can resend again?
 static tic_t freezetimeout[MAXNETNODES]; // Until when can this node freeze the server before getting a timeout?
 
@@ -130,7 +130,7 @@ static tic_t joindelay = 0;
 // Set when the server requests a signature with an IP mismatch.
 // This is a common issue on Hamachi, Radmin, and other VPN software that does noncompliant IP remap horeseshit.
 // When ths is set, provide only blank signatures. If this is set while joining, the server will degrade us to a GUEST.
-static boolean forceGuest = false;
+static dboolean forceGuest = false;
 
 UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
@@ -142,15 +142,15 @@ UINT32 playerdelaytable[MAXPLAYERS]; // mindelay values.
 static tic_t reference_lag;
 static UINT8 spike_time;
 static tic_t target_lag;
-boolean server_lagless;
+dboolean server_lagless;
 
 SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
 SINT8 nodetoplayer3[MAXNETNODES]; // say the numplayer for this node if any (splitscreen == 2)
 SINT8 nodetoplayer4[MAXNETNODES]; // say the numplayer for this node if any (splitscreen == 3)
 UINT8 playerpernode[MAXNETNODES]; // used specialy for splitscreen
-boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
-boolean nodeneedsauth[MAXNETNODES];
+dboolean nodeingame[MAXNETNODES]; // set false as nodes leave game
+dboolean nodeneedsauth[MAXNETNODES];
 
 tic_t servermaxping = 20; // server's max delay, in frames. Defaults to 20
 static tic_t nettics[MAXNETNODES]; // what tic the client have received
@@ -166,17 +166,17 @@ static UINT8 player_joining = false;
 UINT8 hu_redownloadinggamestate = 0;
 
 // kart, true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
-boolean hu_stopped = false;
+dboolean hu_stopped = false;
 
 UINT8 adminpassmd5[16];
-boolean adminpasswordset = false;
+dboolean adminpasswordset = false;
 
 // Client specific
 static ticcmd_t localcmds[MAXSPLITSCREENPLAYERS][MAXGENTLEMENDELAY];
-static boolean cl_packetmissed;
+static dboolean cl_packetmissed;
 // here it is for the secondary local player (splitscreen)
 static UINT8 mynode; // my address pointofview server
-static boolean cl_redownloadinggamestate = false;
+static dboolean cl_redownloadinggamestate = false;
 
 static UINT8 localtextcmd[MAXSPLITSCREENPLAYERS][MAXTEXTCMD];
 static tic_t neededtic;
@@ -185,7 +185,7 @@ char connectedservername[MAXSERVERNAME];
 char connectedservercontact[MAXSERVERCONTACT];
 /// \brief do we accept new players?
 /// \todo WORK!
-boolean acceptnewnode = true;
+dboolean acceptnewnode = true;
 
 UINT32 ourIP; // Used when populating PT_SERVERCHALLENGE (guards against signature reuse)
 uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][PUBKEYLENGTH]; // Player's public key (join process only! active players have it on player_t)
@@ -194,11 +194,11 @@ uint8_t awaitingChallenge[CHALLENGELENGTH]; // The message the server asked our 
 uint8_t lastChallengeAll[CHALLENGELENGTH]; // The message we asked EVERYONE to sign for client-to-client identity proofs
 uint8_t lastReceivedSignature[MAXPLAYERS][SIGNATURELENGTH]; // Everyone's response to lastChallengeAll
 uint8_t knownWhenChallenged[MAXPLAYERS][PUBKEYLENGTH]; // Everyone a client saw at the moment a challenge should be initiated
-boolean expectChallenge = false; // Were we in-game before a client-to-client challenge should have been sent?
+dboolean expectChallenge = false; // Were we in-game before a client-to-client challenge should have been sent?
 
 uint8_t priorKeys[MAXPLAYERS][PUBKEYLENGTH]; // Make a note of keys before consuming a new gamestate, and if the server tries to send us a gamestate where keys differ, assume shenanigans
 
-boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
+dboolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
 
 static OpusDecoder *g_player_opus_decoders[MAXPLAYERS];
@@ -216,7 +216,7 @@ static float g_local_voice_buffer[SRB2_VOICE_MAX_DEQUEUE_SAMPLES];
 static INT32 g_local_voice_buffer_len = 0;
 static INT32 g_local_voice_threshold_time = 0;
 float g_local_voice_last_peak = 0;
-boolean g_local_voice_detected = false;
+dboolean g_local_voice_detected = false;
 
 // engine
 
@@ -243,7 +243,7 @@ static textcmdtic_t *textcmds[TEXTCMD_HASH_SIZE] = {NULL};
 
 static tic_t stop_spamming[MAXPLAYERS];
 
-static boolean IsPlayerGuest(UINT8 player);
+static dboolean IsPlayerGuest(UINT8 player);
 
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
@@ -503,9 +503,9 @@ static UINT8* D_GetTextcmd(tic_t tic, INT32 playernum)
 	return textcmdplayer->cmd;
 }
 
-static boolean ExtraDataTicker(void)
+static dboolean ExtraDataTicker(void)
 {
-	boolean anyNetCmd = false;
+	dboolean anyNetCmd = false;
 	INT32 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -631,12 +631,12 @@ void SendKick(UINT8 playernum, UINT8 msg)
 //   char[MAXPLAYERNAME] | name of the player
 // endif
 // if (xd & XD_WEAPON_PREF)
-//   byte   | original weapon switch: boolean, true if use the old
+//   byte   | original weapon switch: dboolean, true if use the old
 //          | weapon switch methode
 //   char[NUMWEAPONS] | the weapon switch priority
 //   byte   | autoaim: true if use the old autoaim system
 // endif
-/*boolean AddLmpExtradata(UINT8 **demo_point, INT32 playernum)
+/*dboolean AddLmpExtradata(UINT8 **demo_point, INT32 playernum)
 {
 	UINT8 *textcmd = D_GetExistingTextcmd(gametic, playernum);
 
@@ -927,7 +927,7 @@ static inline void CL_DrawConnectionStatus(void)
 	}
 }
 
-static boolean CL_AskFileList(INT32 firstfile)
+static dboolean CL_AskFileList(INT32 firstfile)
 {
 	netbuffer->packettype = PT_TELLFILESNEEDED;
 	netbuffer->u.filesneedednum = firstfile;
@@ -945,7 +945,7 @@ static boolean CL_AskFileList(INT32 firstfile)
   *       Is it even used...?
   *
   */
-static boolean CL_SendJoin(void)
+static dboolean CL_SendJoin(void)
 {
 	UINT8 localplayers = 1;
 	UINT8 i;
@@ -1059,7 +1059,7 @@ static boolean CL_SendJoin(void)
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
 
-static boolean CL_SendKey(void)
+static dboolean CL_SendKey(void)
 {
 	int i;
 	netbuffer->packettype = PT_CLIENTKEY;
@@ -1250,9 +1250,9 @@ static void SV_SendPlayerInfo(INT32 node)
   * \return True if the packet was successfully sent
   *
   */
-static boolean SV_SendServerConfig(INT32 node)
+static dboolean SV_SendServerConfig(INT32 node)
 {
-	boolean waspacketsent;
+	dboolean waspacketsent;
 
 	memset(&netbuffer->u.servercfg, 0, sizeof netbuffer->u.servercfg);
 
@@ -1268,11 +1268,11 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gamestate = (UINT8)gamestate;
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
-	netbuffer->u.servercfg.dedicated = (boolean)dedicated;
+	netbuffer->u.servercfg.dedicated = (dboolean)dedicated;
 
 	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value));
 	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
-	netbuffer->u.servercfg.discordinvites = (boolean)cv_discordinvites.value;
+	netbuffer->u.servercfg.discordinvites = (dboolean)cv_discordinvites.value;
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
@@ -1310,7 +1310,7 @@ static boolean SV_SendServerConfig(INT32 node)
 	return waspacketsent;
 }
 
-static boolean SV_ResendingSavegameToAnyone(void)
+static dboolean SV_ResendingSavegameToAnyone(void)
 {
 	INT32 i;
 
@@ -1320,7 +1320,7 @@ static boolean SV_ResendingSavegameToAnyone(void)
 	return false;
 }
 
-static void SV_SendSaveGame(INT32 node, boolean resending)
+static void SV_SendSaveGame(INT32 node, dboolean resending)
 {
 	size_t length, compressedlen;
 	savebuffer_t save = {0};
@@ -1416,7 +1416,7 @@ static void CL_DumpConsistency(const char *file_name)
 
 #define TMPSAVENAME "$$$.sav"
 
-static void CL_LoadReceivedSavegame(boolean reloading)
+static void CL_LoadReceivedSavegame(dboolean reloading)
 {
 	savebuffer_t save = {0};
 	size_t length, decompressedlen;
@@ -1588,9 +1588,9 @@ static void SendAskInfo(INT32 node)
 serverelem_t serverlist[MAXSERVERLIST];
 UINT32 serverlistcount = 0;
 UINT32 serverlistultimatecount = 0;
-boolean serverlistmode = false;
+dboolean serverlistmode = false;
 
-static boolean resendserverlistnode[MAXNETNODES];
+static dboolean resendserverlistnode[MAXNETNODES];
 static tic_t serverlistepoch;
 
 static void SL_ClearServerList(INT32 connectedserver)
@@ -1618,7 +1618,7 @@ static UINT32 SL_SearchServer(INT32 node)
 	return UINT32_MAX;
 }
 
-static boolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
+static dboolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
 {
 	UINT32 i;
 
@@ -1725,7 +1725,7 @@ void CL_TimeoutServerList(void)
 	{
 		const tic_t timediff = I_GetTime() - serverlistepoch;
 		const tic_t timetoresend = timediff % SERVERLISTRESENDRATE;
-		const boolean timedout = timediff > connectiontimeout;
+		const dboolean timedout = timediff > connectiontimeout;
 
 		if (timedout || (timediff > 0 && timetoresend == 0))
 		{
@@ -1799,7 +1799,7 @@ static void M_ConfirmConnect(INT32 choice)
 	cl_mode = CL_ABORTED;
 }
 
-static boolean CL_FinishedFileList(void)
+static dboolean CL_FinishedFileList(void)
 {
 	INT32 i;
 	char *downloadsize = NULL;
@@ -1938,7 +1938,7 @@ static boolean CL_FinishedFileList(void)
   * \sa CL_ConnectToServer
   *
   */
-static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
+static dboolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 {
 	INT32 i;
 
@@ -2042,9 +2042,9 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
   * \sa CL_ConnectToServer
   *
   */
-static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic_t *asksent)
+static dboolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic_t *asksent)
 {
-	boolean waitmore;
+	dboolean waitmore;
 	INT32 i;
 	const UINT8 pid = 0;
 
@@ -4039,12 +4039,12 @@ static void Got_ServerDeafenPlayer(const UINT8 **p, INT32 playernum)
 	}
 }
 
-static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, player_config_t configs[MAXSPLITSCREENPLAYERS])
+static dboolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, player_config_t configs[MAXSPLITSCREENPLAYERS])
 {
 	INT32 n, newplayernum, i;
 	UINT8 buf[4 + MAXPLAYERNAME + 10 + PUBKEYLENGTH + MAXAVAILABILITY + sizeof(((serverplayer_t *)0)->powerlevels)];
 	UINT8 *buf_p = buf;
-	boolean newplayer = false;
+	dboolean newplayer = false;
 
 	{
 		// splitscreen can allow 2+ players in one node
@@ -4155,11 +4155,11 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, player_co
 }
 
 /*--------------------------------------------------
-	boolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+	dboolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+dboolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 {
 	UINT8 newplayernum = *p;
 
@@ -4261,24 +4261,24 @@ static void GotOurIP(UINT32 address)
 #endif
 
 // is there a game running
-boolean Playing(void)
+dboolean Playing(void)
 {
 	return (server && serverrunning) || (client && cl_mode == CL_CONNECTED);
 }
 
-boolean InADedicatedServer(void)
+dboolean InADedicatedServer(void)
 {
 	return Playing() && (dedicated || connectedtodedicated);
 }
 
-boolean SV_SpawnServer(void)
+dboolean SV_SpawnServer(void)
 {
 #ifdef TESTERS
 	/* Just don't let the testers play. Easy. */
 	I_Error("What do you think you're doing?");
 	return false;
 #else
-	boolean result = false;
+	dboolean result = false;
 	if (demo.playback)
 		G_StopDemo(); // reset engine parameter
 
@@ -4369,7 +4369,7 @@ void SV_StopServer(void)
 }
 
 // called at singleplayer start and stopdemo
-void SV_StartSinglePlayerServer(INT32 dogametype, boolean donetgame)
+void SV_StartSinglePlayerServer(INT32 dogametype, dboolean donetgame)
 {
 	INT32 lastgametype = gametype;
 	server = true;
@@ -4415,7 +4415,7 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 }
 
 #ifdef SIGNGAMETRAFFIC
-	static boolean IsSplitPlayerOnNodeGuest(int node, int split)
+	static dboolean IsSplitPlayerOnNodeGuest(int node, int split)
 	{
 		char allZero[PUBKEYLENGTH];
 		memset(allZero, 0, PUBKEYLENGTH);
@@ -4434,7 +4434,7 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 	}
 #endif
 
-static boolean IsPlayerGuest(UINT8 player)
+static dboolean IsPlayerGuest(UINT8 player)
 {
  	return PR_IsKeyGuest(players[player].public_key);
 }
@@ -4568,7 +4568,7 @@ static void HandleConnect(SINT8 node)
 	else
 	{
 		int sigcheck;
-		boolean newnode = false;
+		dboolean newnode = false;
 
 		memcpy(configs, netbuffer->u.clientcfg.player_configs, sizeof(configs));
 
@@ -5120,7 +5120,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
   * \sa HandlePacketFromPlayer
   *
   */
-static boolean CheckForSpeedHacks(UINT8 p)
+static dboolean CheckForSpeedHacks(UINT8 p)
 {
 	if (netcmds[maketic%BACKUPTICS][p].forwardmove > MAXPLMOVE || netcmds[maketic%BACKUPTICS][p].forwardmove < -MAXPLMOVE
 		|| netcmds[maketic%BACKUPTICS][p].turning > KART_FULLTURN || netcmds[maketic%BACKUPTICS][p].turning < -KART_FULLTURN
@@ -5236,7 +5236,7 @@ static void PT_ReqMapQueue(int node)
 		}
 	}
 
-	const boolean doclear = (reqmapqueue.newgametype == ROUNDQUEUE_CMD_CLEAR);
+	const dboolean doclear = (reqmapqueue.newgametype == ROUNDQUEUE_CMD_CLEAR);
 
 	// The following prints will only appear when multiple clients
 	// attempt to affect the round queue at similar time increments
@@ -5352,7 +5352,7 @@ static void PT_ReqMapQueue(int node)
 	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
 }
 
-static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
+static void PT_HandleVoiceClient(SINT8 node, dboolean isserver)
 {
 	if (!isserver && node != servernode)
 	{
@@ -5383,7 +5383,7 @@ static void PT_HandleVoiceClient(SINT8 node, boolean isserver)
 		return;
 	}
 
-	boolean terminal = (pl->flags & VOICE_PAK_FLAGS_TERMINAL_BIT) > 0;
+	dboolean terminal = (pl->flags & VOICE_PAK_FLAGS_TERMINAL_BIT) > 0;
 	UINT32 framesize = doomcom->datalength - BASEPACKETSIZE - sizeof(voice_pak);
 	UINT8 *frame = (UINT8*)(pl) + sizeof(voice_pak);
 
@@ -5491,7 +5491,7 @@ static void PT_HandleVoiceServer(SINT8 node)
 		}
 
 		// Is this node P1 on that node?
-		boolean isp1onnode = nodetoplayer[pnode] >= 0 && nodetoplayer[pnode] < MAXPLAYERS;
+		dboolean isp1onnode = nodetoplayer[pnode] >= 0 && nodetoplayer[pnode] < MAXPLAYERS;
 
 		if (pnode != node && pnode != servernode && isp1onnode && !(players[i].pflags2 & (PF2_SELFDEAFEN | PF2_SERVERDEAFEN)))
 		{
@@ -6470,7 +6470,7 @@ static void SV_SendServerKeepAlive(void)
 static void CL_SendClientCmd(void)
 {
 	size_t packetsize = 0;
-	boolean mis = false;
+	dboolean mis = false;
 
 	netbuffer->packettype = PT_CLIENTCMD;
 
@@ -6808,9 +6808,9 @@ static void SV_Maketic(void)
 	maketic++;
 }
 
-boolean TryRunTics(tic_t realtics)
+dboolean TryRunTics(tic_t realtics)
 {
-	boolean ticking;
+	dboolean ticking;
 
 	// the machine has lagged but it is not so bad
 	if (realtics > TICRATE/7) // FIXME: consistency failure!!
@@ -6875,7 +6875,7 @@ boolean TryRunTics(tic_t realtics)
 		// run the count * tics
 		while (neededtic > gametic)
 		{
-			boolean dontRun = false;
+			dboolean dontRun = false;
 
 			DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
 
@@ -6930,7 +6930,7 @@ boolean TryRunTics(tic_t realtics)
 					}
 				}
 
-				boolean run = (gametic % NEWTICRATERATIO) == 0;
+				dboolean run = (gametic % NEWTICRATERATIO) == 0;
 
 				if (run)
 				{
@@ -6998,7 +6998,7 @@ static INT32 pingtimeout[MAXPLAYERS];
 static inline void PingUpdate(void)
 {
 	INT32 i, j;
-	boolean pingkick[MAXPLAYERS];
+	dboolean pingkick[MAXPLAYERS];
 	UINT8 nonlaggers = 0;
 	memset(pingkick, 0, sizeof(pingkick));
 
@@ -7784,7 +7784,7 @@ INT32 D_NumPlayersInRace(void)
 
 /** Return whether a player is a real person (not a CPU) and not spectating.
   */
-boolean D_IsPlayerHumanAndGaming (INT32 player_number)
+dboolean D_IsPlayerHumanAndGaming (INT32 player_number)
 {
 	player_t * player = &players[player_number];
 	return (

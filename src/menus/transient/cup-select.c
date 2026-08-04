@@ -78,7 +78,7 @@ static void M_StartCup(UINT8 entry)
 		memset(&roundqueue, 0, sizeof(struct roundqueue));
 		G_GPCupIntoRoundQueue(levellist.levelsearch.cup, levellist.newgametype,
 #if 0 // TODO: encore GP
-			(boolean)cv_dummygpencore.value
+			(dboolean)cv_dummygpencore.value
 #else
 			false
 #endif
@@ -192,7 +192,7 @@ static void M_GPTutorialResponse(INT32 choice)
 	M_ClearMenus(true);
 }
 
-static boolean M_GPTutorialRecommendation(cupheader_t *cup)
+static dboolean M_GPTutorialRecommendation(cupheader_t *cup)
 {
 	// Only applies to GP.
 	if (levellist.levelsearch.grandprix == false)
@@ -287,7 +287,7 @@ static void M_GPBackup(INT32 choice)
 	M_StartCup(UINT8_MAX);
 }
 
-static boolean M_IsCupQueueable(cupheader_t *cup)
+static dboolean M_IsCupQueueable(cupheader_t *cup)
 {
 	levelsearch_t templevelsearch = levellist.levelsearch; // copy levellist so we don't mess with stuff I think
 	UINT16 ShownCount = 0;

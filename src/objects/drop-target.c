@@ -36,7 +36,7 @@ Obj_BeginDropTargetMorph
 	x->health = target->health;
 }
 
-boolean
+dboolean
 Obj_DropTargetMorphThink (mobj_t *x)
 {
 	mobj_t *target = morph_target(x);

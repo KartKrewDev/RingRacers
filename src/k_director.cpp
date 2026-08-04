@@ -60,7 +60,7 @@ static fixed_t K_GetFinishGap(INT32 leader, INT32 follower)
 struct DirectorInfo
 {
     UINT8 viewnum;						// which screen does this director apply to?
-    boolean active = false;				// is view point switching enabled?
+    dboolean active = false;				// is view point switching enabled?
     tic_t cooldown = SWITCHTIME;		// how long has it been since we last switched?
     tic_t freeze = 0;					// when nonzero, fixed switch pending, freeze logic!
     INT32 attacker = 0;					// who to switch to when freeze delay elapses
@@ -251,7 +251,7 @@ private:
 		return true;
 	}
 
-	void change(INT32 player, boolean force)
+	void change(INT32 player, dboolean force)
 	{
 		if (!active)
 		{
@@ -377,7 +377,7 @@ void K_UpdateDirector(void)
 	}
 }
 
-void K_ToggleDirector(UINT8 viewnum, boolean active)
+void K_ToggleDirector(UINT8 viewnum, dboolean active)
 {
 	DirectorInfo& directorinfo = g_directorinfo[viewnum];
 
@@ -389,12 +389,12 @@ void K_ToggleDirector(UINT8 viewnum, boolean active)
 	directorinfo.active = active;
 }
 
-boolean K_DirectorIsEnabled(UINT8 viewnum)
+dboolean K_DirectorIsEnabled(UINT8 viewnum)
 {
 	return g_directorinfo[viewnum].active;
 }
 
-boolean K_DirectorIsAvailable(UINT8 viewnum)
+dboolean K_DirectorIsAvailable(UINT8 viewnum)
 {
 	return viewnum <= r_splitscreen && viewnum < G_PartySize(consoleplayer) &&
 		displayplayers[viewnum] != G_PartyMember(consoleplayer, viewnum);

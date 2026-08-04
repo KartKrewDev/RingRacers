@@ -26,7 +26,7 @@
 #include "../k_collide.h"
 
 // updates the seasaw's visuals and hitboxes using the hnext/hprev list.
-static void Obj_GPZSeasawUpdate(mobj_t *mo, boolean ghostme)
+static void Obj_GPZSeasawUpdate(mobj_t *mo, dboolean ghostme)
 {
 
 	mobj_t *ptr = mo;
@@ -226,7 +226,7 @@ static void Obj_GPZSeasawReset(mobj_t *mo)
 // main seasaw thinker.
 void Obj_GPZSeasawThink(mobj_t *mo)
 {
-	boolean ghost = false;
+	dboolean ghost = false;
 	SINT8 rot = 1;
 	fixed_t px, py;
 

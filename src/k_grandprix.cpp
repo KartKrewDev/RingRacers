@@ -153,7 +153,7 @@ static INT16 K_RivalScore(player_t *bot)
 	return ((difficulty - lowestdifficulty) * roundsleft) + ((score - lowestscore) * roundnum);
 }
 
-static boolean CompareRivals(player_t *a, player_t *b)
+static dboolean CompareRivals(player_t *a, player_t *b)
 {
 	if (a == NULL)
 		return false;
@@ -173,7 +173,7 @@ static boolean CompareRivals(player_t *a, player_t *b)
 void K_AssignFoes(void)
 {
 	std::vector<player_t *> bots;
-	boolean addedplayer = false;
+	dboolean addedplayer = false;
 
 	for (UINT8 i = 0; i < MAXPLAYERS; i++)
 	{
@@ -742,7 +742,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	bot->botvars.diffincrease = increase;
 }
 
-static boolean CompareJoiners(player_t *a, player_t *b)
+static dboolean CompareJoiners(player_t *a, player_t *b)
 {
 	if (a->spectatorReentry != b->spectatorReentry)
 	{
@@ -760,7 +760,7 @@ static boolean CompareJoiners(player_t *a, player_t *b)
 	return a > b;
 }
 
-static boolean CompareReplacements(player_t *a, player_t *b)
+static dboolean CompareReplacements(player_t *a, player_t *b)
 {
 	if ((a->pflags & PF_NOCONTEST) != (b->pflags & PF_NOCONTEST))
 	{
@@ -1119,11 +1119,11 @@ void K_PlayerLoseLife(player_t *player)
 }
 
 /*--------------------------------------------------
-	boolean K_CanChangeRules(boolean allowdemos)
+	dboolean K_CanChangeRules(dboolean allowdemos)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_CanChangeRules(boolean allowdemos)
+dboolean K_CanChangeRules(dboolean allowdemos)
 {
 	if (grandprixinfo.gp == true)
 	{
@@ -1161,11 +1161,11 @@ boolean K_CanChangeRules(boolean allowdemos)
 extern "C" consvar_t cv_forcebots;
 
 /*--------------------------------------------------
-	boolean K_BotDefaultSpectator(player_t *player);
+	dboolean K_BotDefaultSpectator(player_t *player);
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BotDefaultSpectator(void)
+dboolean K_BotDefaultSpectator(void)
 {
 	if (cv_forcebots.value)
 	{

@@ -62,7 +62,7 @@ void M_AddToBox(fixed_t *box, fixed_t x, fixed_t y)
 
 */
 
-boolean M_PointInBox(fixed_t *box, fixed_t x, fixed_t y)
+dboolean M_PointInBox(fixed_t *box, fixed_t x, fixed_t y)
 {
 	if (x < box[BOXLEFT])
 		return false;
@@ -82,12 +82,12 @@ boolean M_PointInBox(fixed_t *box, fixed_t x, fixed_t y)
 	\param	circley	a parameter of type fixed_t
 	\param	circleradius	a parameter of type fixed_t
 
-	\return	boolean
+	\return	dboolean
 
 
 */
 
-boolean M_CircleTouchBox(fixed_t *box, fixed_t circlex, fixed_t circley, fixed_t circleradius)
+dboolean M_CircleTouchBox(fixed_t *box, fixed_t circlex, fixed_t circley, fixed_t circleradius)
 {
 	if (box[BOXLEFT] - circleradius > circlex)
 		return false;

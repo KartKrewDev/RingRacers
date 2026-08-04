@@ -135,7 +135,7 @@ typedef struct
 	fixed_t destX, destY;
 
 	UINT8 spr;
-	boolean small;
+	dboolean small;
 
 	UINT8 action;
 	tic_t delay;
@@ -152,7 +152,7 @@ typedef struct
 	y_vote_catcher catcher;
 	SINT8 selection;
 	UINT8 delay;
-	boolean sentTimeOutVote;
+	dboolean sentTimeOutVote;
 	fixed_t x, destX;
 } y_vote_player;
 
@@ -181,8 +181,8 @@ typedef struct
 	INT32 timer;
 	INT32 tic, endtic;
 	INT32 selectFinalize, pickFinalize, strikeFinalize;
-	boolean notYetPicked;
-	boolean loaded;
+	dboolean notYetPicked;
+	dboolean loaded;
 	SINT8 deferredLevel;
 	y_vote_player players[MAXSPLITSCREENPLAYERS];
 	y_vote_roulette roulette;
@@ -192,9 +192,9 @@ typedef struct
 	// then we want stage striking!
 	player_t *strike_loser;
 	player_t *strike_winner;
-	boolean strike_turn;
-	boolean strike_time_out;
-	boolean stage_striking;
+	dboolean strike_turn;
+	dboolean strike_time_out;
+	dboolean stage_striking;
 } y_vote_data;
 
 // Voting level drawing
@@ -202,7 +202,7 @@ typedef struct
 {
 	char str[128];
 	size_t str_len;
-	boolean encore;
+	dboolean encore;
 	fixed_t hop;
 } y_vote_draw_level;
 
@@ -268,7 +268,7 @@ static UINT8 Y_CountStriked(void)
 	return num_striked;
 }
 
-static boolean Y_VoteIDIsSpecial(const UINT8 playerId)
+static dboolean Y_VoteIDIsSpecial(const UINT8 playerId)
 {
 	switch (playerId)
 	{
@@ -286,7 +286,7 @@ static boolean Y_VoteIDIsSpecial(const UINT8 playerId)
 	}
 }
 
-boolean Y_PlayerIDCanVote(const UINT8 playerId)
+dboolean Y_PlayerIDCanVote(const UINT8 playerId)
 {
 	if (Y_VoteIDIsSpecial(playerId) == true)
 	{
@@ -313,7 +313,7 @@ boolean Y_PlayerIDCanVote(const UINT8 playerId)
 	return true;
 }
 
-static boolean Y_IsPlayersTurn(const UINT8 playerId)
+static dboolean Y_IsPlayersTurn(const UINT8 playerId)
 {
 	if (Y_VoteIDIsSpecial(playerId) == true)
 	{
@@ -338,7 +338,7 @@ static boolean Y_IsPlayersTurn(const UINT8 playerId)
 	}
 }
 
-static boolean Y_PlayerIDCanVoteRightNow(const UINT8 playerId)
+static dboolean Y_PlayerIDCanVoteRightNow(const UINT8 playerId)
 {
 	if (Y_IsPlayersTurn(playerId) == false)
 	{
@@ -348,7 +348,7 @@ static boolean Y_PlayerIDCanVoteRightNow(const UINT8 playerId)
 	return Y_PlayerIDCanVote(playerId);
 }
 
-static boolean Y_PlayerCanSelect(const UINT8 localId)
+static dboolean Y_PlayerCanSelect(const UINT8 localId)
 {
 	if (localId > splitscreen)
 	{
@@ -430,7 +430,7 @@ static void Y_SortPile(void)
 		}
 		else if (numVotes <= 12)
 		{
-			const boolean odd = ((numVotes % 2) != 0);
+			const dboolean odd = ((numVotes % 2) != 0);
 			UINT8 rowSize = (numVotes + 1) / 2;
 			INT32 xOffset = 0;
 
@@ -566,9 +566,9 @@ void Y_SetPlayersVote(const UINT8 inputPlayerId, SINT8 newVote)
 #endif
 }
 
-static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t width, INT32 flags, SINT8 v, boolean dim, SINT8 playerID, boolean from_selection)
+static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t width, INT32 flags, SINT8 v, dboolean dim, SINT8 playerID, dboolean from_selection)
 {
-	const boolean encore = vote_draw.levels[v].encore;
+	const dboolean encore = vote_draw.levels[v].encore;
 	const fixed_t height = (width * BASEVIDHEIGHT) / BASEVIDWIDTH;
 	const fixed_t x = center_x - (width >> 1);
 	const fixed_t y = center_y - (height >> 1);
@@ -613,7 +613,7 @@ static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t widt
 
 	V_AdjustXYWithSnap(&fx, &fy, flags, dupx, dupy);
 
-	boolean striked = false;
+	dboolean striked = false;
 	if (from_selection == true)
 	{
 		striked = g_votes_striked[v];
@@ -958,7 +958,7 @@ static void Y_DrawVoteSelection(fixed_t offset)
 	//
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
-		boolean selected = false;
+		dboolean selected = false;
 		fixed_t destHop = 0;
 		INT32 j;
 
@@ -1165,7 +1165,7 @@ void Y_VoteDrawer(void)
 
 	if (vote.loaded == true)
 	{
-		boolean slideOut = true;
+		dboolean slideOut = true;
 		INT32 i;
 
 		for (i = 0; i <= splitscreen; i++)
@@ -1285,7 +1285,7 @@ static void Y_PlayerSendVote(const UINT8 localPlayer)
 	S_StartSound(NULL, sfx_kc37);
 }
 
-static boolean Y_TickGenericCatcher(y_vote_catcher *const catcher)
+static dboolean Y_TickGenericCatcher(y_vote_catcher *const catcher)
 {
 	fixed_t spd = CATCHER_SPEED;
 	fixed_t xDelta = catcher->destX - catcher->x;
@@ -1587,7 +1587,7 @@ static SINT8 Y_TryMapAngerVote(void)
 	SINT8 angryMaps[VOTE_NUM_LEVELS] = { -1 };
 	size_t angryMapsCount = 0;
 
-	boolean mapVoted[VOTE_NUM_LEVELS] = { false };
+	dboolean mapVoted[VOTE_NUM_LEVELS] = { false };
 	INT32 pick = 0;
 
 	INT32 numPlayers = 0;
@@ -1666,7 +1666,7 @@ static void Y_ExitStageStrike(void)
 	Y_SetVoteTimer();
 }
 
-static boolean Y_CheckStageStrikeStatus(void)
+static dboolean Y_CheckStageStrikeStatus(void)
 {
 	INT32 i;
 	UINT8 num_voters = 0;
@@ -1844,7 +1844,7 @@ static void Y_TickVoteStageStrike(void)
 
 static void Y_TickVoteSelection(void)
 {
-	boolean everyone_voted = true;/* the default condition */
+	dboolean everyone_voted = true;/* the default condition */
 	INT32 i, j;
 
 	if (vote.tic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
@@ -1858,7 +1858,7 @@ static void Y_TickVoteSelection(void)
 	*/
 	for (i = 0; i <= splitscreen; i++)
 	{
-		boolean moved = false;
+		dboolean moved = false;
 
 		if (Y_PlayerCanSelect(i) == true)
 		{
@@ -2182,7 +2182,7 @@ static void Y_InitVoteDrawing(void)
 	vote_draw.selectTransition = FRACUNIT;
 }
 
-static boolean Y_DetermineStageStrike(void)
+static dboolean Y_DetermineStageStrike(void)
 {
 	player_t *a = NULL;
 	player_t *b = NULL;

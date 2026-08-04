@@ -43,8 +43,8 @@ static UDPsocket mysocket = NULL;
 static SDLNet_SocketSet myset = NULL;
 
 static size_t numbans = 0;
-static boolean NET_bannednode[MAXNETNODES+1]; /// \note do we really need the +1?
-static boolean init_SDLNet_driver = false;
+static dboolean NET_bannednode[MAXNETNODES+1]; /// \note do we really need the +1?
+static dboolean init_SDLNet_driver = false;
 
 static const char *NET_AddrToStr(IPaddress* sk)
 {
@@ -68,12 +68,12 @@ static const char *NET_GetBanAddress(size_t ban)
 	return NET_AddrToStr(&banned[ban]);
 }
 
-static boolean NET_cmpaddr(IPaddress* a, IPaddress* b)
+static dboolean NET_cmpaddr(IPaddress* a, IPaddress* b)
 {
 	return (a->host == b->host && (b->port == 0 || a->port == b->port));
 }
 
-static boolean NET_CanGet(void)
+static dboolean NET_CanGet(void)
 {
 	return myset?(SDLNet_CheckSockets(myset,0)  == 1):false;
 }
@@ -133,7 +133,7 @@ static void NET_Get(void)
 }
 
 #if 0
-static boolean NET_CanSend(void)
+static dboolean NET_CanSend(void)
 {
 	return true;
 }
@@ -257,7 +257,7 @@ static SINT8 NET_NetMakeNodewPort(const char *hostname, const char *port)
 }
 
 
-static boolean NET_OpenSocket(void)
+static dboolean NET_OpenSocket(void)
 {
 	memset(clientaddress, 0, sizeof (clientaddress));
 
@@ -293,7 +293,7 @@ static boolean NET_OpenSocket(void)
 	return true;
 }
 
-static boolean NET_Ban(INT32 node)
+static dboolean NET_Ban(INT32 node)
 {
 	if (numbans == MAXBANS)
 		return false;
@@ -304,7 +304,7 @@ static boolean NET_Ban(INT32 node)
 	return true;
 }
 
-static boolean NET_SetBanAddress(const char *address, const char *mask)
+static dboolean NET_SetBanAddress(const char *address, const char *mask)
 {
 	(void)mask;
 	if (bans == MAXBANS)
@@ -326,11 +326,11 @@ static void NET_ClearBans(void)
 // I_InitNetwork
 // Only required for DOS, so this is more a dummy
 //
-boolean I_InitNetwork(void)
+dboolean I_InitNetwork(void)
 {
 #ifdef HAVE_SDLNET
 	char serverhostname[255];
-	boolean ret = false;
+	dboolean ret = false;
 	SDL_version SDLcompiled;
 	const SDL_version *SDLlinked = SDLNet_Linked_Version();
 	SDL_NET_VERSION(&SDLcompiled)

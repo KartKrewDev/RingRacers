@@ -102,7 +102,7 @@ UINT8 K_HogChargeToHogCount(INT32 charge, UINT8 cap)
 	return std::clamp<UINT8>((charge / BALLHOGINCREMENT), 0, cap);
 }
 
-static boolean HogReticuleEmulate(mobj_t *mobj)
+static dboolean HogReticuleEmulate(mobj_t *mobj)
 {
 	fixed_t x, y, z;
 
@@ -237,7 +237,7 @@ static void HogReticuleTest(player_t *player, vector3_t *ret, fixed_t final_scal
 	P_RemoveMobj(mo);
 }
 
-void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_release)
+void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, dboolean on_release)
 {
 	if (player == nullptr)
 	{
@@ -272,7 +272,7 @@ void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, boolean on_relea
 	while (reticule != nullptr && P_MobjWasRemoved(reticule) == false)
 	{
 		mobj_t *next = reticule->hnext;
-		boolean removed = false;
+		dboolean removed = false;
 
 		if (num_hogs > 0)
 		{

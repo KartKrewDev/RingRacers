@@ -500,15 +500,15 @@ std::optional<TargetTracking::Tooltip> object_tooltip(const mobj_t* mobj)
 			.offset3d(0, 0, 32 * mobj->scale * P_MobjFlip(mobj));
 		}
 
-		boolean offroadwarning = K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash && stplyr->curshield != KSHIELD_TOP
+		dboolean offroadwarning = K_ApplyOffroad(stplyr) && stplyr->offroad >= FRACUNIT && !stplyr->spindash && stplyr->curshield != KSHIELD_TOP
 			&& stplyr->boostpower < FRACUNIT && stplyr->rings <= 0 && stplyr->speed < K_GetKartSpeed(stplyr, false, false)/2;
 
-		boolean hitwarning = stplyr->flashing && stplyr->rings <= 0 && stplyr->speed < K_GetKartSpeed(stplyr, false, false)/2
+		dboolean hitwarning = stplyr->flashing && stplyr->rings <= 0 && stplyr->speed < K_GetKartSpeed(stplyr, false, false)/2
 			&& P_IsObjectOnGround(mobj) && !P_PlayerInPain(stplyr);
 
-		boolean whipping = stplyr->whip && !P_MobjWasRemoved(stplyr->whip);
+		dboolean whipping = stplyr->whip && !P_MobjWasRemoved(stplyr->whip);
 
-		boolean hasboost = (stplyr->itemamount &&
+		dboolean hasboost = (stplyr->itemamount &&
 			(
 				stplyr->itemtype == KITEM_SNEAKER || stplyr->itemtype == KITEM_INVINCIBILITY || stplyr->itemtype == KITEM_ROCKETSNEAKER
 				|| stplyr->itemtype == KITEM_FLAMESHIELD || stplyr->itemtype == KITEM_GROW

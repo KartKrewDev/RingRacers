@@ -71,7 +71,7 @@ static FUNCMATH angle_t AngleAdj(const fixed_t fa, const fixed_t wf,
                                  angle_t ra)
 {
 	const angle_t adj = 0x77;
-	const boolean fan = fa < 0;
+	const dboolean fan = fa < 0;
 	const fixed_t sl = FixedDiv(fa, wf*2);
 	const fixed_t lb = fa % (wf*2);
 	const fixed_t lo = (wf*2)-lb;
@@ -262,7 +262,7 @@ angle_t FV3_AngleBetweenVectors(const vector3_t *Vector1, const vector3_t *Vecto
 //
 // This checks to see if a point is inside the ranges of a polygon
 //
-boolean FV2_InsidePolygon(const vector2_t *vIntersection, const vector2_t *Poly, const INT32 vertexCount)
+dboolean FV2_InsidePolygon(const vector2_t *vIntersection, const vector2_t *Poly, const INT32 vertexCount)
 {
 	INT32 i;
 	UINT64 Angle = 0;					// Initialize the angle
@@ -304,7 +304,7 @@ boolean FV2_InsidePolygon(const vector2_t *vIntersection, const vector2_t *Poly,
 	return 0; // If you get here, it obviously wasn't inside the polygon.
 }
 
-boolean FV3_InsidePolygon(const vector3_t *vIntersection, const vector3_t *Poly, const INT32 vertexCount)
+dboolean FV3_InsidePolygon(const vector3_t *vIntersection, const vector3_t *Poly, const INT32 vertexCount)
 {
 	INT32 i;
 	UINT64 Angle = 0;					// Initialize the angle
@@ -351,7 +351,7 @@ boolean FV3_InsidePolygon(const vector3_t *vIntersection, const vector3_t *Poly,
 //
 // This checks if a line is intersecting a polygon
 //
-boolean FV3_IntersectedPolygon(const vector3_t *vPoly, const vector3_t *vLine, const INT32 vertexCount, vector3_t *collisionPoint)
+dboolean FV3_IntersectedPolygon(const vector3_t *vPoly, const vector3_t *vLine, const INT32 vertexCount, vector3_t *collisionPoint)
 {
 	vector3_t vNormal, vIntersection;
 	fixed_t originDistance = 0*FRACUNIT;

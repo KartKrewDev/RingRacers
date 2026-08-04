@@ -27,7 +27,7 @@ extern "C" {
 extern tic_t rendergametic;
 
 extern char srb2home[256]; //Alam: My Home
-extern boolean usehome; //Alam: which path?
+extern dboolean usehome; //Alam: which path?
 extern const char *pandf; //Alam: how to path?
 extern char srb2path[256]; //Alam: SRB2's Home
 extern char addonsdir[MAX_WADPATH]; // Where addons are stored
@@ -51,7 +51,7 @@ void D_PostEvent(const event_t *ev);
 void D_PostEvent_end(void);    // delimiter for locking memory
 #endif
 
-void D_ProcessEvents(boolean callresponders);
+void D_ProcessEvents(dboolean callresponders);
 
 const char *D_Home(void);
 
@@ -62,8 +62,8 @@ void D_TakeMapSnapshots(void);
 //
 void D_ClearState(void);
 void D_StartTitle(void);
-void D_SetDeferredStartTitle(boolean deferred);
-boolean D_IsDeferredStartTitle(void);
+void D_SetDeferredStartTitle(dboolean deferred);
+dboolean D_IsDeferredStartTitle(void);
 
 #ifdef __cplusplus
 } // extern "C"

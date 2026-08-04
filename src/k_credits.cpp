@@ -77,7 +77,7 @@ struct credits_slide_s
 	srb2::String label;
 	srb2::Vector<srb2::String> strings;
 	size_t strings_height;
-	boolean play_demo_afterwards;
+	dboolean play_demo_afterwards;
 	int fade_out_music;
 };
 
@@ -94,13 +94,13 @@ static struct credits_s
 {
 	size_t current_slide;
 	srb2::Vector<UINT16> demo_maps;
-	boolean skip;
+	dboolean skip;
 
 	srb2::Vector<struct credits_star_s> stars;
 
 	fixed_t transition;
 	fixed_t transition_prev;
-	boolean transition_reverse;
+	dboolean transition_reverse;
 
 	tic_t animation_timer;
 
@@ -118,7 +118,7 @@ static struct credits_s
 
 	tic_t demo_exit;
 
-	boolean havent_ticked;
+	dboolean havent_ticked;
 } g_credits;
 
 constexpr const fixed_t kScrollFactor = FRACUNIT * 7 / 8;
@@ -458,7 +458,7 @@ void F_DeferContinueCredits(void)
 	demo.attract = DEMO_ATTRACT_OFF;
 }
 
-boolean F_IsDeferredContinueCredits(void)
+dboolean F_IsDeferredContinueCredits(void)
 {
 	return g_deferred_continue_credits;
 }
@@ -533,7 +533,7 @@ static UINT16 F_PickRandomCreditsDemoMap(void)
 	return UINT16_MAX;
 }
 
-static boolean F_CreditsPlayDemo(void)
+static dboolean F_CreditsPlayDemo(void)
 {
 	const struct credits_slide_s *slide = &g_credits_slides[ g_credits.current_slide ];
 	staffbrief_t *brief;
@@ -622,7 +622,7 @@ static void F_CreditsSlideFinish(void)
 	F_CreditsNextSlide();
 }
 
-static boolean F_TickCreditsScroll(void)
+static dboolean F_TickCreditsScroll(void)
 {
 	const struct credits_slide_s *slide = &g_credits_slides[ g_credits.current_slide ];
 	UINT32 scroll_max = FixedDiv(slide->strings_height + BASEVIDHEIGHT, kScrollFactor);
@@ -657,7 +657,7 @@ static void F_CreditsStarParticle(fixed_t x, fixed_t y)
 	g_credits.stars.push_back(star);
 }
 
-static boolean F_TickCreditsSlide(void)
+static dboolean F_TickCreditsSlide(void)
 {
 	const struct credits_slide_s *slide = &g_credits_slides[ g_credits.current_slide ];
 
@@ -754,7 +754,7 @@ static boolean F_TickCreditsSlide(void)
 	return true;
 }
 
-static boolean F_TickCreditsTyler52(void)
+static dboolean F_TickCreditsTyler52(void)
 {
 	if (g_credits.animation_timer > TICRATE && g_credits.animation_timer < (2*TICRATE) - 17)
 	{
@@ -798,7 +798,7 @@ static void F_HandleCreditsTick(void)
 	g_credits.animation_timer++;
 	F_TickCreditsStars();
 
-	boolean finalize_slide = true;
+	dboolean finalize_slide = true;
 	switch (slide->type)
 	{
 		case CRED_TYPE_SCROLL:

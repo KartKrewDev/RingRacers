@@ -196,7 +196,7 @@ static void DRPC_HandleJoin(const char *secret)
 }
 
 /*--------------------------------------------------
-	static boolean DRPC_InvitesAreAllowed(void)
+	static dboolean DRPC_InvitesAreAllowed(void)
 
 		Determines whenever or not invites or
 		ask to join requests are allowed.
@@ -207,7 +207,7 @@ static void DRPC_HandleJoin(const char *secret)
 	Return:-
 		true if invites are allowed, false otherwise.
 --------------------------------------------------*/
-static boolean DRPC_InvitesAreAllowed(void)
+static dboolean DRPC_InvitesAreAllowed(void)
 {
 	if (!Playing())
 	{
@@ -435,12 +435,12 @@ static void DRPC_EmptyRequests(void)
 
 #ifndef DISCORD_SECRETIVE
 /*--------------------------------------------------
-	static boolean DRPC_DisplayGonerSetup(void)
+	static dboolean DRPC_DisplayGonerSetup(void)
 
 		Returns true if we're in the initial
 		tutorial game state.
 --------------------------------------------------*/
-static boolean DRPC_DisplayGonerSetup(void)
+static dboolean DRPC_DisplayGonerSetup(void)
 {
 	if (M_GameTrulyStarted())
 	{
@@ -502,7 +502,7 @@ enum {
 --------------------------------------------------*/
 void DRPC_UpdatePresence(void)
 {
-	boolean joinSecretSet = false;
+	dboolean joinSecretSet = false;
 	char *clientJoinSecret = NULL;
 
 	DiscordRichPresence discordPresence;

@@ -91,12 +91,12 @@ musictype_t I_SongType(void)
 	return MU_NONE;
 }
 
-boolean I_SongPlaying(void)
+dboolean I_SongPlaying(void)
 {
 	return false;
 }
 
-boolean I_SongPaused(void)
+dboolean I_SongPaused(void)
 {
 	return false;
 }
@@ -105,7 +105,7 @@ boolean I_SongPaused(void)
 //  MUSIC EFFECTS
 /// ------------------------
 
-boolean I_SetSongSpeed(float speed)
+dboolean I_SetSongSpeed(float speed)
 {
         (void)speed;
         return false;
@@ -120,7 +120,7 @@ UINT32 I_GetSongLength(void)
         return 0;
 }
 
-boolean I_SetSongLoopPoint(UINT32 looppoint)
+dboolean I_SetSongLoopPoint(UINT32 looppoint)
 {
         (void)looppoint;
         return false;
@@ -131,7 +131,7 @@ UINT32 I_GetSongLoopPoint(void)
 	return 0;
 }
 
-boolean I_SetSongPosition(UINT32 position)
+dboolean I_SetSongPosition(UINT32 position)
 {
         (void)position;
         return false;
@@ -148,7 +148,7 @@ UINT32 I_GetSongPosition(void)
 
 UINT8 midimusic_started = 0;
 
-boolean I_LoadSong(char *data, size_t len)
+dboolean I_LoadSong(char *data, size_t len)
 {
         (void)data;
         (void)len;
@@ -160,7 +160,7 @@ void I_UnloadSong()
 
 }
 
-boolean I_PlaySong(boolean looping)
+dboolean I_PlaySong(dboolean looping)
 {
         (void)handle;
         (void)looping;
@@ -200,7 +200,7 @@ void I_StopFadingSong(void)
 {
 }
 
-boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void));
+dboolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void));
 {
 	(void)target_volume;
 	(void)source_volume;
@@ -208,20 +208,20 @@ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms
         return false;
 }
 
-boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void));
+dboolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void));
 {
 	(void)target_volume;
 	(void)ms;
 	return false;
 }
 
-boolean I_FadeOutStopSong(UINT32 ms)
+dboolean I_FadeOutStopSong(UINT32 ms)
 {
         (void)ms;
         return false;
 }
 
-boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
+dboolean I_FadeInPlaySong(UINT32 ms, dboolean looping)
 {
         (void)ms;
         (void)looping;

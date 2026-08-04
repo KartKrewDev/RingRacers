@@ -753,7 +753,7 @@ static int sector_set(lua_State *L)
 	default:
 		return luaL_error(L, "sector_t field " LUA_QS " cannot be set.", sector_opt[field]);
 	case sector_floorheight: { // floorheight
-		boolean flag;
+		dboolean flag;
 		tm_t ptm = g_tm;
 		fixed_t lastpos = sector->floorheight;
 		sector->floorheight = luaL_checkfixed(L, 3);
@@ -767,7 +767,7 @@ static int sector_set(lua_State *L)
 		break;
 	}
 	case sector_ceilingheight: { // ceilingheight
-		boolean flag;
+		dboolean flag;
 		tm_t ptm = g_tm;
 		fixed_t lastpos = sector->ceilingheight;
 		sector->ceilingheight = luaL_checkfixed(L, 3);
@@ -1812,7 +1812,7 @@ static int ffloor_set(lua_State *L)
 	default:
 		return luaL_error(L, "ffloor_t field " LUA_QS " cannot be set.", ffloor_opt[field]);
 	case ffloor_topheight: { // topheight
-		boolean flag;
+		dboolean flag;
 		fixed_t lastpos = *ffloor->topheight;
 		tm_t ptm = g_tm;
 		sector_t *sector = &sectors[ffloor->secnum];
@@ -1833,7 +1833,7 @@ static int ffloor_set(lua_State *L)
 		*ffloor->toplightlevel = (INT16)luaL_checkinteger(L, 3);
 		break;
 	case ffloor_bottomheight: { // bottomheight
-		boolean flag;
+		dboolean flag;
 		fixed_t lastpos = *ffloor->bottomheight;
 		tm_t ptm = g_tm;
 		sector_t *sector = &sectors[ffloor->secnum];

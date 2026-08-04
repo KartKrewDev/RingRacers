@@ -57,9 +57,9 @@ angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 
 extern "C" consvar_t cv_debugpickmeup;
 
-boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 {
-	boolean damageitem = false;
+	dboolean damageitem = false;
 
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
@@ -169,7 +169,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 {
 	// Push fakes out of other item boxes
 	if (t2->type == MT_RANDOMITEM || t2->type == MT_EGGMANITEM)
@@ -233,10 +233,10 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 
 static mobj_t *grenade;
 static fixed_t explodedist;
-static boolean explodespin;
+static dboolean explodespin;
 static INT32 minehitlag;
 
-static inline boolean PIT_SSMineChecks(mobj_t *thing)
+static inline dboolean PIT_SSMineChecks(mobj_t *thing)
 {
 	if (thing == grenade) // Don't explode yourself! Endless loop!
 		return true;
@@ -353,7 +353,7 @@ static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 	return BMIT_CONTINUE;
 }
 
-tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
+tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, dboolean spin)
 {
 	INT32 bx, by, xl, xh, yl, yh;
 
@@ -394,7 +394,7 @@ tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 	return 0;
 }
 
-boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
@@ -448,7 +448,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
@@ -552,7 +552,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 {
 	mobj_t *draggeddroptarget = (t1->type == MT_DROPTARGET_SHIELD) ? t1->target : NULL;
 	UINT8 strength;
@@ -842,7 +842,7 @@ void K_LightningShieldAttack(mobj_t *actor, fixed_t size)
 			P_BlockThingsIterator(bx, by, PIT_LightningShieldAttack);
 }
 
-boolean K_BubbleShieldCanReflect(mobj_t *t1, mobj_t *t2)
+dboolean K_BubbleShieldCanReflect(mobj_t *t1, mobj_t *t2)
 {
 	return (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_GACHABOM
 		|| t2->type == MT_BANANA || t2->type == MT_EGGMANITEM || t2->type == MT_BALLHOG
@@ -853,7 +853,7 @@ boolean K_BubbleShieldCanReflect(mobj_t *t1, mobj_t *t2)
 		|| (t2->type == MT_PLAYER && t1->target != t2));
 }
 
-boolean K_BubbleShieldReflect(mobj_t *t1, mobj_t *t2)
+dboolean K_BubbleShieldReflect(mobj_t *t1, mobj_t *t2)
 {
 	mobj_t *owner = t1->player ? t1 : t1->target;
 
@@ -885,7 +885,7 @@ boolean K_BubbleShieldReflect(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (t2->type == MT_PLAYER)
 	{
@@ -898,7 +898,7 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 		thing = oldthing;
 		P_SetTarget(&g_tm.thing, oldg_tm.thing);*/
 
-		boolean hit = false;
+		dboolean hit = false;
 
 		if (K_KartBouncing(t2, t1->target) == true)
 		{
@@ -935,7 +935,7 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
+dboolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 {
 	int victimHitlag = 10;
 	int attackerHitlag = 4;
@@ -1039,7 +1039,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			}
 
 			// if you're here, you're getting hit
-			boolean hit = P_DamageMobj(victim, shield, attacker, 1, DMG_WHUMBLE);
+			dboolean hit = P_DamageMobj(victim, shield, attacker, 1, DMG_WHUMBLE);
 
 			if (!hit)
 				return false;
@@ -1122,7 +1122,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	}
 }
 
-boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
@@ -1163,14 +1163,14 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (t2->player || t2->type == MT_FALLINGROCK)
 		K_KartBouncing(t2, t1);
 	return true;
 }
 
-boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
+dboolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
 	if (K_PodiumSequence() == true)
 	{
@@ -1187,8 +1187,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		return false;
 	}
 
-	boolean guard1 = K_PlayerGuard(t1->player);
-	boolean guard2 = K_PlayerGuard(t2->player);
+	dboolean guard1 = K_PlayerGuard(t1->player);
+	dboolean guard2 = K_PlayerGuard(t2->player);
 
 	// Bubble Shield physically extends past guard when inflated,
 	// makes some sense to suppress this behavior
@@ -1323,7 +1323,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			return false;
 		}
 
-		boolean damagedpresting = (t2->player->flashing || P_PlayerInPain(t2->player));
+		dboolean damagedpresting = (t2->player->flashing || P_PlayerInPain(t2->player));
 
 		// CONS_Printf("T1=%s T2=%s\n", player_names[t1->player - players], player_names[t2->player - players]);
 		// CONS_Printf("DPS=%d\n", damagedpresting);
@@ -1436,7 +1436,7 @@ void K_PuntHazard(mobj_t *t1, mobj_t *t2)
 	P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 }
 
-boolean K_PuntCollide(mobj_t *t1, mobj_t *t2)
+dboolean K_PuntCollide(mobj_t *t1, mobj_t *t2)
 {
 	// MF_SHOOTABLE will get damaged directly, instead
 	if (t1->flags & (MF_DONTPUNT | MF_SHOOTABLE))

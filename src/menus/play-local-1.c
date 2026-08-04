@@ -48,7 +48,7 @@ void M_SetupGametypeMenu(INT32 choice)
 	}
 	else
 	{
-		boolean anyunlocked = false;
+		dboolean anyunlocked = false;
 
 		if (M_SecretUnlocked(SECRET_PRISONBREAK, true))
 		{

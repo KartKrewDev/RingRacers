@@ -442,7 +442,7 @@ void P_CameraLineOpening(line_t *linedef, opening_t *open)
 	open->range = (open->ceiling - open->floor);
 }
 
-boolean
+dboolean
 P_GetMidtextureTopBottom
 (		line_t * linedef,
 		fixed_t x,
@@ -509,7 +509,7 @@ P_GetMidtextureTopBottom
 	else
 #endif
 	{
-		const boolean invismidtexwall = !!(P_IsLineTripWire(linedef)) ^ !!(linedef->flags & ML_MIDTEXINVISWALL);
+		const dboolean invismidtexwall = !!(P_IsLineTripWire(linedef)) ^ !!(linedef->flags & ML_MIDTEXINVISWALL);
 
 		if (((linedef->flags & ML_WRAPMIDTEX) && !side->repeatcnt) || invismidtexwall) // "infinite" repeat
 		{
@@ -537,7 +537,7 @@ P_GetMidtextureTopBottom
 	return true;
 }
 
-static boolean P_MidtextureIsSolid(line_t *linedef, mobj_t *mobj)
+static dboolean P_MidtextureIsSolid(line_t *linedef, mobj_t *mobj)
 {
 	if (linedef->polyobj)
 	{
@@ -555,11 +555,11 @@ static boolean P_MidtextureIsSolid(line_t *linedef, mobj_t *mobj)
 	return ((linedef->flags & ML_MIDSOLID) == ML_MIDSOLID);
 }
 
-boolean P_FoFOpening(sector_t *sector, line_t *linedef, mobj_t *mobj, opening_t *open, fofopening_t *fofopen)
+dboolean P_FoFOpening(sector_t *sector, line_t *linedef, mobj_t *mobj, opening_t *open, fofopening_t *fofopen)
 {
 	fixed_t delta1, delta2;
 	fixed_t thingtop = mobj->z + mobj->height;
-	boolean ret = false; // DId we find any relevant FoFs?
+	dboolean ret = false; // DId we find any relevant FoFs?
 	// Check for frontsector's fake floors
 	for (ffloor_t *rover = sector->ffloors; rover; rover = rover->next)
 	{
@@ -785,7 +785,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 			fixed_t texmid, delta1, delta2;
 
 			// Should we override typical behavior and extend teh midtexture to the ceiling, to include FoFs?
-			// const boolean inifiniteheight = linedef->flags & ML_INFINITEMIDTEXTUREHEIGHT;
+			// const dboolean inifiniteheight = linedef->flags & ML_INFINITEMIDTEXTUREHEIGHT;
 
 			
 			if (P_GetMidtextureTopBottom(linedef, cross.x, cross.y, &textop, &texbottom))
@@ -913,7 +913,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 			// Check for fake floors in the sector.
 			if (front->ffloors || back->ffloors)
 			{
-				boolean anyfrontfofs, anybackfofs;
+				dboolean anyfrontfofs, anybackfofs;
 				fofopening_t fofopen[2] = {
 					{ INT32_MAX, INT32_MIN, NULL, NULL },
 					{ INT32_MAX, INT32_MIN, NULL, NULL },
@@ -1269,7 +1269,7 @@ void P_SetPrecipitationThingPosition(precipmobj_t *thing)
 // to P_BlockLinesIterator, then make one or more calls
 // to it.
 //
-boolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(line_t *))
+dboolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(line_t *))
 {
 	INT32 offset;
 	const INT32 *list; // Big blockmap
@@ -1347,7 +1347,7 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(line_t *)
 //
 // P_BlockThingsIterator
 //
-boolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(mobj_t *))
+dboolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(mobj_t *))
 {
 	mobj_t *mobj, *bnext = NULL;
 
@@ -1586,7 +1586,7 @@ static BlockItReturn_t PIT_AddThingIntercepts(mobj_t *thing)
 //
 // killough 5/3/98: reformatted, cleaned up
 //
-static boolean P_TraverseIntercepts(traverser_t func, fixed_t maxfrac)
+static dboolean P_TraverseIntercepts(traverser_t func, fixed_t maxfrac)
 {
 	size_t count;
 	intercept_t *in = NULL;
@@ -1633,7 +1633,7 @@ static boolean P_TraverseIntercepts(traverser_t func, fixed_t maxfrac)
 // Returns true if the traverser function returns true
 // for all lines.
 //
-boolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
+dboolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 	INT32 flags, traverser_t trav)
 {
 	fixed_t xt1, yt1, xt2, yt2;
@@ -1831,8 +1831,8 @@ boolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 
 //abandoned, maybe I'll need it someday..
 /*
-boolean P_RadiusLinesCheck(fixed_t radius, fixed_t x, fixed_t y,
-	boolean (*func)(line_t *))
+dboolean P_RadiusLinesCheck(fixed_t radius, fixed_t x, fixed_t y,
+	dboolean (*func)(line_t *))
 {
 	INT32 xl, xh, yl, yh;
 	INT32 bx, by;

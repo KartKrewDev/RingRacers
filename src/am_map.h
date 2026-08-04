@@ -32,11 +32,11 @@ struct fline_t
 	fpoint_t a, b;
 };
 
-extern boolean am_recalc; // true if screen size changes
-extern boolean automapactive; // In AutoMap mode?
+extern dboolean am_recalc; // true if screen size changes
+extern dboolean automapactive; // In AutoMap mode?
 
 // Called by main loop.
-boolean AM_Responder(event_t *ev);
+dboolean AM_Responder(event_t *ev);
 
 // Called by main loop.
 void AM_Ticker(void);

@@ -146,7 +146,7 @@ void Obj_SpawnBubbleShieldVisuals(mobj_t *bubble)
 	Visual::spawn(static_cast<Bubble*>(bubble), S_BUBE1, 1, -3); //Backlit outline
 }
 
-boolean Obj_TickBubbleShieldVisual(mobj_t *mobj)
+dboolean Obj_TickBubbleShieldVisual(mobj_t *mobj)
 {
 	return static_cast<Visual*>(mobj)->tick();
 }

@@ -32,7 +32,7 @@ follower_t followers[MAXFOLLOWERS];
 INT32 numfollowercategories = 0;
 followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
 
-boolean horngoner = false;
+dboolean horngoner = false;
 
 CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
@@ -59,7 +59,7 @@ INT32 K_FollowerAvailable(const char *name)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_FollowerUsable(INT32 skinnum)
+dboolean K_FollowerUsable(INT32 skinnum)
 {
 	// Unlike R_SkinUsable, not netsynced.
 	// Solely used to prevent an invalid value being sent over the wire.
@@ -95,15 +95,15 @@ boolean K_FollowerUsable(INT32 skinnum)
 
 	// Use the unlockables table directly
 	// DEFINITELY not M_CheckNetUnlockByID
-	return (boolean)(gamedata->unlocked[i]);
+	return (dboolean)(gamedata->unlocked[i]);
 }
 
 /*--------------------------------------------------
-	boolean K_SetFollowerByName(INT32 playernum, const char *skinname)
+	dboolean K_SetFollowerByName(INT32 playernum, const char *skinname)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_SetFollowerByName(INT32 playernum, const char *skinname)
+dboolean K_SetFollowerByName(INT32 playernum, const char *skinname)
 {
 	INT32 i;
 	player_t *player = &players[playernum];
@@ -748,11 +748,11 @@ void K_HandleFollower(player_t *player)
 }
 
 /*--------------------------------------------------
-	void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
+	void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmelodyspecial)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
+void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmelodyspecial)
 {
 	// special case for checking for fallback follower for autoring
 	const INT32 followerskin = K_GetEffectiveFollowerSkin(taunter);
@@ -798,7 +798,7 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 		return;
 	}
 
-	const boolean tasteful = (taunter->karthud[khud_taunthorns] == 0);
+	const dboolean tasteful = (taunter->karthud[khud_taunthorns] == 0);
 
 	if (tasteful || cv_tastelesstaunts.value)
 	{

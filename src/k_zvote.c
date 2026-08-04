@@ -99,7 +99,7 @@ static void K_MidVoteRockTheVote(void)
 --------------------------------------------------*/
 static void K_MidVoteRunItBack(void)
 {
-	boolean newencore = false;
+	dboolean newencore = false;
 
 	if (cv_kartencore.value != 0)
 	{
@@ -141,11 +141,11 @@ static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
 };
 
 /*--------------------------------------------------
-	boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
+	dboolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
+dboolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
 {
 	switch (voteType)
 	{
@@ -376,11 +376,11 @@ void K_ResetMidVote(void)
 }
 
 /*--------------------------------------------------
-	boolean K_AnyMidVotesAllowed(void)
+	dboolean K_AnyMidVotesAllowed(void)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_AnyMidVotesAllowed(void)
+dboolean K_AnyMidVotesAllowed(void)
 {
 	INT32 i = INT32_MAX;
 
@@ -396,12 +396,12 @@ boolean K_AnyMidVotesAllowed(void)
 }
 
 /*--------------------------------------------------
-	midVoteType_e K_GetNextCallableMidVote(INT32 seed, boolean backwards)
+	midVoteType_e K_GetNextCallableMidVote(INT32 seed, dboolean backwards)
 
 		See header file for description.
 --------------------------------------------------*/
 
-midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, boolean backwards)
+midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, dboolean backwards)
 {
 	if (seed >= MVT__MAX)
 		seed = 0;
@@ -441,11 +441,11 @@ midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, boolean backwards)
 }
 
 /*--------------------------------------------------
-	boolean K_PlayerIDAllowedInMidVote(const UINT8 id)
+	dboolean K_PlayerIDAllowedInMidVote(const UINT8 id)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PlayerIDAllowedInMidVote(const UINT8 id)
+dboolean K_PlayerIDAllowedInMidVote(const UINT8 id)
 {
 	const player_t *player = &players[id];
 
@@ -512,11 +512,11 @@ UINT8 K_RequiredMidVotes(void)
 }
 
 /*--------------------------------------------------
-	boolean K_PlayerIDMidVoted(const UINT8 id)
+	dboolean K_PlayerIDMidVoted(const UINT8 id)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PlayerIDMidVoted(const UINT8 id)
+dboolean K_PlayerIDMidVoted(const UINT8 id)
 {
 	const player_t *player = &players[id];
 
@@ -568,11 +568,11 @@ UINT8 K_CountMidVotes(void)
 }
 
 /*--------------------------------------------------
-	boolean K_MinimalCheckNewMidVote(midVoteType_e type)
+	dboolean K_MinimalCheckNewMidVote(midVoteType_e type)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_MinimalCheckNewMidVote(midVoteType_e type)
+dboolean K_MinimalCheckNewMidVote(midVoteType_e type)
 {
 	if (g_midVote.active == true)
 	{
@@ -608,11 +608,11 @@ boolean K_MinimalCheckNewMidVote(midVoteType_e type)
 }
 
 /*--------------------------------------------------
-	boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+	dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
 {
 	(void)variable;
 
@@ -814,7 +814,7 @@ static void K_HandleMidVoteInput(void)
 	{
 		//player_t *const player = &players[ g_localplayers[i] ];
 		midVoteGUI_t *const gui = &g_midVote.gui[i];
-		boolean pressed = false;
+		dboolean pressed = false;
 
 		if (menuactive == false)
 		{
@@ -1006,7 +1006,7 @@ const char *K_GetMidVoteLabel(midVoteType_e i)
 }
 
 /*--------------------------------------------------
-	static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, boolean flipped)
+	static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, dboolean flipped)
 
 		Draws a bar
 
@@ -1016,7 +1016,7 @@ const char *K_GetMidVoteLabel(midVoteType_e i)
 	Return:-
 		true if it uses a victim, otherwise false.
 --------------------------------------------------*/
-static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, boolean flipped)
+static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, dboolean flipped)
 {
 	const SINT8 sign = (flipped == true) ? -1 : 1;
 	patch_t *bar = g_zBar[0];
@@ -1090,7 +1090,7 @@ void K_DrawMidVote(void)
 {
 	const INT32 id = R_GetViewNumber();
 	midVoteGUI_t *gui = NULL;
-	boolean pressed = false;
+	dboolean pressed = false;
 	fixed_t x = INT32_MAX, y = INT32_MAX;
 
 	pressed = G_PlayerInputDown(id, gc_z, 0);
@@ -1151,9 +1151,9 @@ void K_DrawMidVote(void)
 	{
 		// Draw the actual vote status
 		const fixed_t barHalf = (g_zBar[0]->width * FRACUNIT * (ZVOTE_PATCH_BAR_SEGS - 1)) >> 1;
-		const boolean blink = (gametic & 1);
-		boolean drawButton = blink;
-		boolean drawVotes = blink;
+		const dboolean blink = (gametic & 1);
+		dboolean drawButton = blink;
+		dboolean drawVotes = blink;
 
 		fixed_t strWidth = 0;
 

@@ -16,7 +16,7 @@
 
 struct setup_explosions_s setup_explosions[CSEXPLOSIONS];
 
-void M_SetupReadyExplosions(boolean charsel, UINT16 basex, UINT16 basey, UINT16 color)
+void M_SetupReadyExplosions(dboolean charsel, UINT16 basex, UINT16 basey, UINT16 color)
 {
 	UINT8 i, j;
 	UINT8 e = 0;

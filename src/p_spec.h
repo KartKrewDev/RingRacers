@@ -491,10 +491,10 @@ void P_SetupLevelFlatAnims(void);
 
 // at map load
 void P_InitSpecials(void);
-void P_ApplyFlatAlignment(sector_t* sector, angle_t flatangle, fixed_t xoffs, fixed_t yoffs, boolean floor, boolean ceiling);
+void P_ApplyFlatAlignment(sector_t* sector, angle_t flatangle, fixed_t xoffs, fixed_t yoffs, dboolean floor, dboolean ceiling);
 fixed_t P_GetSectorGravityFactor(sector_t *sec);
-void P_SpawnSpecials(boolean fromnetsave);
-void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave);
+void P_SpawnSpecials(dboolean fromnetsave);
+void P_SpawnSpecialsThatRequireObjects(dboolean fromnetsave);
 
 // every tic
 void P_UpdateSpecials(void);
@@ -503,13 +503,13 @@ sector_t *P_MobjTouchingSectorSpecialFlag(mobj_t *mo, sectorspecialflags_t flag)
 sector_t *P_PlayerTouchingSectorSpecial(player_t *player, INT32 section, INT32 number);
 sector_t *P_PlayerTouchingSectorSpecialFlag(player_t *player, sectorspecialflags_t flag);
 void P_PlayerInSpecialSector(player_t *player);
-void P_CheckMobjTrigger(mobj_t *mobj, boolean pushable);
-void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous, boolean sectorchanged);
+void P_CheckMobjTrigger(mobj_t *mobj, dboolean pushable);
+void P_CheckMobjTouchingSectorActions(mobj_t *mobj, dboolean continuous, dboolean sectorchanged);
 sector_t *P_FindPlayerTrigger(player_t *player, line_t *sourceline);
-boolean P_IsPlayerValid(size_t playernum);
-boolean P_CanPlayerTrigger(size_t playernum);
+dboolean P_IsPlayerValid(size_t playernum);
+dboolean P_CanPlayerTrigger(size_t playernum);
 void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *roversector);
-void P_CheckSectorTransitionalEffects(mobj_t *thing, sector_t *prevsec, boolean wasgrounded);
+void P_CheckSectorTransitionalEffects(mobj_t *thing, sector_t *prevsec, dboolean wasgrounded);
 
 fixed_t P_FindLowestFloorSurrounding(sector_t *sec);
 fixed_t P_FindHighestFloorSurrounding(sector_t *sec);
@@ -538,26 +538,26 @@ struct activator_t
 	UINT8 side;
 	sector_t *sector;
 	polyobj_t *po;
-	boolean fromLineSpecial; // Backwards compat for ACS
+	dboolean fromLineSpecial; // Backwards compat for ACS
 };
 
-boolean P_CanActivateSpecial(INT16 special);
-boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
+dboolean P_CanActivateSpecial(INT16 special);
+dboolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
 
-void P_SetupSignExit(player_t *player, boolean tie);
+void P_SetupSignExit(player_t *player, dboolean tie);
 
-boolean P_IsMobjTouchingSectorPlane(mobj_t *mo, sector_t *sec);
-boolean P_IsMobjTouching3DFloor(mobj_t *mo, ffloor_t *ffloor, sector_t *sec);
-boolean P_IsMobjTouchingPolyobj(mobj_t *mo, polyobj_t *po, sector_t *polysec);
+dboolean P_IsMobjTouchingSectorPlane(mobj_t *mo, sector_t *sec);
+dboolean P_IsMobjTouching3DFloor(mobj_t *mo, ffloor_t *ffloor, sector_t *sec);
+dboolean P_IsMobjTouchingPolyobj(mobj_t *mo, polyobj_t *po, sector_t *polysec);
 
 void P_SwitchWeather(preciptype_t newWeather);
 
-boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller);
+dboolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller);
 void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller);
 void P_RunNightserizeExecutors(mobj_t *actor);
 void P_RunDeNightserizeExecutors(mobj_t *actor);
 void P_RunNightsLapExecutors(mobj_t *actor);
-void P_RunNightsCapsuleTouchExecutors(mobj_t *actor, boolean entering, boolean enoughspheres);
+void P_RunNightsCapsuleTouchExecutors(mobj_t *actor, dboolean entering, dboolean enoughspheres);
 
 UINT16 P_GetFFloorID(ffloor_t *fflr);
 ffloor_t *P_GetFFloorByID(sector_t *sec, UINT16 id);
@@ -652,13 +652,13 @@ void T_LightningFlash(lightflash_t *flash);
 void T_StrobeFlash(strobe_t *flash);
 
 void P_SpawnLightningFlash(sector_t *sector);
-strobe_t * P_SpawnAdjustableStrobeFlash(sector_t *sector, INT16 lighta, INT16 lightb, INT32 darktime, INT32 brighttime, boolean inSync);
+strobe_t * P_SpawnAdjustableStrobeFlash(sector_t *sector, INT16 lighta, INT16 lightb, INT32 darktime, INT32 brighttime, dboolean inSync);
 
 void T_Glow(glow_t *g);
 glow_t *P_SpawnAdjustableGlowingLight(sector_t *sector, INT16 lighta, INT16 lightb, INT32 length);
 
-void P_FadeLightBySector(sector_t *sector, INT32 destvalue, INT32 speed, boolean ticbased);
-void P_FadeLight(INT16 tag, INT32 destvalue, INT32 speed, boolean ticbased, boolean force, boolean relative);
+void P_FadeLightBySector(sector_t *sector, INT32 destvalue, INT32 speed, dboolean ticbased);
+void P_FadeLight(INT16 tag, INT32 destvalue, INT32 speed, dboolean ticbased, dboolean force, dboolean relative);
 void T_LightFade(lightlevel_t *ll);
 
 typedef enum
@@ -724,20 +724,20 @@ struct ceiling_t
 INT32 EV_DoCeiling(mtag_t tag, line_t *line, ceiling_e type);
 void T_MoveCeiling(ceiling_t *ceiling);
 
-boolean EV_DoRaiseCeilingToHighest(mtag_t tag);
-boolean EV_DoLowerCeilingToLowestFast(mtag_t tag);
-boolean EV_DoInstantRaiseCeiling(mtag_t tag);
-boolean EV_DoMoveCeilingByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture);
-boolean EV_DoInstantMoveCeilingByHeight(mtag_t tag, fixed_t height, INT32 texture);
-boolean EV_DoMoveCeilingByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant);
-boolean EV_DoBounceCeiling(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
+dboolean EV_DoRaiseCeilingToHighest(mtag_t tag);
+dboolean EV_DoLowerCeilingToLowestFast(mtag_t tag);
+dboolean EV_DoInstantRaiseCeiling(mtag_t tag);
+dboolean EV_DoMoveCeilingByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture);
+dboolean EV_DoInstantMoveCeilingByHeight(mtag_t tag, fixed_t height, INT32 texture);
+dboolean EV_DoMoveCeilingByDistance(mtag_t tag, fixed_t distance, fixed_t speed, dboolean instant);
+dboolean EV_DoBounceCeiling(mtag_t tag, dboolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
 
 INT32 EV_DoCrush(mtag_t tag, line_t *line, ceiling_e type);
 void T_CrushCeiling(ceiling_t *ceiling);
 
-boolean EV_DoRaiseAndCrushCeiling(mtag_t tag, fixed_t speed, fixed_t returnSpeed);
-boolean EV_DoCrushBothOnce(mtag_t tag, fixed_t speed);
-boolean EV_DoCrushCeilingOnce(mtag_t tag, fixed_t speed);
+dboolean EV_DoRaiseAndCrushCeiling(mtag_t tag, fixed_t speed, fixed_t returnSpeed);
+dboolean EV_DoCrushBothOnce(mtag_t tag, fixed_t speed);
+dboolean EV_DoCrushCeilingOnce(mtag_t tag, fixed_t speed);
 
 //
 // P_FLOOR
@@ -858,7 +858,7 @@ struct bouncecheese_t
 	fixed_t distance;
 	fixed_t floorwasheight;
 	fixed_t ceilingwasheight;
-	boolean low;
+	dboolean low;
 };
 
 struct mariothink_t
@@ -907,8 +907,8 @@ struct eachtime_t
 {
 	thinker_t thinker;
 	line_t *sourceline; // Source line of the thinker
-	boolean playersInArea[MAXPLAYERS];
-	boolean triggerOnExit;
+	dboolean playersInArea[MAXPLAYERS];
+	dboolean triggerOnExit;
 };
 
 typedef int raiseflag_t;
@@ -939,23 +939,23 @@ typedef enum
 	pastdest
 } result_e;
 
-result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest, boolean crush,
-	boolean ceiling, INT32 direction);
+result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest, dboolean crush,
+	dboolean ceiling, INT32 direction);
 
 void EV_DoFloor(mtag_t tag, line_t *line, floor_e floortype);
 void EV_DoRaiseFloorToNearestFast(mtag_t tag);
 void EV_DoInstantLowerFloor(mtag_t tag);
 void EV_DoInstantMoveFloorByHeight(mtag_t tag, fixed_t height, INT32 texture);
 void EV_DoMoveFloorByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture);
-void EV_DoMoveFloorByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant);
-void EV_DoBounceFloor(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
+void EV_DoMoveFloorByDistance(mtag_t tag, fixed_t distance, fixed_t speed, dboolean instant);
+void EV_DoBounceFloor(mtag_t tag, dboolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
 void EV_DoCrushFloorOnce(mtag_t tag, fixed_t speed);
 
 void EV_DoElevator(mtag_t tag, line_t *line, elevator_e elevtype);
 void EV_DoElevateDown(mtag_t tag);
 void EV_DoElevateUp(mtag_t tag);
 void EV_DoElevateHighest(mtag_t tag);
-void EV_DoContinuousElevator(mtag_t tag, fixed_t speed, INT32 delayInit, INT32 delay, boolean lowFirst);
+void EV_DoContinuousElevator(mtag_t tag, fixed_t speed, INT32 delayInit, INT32 delay, dboolean lowFirst);
 void EV_DoBridgeFall(mtag_t tag);
 
 void EV_CrumbleChain(sector_t *sec, ffloor_t *rover);
@@ -963,9 +963,9 @@ void EV_BounceSector(sector_t *sector, fixed_t momz, line_t *sourceline);
 
 // Some other special 3dfloor types
 INT32 EV_StartCrumble(sector_t *sector, ffloor_t *rover,
-	boolean floating, player_t *player, fixed_t origalpha, boolean crumblereturn);
+	dboolean floating, player_t *player, fixed_t origalpha, dboolean crumblereturn);
 
-void EV_DoContinuousFall(sector_t *sec, sector_t *backsector, fixed_t spd, boolean backwards);
+void EV_DoContinuousFall(sector_t *sec, sector_t *backsector, fixed_t spd, dboolean backwards);
 
 void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher);
 
@@ -1088,15 +1088,15 @@ struct fade_t
 	INT16 destvalue;    ///< Transparency value to fade to
 	INT16 destlightlevel; ///< Light level to fade to
 	INT16 speed;        ///< Speed to fade by
-	boolean ticbased;    ///< Tic-based logic toggle
+	dboolean ticbased;    ///< Tic-based logic toggle
 	INT32 timer;        ///< Timer for tic-based logic
-	boolean doexists;   ///< Handle FOF_EXISTS
-	boolean dotranslucent; ///< Handle FOF_TRANSLUCENT
-	boolean dolighting; ///< Handle shadows and light blocks
-	boolean docolormap; ///< Handle colormaps
-	boolean docollision; ///< Handle interactive flags
-	boolean doghostfade; ///< No interactive flags during fading
-	boolean exactalpha; ///< Use exact alpha values (opengl)
+	dboolean doexists;   ///< Handle FOF_EXISTS
+	dboolean dotranslucent; ///< Handle FOF_TRANSLUCENT
+	dboolean dolighting; ///< Handle shadows and light blocks
+	dboolean docolormap; ///< Handle colormaps
+	dboolean docollision; ///< Handle interactive flags
+	dboolean doghostfade; ///< No interactive flags during fading
+	dboolean exactalpha; ///< Use exact alpha values (opengl)
 };
 
 void T_Fade(fade_t *d);
@@ -1109,7 +1109,7 @@ struct fadecolormap_t
 	sector_t *sector;           ///< Sector where action is taking place.
 	extracolormap_t *source_exc;
 	extracolormap_t *dest_exc;
-	boolean ticbased;           ///< Tic-based timing
+	dboolean ticbased;           ///< Tic-based timing
 	INT32 duration;             ///< Total duration for tic-based logic (OR: speed increment)
 	INT32 timer;                ///< Timer for tic-based logic (OR: internal speed counter)
 };

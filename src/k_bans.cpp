@@ -209,7 +209,7 @@ static mysockaddr_t* SV_NodeToBanAddress(UINT8 node)
 	return &convertedaddress;
 }
 
-static boolean SV_IsBanEnforced(banrecord_t *ban)
+static dboolean SV_IsBanEnforced(banrecord_t *ban)
 {
 	if (ban->deleted)
 		return false;
@@ -268,7 +268,7 @@ void SV_BanPlayer(INT32 pnum, time_t minutes, char* reason)
 	SV_Ban(targetaddress, 0, players[pnum].public_key, expires, player_names[pnum], reason);
 }
 
-boolean SV_BanIP(const char *address, UINT8 mask, uint8_t* public_key, time_t expires, const char* username, const char* reason)
+dboolean SV_BanIP(const char *address, UINT8 mask, uint8_t* public_key, time_t expires, const char* username, const char* reason)
 {
 	struct my_addrinfo *ai, *runp, hints;
 
@@ -323,7 +323,7 @@ void SV_Ban(mysockaddr_t address, UINT8 mask, uint8_t* public_key, time_t expire
 	SV_SaveBans();
 }
 
-static void SV_BanSearch(boolean remove)
+static void SV_BanSearch(dboolean remove)
 {
 	const char* filtertarget = (COM_Argc() > 1) ? COM_Argv(1) : NULL;
 
@@ -336,7 +336,7 @@ static void SV_BanSearch(boolean remove)
 	time_t now = time(NULL);
 	UINT32 records = 0;
 	UINT32 matchedrecords = 0;
-	boolean force = COM_CheckPartialParm("-f");
+	dboolean force = COM_CheckPartialParm("-f");
 
 	// First pass: What records are we even looking for?
 	for (banrecord_t& ban : bans)
@@ -359,7 +359,7 @@ static void SV_BanSearch(boolean remove)
 		matchedrecords++;
 	}
 
-	boolean saferemove = remove && (matchedrecords <= 1 || force);
+	dboolean saferemove = remove && (matchedrecords <= 1 || force);
 
 	// Second pass: Report and/or act on records.
 	for (banrecord_t& ban : bans)

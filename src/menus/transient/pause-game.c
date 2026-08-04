@@ -186,8 +186,8 @@ void M_OpenPauseMenu(void)
 	}
 	else if (!netgame && !demo.playback)
 	{
-		boolean retryallowed = (modeattacking != ATTACKING_NONE);
-		boolean giveup = (
+		dboolean retryallowed = (modeattacking != ATTACKING_NONE);
+		dboolean giveup = (
 			grandprixinfo.gp == true
 			&& grandprixinfo.eventmode != GPEVENT_NONE
 			&& roundqueue.size != 0
@@ -287,7 +287,7 @@ void M_PauseTick(void)
 #endif
 }
 
-boolean M_PauseInputs(INT32 ch)
+dboolean M_PauseInputs(INT32 ch)
 {
 
 	const UINT8 pid = 0;

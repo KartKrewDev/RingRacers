@@ -302,7 +302,7 @@ static void ActivateRingShooter(mobj_t *mo)
 	RingShooterCountdown(mo);
 }
 
-static boolean RingShooterInit(mobj_t *mo)
+static dboolean RingShooterInit(mobj_t *mo)
 {
 	if (rs_base_initstate(mo) == -1)
 	{
@@ -374,7 +374,7 @@ static boolean RingShooterInit(mobj_t *mo)
 	return (rs_base_initstate(mo) != -1);
 }
 
-boolean Obj_RingShooterThinker(mobj_t *mo)
+dboolean Obj_RingShooterThinker(mobj_t *mo)
 {
 	if (RingShooterInit(mo) == true)
 	{
@@ -638,7 +638,7 @@ static void SpawnRingShooter(player_t *player)
 	rs_base_playerface(base) = (player - players);
 }
 
-static boolean AllowRingShooter(const player_t *player)
+static dboolean AllowRingShooter(const player_t *player)
 {
 	const fixed_t minSpeed = 6 * player->mo->scale;
 
@@ -668,7 +668,7 @@ static boolean AllowRingShooter(const player_t *player)
 	return false;
 }
 
-boolean Obj_PlayerRingShooterFreeze(const player_t *player)
+dboolean Obj_PlayerRingShooterFreeze(const player_t *player)
 {
 	const mobj_t *base = player->ringShooter;
 

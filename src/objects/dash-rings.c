@@ -121,7 +121,7 @@ void Obj_RainbowDashRingThink(mobj_t *mobj)
 	mobj->color = rainbow_colors[(leveltime / 2) % numColors];
 }
 
-static boolean DashRingsAreTooClose(mobj_t *ring1, mobj_t *ring2)
+static dboolean DashRingsAreTooClose(mobj_t *ring1, mobj_t *ring2)
 {
 	if (ring1 == ring2)
 		return true;
@@ -133,7 +133,7 @@ static boolean DashRingsAreTooClose(mobj_t *ring1, mobj_t *ring2)
 	return false;
 }
 
-boolean Obj_DashRingIsUsableByPlayer(mobj_t *ring, player_t *player)
+dboolean Obj_DashRingIsUsableByPlayer(mobj_t *ring, player_t *player)
 {
 	if (player->carry != CR_NONE)
 	{
@@ -279,7 +279,7 @@ void Obj_DashRingPlayerThink(player_t *player)
 	}
 }
 
-boolean Obj_DashRingPlayerHasNoGravity(player_t *player)
+dboolean Obj_DashRingPlayerHasNoGravity(player_t *player)
 {
 	if (player->dashRingPullTics > 0)
 		return true;

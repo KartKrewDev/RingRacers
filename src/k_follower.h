@@ -115,7 +115,7 @@ struct followercategory_t
 extern INT32 numfollowercategories;
 extern followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
 
-extern boolean horngoner;
+extern dboolean horngoner;
 
 /*--------------------------------------------------
 	INT32 K_FollowerAvailable(const char *name)
@@ -135,7 +135,7 @@ INT32 K_FollowerAvailable(const char *name);
 
 
 /*--------------------------------------------------
-	boolean K_FollowerUsable(INT32 followernum);
+	dboolean K_FollowerUsable(INT32 followernum);
 
 		Check if a follower is usable or not.
 
@@ -147,11 +147,11 @@ INT32 K_FollowerAvailable(const char *name);
 		otherwise false.
 --------------------------------------------------*/
 
-boolean K_FollowerUsable(INT32 skinnum);
+dboolean K_FollowerUsable(INT32 skinnum);
 
 
 /*--------------------------------------------------
-	boolean K_SetFollowerByName(INT32 playernum, const char *skinname)
+	dboolean K_SetFollowerByName(INT32 playernum, const char *skinname)
 
 		Updates a player's follower type via a named value.
 		Calls "K_SetFollowerByNum" internally.
@@ -165,7 +165,7 @@ boolean K_FollowerUsable(INT32 skinnum);
 		otherwise false.
 --------------------------------------------------*/
 
-boolean K_SetFollowerByName(INT32 playernum, const char *skinname);
+dboolean K_SetFollowerByName(INT32 playernum, const char *skinname);
 
 
 /*--------------------------------------------------
@@ -233,7 +233,7 @@ void K_HandleFollower(player_t *player);
 void K_RemoveFollower(player_t *player);
 
 /*--------------------------------------------------
-	void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
+	void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmelodyspecial)
 
 		Plays horn and spawns object (MOSTLY non-netsynced)
 
@@ -246,7 +246,7 @@ void K_RemoveFollower(player_t *player);
 		None
 --------------------------------------------------*/
 
-void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial);
+void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmelodyspecial);
 
 /*--------------------------------------------------
 	INT32 K_GetEffectiveFollowerSkin(const player_t *player)

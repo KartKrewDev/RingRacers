@@ -282,7 +282,7 @@ static void SPBTurn(
 	// Calculate sliptide effect during seeking.
 	if (returnSliptide != NULL)
 	{
-		const boolean isSliptiding =  (abs(delta) >= SPB_SLIPTIDEDELTA);
+		const dboolean isSliptiding =  (abs(delta) >= SPB_SLIPTIDEDELTA);
 		SINT8 sliptide = 0;
 
 		if (isSliptiding == true)
@@ -323,7 +323,7 @@ static void SetSPBSpeed(mobj_t *spb, fixed_t xySpeed, fixed_t zSpeed)
 	);
 }
 
-static boolean SPBSeekSoundPlaying(mobj_t *spb)
+static dboolean SPBSeekSoundPlaying(mobj_t *spb)
 {
 	return (S_SoundPlaying(spb, sfx_spbska)
 		|| S_SoundPlaying(spb, sfx_spbskb)
@@ -353,7 +353,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 	fixed_t steerDist = INT32_MAX;
 	mobj_t *steerMobj = NULL;
 
-	boolean circling = false;
+	dboolean circling = false;
 
 	size_t i;
 
@@ -473,13 +473,13 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 
 		if (waypointDist <= waypointRad)
 		{
-			boolean pathfindsuccess = false;
+			dboolean pathfindsuccess = false;
 
 			if (destWaypoint != NULL)
 			{
 				// Go to next waypoint.
-				const boolean useshortcuts  = K_GetWaypointIsShortcut(destWaypoint); // If the player is on a shortcut, use shortcuts. No escape.
-				boolean huntbackwards = false;
+				const dboolean useshortcuts  = K_GetWaypointIsShortcut(destWaypoint); // If the player is on a shortcut, use shortcuts. No escape.
+				dboolean huntbackwards = false;
 				path_t pathtoplayer = {0};
 
 				pathfindsuccess = K_PathfindToWaypoint(
@@ -512,7 +512,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 					else
 					{
 						path_t reversepath = {0};
-						boolean reversesuccess = false;
+						dboolean reversesuccess = false;
 
 						huntbackwards = true;
 						reversesuccess = K_PathfindToWaypoint(

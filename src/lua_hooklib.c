@@ -73,7 +73,7 @@ static UINT8 * hooksErrored;
 
 static int errorRef;
 
-static boolean mobj_hook_available(int hook_type, mobjtype_t mobj_type)
+static dboolean mobj_hook_available(int hook_type, mobjtype_t mobj_type)
 {
 	return
 		(
@@ -289,7 +289,7 @@ static void push_string(void)
 	lua_pushvalue(gL, SINDEX);
 }
 
-static boolean begin_hook_values(Hook_State *hook)
+static dboolean begin_hook_values(Hook_State *hook)
 {
 	hook->top = lua_gettop(gL);
 	return true;
@@ -301,7 +301,7 @@ static void start_hook_stack(void)
 	push_error_handler();
 }
 
-static boolean init_hook_type
+static dboolean init_hook_type
 (
 		Hook_State * hook,
 		int          status,
@@ -324,7 +324,7 @@ static boolean init_hook_type
 		return false;
 }
 
-static boolean prepare_hook
+static dboolean prepare_hook
 (
 		Hook_State * hook,
 		int default_status,
@@ -335,7 +335,7 @@ static boolean prepare_hook
 			hookIds[hook_type].numHooks);
 }
 
-static boolean prepare_mobj_hook
+static dboolean prepare_mobj_hook
 (
 		Hook_State * hook,
 		int          default_status,
@@ -351,7 +351,7 @@ static boolean prepare_mobj_hook
 			mobj_hook_available(hook_type, mobj_type));
 }
 
-static boolean prepare_string_hook
+static dboolean prepare_string_hook
 (
 		Hook_State * hook,
 		int          default_status,
@@ -369,7 +369,7 @@ static boolean prepare_string_hook
 		return false;
 }
 
-static boolean prepare_hud_hook
+static dboolean prepare_hud_hook
 (
 		Hook_State * hook,
 		int hook_type
@@ -640,7 +640,7 @@ void LUA_HookInt(INT32 number, int hook_type)
 	}
 }
 
-void LUA_HookBool(boolean value, int hook_type)
+void LUA_HookBool(dboolean value, int hook_type)
 {
 	Hook_State hook;
 	if (prepare_hook(&hook, 0, hook_type))
@@ -973,7 +973,7 @@ void LUA_HookPlayerQuit(player_t *plr, kickreason_t reason)
 }
 
 /*
-int LUA_HookTeamSwitch(player_t *player, int newteam, boolean fromspectators, boolean tryingautobalance, boolean tryingscramble)
+int LUA_HookTeamSwitch(player_t *player, int newteam, dboolean fromspectators, dboolean tryingautobalance, dboolean tryingscramble)
 {
 	Hook_State hook;
 	if (prepare_hook(&hook, true, HOOK(TeamSwitch)))
@@ -989,7 +989,7 @@ int LUA_HookTeamSwitch(player_t *player, int newteam, boolean fromspectators, bo
 }
 */
 
-int LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced)
+int LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, dboolean forced)
 {
 	Hook_State hook;
 	if (prepare_hook(&hook, 0, HOOK(ViewpointSwitch)))
@@ -1023,7 +1023,7 @@ int LUA_HookSeenPlayer(player_t *player, player_t *seenfriend)
 static int roulette_hook(
 	player_t *player,
 	itemroulette_t *const roulette,
-	boolean ringbox,
+	dboolean ringbox,
 	int hook_type,
 	Hook_Callback results_handler)
 {
@@ -1044,13 +1044,13 @@ static int roulette_hook(
 	return hook.status;
 }
 
-int LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox)
+int LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette, dboolean ringbox)
 {
 	return roulette_hook(player, roulette, ringbox, HOOK(PreFillItemRoulette), res_true);
 }
 
 
-int LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox)
+int LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette, dboolean ringbox)
 {
 	return roulette_hook(player, roulette, ringbox, HOOK(FillItemRoulette), res_true);
 }
@@ -1079,4 +1079,4 @@ int LUA_HookGPRankPoints(UINT8 position, UINT8 numplayers, INT16 *points)
 	return hook.status;
 }
 
-boolean hook_cmd_running = false;
+dboolean hook_cmd_running = false;

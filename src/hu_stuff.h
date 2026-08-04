@@ -120,41 +120,41 @@ typedef INT32 sayflags_t;
 #define HU_PRIVNOTICE	(1<<2)		// Special server sayto, we don't want to see it as the sender.
 
 // some functions
-void HU_AddChatText(const char *text, boolean playsound);
+void HU_AddChatText(const char *text, dboolean playsound);
 
 // set true when key is pressed while chat is open
-extern boolean chat_keydown;
+extern dboolean chat_keydown;
 
 // set true when entering a chat message
-extern boolean chat_on;
+extern dboolean chat_on;
 
 // set true when push-to-talk is held
-extern boolean g_voicepushtotalk_on;
+extern dboolean g_voicepushtotalk_on;
 
 // keystrokes in the console or chat window
-extern boolean hu_keystrokes;
+extern dboolean hu_keystrokes;
 
 extern patch_t *pinggfx[5];
 extern patch_t *framecounter;
 extern patch_t *frameslash;
 
 // set true whenever the tab rankings are being shown for any reason
-extern boolean hu_showscores;
+extern dboolean hu_showscores;
 
 // init heads up data at game startup.
 void HU_Init(void);
 
 void HU_LoadGraphics(void);
 
-// Load a HUDGFX patch or NULL/missingpat (dependent on required boolean).
-patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...);
+// Load a HUDGFX patch or NULL/missingpat (dependent on required dboolean).
+patch_t *HU_UpdateOrBlankPatch(patch_t **user, dboolean required, const char *format, ...);
 //#define HU_CachePatch(...) HU_UpdateOrBlankPatch(NULL, false, __VA_ARGS__) -- not sure how to default the missingpat here plus not currently used
 #define HU_UpdatePatch(user, ...) HU_UpdateOrBlankPatch(user, true, __VA_ARGS__)
 
 // reset heads up when consoleplayer respawns.
 void HU_Start(void);
 
-boolean HU_Responder(event_t *ev);
+dboolean HU_Responder(event_t *ev);
 void HU_Ticker(void);
 void HU_Drawer(void);
 void HU_DrawSongCredits(void);
@@ -172,8 +172,8 @@ void HU_SetCEchoFlags(INT32 flags);
 void HU_DoCEcho(const char *msg);
 
 // Titlecard CECHO shite
-void HU_DoTitlecardCEcho(player_t *player, const char *msg, boolean interrupt);
-void HU_DoTitlecardCEchoForDuration(player_t *player, const char *msg, boolean interrupt, tic_t duration);
+void HU_DoTitlecardCEcho(player_t *player, const char *msg, dboolean interrupt);
+void HU_DoTitlecardCEchoForDuration(player_t *player, const char *msg, dboolean interrupt, tic_t duration);
 void HU_ClearTitlecardCEcho(void);
 
 void DoSayCommand(char *message, SINT8 target, UINT8 flags, UINT8 source);

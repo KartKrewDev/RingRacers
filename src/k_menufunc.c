@@ -46,7 +46,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 I_mutex k_menu_mutex;
 #endif
 
-boolean menuactive = false;
+dboolean menuactive = false;
 
 // current menudef
 menu_t *currentMenu = &MAIN_ProfilesDef;
@@ -61,14 +61,14 @@ menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 // Prevent early resetting in Attack modes when setting a new best time.
 // I can't make demos save at the correct time, but I can do this!
-boolean blockreset = false;
+dboolean blockreset = false;
 
 // finish wipes between screens
-boolean menuwipe = false;
+dboolean menuwipe = false;
 
 // lock out further input in a tic when important buttons are pressed
 // (in other words -- stop bullshit happening by mashing buttons in fades)
-static boolean noFurtherInput = false;
+static dboolean noFurtherInput = false;
 
 // ==========================================================================
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
@@ -248,7 +248,7 @@ static const char *M_QueryCvarAction(const char *replace)
 	return cvar->string;
 }
 
-boolean M_NextOpt(void)
+dboolean M_NextOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 
@@ -277,7 +277,7 @@ boolean M_NextOpt(void)
 	return true;
 }
 
-boolean M_PrevOpt(void)
+dboolean M_PrevOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 
@@ -306,7 +306,7 @@ boolean M_PrevOpt(void)
 	return true;
 }
 
-static boolean M_GamestateCanOpenMenu(void)
+static dboolean M_GamestateCanOpenMenu(void)
 {
 	switch (gamestate)
 	{
@@ -325,7 +325,7 @@ static boolean M_GamestateCanOpenMenu(void)
 //
 // M_Responder
 //
-boolean M_Responder(event_t *ev)
+dboolean M_Responder(event_t *ev)
 {
 	if (ev->type == ev_keydown && !ev->data2)
 	{
@@ -463,7 +463,7 @@ boolean M_Responder(event_t *ev)
 
 		if (CON_Ready() == false)
 		{
-			boolean allowmpause = true;
+			dboolean allowmpause = true;
 
 			// Special mid-game input behaviours
 			if (Playing() && !demo.playback)
@@ -538,7 +538,7 @@ boolean M_Responder(event_t *ev)
 void M_PlayMenuJam(void)
 {
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
-	static boolean musicstatepermitted = false;
+	static dboolean musicstatepermitted = false;
 
 	if (challengesmenu.pending)
 	{
@@ -548,8 +548,8 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	const boolean trulystarted = M_GameTrulyStarted();
-	const boolean profilemode = (
+	const dboolean trulystarted = M_GameTrulyStarted();
+	const dboolean profilemode = (
 		optionsmenu.profilemenu
 		&& !optionsmenu.resetprofilemenu
 	);
@@ -631,7 +631,7 @@ void M_PlayMenuJam(void)
 
 #undef IsCurrentlyPlaying
 
-boolean M_ConsiderSealedSwapAlert(void)
+dboolean M_ConsiderSealedSwapAlert(void)
 {
 	if (gamedata->sealedswapalerted == true)
 		return false;
@@ -902,7 +902,7 @@ void M_StartControlPanel(void)
 //
 // M_ClearMenus
 //
-void M_ClearMenus(boolean callexitmenufunc)
+void M_ClearMenus(dboolean callexitmenufunc)
 {
 	if (!menuactive)
 		return;
@@ -930,7 +930,7 @@ void M_ClearMenus(boolean callexitmenufunc)
 	menuactive = false;
 }
 
-void M_ClearMenusNoTitle(boolean callexitmenufunc)
+void M_ClearMenusNoTitle(dboolean callexitmenufunc)
 {
 	if (!menuactive)
 		return;
@@ -957,7 +957,7 @@ void M_SelectableClearMenus(INT32 choice)
 //
 // M_SetupNextMenu
 //
-void M_SetupNextMenu(menu_t *menudef, boolean notransition)
+void M_SetupNextMenu(menu_t *menudef, dboolean notransition)
 {
 	INT16 i;
 
@@ -1084,7 +1084,7 @@ void M_SetMenuDelay(UINT8 i)
 	}
 }
 
-void M_UpdateMenuCMD(UINT8 i, boolean bailrequired, boolean chat_open)
+void M_UpdateMenuCMD(UINT8 i, dboolean bailrequired, dboolean chat_open)
 {
 	UINT8 mp = max(1, setup_numplayers);
 
@@ -1139,7 +1139,7 @@ void M_UpdateMenuCMD(UINT8 i, boolean bailrequired, boolean chat_open)
 	}
 }
 
-boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
+dboolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 {
 	if (menucmd[pid].buttonsHeld & bt)
 	{
@@ -1149,40 +1149,40 @@ boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 	return !!(menucmd[pid].buttons & bt);
 }
 
-boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt)
+dboolean M_MenuButtonHeld(UINT8 pid, UINT32 bt)
 {
 	return !!(menucmd[pid].buttons & bt);
 }
 
 // Returns true if we press the confirmation button
-boolean M_MenuConfirmPressed(UINT8 pid)
+dboolean M_MenuConfirmPressed(UINT8 pid)
 {
 	 return M_MenuButtonPressed(pid, MBT_A);
 }
 
-boolean M_MenuConfirmHeld(UINT8 pid)
+dboolean M_MenuConfirmHeld(UINT8 pid)
 {
 	 return M_MenuButtonHeld(pid, MBT_A);
 }
 
 // Returns true if we press the Cancel button
-boolean M_MenuBackPressed(UINT8 pid)
+dboolean M_MenuBackPressed(UINT8 pid)
 {
 	 return (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X));
 }
 
-boolean M_MenuBackHeld(UINT8 pid)
+dboolean M_MenuBackHeld(UINT8 pid)
 {
 	 return (M_MenuButtonHeld(pid, MBT_B) || M_MenuButtonHeld(pid, MBT_X));
 }
 
 // Retrurns true if we press the tertiary option button (C)
-boolean M_MenuExtraPressed(UINT8 pid)
+dboolean M_MenuExtraPressed(UINT8 pid)
 {
 	 return M_MenuButtonPressed(pid, MBT_C);
 }
 
-boolean M_MenuExtraHeld(UINT8 pid)
+dboolean M_MenuExtraHeld(UINT8 pid)
 {
 	 return M_MenuButtonHeld(pid, MBT_C);
 }

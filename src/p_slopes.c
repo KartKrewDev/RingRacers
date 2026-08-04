@@ -104,7 +104,7 @@ void P_CalculateSlopeNormal(pslope_t *slope) {
 }
 
 // Calculate slope's high & low z
-static void P_CalculateLineSlopeHighLow(pslope_t *slope, line_t *line, boolean ceiling, boolean back)
+static void P_CalculateLineSlopeHighLow(pslope_t *slope, line_t *line, dboolean ceiling, dboolean back)
 {
 	// To find the real highz/lowz of a slope, you need to check all the vertexes
 	// in the slope's sector with P_GetZAt to get the REAL lowz & highz
@@ -408,7 +408,7 @@ static fixed_t GetExtent(sector_t *sector, line_t *line)
 	return fardist;
 }
 
-static boolean P_CopySlope(pslope_t** toslope, pslope_t* fromslope)
+static dboolean P_CopySlope(pslope_t** toslope, pslope_t* fromslope)
 {
 	if (*toslope || !fromslope)
 		return true;
@@ -430,7 +430,7 @@ static void P_UpdateHasSlope(sector_t *sec)
 }
 
 /// Creates one or more slopes based on the given line type and front/back sectors.
-static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
+static void line_SpawnViaLine(const int linenum, const dboolean spawnthinker)
 {
 	// With dynamic slopes, it's fine to just leave this function as normal,
 	// because checking to see if a slope had changed will waste more memory than
@@ -441,10 +441,10 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 	vector2_t direction;
 	fixed_t nx, ny, dz, extent;
 
-	boolean frontfloor = line->args[0] == TMS_FRONT;
-	boolean backfloor = line->args[0] == TMS_BACK;
-	boolean frontceil = line->args[1] == TMS_FRONT;
-	boolean backceil = line->args[1] == TMS_BACK;
+	dboolean frontfloor = line->args[0] == TMS_FRONT;
+	dboolean backfloor = line->args[0] == TMS_BACK;
+	dboolean frontceil = line->args[1] == TMS_FRONT;
+	dboolean backceil = line->args[1] == TMS_BACK;
 	UINT8 flags = 0; // Slope flags
 	if (line->args[2] & TMSL_NOPHYSICS)
 		flags |= SL_NOPHYSICS;
@@ -624,7 +624,7 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 }
 
 /// Creates a new slope from three mapthings with the specified IDs
-static pslope_t *MakeViaMapthings(INT16 tag1, INT16 tag2, INT16 tag3, UINT8 flags, const boolean spawnthinker)
+static pslope_t *MakeViaMapthings(INT16 tag1, INT16 tag2, INT16 tag3, UINT8 flags, const dboolean spawnthinker)
 {
 	size_t i;
 	mapthing_t* mt = mapthings;
@@ -668,7 +668,7 @@ static pslope_t *MakeViaMapthings(INT16 tag1, INT16 tag2, INT16 tag3, UINT8 flag
 }
 
 /// Create vertex based slopes using tagged mapthings.
-static void line_SpawnViaMapthingVertexes(const int linenum, const boolean spawnthinker)
+static void line_SpawnViaMapthingVertexes(const int linenum, const dboolean spawnthinker)
 {
 	line_t *line = lines + linenum;
 	side_t *side;
@@ -759,7 +759,7 @@ static void SpawnVertexSlopes(void)
 	}
 }
 
-static boolean P_SetSlopeFromTag(sector_t *sec, INT32 tag, boolean ceiling)
+static dboolean P_SetSlopeFromTag(sector_t *sec, INT32 tag, dboolean ceiling)
 {
 	INT32 i;
 	pslope_t **secslope = ceiling ? &sec->c_slope : &sec->f_slope;
@@ -787,8 +787,8 @@ void P_CopySectorSlope(line_t *line)
 {
 	sector_t *fsec = line->frontsector;
 	sector_t *bsec = line->backsector;
-	boolean setfront = false;
-	boolean setback = false;
+	dboolean setfront = false;
+	dboolean setback = false;
 
 	setfront |= P_SetSlopeFromTag(fsec, line->args[0], false);
 	setfront |= P_SetSlopeFromTag(fsec, line->args[1], true);
@@ -838,7 +838,7 @@ pslope_t *MakeViaEquationConstants(const fixed_t a, const fixed_t b, const fixed
 }
 
 /// Initializes and reads the slopes from the map data.
-void P_SpawnSlopes(const boolean fromsave) {
+void P_SpawnSlopes(const dboolean fromsave) {
 	size_t i;
 
 	/// Generates vertex slopes.
@@ -942,7 +942,7 @@ fixed_t P_GetLightZAt(const lightlist_t *light, fixed_t x, fixed_t y)
 }
 
 // Returns true if we should run slope physics code on an object.
-boolean P_CanApplySlopePhysics(mobj_t *mo, pslope_t *slope)
+dboolean P_CanApplySlopePhysics(mobj_t *mo, pslope_t *slope)
 {
 	if (slope == NULL || mo == NULL || P_MobjWasRemoved(mo) == true)
 	{
@@ -976,7 +976,7 @@ boolean P_CanApplySlopePhysics(mobj_t *mo, pslope_t *slope)
 }
 
 // Returns true if we should run slope launch code on an object.
-boolean P_CanApplySlopeLaunch(mobj_t *mo, pslope_t *slope)
+dboolean P_CanApplySlopeLaunch(mobj_t *mo, pslope_t *slope)
 {
 	if (slope == NULL || mo == NULL || P_MobjWasRemoved(mo) == true)
 	{

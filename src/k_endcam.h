@@ -45,7 +45,7 @@ struct endcam_t
 
 	// You should not set these yourself.
 	// Use K_CommitEndCamera.
-	boolean active;
+	dboolean active;
 	tic_t begin; // leveltime
 };
 
@@ -70,7 +70,7 @@ void K_StopRoundWinCamera(void);
 // Low-level functions
 void K_MoveEndCamera(camera_t *thiscam);
 void K_EndCameraGC(void);
-boolean K_EndCameraIsFreezing(void);
+dboolean K_EndCameraIsFreezing(void);
 void K_SaveEndCamera(savebuffer_t *save);
 void K_LoadEndCamera(savebuffer_t *save);
 

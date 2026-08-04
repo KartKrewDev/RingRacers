@@ -29,12 +29,12 @@ extern "C" {
 //
 
 // Called by main loop.
-boolean F_IntroResponder(event_t *ev);
-boolean F_CutsceneResponder(event_t *ev);
+dboolean F_IntroResponder(event_t *ev);
+dboolean F_CutsceneResponder(event_t *ev);
 
 // Called by main loop.
 void F_IntroTicker(void);
-void F_TitleScreenTicker(boolean run);
+void F_TitleScreenTicker(dboolean run);
 void F_CutsceneTicker(void);
 void F_AttractDemoTicker(void);
 void F_TextPromptTicker(void);
@@ -55,16 +55,16 @@ void F_GameEvaluationTicker(void);
 
 void F_VersionDrawer(void);
 
-void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean resetplayer);
+void F_StartCustomCutscene(INT32 cutscenenum, dboolean precutscene, dboolean resetplayer);
 void F_CutsceneDrawer(void);
 void F_EndCutScene(void);
 
-void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postexectag, boolean blockcontrols, boolean freezerealtime);
+void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postexectag, dboolean blockcontrols, dboolean freezerealtime);
 void F_GetPromptPageByNamedTag(const char *tag, INT32 *promptnum, INT32 *pagenum);
 void F_TextPromptDrawer(void);
-void F_EndTextPrompt(boolean forceexec, boolean noexec);
-boolean F_GetPromptHideHudAll(void);
-boolean F_GetPromptHideHud(fixed_t y);
+void F_EndTextPrompt(dboolean forceexec, dboolean noexec);
+dboolean F_GetPromptHideHudAll(void);
+dboolean F_GetPromptHideHud(fixed_t y);
 
 INT32 F_AttractDemoExitFade(void);
 
@@ -98,7 +98,7 @@ extern INT16 ttx;
 extern INT16 tty;
 extern INT16 ttloop;
 extern UINT16 tttics;
-extern boolean ttavailable[6];
+extern dboolean ttavailable[6];
 
 // Current menu parameters
 extern char curbgname[9];
@@ -106,10 +106,10 @@ extern SINT8 curfadevalue;
 extern INT32 curbgcolor;
 extern INT32 curbgxspeed;
 extern INT32 curbgyspeed;
-extern boolean curbghide;
-extern boolean hidetitlemap;
+extern dboolean curbghide;
+extern dboolean hidetitlemap;
 
-extern boolean curhidepics;
+extern dboolean curhidepics;
 extern ttmode_enum curttmode;
 extern UINT8 curttscale;
 // ttmode user vars
@@ -125,17 +125,17 @@ extern UINT16 curtttics;
 // WIPE
 //
 
-extern boolean WipeInAction;
+extern dboolean WipeInAction;
 extern UINT8 g_wipemode;
 extern UINT8 g_wipetype;
 extern UINT8 g_wipeframe;
-extern boolean g_wipereverse;
-extern boolean g_wipeencorewiggle;
-extern boolean WipeStageTitle;
+extern dboolean g_wipereverse;
+extern dboolean g_wipeencorewiggle;
+extern dboolean WipeStageTitle;
 
 extern INT32 lastwipetic;
 
-extern boolean g_attractnowipe;
+extern dboolean g_attractnowipe;
 
 // Don't know where else to place this constant
 // But this file seems appropriate
@@ -143,19 +143,19 @@ extern boolean g_attractnowipe;
 
 void F_WipeStartScreen(void);
 void F_WipeEndScreen(void);
-void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle);
+void F_RunWipe(UINT8 wipemode, UINT8 wipetype, dboolean drawMenu, const char *colormap, dboolean reverse, dboolean encorewiggle);
 void F_WipeStageTitle(void);
 #define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
 tic_t F_GetWipeLength(UINT8 wipetype);
-boolean F_WipeExists(UINT8 wipetype);
+dboolean F_WipeExists(UINT8 wipetype);
 /// @brief true if the wipetype is to-black
-boolean F_WipeIsToBlack(UINT8 wipemode);
+dboolean F_WipeIsToBlack(UINT8 wipemode);
 /// @brief true if the wipetype is to-white
-boolean F_WipeIsToWhite(UINT8 wipemode);
+dboolean F_WipeIsToWhite(UINT8 wipemode);
 /// @brief true if the wipetype is to-invert
-boolean F_WipeIsToInvert(UINT8 wipemode);
+dboolean F_WipeIsToInvert(UINT8 wipemode);
 /// @brief true if the wipetype is modulated from the previous frame
-boolean F_WipeIsCrossfade(UINT8 wipemode);
+dboolean F_WipeIsCrossfade(UINT8 wipemode);
 
 enum
 {

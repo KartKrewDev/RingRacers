@@ -85,11 +85,11 @@ void *Picture_GetPatchPixel(
 void *Picture_TextureToFlat(size_t trickytex);
 
 INT32 Picture_FormatBPP(pictureformat_t format);
-boolean Picture_IsPatchFormat(pictureformat_t format);
-boolean Picture_IsInternalPatchFormat(pictureformat_t format);
-boolean Picture_IsDoomPatchFormat(pictureformat_t format);
-boolean Picture_IsFlatFormat(pictureformat_t format);
-boolean Picture_CheckIfDoomPatch(softwarepatch_t *patch, size_t size);
+dboolean Picture_IsPatchFormat(pictureformat_t format);
+dboolean Picture_IsInternalPatchFormat(pictureformat_t format);
+dboolean Picture_IsDoomPatchFormat(pictureformat_t format);
+dboolean Picture_IsFlatFormat(pictureformat_t format);
+dboolean Picture_CheckIfDoomPatch(softwarepatch_t *patch, size_t size);
 
 // Structs
 typedef enum
@@ -115,7 +115,7 @@ struct spriteinfo_t
 
 // Portable Network Graphics
 #define PNG_HEADER_SIZE (8)
-boolean Picture_IsLumpPNG(const UINT8 *d, size_t s);
+dboolean Picture_IsLumpPNG(const UINT8 *d, size_t s);
 #define Picture_ThrowPNGError(lumpname, wadfilename) I_Error("W_Wad: Lump \"%s\" in file \"%s\" is a .png - please convert to either Doom or Flat (raw) image format.", lumpname, wadfilename); // Fears Of LJ Sonic
 
 #ifndef NO_PNG_LUMPS
@@ -125,7 +125,7 @@ void *Picture_PNGConvert(
 	INT16 *topoffset, INT16 *leftoffset,
 	size_t insize, size_t *outsize,
 	pictureflags_t flags);
-boolean Picture_PNGDimensions(UINT8 *png, INT32 *width, INT32 *height, INT16 *topoffset, INT16 *leftoffset, size_t size);
+dboolean Picture_PNGDimensions(UINT8 *png, INT32 *width, INT32 *height, INT16 *topoffset, INT16 *leftoffset, size_t size);
 #endif
 
 #define PICTURE_PNG_USELOOKUP

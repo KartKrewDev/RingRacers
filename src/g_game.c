@@ -86,7 +86,7 @@
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
-boolean ultimatemode = false;
+dboolean ultimatemode = false;
 
 JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
@@ -113,7 +113,7 @@ UINT32 mapmusresume;
 UINT8 mapmusrng; // Random selection result
 
 INT16 gamemap = 1;
-boolean g_reloadingMap;
+dboolean g_reloadingMap;
 UINT32 maptol;
 
 preciptype_t globalweather = PRECIP_NONE;
@@ -143,24 +143,24 @@ SINT8 startinglivesbalance[maxgameovers+1] = {3, 5, 7, 9, 12, 15, 20, 25, 30, 40
 
 UINT16 mainwads = 0;
 UINT16 musicwads = 0;
-boolean modifiedgame = false; // Set if homebrew PWAD stuff has been added.
-boolean majormods = false; // Set if Lua/Gameplay SOC/replacement map has been added.
-boolean savemoddata = false;
-boolean usedCheats = false; // Set when a "cheats on" is ever used.
-boolean usedTourney = false; // Entered the "Tournament Mode" cheat.
+dboolean modifiedgame = false; // Set if homebrew PWAD stuff has been added.
+dboolean majormods = false; // Set if Lua/Gameplay SOC/replacement map has been added.
+dboolean savemoddata = false;
+dboolean usedCheats = false; // Set when a "cheats on" is ever used.
+dboolean usedTourney = false; // Entered the "Tournament Mode" cheat.
 UINT8 paused;
 UINT8 modeattacking = ATTACKING_NONE;
-boolean imcontinuing = false;
+dboolean imcontinuing = false;
 
 // menu demo things
 UINT8  numDemos      = 0;
 UINT32 demoDelayTime = 15*TICRATE;
 UINT32 demoIdleTime  = 3*TICRATE;
 
-boolean netgame; // only true if packets are broadcast
-boolean multiplayer;
-boolean playeringame[MAXPLAYERS];
-boolean addedtogame;
+dboolean netgame; // only true if packets are broadcast
+dboolean multiplayer;
+dboolean playeringame[MAXPLAYERS];
+dboolean addedtogame;
 player_t players[MAXPLAYERS];
 
 INT32 consoleplayer; // player taking events and displaying
@@ -173,8 +173,8 @@ INT16 lastmap; // last level you were at (returning from special stages)
 tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 
 char * titlemap = NULL;
-boolean hidetitlepics = false;
-boolean looptitle = true;
+dboolean hidetitlepics = false;
+dboolean looptitle = true;
 
 char * bootmap = NULL; //bootmap for loading a map on startup
 char * podiummap = NULL; // map to load for podium
@@ -183,7 +183,7 @@ char * tutorialplaygroundmap = NULL; // map to load for playground
 char * tutorialchallengemap = NULL; // map to load for tutorial skip
 UINT8 tutorialchallenge = TUTORIALSKIP_NONE;
 
-boolean exitfadestarted = false;
+dboolean exitfadestarted = false;
 
 cutscene_t *cutscenes[128];
 textprompt_t *textprompts[MAX_PROMPTS];
@@ -208,8 +208,8 @@ UINT16 basenumkartcupheaders = 0;
 
 unloaded_cupheader_t *unloadedcupheaders = NULL;
 
-static boolean exitgame = false;
-static boolean retrying = false;
+static dboolean exitgame = false;
+static dboolean retrying = false;
 
 UINT8 stagefailed; // Used for GEMS BONUS? Also to see if you beat the stage.
 
@@ -227,12 +227,12 @@ UINT8 nummapspraycans = 0;
 UINT16 numchallengedestructibles = 0;
 
 // Elminates unnecessary searching.
-boolean CheckForBustableBlocks;
-boolean CheckForBouncySector;
-boolean CheckForQuicksand;
-boolean CheckForMarioBlocks;
-boolean CheckForFloatBob;
-boolean CheckForReverseGravity;
+dboolean CheckForBustableBlocks;
+dboolean CheckForBouncySector;
+dboolean CheckForQuicksand;
+dboolean CheckForMarioBlocks;
+dboolean CheckForFloatBob;
+dboolean CheckForReverseGravity;
 
 // Powerup durations
 UINT16 invulntics = 20*TICRATE;
@@ -289,41 +289,41 @@ struct maplighting maplighting;
 // Cvars that we don't want changed mid-game
 UINT8 numlaps; // Removed from Cvar hell
 UINT8 gamespeed; // Game's current speed (or difficulty, or cc, or etc); 0 for easy, 1 for normal, 2 for hard
-boolean encoremode = false; // Encore Mode currently enabled?
-boolean prevencoremode;
-boolean franticitems; // Frantic items currently enabled?
+dboolean encoremode = false; // Encore Mode currently enabled?
+dboolean prevencoremode;
+dboolean franticitems; // Frantic items currently enabled?
 
 // Server wants to enable teams?
 // (Certain gametypes can override this -- prefer using G_GametypeHasTeams().)
-boolean g_teamplay;
+dboolean g_teamplay;
 
 // Server wants to allow Duel mode?
-boolean g_duelpermitted;
+dboolean g_duelpermitted;
 
 // Voting system
 UINT16 g_voteLevels[VOTE_NUM_LEVELS][2]; // Levels that were rolled by the host
 SINT8 g_votes[VOTE_TOTAL]; // Each player's vote
 SINT8 g_pickedVote; // What vote the host rolls
-boolean g_votes_striked[VOTE_NUM_LEVELS]; // Which levels were striked from votes?
+dboolean g_votes_striked[VOTE_NUM_LEVELS]; // Which levels were striked from votes?
 
 // Server-sided, synched variables
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
 tic_t itemCooldowns[NUMKARTITEMS - 1]; // Cooldowns to prevent item spawning
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
-boolean thwompsactive; // Thwomps activate on lap 2
+dboolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
 SINT8 spbplace; // SPB exists, give the person behind better items
-boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
+dboolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
 tic_t attacktimingstarted; // For Time Attack
-boolean inDuel; // Boolean, keeps track of if it is a 1v1
+dboolean inDuel; // Boolean, keeps track of if it is a 1v1
 UINT8 overtimecheckpoints; // Duel overtime speedups!
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
-boolean legitimateexit; // Did this client actually finish the match?
-boolean comebackshowninfo; // Have you already seen the "ATTACK OR PROTECT" message?
+dboolean legitimateexit; // Did this client actually finish the match?
+dboolean comebackshowninfo; // Have you already seen the "ATTACK OR PROTECT" message?
 
-boolean precache = true; // if true, load all graphics at start
+dboolean precache = true; // if true, load all graphics at start
 
 UINT16 prevmap, nextmap;
 
@@ -332,7 +332,7 @@ UINT16 prevmap, nextmap;
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1];
 INT32 player_name_changes[MAXPLAYERS];
 
-boolean G_TimeAttackStart(void)
+dboolean G_TimeAttackStart(void)
 {
 	return (modeattacking && (gametyperules & (GTR_CIRCUIT|GTR_CATCHER)) == GTR_CIRCUIT);
 }
@@ -401,10 +401,10 @@ tic_t G_GetBestLap(INT16 map)
 
 struct stickermedalinfo stickermedalinfo;
 
-void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
+void G_UpdateTimeStickerMedals(UINT16 map, dboolean showownrecord)
 {
 	emblem_t *emblem = M_GetLevelEmblems(map+1);
-	boolean gonnadrawtime = false;
+	dboolean gonnadrawtime = false;
 
 	memset(&stickermedalinfo, 0, sizeof(stickermedalinfo));
 	stickermedalinfo.timetoreach = UINT32_MAX;
@@ -660,7 +660,7 @@ static void G_UpdateRecordReplays(void)
 }
 
 // for consistency among messages: this marks the game as modified.
-void G_SetGameModified(boolean silent, boolean major)
+void G_SetGameModified(dboolean silent, dboolean major)
 {
 	(void)silent;
 
@@ -795,7 +795,7 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-void G_FinalClipAimingPitch(INT32 *aiming, player_t *player, boolean skybox)
+void G_FinalClipAimingPitch(INT32 *aiming, player_t *player, dboolean skybox)
 {
 #ifndef HWRENDER
 	(void)player;
@@ -855,7 +855,7 @@ static INT32 G_GetValueFromControlTable(INT32 deviceID, INT32 deadzone, INT32 *c
 	return failret;
 }
 
-static void G_SetGamepadPrompts(UINT8 p, boolean prompts)
+static void G_SetGamepadPrompts(UINT8 p, dboolean prompts)
 {
 	if (showgamepadprompts[p] != prompts)
 	{
@@ -868,13 +868,13 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
 	const INT32 deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
 	const INT32 keyboard_player = G_GetPlayerForDevice(KEYBOARD_MOUSE_DEVICE);
-	const boolean in_menu = (menuPlayers > 0);
-	const boolean main_player = (p == 0);
+	const dboolean in_menu = (menuPlayers > 0);
+	const dboolean main_player = (p == 0);
 	INT32 deviceID = UNASSIGNED_DEVICE;
 	INT32 value = -1;
 	INT32 avail_gamepad_id = 0;
 	INT32 i;
-	boolean bind_was_reachable = false;
+	dboolean bind_was_reachable = false;
 
 	if (p >= MAXSPLITSCREENPLAYERS)
 	{
@@ -999,7 +999,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 
 #undef KEYBOARDDEFAULTSSPLIT
 
-boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers)
+dboolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
 	return (abs(G_PlayerInputAnalog(p, gc, menuPlayers)) >= JOYAXISRANGE/2);
 }
@@ -1103,9 +1103,9 @@ void rumble_off_handle4(void)
 //
 // G_DoLoadLevelEx
 //
-void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
+void G_DoLoadLevelEx(dboolean resetplayer, gamestate_t newstate)
 {
-	boolean doAutomate = false;
+	dboolean doAutomate = false;
 	INT32 i;
 
 	// Make sure objectplace is OFF when you first start the level!
@@ -1237,7 +1237,7 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	G_ResetAllDeviceRumbles();
 }
 
-void G_DoLoadLevel(boolean resetplayer)
+void G_DoLoadLevel(dboolean resetplayer)
 {
 	G_DoLoadLevelEx(resetplayer, GS_LEVEL);
 }
@@ -1320,7 +1320,7 @@ void G_PreLevelTitleCard(void)
 //
 // Returns true if the current level has a title card.
 //
-boolean G_IsTitleCardAvailable(void)
+dboolean G_IsTitleCardAvailable(void)
 {
 	// We're trying to take map pictures dude
 	if (roundqueue.snapshotmaps == true)
@@ -1357,14 +1357,14 @@ boolean G_IsTitleCardAvailable(void)
 }
 
 INT32 pausedelay = 0;
-boolean pausebreakkey = false;
+dboolean pausebreakkey = false;
 static INT32 camtoggledelay[MAXSPLITSCREENPLAYERS];
 
 //
 // G_Responder
 // Get info needed to make ticcmd_ts for the players.
 //
-boolean G_Responder(event_t *ev)
+dboolean G_Responder(event_t *ev)
 {
 	//INT32 i;
 
@@ -1543,7 +1543,7 @@ boolean G_Responder(event_t *ev)
 // G_CouldView
 // Return whether a player could be viewed by any means.
 //
-boolean G_CouldView(INT32 playernum)
+dboolean G_CouldView(INT32 playernum)
 {
 	player_t *player;
 
@@ -1578,7 +1578,7 @@ boolean G_CouldView(INT32 playernum)
 // G_CanView
 // Return whether a player can be viewed on a particular view (splitscreen).
 //
-boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
+dboolean G_CanView(INT32 playernum, UINT8 viewnum, dboolean onlyactive)
 {
 	// PF_ELIMINATED: Battle Overtime Barrier killed this player
 	if (!playeringame[playernum] || players[playernum].spectator || (players[playernum].pflags & PF_ELIMINATED))
@@ -1618,7 +1618,7 @@ boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 // Return the next player that can be viewed on a view, wraps forward.
 // An out of range startview is corrected.
 //
-INT32 G_FindView(INT32 startview, UINT8 viewnum, boolean onlyactive, boolean reverse)
+INT32 G_FindView(INT32 startview, UINT8 viewnum, dboolean onlyactive, dboolean reverse)
 {
 	INT32 i, dir = reverse ? -1 : 1;
 	startview = min(max(startview, -1), MAXPLAYERS);
@@ -1635,7 +1635,7 @@ INT32 G_FindView(INT32 startview, UINT8 viewnum, boolean onlyactive, boolean rev
 	return -1;
 }
 
-INT32 G_CountPlayersPotentiallyViewable(boolean active)
+INT32 G_CountPlayersPotentiallyViewable(dboolean active)
 {
 	INT32 total = 0;
 	INT32 i;
@@ -1653,7 +1653,7 @@ INT32 G_CountPlayersPotentiallyViewable(boolean active)
 // Also promotes splitscreen up to available viewable players.
 // An out of range playernum is corrected.
 //
-void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
+void G_ResetView(UINT8 viewnum, INT32 playernum, dboolean onlyactive)
 {
 	UINT8 splits;
 	UINT8 viewd;
@@ -1735,7 +1735,7 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 // Increment a viewpoint by offset from the current player. A negative value
 // decrements.
 //
-void G_AdjustView(UINT8 viewnum, INT32 offset, boolean onlyactive)
+void G_AdjustView(UINT8 viewnum, INT32 offset, dboolean onlyactive)
 {
 	INT32 *displayplayerp, oldview;
 	displayplayerp = &displayplayers[viewnum-1];
@@ -1869,13 +1869,13 @@ void G_UpdateAllPlayerPreferences(void)
 	}
 }
 
-extern boolean demosynced;
+extern dboolean demosynced;
 
 //
 // G_Ticker
 // Make ticcmd_ts for the players.
 //
-void G_Ticker(boolean run)
+void G_Ticker(dboolean run)
 {
 	UINT32 i;
 	INT32 buf;
@@ -1934,7 +1934,7 @@ void G_Ticker(boolean run)
 							min_lvl = 9;
 						}
 
-						boolean already_min_lvl = (players[i].botvars.difficulty >= min_lvl);
+						dboolean already_min_lvl = (players[i].botvars.difficulty >= min_lvl);
 
 						if (players[i].botvars.difficulty <= bot_level_decrease)
 						{
@@ -1962,7 +1962,7 @@ void G_Ticker(boolean run)
 	// do player reborns if needed
 	if (G_GamestateUsesLevel() == true)
 	{
-		boolean changed = false;
+		dboolean changed = false;
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -2228,7 +2228,7 @@ static inline void G_PlayerFinishLevel(INT32 player)
 // G_PlayerReborn
 // Called after a player dies. Almost everything is cleared and initialized.
 //
-void G_PlayerReborn(INT32 player, boolean betweenmaps)
+void G_PlayerReborn(INT32 player, dboolean betweenmaps)
 {
 	player_t *p;
 	INT32 score, roundscore;
@@ -2237,7 +2237,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 kartspeed;
 	UINT8 kartweight;
 
-	boolean followerready;
+	dboolean followerready;
 	INT32 followerskin;
 	UINT16 followercolor;
 
@@ -2276,8 +2276,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 griefStrikes;
 
 	UINT8 splitscreenindex;
-	boolean spectator;
-	boolean bot;
+	dboolean spectator;
+	dboolean bot;
 	UINT8 botdifficulty;
 	botStyle_e style;
 
@@ -2287,12 +2287,12 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	angle_t playerangleturn;
 
 	INT16 botdiffincrease;
-	boolean botrival;
-	boolean botfoe;
+	dboolean botrival;
+	dboolean botfoe;
 
-	boolean cangrabitems;
+	dboolean cangrabitems;
 
-	boolean finalized;
+	dboolean finalized;
 
 	SINT8 xtralife;
 
@@ -2307,7 +2307,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 khudfault;
 	INT32 kickstartaccel;
 	INT32 checkpointId;
-	boolean enteredGame;
+	dboolean enteredGame;
 	tic_t spectatewait;
 	UINT8 lastsafelap;
 	UINT8 lastsafecheatcheck;
@@ -2315,13 +2315,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT16 duelscore;
 
-	boolean mfdfinish;
+	dboolean mfdfinish;
 
 	roundconditions_t roundconditions;
-	boolean saveroundconditions;
+	dboolean saveroundconditions;
 
 	level_tally_t tally;
-	boolean tallyactive;
+	dboolean tallyactive;
 
 	tic_t laptime[LAP__MAX];
 
@@ -2775,7 +2775,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 // at the given mapthing_t spot
 // because something is occupying it
 //
-static boolean G_CheckSpot(INT32 playernum, mapthing_t *mthing)
+static dboolean G_CheckSpot(INT32 playernum, mapthing_t *mthing)
 {
 	fixed_t x;
 	fixed_t y;
@@ -2865,7 +2865,7 @@ void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 
 mapthing_t *G_FindTeamStart(INT32 playernum)
 {
-	const boolean do_prints = P_IsPartyPlayer(&players[playernum]);
+	const dboolean do_prints = P_IsPartyPlayer(&players[playernum]);
 	INT32 i, j;
 
 	for (i = 0; i < TEAM__MAX; i++)
@@ -2942,7 +2942,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 
 mapthing_t *G_FindBattleStart(INT32 playernum)
 {
-	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
+	const dboolean doprints = P_IsPartyPlayer(&players[playernum]);
 	INT32 i, j;
 
 	if (numdmstarts)
@@ -2965,7 +2965,7 @@ mapthing_t *G_FindBattleStart(INT32 playernum)
 
 mapthing_t *G_FindRaceStart(INT32 playernum)
 {
-	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
+	const dboolean doprints = P_IsPartyPlayer(&players[playernum]);
 
 	if (numcoopstarts)
 	{
@@ -3061,7 +3061,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 
 mapthing_t *G_FindPodiumStart(INT32 playernum)
 {
-	const boolean doprints = P_IsPartyPlayer(&players[playernum]);
+	const dboolean doprints = P_IsPartyPlayer(&players[playernum]);
 
 	if (numcoopstarts)
 	{
@@ -3372,7 +3372,7 @@ void G_FinishExitLevel(void)
 
 	if (gamestate == GS_LEVEL)
 	{
-		const boolean worknetgame = (demo.playback ? demo.netgame : netgame);
+		const dboolean worknetgame = (demo.playback ? demo.netgame : netgame);
 		if (g_exit.retry)
 		{
 			// Restart cup here whenever we do Online GP
@@ -3387,7 +3387,7 @@ void G_FinishExitLevel(void)
 		{
 			// Were we in a Special Stage?
 			// We can still progress to the podium when we game over here.
-			const boolean special = grandprixinfo.gp == true && grandprixinfo.cup != NULL && grandprixinfo.eventmode == GPEVENT_SPECIAL;
+			const dboolean special = grandprixinfo.gp == true && grandprixinfo.cup != NULL && grandprixinfo.eventmode == GPEVENT_SPECIAL;
 
 			if (demo.playback && !worknetgame)
 			{
@@ -3583,7 +3583,7 @@ char *G_PrepareGametypeConstant(const char *newgtconst)
 	// Remove characters that will not be allowed in the constant string.
 	for (; r < strlen(tmpconst); r++)
 	{
-		boolean writechar = true;
+		dboolean writechar = true;
 		char rc = tmpconst[r];
 		switch (rc)
 		{
@@ -3666,7 +3666,7 @@ void G_AddTOL(UINT32 newtol, const char *tolname)
 // Returns true if the current gametype uses
 // the lives system.  False otherwise.
 //
-boolean G_GametypeUsesLives(void)
+dboolean G_GametypeUsesLives(void)
 {
 	if (modeattacking) // NOT in Record Attack
 		return false;
@@ -3684,7 +3684,7 @@ boolean G_GametypeUsesLives(void)
 // (Retrying may still not be possible if the player doesn't
 // have enough lives.)
 //
-boolean G_GametypeAllowsRetrying(void)
+dboolean G_GametypeAllowsRetrying(void)
 {
 	if (modeattacking) // Attack modes have their own retry system
 		return false;
@@ -3704,7 +3704,7 @@ boolean G_GametypeAllowsRetrying(void)
 // Returns true if the current gametype uses
 // Red/Blue teams.  False otherwise.
 //
-boolean G_GametypeHasTeams(void)
+dboolean G_GametypeHasTeams(void)
 {
 	const UINT32 rules = (gametyperules & (GTR_TEAMS|GTR_NOTEAMS));
 	if (rules == GTR_TEAMS)
@@ -3728,7 +3728,7 @@ boolean G_GametypeHasTeams(void)
 // Returns true if the current gametype supports
 // spectators.  False otherwise.
 //
-boolean G_GametypeHasSpectators(void)
+dboolean G_GametypeHasSpectators(void)
 {
 	// TODO: this would make a great debug feature for release
 #ifdef DEVELOP
@@ -3745,7 +3745,7 @@ boolean G_GametypeHasSpectators(void)
 //
 INT16 G_SometimesGetDifferentEncore(void)
 {
-	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE, false) || encorescramble == 1)
+	dboolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE, false) || encorescramble == 1)
 		&& (gametyperules & GTR_ENCORE));
 	UINT8 encoremodifier = 0;
 
@@ -3885,7 +3885,7 @@ static UINT16 *g_allowedMaps = NULL;
 static size_t g_randMapStack = 0;
 #endif
 
-UINT16 G_RandMapPerPlayerCount(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer, UINT8 numPlayers)
+UINT16 G_RandMapPerPlayerCount(UINT32 tolflags, UINT16 pprevmap, dboolean ignoreBuffers, dboolean callAgainSoon, UINT16 *extBuffer, UINT8 numPlayers)
 {
 	INT32 allowedMapsCount = 0;
 	INT32 extBufferCount = 0;
@@ -3998,7 +3998,7 @@ tryAgain:
 
 			if (extBufferCount > 0)
 			{
-				boolean inExt = false;
+				dboolean inExt = false;
 
 				// An optional additional buffer,
 				// to avoid duplicates on the voting screen.
@@ -4067,7 +4067,7 @@ tryAgain:
 	return ret;
 }
 
-UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer)
+UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, dboolean ignoreBuffers, dboolean callAgainSoon, UINT16 *extBuffer)
 {
 	return G_RandMapPerPlayerCount(tolflags, pprevmap, ignoreBuffers, callAgainSoon, extBuffer, 0);
 }
@@ -4235,7 +4235,7 @@ void G_UpdateVisited(void)
 	gamedata->deferredsave = true;
 }
 
-void G_HandleSaveLevel(boolean removecondition)
+void G_HandleSaveLevel(dboolean removecondition)
 {
 	if (!grandprixinfo.gp || !grandprixinfo.cup
 	|| splitscreen || netgame)
@@ -4264,7 +4264,7 @@ doremove:
 struct roundqueue roundqueue;
 struct menuqueue menuqueue;
 
-void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted)
+void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, dboolean setencore, dboolean rankrestricted)
 {
 	I_Assert(position < ROUNDQUEUE_MAX);
 
@@ -4275,7 +4275,7 @@ void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, bool
 	roundqueue.entries[position].overridden = false;
 }
 
-void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted)
+void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, dboolean setencore, dboolean rankrestricted)
 {
 	if (roundqueue.size >= ROUNDQUEUE_MAX)
 	{
@@ -4287,7 +4287,7 @@ void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boole
 	roundqueue.size++;
 }
 
-void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencore)
+void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, dboolean setencore)
 {
 	UINT8 i, levelindex = 0, bonusindex = 0;
 	UINT8 bonusmodulo = max(1, (cup->numlevels+1)/(cup->numbonus+1));
@@ -4444,7 +4444,7 @@ void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencor
 void G_GetNextMap(void)
 {
 	INT32 i;
-	boolean setalready = false;
+	dboolean setalready = false;
 
 	if (!server)
 	{
@@ -4536,7 +4536,7 @@ void G_GetNextMap(void)
 	else if (roundqueue.size > 0)
 	{
 		// See also Y_CalculateMatchData, M_DrawPause
-		boolean permitrank = false;
+		dboolean permitrank = false;
 		if (grandprixinfo.gp == true
 			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL)
 		{
@@ -4638,14 +4638,14 @@ void G_GetNextMap(void)
 		UINT32 tolflag = G_TOLFlag(gametype);
 		register INT16 cm;
 
-		const boolean cupmode = (!(gametyperules & GTR_NOCUPSELECT));
+		const dboolean cupmode = (!(gametyperules & GTR_NOCUPSELECT));
 
 		nextmap = NEXTMAP_TITLE;
 
 		if (cupmode)
 		{
 			cupheader_t *cup = mapheaderinfo[prevmap]->cup;
-			boolean gettingresult = false;
+			dboolean gettingresult = false;
 
 			while (cup)
 			{
@@ -5428,7 +5428,7 @@ void G_LoadGame(void)
 	CON_ToggleOff();
 }
 
-void G_GetBackupCupData(boolean actuallygetdata)
+void G_GetBackupCupData(dboolean actuallygetdata)
 {
 	if (actuallygetdata == false)
 	{
@@ -5488,7 +5488,7 @@ void G_GetBackupCupData(boolean actuallygetdata)
 //
 void G_SaveGame(void)
 {
-	boolean saved;
+	dboolean saved;
 	char savename[256] = "";
 	savebuffer_t save = {0};
 
@@ -5534,7 +5534,7 @@ void G_SaveGame(void)
 // Can be called by the startup code or the menu task,
 // consoleplayer, displayplayers[], playeringame[] should be set.
 //
-void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
+void G_DeferedInitNew(dboolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ssplayers, dboolean FLS)
 {
 	UINT16 color = SKINCOLOR_NONE;
 
@@ -5569,7 +5569,7 @@ void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ss
 // This is the map command interpretation something like Command_Map_f
 //
 // called at: map cmd execution, doloadgame, doplaydemo
-void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skipprecutscene)
+void G_InitNew(UINT8 pencoremode, INT32 map, dboolean resetplayer, dboolean skipprecutscene)
 {
 	const char * mapname = G_BuildMapName(map);
 
@@ -5742,7 +5742,7 @@ char *G_BuildMapTitle(INT32 mapnum)
 
 static void measurekeywords(mapsearchfreq_t *fr,
 		struct searchdim **dimp, UINT8 *cuntp,
-		const char *s, const char *q, boolean wanttable)
+		const char *s, const char *q, dboolean wanttable)
 {
 	char *qp;
 	char *sp;
@@ -5795,7 +5795,7 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 	char   *aprop = NULL;
 
 	mapsearchfreq_t *freq;
-	boolean wanttable;
+	dboolean wanttable;
 	INT32 freqc;
 	UINT8 frequ;
 
@@ -5991,7 +5991,7 @@ void G_SetGamestate(gamestate_t newstate)
 #endif
 }
 
-boolean G_GamestateUsesLevel(void)
+dboolean G_GamestateUsesLevel(void)
 {
 	switch (gamestate)
 	{
@@ -6025,7 +6025,7 @@ void G_ClearExitGameFlag(void)
 	exitgame = false;
 }
 
-boolean G_GetExitGameFlag(void)
+dboolean G_GetExitGameFlag(void)
 {
 	return exitgame;
 }
@@ -6048,12 +6048,12 @@ void G_ClearRetryFlag(void)
 	retrying = false;
 }
 
-boolean G_GetRetryFlag(void)
+dboolean G_GetRetryFlag(void)
 {
 	return retrying;
 }
 
-boolean G_IsModeAttackRetrying(void)
+dboolean G_IsModeAttackRetrying(void)
 {
 	return retrying && modeattacking != ATTACKING_NONE;
 }
@@ -6064,7 +6064,7 @@ INT32 G_TicsToHours(tic_t tics)
 	return tics/(3600*TICRATE);
 }
 
-INT32 G_TicsToMinutes(tic_t tics, boolean full)
+INT32 G_TicsToMinutes(tic_t tics, dboolean full)
 {
 	if (full)
 		return tics/(60*TICRATE);
@@ -6130,7 +6130,7 @@ void G_AssignTeam(player_t *const p, UINT8 new_team)
 	}
 }
 
-boolean G_SameTeam(const player_t *a, const player_t *b)
+dboolean G_SameTeam(const player_t *a, const player_t *b)
 {
 	if (a == NULL || b == NULL)
 	{

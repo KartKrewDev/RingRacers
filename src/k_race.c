@@ -118,18 +118,18 @@ static void K_CreateFinishLineFromPoints(fixed_t x1, fixed_t y1, fixed_t x2, fix
 }
 
 /*--------------------------------------------------
-	boolean K_GenerateFinishBeamLine(void)
+	dboolean K_GenerateFinishBeamLine(void)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_GenerateFinishBeamLine(void)
+dboolean K_GenerateFinishBeamLine(void)
 {
 	mapthing_t *mt;
 
 	INT64 bounds[4];
 	angle_t angle = 0;
 
-	boolean valid = false;
+	dboolean valid = false;
 	size_t i;
 
 	// Ensure everything's freed by this time.
@@ -220,7 +220,7 @@ boolean K_GenerateFinishBeamLine(void)
 }
 
 /*--------------------------------------------------
-	static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *line, boolean reverse)
+	static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *line, dboolean reverse)
 
 		Draws a helix out of rainbow colored orbs along a line, unique for each display player.
 		Called twice for the finish line beam effect.
@@ -235,13 +235,13 @@ boolean K_GenerateFinishBeamLine(void)
 		None
 --------------------------------------------------*/
 
-static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *line, boolean reverse)
+static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *line, dboolean reverse)
 {
 	const fixed_t linelength = P_AproxDistance(line->dx, line->dy);
 	const fixed_t xstep = FixedDiv(line->dx, linelength);
 	const fixed_t ystep = FixedDiv(line->dy, linelength);
 
-	const boolean passable = (leveltime >= starttime || G_TimeAttackStart());
+	const dboolean passable = (leveltime >= starttime || G_TimeAttackStart());
 
 	fixed_t linex = line->v1->x;
 	fixed_t liney = line->v1->y;

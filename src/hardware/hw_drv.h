@@ -30,7 +30,7 @@ extern "C" {
 //                                                       STANDARD DLL EXPORTS
 // ==========================================================================
 
-EXPORT boolean HWRAPI(Init) (void);
+EXPORT dboolean HWRAPI(Init) (void);
 #ifndef HAVE_SDL
 EXPORT void HWRAPI(Shutdown) (void);
 #endif
@@ -71,13 +71,13 @@ EXPORT void HWRAPI(DrawScreenFinalTexture) (int width, int height);
 #define SCREENVERTS 10
 EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2]);
 
-EXPORT boolean HWRAPI(CompileShaders) (void);
+EXPORT dboolean HWRAPI(CompileShaders) (void);
 EXPORT void HWRAPI(CleanShaders) (void);
 EXPORT void HWRAPI(SetShader) (int type);
 EXPORT void HWRAPI(UnSetShader) (void);
 
 EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value);
-EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, boolean isfragment);
+EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, dboolean isfragment);
 
 // ==========================================================================
 //                                      HWR DRIVER OBJECT, FOR CLIENT PROGRAM

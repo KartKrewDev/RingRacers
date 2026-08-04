@@ -208,7 +208,7 @@ void I_GetCursorPosition(INT32 *x, INT32 *y)
 	(void)y;
 }
 
-boolean I_HasOpenURL()
+dboolean I_HasOpenURL()
 {
 	return 0;
 }

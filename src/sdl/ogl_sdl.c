@@ -85,10 +85,10 @@ void *GetGLFunc(const char *proc)
 	return (void*)SDL_GL_GetProcAddress(proc);
 }
 
-boolean LoadGL(void)
+dboolean LoadGL(void)
 {
 #ifndef STATIC_OPENGL
-	static boolean loaded_libraries = false;
+	static dboolean loaded_libraries = false;
 	const char *OGLLibname = NULL;
 	const char *GLULibname = NULL;
 
@@ -158,10 +158,10 @@ boolean LoadGL(void)
 
 	\return	if true, changed video mode
 */
-boolean OglSdlSurface(INT32 w, INT32 h)
+dboolean OglSdlSurface(INT32 w, INT32 h)
 {
 	INT32 cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
-	static boolean first_init = false;
+	static dboolean first_init = false;
 
 	oglflags = 0;
 
@@ -218,9 +218,9 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 
 	\return	void
 */
-void OglSdlFinishUpdate(boolean waitvbl)
+void OglSdlFinishUpdate(dboolean waitvbl)
 {
-	static boolean oldwaitvbl = false;
+	static dboolean oldwaitvbl = false;
 	int sdlw, sdlh;
 	if (oldwaitvbl != waitvbl)
 	{

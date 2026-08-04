@@ -294,7 +294,7 @@ UINT8 G_PartySize(UINT8 player)
 	return final_party[player].size();
 }
 
-boolean G_IsPartyLocal(UINT8 player)
+dboolean G_IsPartyLocal(UINT8 player)
 {
 	return final_party[player].local();
 }

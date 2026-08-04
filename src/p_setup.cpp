@@ -130,7 +130,7 @@
 #include <tracy/tracy/TracyC.h>
 
 extern "C" consvar_t cv_continuousmusic;
-boolean g_reloadinggamestate = false;
+dboolean g_reloadinggamestate = false;
 
 //
 // Map MD5, calculated on level load.
@@ -143,7 +143,7 @@ unsigned char mapmd5[16];
 // Store VERTEXES, LINEDEFS, SIDEDEFS, etc.
 //
 
-boolean udmf;
+dboolean udmf;
 INT32 udmf_version;
 size_t numvertexes, numsegs, numsectors, numsubsectors, numnodes, numlines, numsides, nummapthings;
 size_t num_orig_vertexes;
@@ -160,8 +160,8 @@ line_t *spawnlines;
 side_t *spawnsides;
 INT32 numcheatchecks;
 UINT16 bossdisabled;
-boolean stoppedclock;
-boolean levelloading;
+dboolean stoppedclock;
+dboolean levelloading;
 UINT8 levelfadecol;
 
 tic_t oldbest;
@@ -209,7 +209,7 @@ mapthing_t *faultstart;
 // Global state for PartialAddWadFile/MultiSetupWadFiles
 // Might be replacable with parameters, but non-trivial when the functions are called on separate tics
 static SINT8 partadd_stage = -1;
-static boolean partadd_important = false;
+static dboolean partadd_important = false;
 UINT16 partadd_earliestfile = UINT16_MAX;
 
 
@@ -247,7 +247,7 @@ mobj_t *P_GetLastTubeWaypoint(UINT8 sequence)
 	return tubewaypoints[sequence][numtubewaypoints[sequence] - 1];
 }
 
-mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, boolean wrap)
+mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, dboolean wrap)
 {
 	UINT8 sequence = current->threshold;
 	UINT8 id = current->health;
@@ -265,7 +265,7 @@ mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, boolean wrap)
 	return tubewaypoints[sequence][id];
 }
 
-mobj_t *P_GetNextTubeWaypoint(mobj_t *current, boolean wrap)
+mobj_t *P_GetNextTubeWaypoint(mobj_t *current, dboolean wrap)
 {
 	UINT8 sequence = current->threshold;
 	UINT8 id = current->health;
@@ -310,7 +310,7 @@ mobj_t *P_GetClosestTubeWaypoint(UINT8 sequence, mobj_t *mo)
 }
 
 // Return true if all waypoints are in the same location
-boolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence)
+dboolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence)
 {
 	mobj_t *first, *waypoint;
 	UINT8 wp;
@@ -621,7 +621,7 @@ levelflat refers to an array of level flats,
 or NULL if we want to allocate it now.
 */
 static INT32
-Ploadflat (levelflat_t *levelflat, const char *flatname, boolean resize)
+Ploadflat (levelflat_t *levelflat, const char *flatname, dboolean resize)
 {
 	int       texturenum;
 	size_t i;
@@ -795,7 +795,7 @@ static int cmp_loopends(const void *a, const void *b)
 	return maincomp != 0 ? maincomp : intsign((mt1 - mapthings) - (mt2 - mapthings));
 }
 
-static void P_SpawnMapThings(boolean spawnemblems)
+static void P_SpawnMapThings(dboolean spawnemblems)
 {
 	size_t i;
 	mapthing_t *mt;
@@ -1265,7 +1265,7 @@ static void P_LoadSidedefs(UINT8 *data)
 	for (i = 0; i < numsides; i++, sd++, msd++)
 	{
 		INT16 textureoffset = SHORT(msd->textureoffset);
-		boolean isfrontside;
+		dboolean isfrontside;
 
 		P_InitializeSidedef(sd);
 
@@ -1445,7 +1445,7 @@ UINT32 vertexesPos[UINT16_MAX];
 UINT32 sectorsPos[UINT16_MAX];
 
 // Determine total amount of map data in TEXTMAP.
-static boolean TextmapCount(size_t size)
+static dboolean TextmapCount(size_t size)
 {
 	TracyCZone(__zone, true);
 
@@ -1525,7 +1525,7 @@ static void ParseUserProperty(mapUserProperties_t *user, const char *param, cons
 {
 	if (fastncmp(param, "user_", 5) && strlen(param) > 5)
 	{
-		const boolean valIsString = M_TokenizerJustReadString();
+		const dboolean valIsString = M_TokenizerJustReadString();
 		const char *key = param + 5;
 		const size_t valLen = strlen(val);
 		UINT8 numberType = PROP_NUM_TYPE_INT;
@@ -1573,10 +1573,10 @@ static void ParseUserProperty(mapUserProperties_t *user, const char *param, cons
 				// Value is some other kind of type.
 				// Currently we just support bool.
 
-				boolean vBool = fastcmp("true", val);
+				dboolean vBool = fastcmp("true", val);
 				if (vBool == true || fastcmp("false", val))
 				{
-					// Value is a boolean.
+					// Value is a dboolean.
 					K_UserPropertyPush(user, key, USER_PROP_BOOL, &vBool);
 				}
 				else
@@ -1609,7 +1609,7 @@ static void ParseTextmapVertexParameter(UINT32 i, const char *param, const char 
 }
 
 typedef struct textmap_colormap_s {
-	boolean used;
+	dboolean used;
 	INT32 lightcolor;
 	UINT8 lightalpha;
 	INT32 fadecolor;
@@ -2242,7 +2242,7 @@ typedef struct
 	mapthing_t *angleanchor;
 } sectorspecialthings_t;
 
-static boolean P_CanWriteTextmap(void)
+static dboolean P_CanWriteTextmap(void)
 {
 	return roundqueue.writetextmap == true && roundqueue.size > 0;
 }
@@ -2339,7 +2339,7 @@ static void P_WriteTextmap(void)
 	side_t *wsides;
 	mtag_t freetag;
 	sectorspecialthings_t *specialthings;
-	boolean *wusedvertexes;
+	dboolean *wusedvertexes;
 
 	f = P_OpenTextmap("w", "Couldn't save map file");
 	if (!f)
@@ -2353,7 +2353,7 @@ static void P_WriteTextmap(void)
 	wlines = static_cast<line_t*>(Z_Calloc(numlines * sizeof(*lines), PU_LEVEL, NULL));
 	wsides = static_cast<side_t*>(Z_Calloc(numsides * sizeof(*sides), PU_LEVEL, NULL));
 	specialthings = static_cast<sectorspecialthings_t*>(Z_Calloc(numsectors * sizeof(*sectors), PU_LEVEL, NULL));
-	wusedvertexes = static_cast<boolean*>(Z_Calloc(num_orig_vertexes * sizeof(boolean), PU_LEVEL, NULL));
+	wusedvertexes = static_cast<dboolean*>(Z_Calloc(num_orig_vertexes * sizeof(dboolean), PU_LEVEL, NULL));
 
 	memcpy(wmapthings, mapthings, nummapthings * sizeof(*mapthings));
 	memcpy(wvertexes, vertexes, num_orig_vertexes * sizeof(*vertexes));
@@ -3354,7 +3354,7 @@ P_MirrorTextureOffset
 	return source_width - actual_width - offset;
 }
 
-static boolean P_CheckLineSideTripWire(line_t *ld, int p)
+static dboolean P_CheckLineSideTripWire(line_t *ld, int p)
 {
 	INT32 n;
 
@@ -3363,7 +3363,7 @@ static boolean P_CheckLineSideTripWire(line_t *ld, int p)
 
 	terrain_t *terrain;
 
-	boolean tripwire;
+	dboolean tripwire;
 
 	n = ld->sidenum[p];
 
@@ -3421,7 +3421,7 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
 	line_t *ld = lines;
-	const boolean subtractTripwire = ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM);
+	const dboolean subtractTripwire = ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM);
 
 	for (; i--; ld++)
 	{
@@ -3503,7 +3503,7 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 	}
 }
 
-static boolean P_LoadMapData(const virtres_t *virt)
+static dboolean P_LoadMapData(const virtres_t *virt)
 {
 	TracyCZone(__zone, true);
 
@@ -3712,7 +3712,7 @@ void P_UpdateSegLightOffset(seg_t *li)
 	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
 }
 
-boolean P_SectorUsesDirectionalLighting(const sector_t *sector)
+dboolean P_SectorUsesDirectionalLighting(const sector_t *sector)
 {
 	if (sector != NULL)
 	{
@@ -3740,7 +3740,7 @@ boolean P_SectorUsesDirectionalLighting(const sector_t *sector)
 	return false;
 }
 
-boolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector)
+dboolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector)
 {
 	if (!P_SectorUsesDirectionalLighting(sector))
 	{
@@ -3752,7 +3752,7 @@ boolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector)
 	return (baselightnum < LIGHTLEVELS-1 && baselightnum > 0);
 }
 
-boolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector)
+dboolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector)
 {
 	if (!P_SectorUsesDirectionalLighting(sector))
 	{
@@ -3838,7 +3838,7 @@ typedef enum {
 // Find out the BSP format.
 static nodetype_t P_GetNodetype(const virtres_t *virt, UINT8 **nodedata)
 {
-	boolean supported[NUMNODETYPES] = {0};
+	dboolean supported[NUMNODETYPES] = {0};
 	nodetype_t nodetype = NT_UNSUPPORTED;
 	char signature[4 + 1];
 
@@ -3913,7 +3913,7 @@ static nodetype_t P_GetNodetype(const virtres_t *virt, UINT8 **nodedata)
 }
 
 // Extended node formats feature additional vertices; useful for OpenGL, but totally useless in gamelogic.
-static boolean P_LoadExtraVertices(UINT8 **data)
+static dboolean P_LoadExtraVertices(UINT8 **data)
 {
 	UINT32 origvrtx = READUINT32((*data));
 	UINT32 xtrvrtx = READUINT32((*data));
@@ -3950,7 +3950,7 @@ static boolean P_LoadExtraVertices(UINT8 **data)
 	return true;
 }
 
-static boolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype)
+static dboolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype)
 {
 	size_t i, k;
 	INT16 m;
@@ -4068,7 +4068,7 @@ static void P_LoadExtendedNodes(UINT8 **data, nodetype_t nodetype)
 {
 	node_t *mn;
 	size_t i, j, k;
-	boolean xgl3 = (nodetype == NT_XGL3);
+	dboolean xgl3 = (nodetype == NT_XGL3);
 
 	numnodes = READINT32((*data));
 	nodes = static_cast<node_t*>(Z_Calloc(numnodes*sizeof(*nodes), PU_LEVEL, NULL));
@@ -4169,7 +4169,7 @@ static void P_ReadBlockMapLump(INT16 *wadblockmaplump, size_t count)
 // because making both the WAD and PK3 loading code use
 // the same functions is trickier than it looks for blockmap
 // -- Monster Iestyn 09/01/18
-static boolean P_LoadBlockMap(UINT8 *data, size_t count)
+static dboolean P_LoadBlockMap(UINT8 *data, size_t count)
 {
 	if (!count || count >= 0x20000)
 		return false;
@@ -4200,7 +4200,7 @@ static boolean P_LoadBlockMap(UINT8 *data, size_t count)
 	return true;
 }
 
-static boolean LineInBlock(fixed_t cx1, fixed_t cy1, fixed_t cx2, fixed_t cy2, fixed_t bx1, fixed_t by1)
+static dboolean LineInBlock(fixed_t cx1, fixed_t cy1, fixed_t cx2, fixed_t cy2, fixed_t bx1, fixed_t by1)
 {
 	fixed_t bbox[4];
 	line_t testline;
@@ -4312,7 +4312,7 @@ static void P_CreateBlockMap(void)
 
 		size_t tot = bmapwidth * bmapheight; // size of blockmap
 		bmap_t *bmap = static_cast<bmap_t*>(calloc(tot, sizeof (*bmap))); // array of blocklists
-		boolean straight;
+		dboolean straight;
 
 		if (bmap == NULL) I_Error("%s: Out of memory making blockmap", "P_CreateBlockMap");
 
@@ -4640,7 +4640,7 @@ static void P_AddBinaryMapTags(void)
 		}
 
 		for (j = 0; j < numsectors; j++) {
-			boolean matches_target_tag = target_tag && Tag_Find(&sectors[j].tags, target_tag);
+			dboolean matches_target_tag = target_tag && Tag_Find(&sectors[j].tags, target_tag);
 			size_t k;
 			for (k = 0; k < 4; k++) {
 				if (lines[i].flags & ML_WRAPMIDTEX) {
@@ -6387,10 +6387,10 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 712: //Slope back sector floor and ceiling
 		case 713: //Slope back sector floor and front sector ceiling
 		{
-			boolean frontfloor = (lines[i].special == 700 || lines[i].special == 702 || lines[i].special == 703);
-			boolean backfloor = (lines[i].special == 710 || lines[i].special == 712 || lines[i].special == 713);
-			boolean frontceil = (lines[i].special == 701 || lines[i].special == 702 || lines[i].special == 713);
-			boolean backceil = (lines[i].special == 711 || lines[i].special == 712 || lines[i].special == 703);
+			dboolean frontfloor = (lines[i].special == 700 || lines[i].special == 702 || lines[i].special == 703);
+			dboolean backfloor = (lines[i].special == 710 || lines[i].special == 712 || lines[i].special == 713);
+			dboolean frontceil = (lines[i].special == 701 || lines[i].special == 702 || lines[i].special == 713);
+			dboolean backceil = (lines[i].special == 711 || lines[i].special == 712 || lines[i].special == 703);
 
 			lines[i].args[0] = backfloor ? TMS_BACK : (frontfloor ? TMS_FRONT : TMS_NONE);
 			lines[i].args[1] = backceil ? TMS_BACK : (frontceil ? TMS_FRONT : TMS_NONE);
@@ -7560,7 +7560,7 @@ static void P_MakeMapMD5(virtres_t *virt, void *dest)
 	M_Memcpy(dest, &resmd5, 16);
 }
 
-static boolean P_LoadMapFromFile(void)
+static dboolean P_LoadMapFromFile(void)
 {
 	TracyCZone(__zone, true);
 
@@ -7609,7 +7609,7 @@ static boolean P_LoadMapFromFile(void)
 /** Sets up a sky texture to use for the level.
   * The sky texture is used instead of F_SKY1.
   */
-void P_SetupLevelSky(const char *skytexname, boolean global)
+void P_SetupLevelSky(const char *skytexname, dboolean global)
 {
 	char tex[9];
 	if (!skytexname || !skytexname[0])
@@ -7636,7 +7636,7 @@ void P_SetupLevelSky(const char *skytexname, boolean global)
 static const char *maplumpname;
 lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 
-extern "C" boolean blockreset;
+extern "C" dboolean blockreset;
 
 //
 // P_LevelInitStuff
@@ -7706,7 +7706,7 @@ static void P_InitLevelSettings(void)
 	g_exit.retry = false;
 
 	// Gamespeed and frantic items
-	const boolean multi_speed = (gametypes[gametype]->speed == KARTSPEED_AUTO);
+	const dboolean multi_speed = (gametypes[gametype]->speed == KARTSPEED_AUTO);
 	gamespeed = multi_speed ? KARTSPEED_EASY : gametypes[gametype]->speed;
 	franticitems = false;
 	g_teamplay = false;
@@ -7756,9 +7756,9 @@ static void P_InitLevelSettings(void)
 			else
 				gamespeed = (UINT8)cv_kartspeed.value;
 		}
-		franticitems = (boolean)cv_kartfrantic.value;
-		g_teamplay = (boolean)cv_teamplay.value; // we will overwrite this later if there is not enough players
-		g_duelpermitted = (boolean)cv_duel.value; // Ignored if too many players, see K_InRaceDuel
+		franticitems = (dboolean)cv_kartfrantic.value;
+		g_teamplay = (dboolean)cv_teamplay.value; // we will overwrite this later if there is not enough players
+		g_duelpermitted = (dboolean)cv_duel.value; // Ignored if too many players, see K_InRaceDuel
 
 	}
 
@@ -8406,7 +8406,7 @@ void P_ResetLevelMusic(void)
 	mapmusrng = idx;
 }
 
-boolean P_UseContinuousLevelMusic(void)
+dboolean P_UseContinuousLevelMusic(void)
 {
 	if (gametyperules & GTR_BOSS)
 		return false;
@@ -8510,7 +8510,7 @@ void P_FreeLevelState(void)
   * \param fromnetsave If true, skip some stuff because we're loading a netgame snapshot.
   * \todo Clean up, refactor, split up; get rid of the bloat.
   */
-boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
+dboolean P_LoadLevel(dboolean fromnetsave, dboolean reloadinggamestate)
 {
 	TracyCZone(__zone, true);
 
@@ -8520,7 +8520,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	INT32 i;
 	virtlump_t *encoreLump = NULL;
 
-	boolean fade_shortcircuit = false;
+	dboolean fade_shortcircuit = false;
 
 	levelloading = true;
 	g_reloadinggamestate = reloadinggamestate;
@@ -9135,7 +9135,7 @@ void P_PostLoadLevel(void)
 //
 // Runs a SOC file or a lump, depending on if ".SOC" exists in the filename
 //
-boolean P_RunSOC(const char *socfilename)
+dboolean P_RunSOC(const char *socfilename)
 {
 	lumpnum_t lump;
 
@@ -9652,7 +9652,7 @@ void Command_Platinums(void)
 // Add a wadfile to the active wad files,
 // replace sounds, musics, patches, textures, sprites and maps
 //
-boolean P_AddWadFile(const char *wadfilename)
+dboolean P_AddWadFile(const char *wadfilename)
 {
 	UINT16 wadnum;
 
@@ -9843,7 +9843,7 @@ SINT8 P_PartialAddGetStage(void)
 // Setup functions that iterate over every loaded WAD go here.
 // If fullsetup false, only do one stage per call.
 //
-boolean P_MultiSetupWadFiles(boolean fullsetup)
+dboolean P_MultiSetupWadFiles(dboolean fullsetup)
 {
 	if (partadd_stage < 0)
 		I_Error(M_GetText("P_MultiSetupWadFiles: Post-load addon setup attempted without loading any addons first"));

@@ -47,9 +47,9 @@ enum hud {
 	hud_MAX
 };
 
-extern boolean hud_running;
+extern dboolean hud_running;
 
-boolean LUA_HudEnabled(enum hud option);
+dboolean LUA_HudEnabled(enum hud option);
 
 void LUA_SetHudHook(int hook, huddrawlist_h list);
 

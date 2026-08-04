@@ -63,12 +63,12 @@ void V_Recalc(void);
 
 struct colorlookup_t
 {
-	boolean init;
+	dboolean init;
 	RGBA_t palette[256];
 	UINT16 table[0xFFFF];
 };
 
-void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, boolean makecolors);
+void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, dboolean makecolors);
 UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
 UINT8 GetColorLUTDirect(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
 
@@ -187,7 +187,7 @@ struct cliprect_t
 {
 	fixed_t left, right, top, bottom;
 	INT32 flags;
-	boolean enabled;
+	dboolean enabled;
 };
 
 const cliprect_t *V_GetClipRect(void);
@@ -230,7 +230,7 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum);
 
 
 // draw wobbly VHS pause stuff
-void V_DrawVhsEffect(boolean rewind);
+void V_DrawVhsEffect(dboolean rewind);
 
 // fade down the screen buffer before drawing the menu over
 void V_DrawFadeScreen(UINT16 color, UINT8 strength);
@@ -261,9 +261,9 @@ INT32 V_DanceYOffset(INT32 counter);
 
 // draw a single character
 void V_DrawCharacterScaled(fixed_t x, fixed_t y, fixed_t scale, INT32 flags, int font, int c, UINT8 *colormap);
-void V_DrawCharacter(INT32 x, INT32 y, INT32 option, boolean lowercase);
+void V_DrawCharacter(INT32 x, INT32 y, INT32 option, dboolean lowercase);
 
-void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UINT8 *colormap);
+void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, dboolean lowercaseallowed, UINT8 *colormap);
 
 UINT8 *V_GetStringColormap(INT32 colorflags);
 
@@ -350,15 +350,15 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 // threshold: when the letters start disappearing (leave to 0 to disable) (both are INT32 in case you supply negative values...)
 // NOTE: This function ignores most conventional string flags (V_RETURN8, V_FORCEUPPERCASE ...)
 // NOTE: This font only works with uppercase letters.
-void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold, boolean p4);
+void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, INT32 flags, dboolean bossmode, INT32 timer, INT32 threshold, dboolean p4);
 #define V_DrawTitleCardString( x,y,str,flags,bossmode,timer,threshold,p4 ) \
 	V_DrawTitleCardStringFixed ((x)<<FRACBITS,(y)<<FRACBITS,FRACUNIT,str,flags,bossmode,timer,threshold,p4)
 	
 // returns thr width of a string drawn using the above function.
-INT32 V_TitleCardStringWidth(const char *str, boolean p4);
+INT32 V_TitleCardStringWidth(const char *str, dboolean p4);
 
 // offset that can be subtracted to center align.
-INT32 V_CenteredTitleCardStringOffset(const char *str, boolean p4);
+INT32 V_CenteredTitleCardStringOffset(const char *str, dboolean p4);
 
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);

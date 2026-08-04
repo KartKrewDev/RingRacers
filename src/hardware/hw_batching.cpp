@@ -20,7 +20,7 @@
 GLMipmap_t *current_texture = NULL;
 GLMipmap_t *current_brightmap = NULL;
 
-boolean currently_batching = false;
+dboolean currently_batching = false;
 
 FOutVector* finalVertexArray = NULL;// contains subset of sorted vertices and texture coordinates to be sent to gpu
 UINT32* finalVertexIndexArray = NULL;// contains indexes for glDrawElements, taking into account fan->triangles conversion
@@ -93,7 +93,7 @@ void HWR_SetCurrentTexture(GLMipmap_t *texture)
 // If batching is enabled, this function collects the polygon data and the chosen texture
 // for later use in HWR_RenderBatches. Otherwise the rendering backend is used to
 // render the polygon immediately.
-void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader, boolean horizonSpecial)
+void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader, dboolean horizonSpecial)
 {
 	if (currently_batching)
 	{
@@ -340,12 +340,12 @@ void HWR_RenderBatches(void)
 		int firstIndex;
 		int lastIndex;
 
-		boolean stopFlag = false;
-		boolean changeState = false;
-		boolean changeShader = false;
-		boolean changeTexture = false;
-		boolean changePolyFlags = false;
-		boolean changeSurfaceInfo = false;
+		dboolean stopFlag = false;
+		dboolean changeState = false;
+		dboolean changeShader = false;
+		dboolean changeTexture = false;
+		dboolean changePolyFlags = false;
+		dboolean changeSurfaceInfo = false;
 
 		// steps:
 		// write vertices

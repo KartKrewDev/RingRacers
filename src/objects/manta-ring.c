@@ -51,7 +51,7 @@
 #define manta_owner(o) ((o)->target)
 #define manta_chase(o) ((o)->tracer)
 
-static boolean MantaAlreadyTouched(mobj_t *manta, player_t *player)
+static dboolean MantaAlreadyTouched(mobj_t *manta, player_t *player)
 {
 	INT32 touchFlag = 0;
 

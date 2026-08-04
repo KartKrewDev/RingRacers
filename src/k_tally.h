@@ -61,13 +61,13 @@ typedef enum
 
 struct level_tally_t
 {
-	boolean active;
+	dboolean active;
 	player_t *owner;
 
 	UINT16 gt;
-	boolean gotThru;
+	dboolean gotThru;
 	char header[64];
-	boolean showRoundNum;
+	dboolean showRoundNum;
 	sfxenum_t gradeVoice;
 
 	// Stats
@@ -96,19 +96,19 @@ struct level_tally_t
 	INT32 displayBonus[TALLY_WINDOW_SIZE];
 	UINT8 tickSound;
 	UINT8 xtraBlink;
-	boolean showGrade;
-	boolean done;
-	boolean releasedFastForward;
+	dboolean showGrade;
+	dboolean done;
+	dboolean releasedFastForward;
 	INT32 directorWait;
 
 #ifdef __cplusplus
-	boolean UseBonuses(void);
+	dboolean UseBonuses(void);
 	void DetermineBonuses(void);
 	void DetermineStatistics(void);
 	INT32 CalculateGrade(void);
 	void Init(player_t *player);
 	void NewLine(void);
-	boolean IncrementLine(void);
+	dboolean IncrementLine(void);
 	void Tick(void);
 	void Draw(void);
 #endif
@@ -121,7 +121,7 @@ extern "C" {
 void K_InitPlayerTally(player_t *player);
 void K_TickPlayerTally(player_t *player);
 void K_DrawPlayerTally(void);
-boolean K_PlayerTallyActive(player_t *player);
+dboolean K_PlayerTallyActive(player_t *player);
 tic_t K_TallyDelay(void);
 
 #ifdef __cplusplus

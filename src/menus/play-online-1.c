@@ -22,7 +22,7 @@
 	#define IT_STRING_CALL_NOTESTERS (IT_STRING | IT_CALL)
 #endif // TESTERS
 
-static boolean firstDismissedNagThisBoot = true;
+static dboolean firstDismissedNagThisBoot = true;
 
 static void M_HandleMasterServerResetChoice(INT32 ch)
 {
@@ -90,7 +90,7 @@ static const char *query_ip(const char *replace)
 	return "";
 }
 
-static boolean uses_gamepad;
+static dboolean uses_gamepad;
 
 static void ip_entry(void)
 {
@@ -166,7 +166,7 @@ static void draw_routine(void)
 	M_DrawMasterServerReminder();
 }
 
-static boolean any_stored_ips(void)
+static dboolean any_stored_ips(void)
 {
 	for (int i = 0; i < NUMLOGIP; ++i)
 	{
@@ -189,7 +189,7 @@ static void init_routine(void)
 		it->status = IT_STRING | IT_CALL;
 }
 
-static boolean input_routine(INT32 key)
+static dboolean input_routine(INT32 key)
 {
 	uses_gamepad = (key == -1);
 	return false;
@@ -220,7 +220,7 @@ menu_t PLAY_MP_OptSelectDef = {
 struct mpmenu_s mpmenu;
 
 // Use this as a quit routine within the HOST GAME and JOIN BY IP "sub" menus
-boolean M_MPResetOpts(void)
+dboolean M_MPResetOpts(void)
 {
 	UINT8 i = 0;
 

@@ -152,9 +152,9 @@ static void LatLngInit(void)
 	}
 }
 
-static boolean latlnginit = false;
+static dboolean latlnginit = false;
 
-model_t *MD3_LoadModel(const char *fileName, int ztag, boolean useFloat)
+model_t *MD3_LoadModel(const char *fileName, int ztag, dboolean useFloat)
 {
 	const float WUNITS = 1.0f;
 	model_t *retModel = NULL;

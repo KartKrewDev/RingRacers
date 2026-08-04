@@ -81,7 +81,7 @@ get_look_angle (mobj_t *thing)
 	return player ? player->angleturn : thing->angle;
 }
 
-static boolean
+static dboolean
 is_hyudoro (mobj_t *thing)
 {
 	return !P_MobjWasRemoved(thing) &&
@@ -212,7 +212,7 @@ project_hyudoro_hover (mobj_t *hyu)
 	bob_in_place(hyu, 64);
 }
 
-static boolean
+static dboolean
 project_hyudoro_orbit (mobj_t *hyu)
 {
 	mobj_t *orbit = hyudoro_target(hyu);
@@ -506,7 +506,7 @@ hyudoro_set_held_item_from_player
 {
 	if (K_ItemEnabled(KITEM_KITCHENSINK))
 	{
-		boolean convert = false;
+		dboolean convert = false;
 
 		switch (player->itemtype)
 		{
@@ -537,7 +537,7 @@ hyudoro_set_held_item_from_player
 	set_item(hyu, player->itemtype, player->itemamount);
 }
 
-static boolean
+static dboolean
 hyudoro_patrol_hit_player
 (		mobj_t * hyu,
 		mobj_t * toucher)
@@ -618,7 +618,7 @@ hyudoro_patrol_hit_player
 	return true;
 }
 
-static boolean
+static dboolean
 award_immediately (mobj_t *hyu)
 {
 	player_t *player = get_hyudoro_target_player(hyu);
@@ -644,7 +644,7 @@ award_immediately (mobj_t *hyu)
 	return true;
 }
 
-static boolean
+static dboolean
 hyudoro_return_hit_player
 (		mobj_t * hyu,
 		mobj_t * toucher)
@@ -664,7 +664,7 @@ hyudoro_return_hit_player
 	return true;
 }
 
-static boolean
+static dboolean
 hyudoro_hover_await_stack (mobj_t *hyu)
 {
 	player_t *player = get_hyudoro_target_player(hyu);
@@ -687,7 +687,7 @@ hyudoro_hover_await_stack (mobj_t *hyu)
 static void
 trail_ghosts
 (		mobj_t * hyu,
-		boolean colorize)
+		dboolean colorize)
 {
 	// Spawns every other frame
 	if (leveltime & 1)
@@ -896,7 +896,7 @@ Obj_HyudoroCollide
 	}
 }
 
-boolean
+dboolean
 Obj_HyudoroShadowZ
 (		mobj_t * hyu,
 		fixed_t * return_z,

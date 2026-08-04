@@ -27,7 +27,7 @@ extern "C" {
 extern consvar_t cv_fpscap;
 
 UINT32 R_GetFramerateCap(void);
-boolean R_UsingFrameInterpolation(void);
+dboolean R_UsingFrameInterpolation(void);
 
 enum viewcontext_e
 {
@@ -49,7 +49,7 @@ struct viewvars_t {
 	fixed_t x;
 	fixed_t y;
 	fixed_t z;
-	boolean sky;
+	dboolean sky;
 	sector_t *sector;
 	player_t *player;
 
@@ -96,12 +96,12 @@ struct levelinterpolator_t {
 			sector_t *sector;
 			fixed_t oldheight;
 			fixed_t bakheight;
-			boolean ceiling;
+			dboolean ceiling;
 		} sectorplane;
 		struct {
 			sector_t *sector;
 			fixed_t oldxoffs, oldyoffs, bakxoffs, bakyoffs;
-			boolean ceiling;
+			dboolean ceiling;
 		} sectorscroll;
 		struct {
 			side_t *side;
@@ -144,8 +144,8 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out);
 // Evaluate the interpolated mobj state for the given precipmobj
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out);
 
-void R_CreateInterpolator_SectorPlane(thinker_t *thinker, sector_t *sector, boolean ceiling);
-void R_CreateInterpolator_SectorScroll(thinker_t *thinker, sector_t *sector, boolean ceiling);
+void R_CreateInterpolator_SectorPlane(thinker_t *thinker, sector_t *sector, dboolean ceiling);
+void R_CreateInterpolator_SectorScroll(thinker_t *thinker, sector_t *sector, dboolean ceiling);
 void R_CreateInterpolator_SideScroll(thinker_t *thinker, side_t *side);
 void R_CreateInterpolator_Polyobj(thinker_t *thinker, polyobj_t *polyobj);
 void R_CreateInterpolator_DynSlope(thinker_t *thinker, pslope_t *slope);

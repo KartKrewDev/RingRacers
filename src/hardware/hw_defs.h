@@ -116,14 +116,14 @@ typedef struct
 	FLOAT       scalex,scaley,scalez;
 	FLOAT       fovxangle, fovyangle;
 	UINT8       splitscreen;
-	boolean     flip;            // screenflip
-	boolean     shearing;        // 14042019
+	dboolean     flip;            // screenflip
+	dboolean     shearing;        // 14042019
 	float       viewaiming;      // 17052019
-	boolean     roll;
+	dboolean     roll;
 	FLOAT       rollangle; // done to not override USE_FTRANSFORM_ANGLEZ
 	FLOAT       centerx, centery;
 	FLOAT       rollx, rollz;
-	boolean     mirror;          // SRB2Kart: Encore Mode
+	dboolean     mirror;          // SRB2Kart: Encore Mode
 } FTransform;
 
 // Transformed vector, as passed to HWR API
@@ -191,7 +191,7 @@ typedef struct
 	gl_skyloopmode_t mode;
 	int vertexcount;
 	int vertexindex;
-	boolean use_texture;
+	dboolean use_texture;
 } gl_skyloopdef_t;
 
 typedef struct
@@ -202,7 +202,7 @@ typedef struct
 
 	int detail, vertex_count;
 	int texture, width, height;
-	boolean rebuild; // VBO needs to be rebuilt
+	dboolean rebuild; // VBO needs to be rebuilt
 
 	gl_skyloopdef_t *loops;
 	gl_skyvertex_t *data;
@@ -273,7 +273,7 @@ struct FLightInfo
 	FUINT			light_level;
 	FUINT			fade_start;
 	FUINT			fade_end;
-	boolean			directional;
+	dboolean			directional;
 };
 typedef struct FLightInfo FLightInfo;
 

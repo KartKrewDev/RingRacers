@@ -22,12 +22,12 @@ void M_AVRecorder_AddCommands(void);
 const char *M_AVRecorder_GetFileExtension(void);
 
 // True if successully opened.
-boolean M_AVRecorder_Open(const char *filename);
+dboolean M_AVRecorder_Open(const char *filename);
 
 void M_AVRecorder_Close(void);
 
 // Check whether AVRecorder is still valid. Call M_AVRecorder_Close if expired.
-boolean M_AVRecorder_IsExpired(void);
+dboolean M_AVRecorder_IsExpired(void);
 
 const char *M_AVRecorder_GetCurrentFormat(void);
 

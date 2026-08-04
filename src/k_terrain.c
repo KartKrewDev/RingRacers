@@ -706,7 +706,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 --------------------------------------------------*/
 void K_SetDefaultFriction(mobj_t *mo)
 {
-	boolean isPlayer = false;
+	dboolean isPlayer = false;
 
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
 	{
@@ -1094,7 +1094,7 @@ static void K_CleanupTerrainOverlay(mobj_t *mo)
 }
 
 /*--------------------------------------------------
-	static boolean K_InitTerrainOverlay(mobj_t *mo)
+	static dboolean K_InitTerrainOverlay(mobj_t *mo)
 
 		Creates a new terrain overlay for an object.
 
@@ -1104,7 +1104,7 @@ static void K_CleanupTerrainOverlay(mobj_t *mo)
 	Return:-
 		true if successful, otherwise false.
 --------------------------------------------------*/
-static boolean K_InitTerrainOverlay(mobj_t *mo)
+static dboolean K_InitTerrainOverlay(mobj_t *mo)
 {
 	mobj_t *new = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_OVERLAY);
 
@@ -1132,7 +1132,7 @@ static boolean K_InitTerrainOverlay(mobj_t *mo)
 --------------------------------------------------*/
 static t_overlay_action_t K_DesiredTerrainOverlayAction(mobj_t *mo)
 {
-	const boolean moving = (P_AproxDistance(mo->momx, mo->momy) >= (mo->scale >> 1));
+	const dboolean moving = (P_AproxDistance(mo->momx, mo->momy) >= (mo->scale >> 1));
 
 	if (moving == true)
 	{
@@ -1620,12 +1620,12 @@ static void K_TerrainDefaults(terrain_t *terrain)
 }
 
 /*--------------------------------------------------
-	boolean K_TerrainHasAffect(terrain_t *terrain)
+	dboolean K_TerrainHasAffect(terrain_t *terrain)
 
 		See header file for description.
 --------------------------------------------------*/
 
-boolean K_TerrainHasAffect(terrain_t *terrain, boolean badonly)
+dboolean K_TerrainHasAffect(terrain_t *terrain, dboolean badonly)
 {
 	if (terrain->friction > 0
 	|| terrain->offroad != 0
@@ -1787,7 +1787,7 @@ static void K_NewTerrainFloorDefs(void)
 }
 
 /*--------------------------------------------------
-	static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, char *))
+	static dboolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, char *))
 
 		Runs another parser function for the TERRAIN
 		lump, handling the nitty-gritty parts of the
@@ -1800,7 +1800,7 @@ static void K_NewTerrainFloorDefs(void)
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, char *))
+static dboolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, char *))
 {
 	char *param, *val;
 
@@ -1836,7 +1836,7 @@ static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, c
 }
 
 /*--------------------------------------------------
-	static boolean K_TERRAINLumpParser(char *data, size_t size)
+	static dboolean K_TERRAINLumpParser(char *data, size_t size)
 
 		Parses inputted lump data as a TERRAIN lump.
 
@@ -1847,7 +1847,7 @@ static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, c
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_TERRAINLumpParser(char *data, size_t size)
+static dboolean K_TERRAINLumpParser(char *data, size_t size)
 {
 	char *tkn = M_GetToken(data);
 	UINT32 tknHash = 0;
@@ -1856,7 +1856,7 @@ static boolean K_TERRAINLumpParser(char *data, size_t size)
 
 	while (tkn && (pos = M_GetTokenPos()) < size)
 	{
-		boolean valid = true;
+		dboolean valid = true;
 
 		// Avoid anything inside bracketed stuff, only look for external keywords.
 		if (fastcmp(tkn, "{") || fastcmp(tkn, "}"))

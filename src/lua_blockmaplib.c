@@ -32,7 +32,7 @@ static const char *const search_opt[] = {
 // 2 - stop search completely
 typedef UINT8 (*blockmap_func)(lua_State *, INT32, INT32, mobj_t *);
 
-static boolean blockfuncerror = false; // errors should only print once per search blockmap call
+static dboolean blockfuncerror = false; // errors should only print once per search blockmap call
 
 // Helper function for "objects" search
 static UINT8 lib_searchBlockmap_Objects(lua_State *L, INT32 x, INT32 y, mobj_t *thing)
@@ -231,7 +231,7 @@ static int lib_searchBlockmap(lua_State *L)
 	mobj_t *mobj;
 	INT32 xl, xh, yl, yh, bx, by;
 	fixed_t x1, x2, y1, y2;
-	boolean retval = true;
+	dboolean retval = true;
 	UINT8 funcret = 0;
 	blockmap_func searchFunc;
 

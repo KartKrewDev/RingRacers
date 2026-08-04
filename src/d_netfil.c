@@ -42,7 +42,7 @@
 #include <errno.h>
 
 // Prototypes
-static boolean AddFileToSendQueue(INT32 node, const char *filename, UINT8 fileid);
+static dboolean AddFileToSendQueue(INT32 node, const char *filename, UINT8 fileid);
 
 #ifdef HAVE_CURL
 static size_t curlwrite_data(void *ptr, size_t size, size_t nmemb, FILE *stream);
@@ -70,7 +70,7 @@ typedef struct filetran_s
 	UINT8 iteration;
 	UINT8 ackediteration;
 	UINT32 position; // The current position in the file
-	boolean *ackedfragments;
+	dboolean *ackedfragments;
 	UINT32 ackedsize;
 	FILE *currentfile; // The file currently being sent/received
 	tic_t dontsenduntil;
@@ -93,7 +93,7 @@ typedef struct
 {
 	char filename[MAX_WADPATH];
 	UINT8 md5sum[16];
-	boolean *receivedfragments;
+	dboolean *receivedfragments;
 	UINT32 fragmentsize;
 	UINT32 currentsize;
 } pauseddownload_t;
@@ -109,8 +109,8 @@ UINT32 totalfilesrequestedsize = 0;
 #ifdef HAVE_CURL
 static CURL *http_handle;
 static CURLM *multi_handle;
-boolean curl_running = false;
-boolean curl_failedwebdownload = false;
+dboolean curl_running = false;
+dboolean curl_failedwebdownload = false;
 static curl_off_t curl_dlnow;
 static curl_off_t curl_dltotal;
 static time_t curl_starttime;
@@ -124,8 +124,8 @@ HTTP_login *curl_logins;
 #endif
 
 luafiletransfer_t *luafiletransfers = NULL;
-boolean waitingforluafiletransfer = false;
-boolean waitingforluafilecommand = false;
+dboolean waitingforluafiletransfer = false;
+dboolean waitingforluafilecommand = false;
 char luafiledir[256 + 16] = "luafiles";
 
 /** Fills a serverinfo packet with information about wad files loaded.
@@ -253,7 +253,7 @@ void CL_PrepareDownloadSaveGame(const char *tmpsave)
   * \return True if we can download all the files
   *
   */
-boolean CL_CheckDownloadable(void)
+dboolean CL_CheckDownloadable(void)
 {
 	UINT8 i,dlstatus = 0;
 
@@ -324,7 +324,7 @@ boolean CL_CheckDownloadable(void)
   * \return True if the transfer can be resumed
   *
   */
-static boolean CL_CanResumeDownload(fileneeded_t *file)
+static dboolean CL_CanResumeDownload(fileneeded_t *file)
 {
 	return pauseddownload
 		&& !strcmp(pauseddownload->filename, file->filename) // Same name
@@ -353,14 +353,14 @@ void CL_AbortDownloadResume(void)
   * \note Sends a PT_REQUESTFILE packet
   *
   */
-boolean CL_SendFileRequest(void)
+dboolean CL_SendFileRequest(void)
 {
 	char *p;
 	INT32 i;
 	INT64 totalfreespaceneeded = 0, availablefreespace;
 	INT32 skippedafile = -1;
 #ifdef MORELEGACYDOWNLOADER
-	boolean firstloop = true;
+	dboolean firstloop = true;
 #endif
 
 #ifdef PARANOIA
@@ -491,7 +491,7 @@ tryagain:
 
 // get request filepak and put it on the send queue
 // returns false if a requested file was not found or cannot be sent
-boolean PT_RequestFile(INT32 node)
+dboolean PT_RequestFile(INT32 node)
 {
 	char wad[MAX_WADPATH+1];
 	UINT8 *p = netbuffer->u.textcmd;
@@ -528,7 +528,7 @@ INT32 CL_CheckFiles(void)
 	char wadfilename[MAX_WADPATH];
 	size_t packetsize = 0;
 	size_t filestoload = 0;
-	boolean downloadrequired = false;
+	dboolean downloadrequired = false;
 
 //	if (M_CheckParm("-nofiles"))
 //		return 1;
@@ -634,7 +634,7 @@ INT32 CL_CheckFiles(void)
 }
 
 // Load it now
-boolean CL_LoadServerFiles(void)
+dboolean CL_LoadServerFiles(void)
 {
 	INT32 i;
 
@@ -886,7 +886,7 @@ static INT32 filestosend = 0;
   * \sa AddLuaFileToSendQueue
   *
   */
-static boolean AddFileToSendQueue(INT32 node, const char *filename, UINT8 fileid)
+static dboolean AddFileToSendQueue(INT32 node, const char *filename, UINT8 fileid)
 {
 	filetx_t **q; // A pointer to the "next" field of the last file in the list
 	filetx_t *p; // The new file request
@@ -1014,7 +1014,7 @@ void AddRamToSendQueue(INT32 node, void *data, size_t size, freemethod_t freemet
   * \sa AddRamToSendQueue
   *
   */
-boolean AddLuaFileToSendQueue(INT32 node, const char *filename)
+dboolean AddLuaFileToSendQueue(INT32 node, const char *filename)
 {
 	filetx_t **q; // A pointer to the "next" field of the last file in the list
 	filetx_t *p; // The new file request
@@ -1588,7 +1588,7 @@ void PT_FileFragment(void)
  * \return True if the node is downloading a file
  *
  */
-boolean SendingFile(INT32 node)
+dboolean SendingFile(INT32 node)
 {
 	return transfer[node].txlist != NULL;
 }
@@ -1742,10 +1742,10 @@ filestatus_t checkfilemd5(char *filename, const UINT8 *wantedmd5sum)
 // Rewritten by Monster Iestyn to be less stupid
 // Note: if completepath is true, "filename" is modified, but only if FS_FOUND is going to be returned
 // (Don't worry about WinCE's version of filesearch, nobody cares about that OS anymore)
-filestatus_t findfile(char *filename, const char *priorityfolder, const UINT8 *wantedmd5sum, boolean completepath)
+filestatus_t findfile(char *filename, const char *priorityfolder, const UINT8 *wantedmd5sum, dboolean completepath)
 {
 	filestatus_t homecheck; // store result of last file search
-	boolean badmd5 = false; // store whether md5 was bad from either of the first two searches (if nothing was found in the third)
+	dboolean badmd5 = false; // store whether md5 was bad from either of the first two searches (if nothing was found in the third)
 
 	// first, check SRB2's "home" directory (if non-'.')
 	if (strcmp(srb2home, "."))
@@ -1909,7 +1909,7 @@ void CURLGetFile(void)
 	const char *easy_handle_error;
 
 #ifdef HAVE_THREADS
-	boolean running = true;
+	dboolean running = true;
 
 	I_lock_mutex(&downloadmutex);
 	while (running && curl_running)

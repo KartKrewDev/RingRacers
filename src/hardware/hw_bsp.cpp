@@ -216,7 +216,7 @@ static polyvertex_t *fracdivline(fdivline_t *bsp, polyvertex_t *v1,
 // if two vertice coords have a x and/or y difference
 // of less or equal than 1 FRACUNIT, they are considered the same
 // point. Note: hardcoded value, 1.0f could be anything else.
-static boolean SameVertice (polyvertex_t *p1, polyvertex_t *p2)
+static dboolean SameVertice (polyvertex_t *p1, polyvertex_t *p2)
 {
 #if 0
 	float diff;
@@ -713,7 +713,7 @@ void HWR_FreeExtraSubsectors(void)
 #define MAXDIST 1.5f
 // BP: can't move vertex: DON'T change polygon geometry! (convex)
 //#define MOVEVERTEX
-static boolean PointInSeg(polyvertex_t *a,polyvertex_t *v1,polyvertex_t *v2)
+static dboolean PointInSeg(polyvertex_t *a,polyvertex_t *v1,polyvertex_t *v2)
 {
 	float ax,ay,bx,by,cx,cy,d,norm;
 	polyvertex_t *p;

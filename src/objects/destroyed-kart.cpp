@@ -548,7 +548,7 @@ void Obj_DestroyedKartThink(mobj_t *kart)
 	static_cast<Kart*>(kart)->think();
 }
 
-boolean Obj_DestroyKart(mobj_t *kart)
+dboolean Obj_DestroyKart(mobj_t *kart)
 {
 	return static_cast<Kart*>(kart)->destroy();
 }

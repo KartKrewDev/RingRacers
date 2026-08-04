@@ -145,7 +145,7 @@ static AVRecorder::Config configure()
 	return cfg;
 }
 
-boolean M_AVRecorder_Open(const char* filename)
+dboolean M_AVRecorder_Open(const char* filename)
 {
 	try
 	{
@@ -192,7 +192,7 @@ void M_AVRecorder_PrintCurrentConfiguration(void)
 	g_av_recorder->print_configuration();
 }
 
-boolean M_AVRecorder_IsExpired(void)
+dboolean M_AVRecorder_IsExpired(void)
 {
 	SRB2_ASSERT(g_av_recorder != nullptr);
 

@@ -1250,7 +1250,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 // --------------------------------------------------------------------------
 // save screenshots with TGA format
 // --------------------------------------------------------------------------
-static inline boolean saveTGA(const char *file_name, void *buffer,
+static inline dboolean saveTGA(const char *file_name, void *buffer,
 	INT32 width, INT32 height)
 {
 	INT32 fd;
@@ -1306,9 +1306,9 @@ UINT8 *HWR_GetScreenshot(void)
 	return buf;
 }
 
-boolean HWR_Screenshot(const char *pathname)
+dboolean HWR_Screenshot(const char *pathname)
 {
-	boolean ret;
+	dboolean ret;
 	UINT8 *buf = (UINT8 *)malloc(vid.width * vid.height * 3 * sizeof (*buf));
 
 	if (!buf)

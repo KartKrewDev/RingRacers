@@ -245,19 +245,19 @@ CV_PossibleValue_t perfstats_cons_t[] = {
 };
 
 char timedemo_name[256];
-boolean timedemo_csv;
+dboolean timedemo_csv;
 char timedemo_csv_id[256];
-boolean timedemo_quit;
+dboolean timedemo_quit;
 
 INT16 gametype = GT_RACE;
 INT16 g_lastgametype = GT_RACE;
 INT16 numgametypes = GT_FIRSTFREESLOT;
 
-boolean forceresetplayers = false;
-boolean deferencoremode = false;
-boolean forcespecialstage = false;
+dboolean forceresetplayers = false;
+dboolean deferencoremode = false;
+dboolean forcespecialstage = false;
 
-boolean staffsync = false;
+dboolean staffsync = false;
 
 UINT8 splitscreen = 0;
 INT32 adminplayers[MAXPLAYERS];
@@ -610,7 +610,7 @@ void D_RegisterClientCommands(void)
   * \author Graue <graue@oceanbase.org>
   */
 
-static boolean AllowedPlayerNameChar(char ch)
+static dboolean AllowedPlayerNameChar(char ch)
 {
 	if (!isprint(ch) || ch == ';' || ch == '"' || (UINT8)(ch) >= 0x80)
 		return false;
@@ -618,7 +618,7 @@ static boolean AllowedPlayerNameChar(char ch)
 	return true;
 }
 
-boolean IsPlayerNameUnique(const char *name, INT32 playernum)
+dboolean IsPlayerNameUnique(const char *name, INT32 playernum)
 {
 	// Check if a player is currently using the name, case-insensitively.
 	for (INT32 ix = 0; ix < MAXPLAYERS; ix++)
@@ -634,7 +634,7 @@ boolean IsPlayerNameUnique(const char *name, INT32 playernum)
 	return true;
 }
 
-boolean IsPlayerNameGood(char *name)
+dboolean IsPlayerNameGood(char *name)
 {
 	size_t ix, len = strlen(name);
 
@@ -670,7 +670,7 @@ boolean IsPlayerNameGood(char *name)
 	return true;
 }
 
-boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
+dboolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 {
 	size_t len = strlen(name);
 
@@ -733,8 +733,8 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 	char *p;
 	char *tmpname = NULL;
 	INT32 i;
-	boolean namefailed = true;
-	boolean clientjoin = !!(playernum >= MAXPLAYERS);
+	dboolean namefailed = true;
+	dboolean clientjoin = !!(playernum >= MAXPLAYERS);
 
 	if (clientjoin)
 		playernum -= MAXPLAYERS;
@@ -878,7 +878,7 @@ static void SetPlayerName(INT32 playernum, char *newname)
 	}
 }
 
-boolean CanChangeSkin(INT32 playernum)
+dboolean CanChangeSkin(INT32 playernum)
 {
 	(void)playernum;
 
@@ -1401,7 +1401,7 @@ static void Got_PartyInvite(const UINT8 **cp,INT32 playernum)
 {
 	UINT8 invitee;
 
-	boolean kick = false;
+	dboolean kick = false;
 
 	invitee = READUINT8 (*cp);
 
@@ -2044,7 +2044,7 @@ Command_CancelInvite_f (void)
 	SendNetXCmd(XD_CANCELPARTYINVITE, buffer, sizeof buffer);
 }
 
-static boolean
+static dboolean
 CheckPartyInvite (void)
 {
 	if (splitscreen_invitations[consoleplayer] < 0)
@@ -2253,7 +2253,7 @@ INT32 mapchangepending = 0;
   * \sa D_GameTypeChanged, Command_Map_f
   * \author Graue <graue@oceanbase.org>
   */
-void D_MapChange(UINT16 mapnum, INT32 newgametype, boolean pencoremode, boolean presetplayers, INT32 delay, boolean skipprecutscene, boolean pforcespecialstage)
+void D_MapChange(UINT16 mapnum, INT32 newgametype, dboolean pencoremode, dboolean presetplayers, INT32 delay, dboolean skipprecutscene, dboolean pforcespecialstage)
 {
 	static char buf[1+1+1+1+1+2+4];
 	static char *buf_p = buf;
@@ -2576,11 +2576,11 @@ static void Command_Map_f(void)
 	size_t option_skill;
 	size_t option_server;
 	size_t option_match;
-	boolean newresetplayers;
-	boolean newforcespecialstage;
+	dboolean newresetplayers;
+	dboolean newforcespecialstage;
 
-	boolean usingcheats;
-	boolean ischeating;
+	dboolean usingcheats;
+	dboolean ischeating;
 
 	INT32 newmapnum;
 
@@ -2588,7 +2588,7 @@ static void Command_Map_f(void)
 	char   *realmapname = NULL;
 
 	INT32 newgametype = gametype;
-	boolean newencoremode = (cv_kartencore.value == 1);
+	dboolean newencoremode = (cv_kartencore.value == 1);
 
 	if (Playing())
 	{
@@ -2630,7 +2630,7 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	boolean getgametypefrommap = false;
+	dboolean getgametypefrommap = false;
 
 	// new gametype value
 	// use current one by default
@@ -2788,7 +2788,7 @@ static void Command_Map_f(void)
 		if (!Playing())
 		{
 			UINT8 ssplayers = cv_splitplayers.value-1;
-			boolean newnetgame = (option_server != 0);
+			dboolean newnetgame = (option_server != 0);
 
 			multiplayer = true;
 			netgame = false;
@@ -2897,7 +2897,7 @@ static void Got_Mapcmd(const UINT8 **cp, INT32 playernum)
 	UINT8 flags;
 	INT32 presetplayer = 1;
 	UINT8 skipprecutscene, pforcespecialstage;
-	boolean pencoremode, hasroundqueuedata;
+	dboolean pencoremode, hasroundqueuedata;
 	UINT16 mapnumber, lastgametype;
 
 	forceresetplayers = deferencoremode = false;
@@ -2982,7 +2982,7 @@ static void Got_Mapcmd(const UINT8 **cp, INT32 playernum)
 	// Handle some Grand Prix state.
 	if (grandprixinfo.gp)
 	{
-		boolean caughtretry = (gametype == lastgametype
+		dboolean caughtretry = (gametype == lastgametype
 				&& mapnumber == gamemap);
 		if (pforcespecialstage // Forced.
 			|| (caughtretry && grandprixinfo.eventmode == GPEVENT_SPECIAL) // Catch retries of forced.
@@ -3052,7 +3052,7 @@ static void Command_RandomMap(void)
 
 static void Command_RestartLevel(void)
 {
-	boolean newencore = false;
+	dboolean newencore = false;
 
 	if (client && !IsPlayerAdmin(consoleplayer))
 	{
@@ -3080,7 +3080,7 @@ static void Command_RestartLevel(void)
 	D_MapChange(gamemap, g_lastgametype, newencore, false, 0, false, false);
 }
 
-void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode)
+void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, dboolean newencoremode)
 {
 	UINT8 flags = 0;
 
@@ -3114,8 +3114,8 @@ static void Command_QueueMap_f(void)
 	size_t option_show;
 	size_t option_random;
 
-	boolean usingcheats;
-	boolean ischeating;
+	dboolean usingcheats;
+	dboolean ischeating;
 
 	INT32 newmapnum;
 
@@ -3123,7 +3123,7 @@ static void Command_QueueMap_f(void)
 	char   *realmapname = NULL;
 
 	INT32 newgametype = gametype;
-	boolean newencoremode = (cv_kartencore.value == 1);
+	dboolean newencoremode = (cv_kartencore.value == 1);
 
 	if (!Playing())
 	{
@@ -3281,9 +3281,9 @@ static void Command_QueueMap_f(void)
 static void Got_MapQueuecmd(const UINT8 **cp, INT32 playernum)
 {
 	UINT8 flags, queueposition, i;
-	boolean setencore;
+	dboolean setencore;
 	UINT16 setgametype;
-	boolean doclear = false;
+	dboolean doclear = false;
 
 	flags = READUINT8(*cp);
 
@@ -3763,7 +3763,7 @@ static void Got_Spectate(const UINT8 **cp, INT32 playernum)
 	player_t *const player = &players[edit_player];
 
 	// Safety first!
-	const boolean was_spectator = (player->spectator == true);
+	const dboolean was_spectator = (player->spectator == true);
 	if (was_spectator == false)
 	{
 		if (gamestate == GS_LEVEL && player->mo != NULL)
@@ -3902,7 +3902,7 @@ static void Command_Login_f(void)
 #endif
 }
 
-boolean IsPlayerAdmin(INT32 playernum)
+dboolean IsPlayerAdmin(INT32 playernum)
 {
 #if 0 // defined(DEVELOP)
 	return playernum != serverplayer;
@@ -4300,7 +4300,7 @@ static void Got_MotD_f(const UINT8 **cp, INT32 playernum)
 {
 	char *mymotd = Z_Malloc(sizeof(motd), PU_STATIC, NULL);
 	INT32 i;
-	boolean kick = false;
+	dboolean kick = false;
 
 	READSTRINGN(*cp, mymotd, sizeof(motd));
 
@@ -4429,7 +4429,7 @@ static void Command_Addfile(void)
 		char *buf_p = buf;
 		INT32 i;
 		size_t ii;
-		int musiconly = -1; // W_VerifyNMUSlumps isn't boolean
+		int musiconly = -1; // W_VerifyNMUSlumps isn't dboolean
 
 		fn = COM_Argv(curarg);
 
@@ -4563,8 +4563,8 @@ static void Got_RequestAddfilecmd(const UINT8 **cp, INT32 playernum)
 	char filename[241];
 	filestatus_t ncs = FS_NOTCHECKED;
 	UINT8 md5sum[16];
-	boolean kick = false;
-	boolean toomany = false;
+	dboolean kick = false;
+	dboolean toomany = false;
 	INT32 i,j;
 
 	READSTRINGN(*cp, filename, 240);
@@ -4691,7 +4691,7 @@ static void Command_ListDoomednums_f(void)
 	INT16 i, j, focusstart = 0, focusend = 0;
 	INT32 argc = COM_Argc(), argstart = 0;
 	INT16 table[MAXDOOMEDNUM];
-	boolean nodoubles = false;
+	dboolean nodoubles = false;
 	UINT8 doubles[(MAXDOOMEDNUM+8/8)];
 
 	if (argc > 1)
@@ -4825,11 +4825,11 @@ static void Command_cxdiag_f(void)
 				continue;
 
 			UINT32 lastID = 0;
-			boolean validSoFar = true;
-			boolean requiresPlaying = false;
-			boolean lastRequiresPlaying = false;
-			boolean lastrequiredplayingvalid = false;
-			boolean immediatelyprefix = false;
+			dboolean validSoFar = true;
+			dboolean requiresPlaying = false;
+			dboolean lastRequiresPlaying = false;
+			dboolean lastrequiredplayingvalid = false;
+			dboolean immediatelyprefix = false;
 			INT32 relevantlevelgt = -1;
 			UINT8 lastj = j = 0;
 			while (true) //for (j = 0; j < c->numconditions; ++j)
@@ -4872,7 +4872,7 @@ static void Command_cxdiag_f(void)
 					}
 				}
 
-				const boolean firstpass = (lastj <= j);
+				const dboolean firstpass = (lastj <= j);
 
 				if (cn->type == UC_DESCRIPTIONOVERRIDE)
 				{
@@ -5603,7 +5603,7 @@ static void Command_Mapmd5_f(void)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 }
 
-boolean G_GamestateUsesExitLevel(void)
+dboolean G_GamestateUsesExitLevel(void)
 {
 	if (demo.playback)
 		return false;
@@ -5664,8 +5664,8 @@ static void Got_ExitLevelcmd(const UINT8 **cp, INT32 playernum)
 static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 {
 	INT16 newGametype = 0;
-	boolean baseEncore = false;
-	boolean optionalEncore = false;
+	dboolean baseEncore = false;
+	dboolean optionalEncore = false;
 	INT16 tempVoteLevels[VOTE_NUM_LEVELS][2];
 	INT32 i;
 
@@ -5680,8 +5680,8 @@ static void Got_SetupVotecmd(const UINT8 **cp, INT32 playernum)
 	}
 
 	newGametype = READINT16(*cp);
-	baseEncore = (boolean)READUINT8(*cp);
-	optionalEncore = (boolean)READUINT8(*cp);
+	baseEncore = (dboolean)READUINT8(*cp);
+	optionalEncore = (dboolean)READUINT8(*cp);
 
 	if (!(gametyperules & GTR_ENCORE))
 	{
@@ -6164,7 +6164,7 @@ static void Got_Cheat(const UINT8 **cp, INT32 playernum)
 			waypoint_t *finish = K_GetFinishLineWaypoint();
 			waypoint_t *waypoint = K_GetWaypointFromID(id);
 			path_t path = {0};
-			boolean retryBackwards = false;
+			dboolean retryBackwards = false;
 			const UINT32 baseDist = FixedMul(RESPAWN_DIST, mapobjectscale);
 
 			CV_CheaterWarning(targetPlayer, va("respawnat %d", id));
@@ -7019,8 +7019,8 @@ static void Command_Staffsync(void)
 #ifdef DEVELOP
 static void Command_FastForward(void)
 {
-	boolean r_flag = false;
-	boolean t_flag = false;
+	dboolean r_flag = false;
+	dboolean t_flag = false;
 
 	size_t num_time_args = 0;
 	const char *time_arg = NULL;
@@ -7284,7 +7284,7 @@ static void Color_OnChange(const UINT8 p)
 	I_Assert(p < MAXSPLITSCREENPLAYERS);
 
 	UINT16 color = cv_playercolor[p].value;
-	boolean colorisgood = (color == SKINCOLOR_NONE || K_ColorUsable(color, false, true) == true);
+	dboolean colorisgood = (color == SKINCOLOR_NONE || K_ColorUsable(color, false, true) == true);
 
 	if (Playing() && p <= splitscreen)
 	{
@@ -7528,14 +7528,14 @@ void NumLaps_OnChange(void)
 	}
 }
 
-boolean M_AnyItemsEnabled(void);
+dboolean M_AnyItemsEnabled(void);
 void KartItem_OnChange(void);
 void KartItem_OnChange(void)
 {
 	if (netgame && !server)
 		return;
 
-	const boolean check = !M_AnyItemsEnabled();
+	const dboolean check = !M_AnyItemsEnabled();
 	if (cv_thunderdome.value != check)
 		CV_SetValue(&cv_thunderdome, check);
 }
@@ -7559,7 +7559,7 @@ void KartFrantic_OnChange(void)
 	if (gamestate == GS_LEVEL && leveltime < starttime)
 	{
 		CONS_Printf(M_GetText("Frantic items has been set to %s.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
-		franticitems = (boolean)cv_kartfrantic.value;
+		franticitems = (dboolean)cv_kartfrantic.value;
 	}
 	else
 	{
@@ -7634,7 +7634,7 @@ void LiveStudioAudience_OnChange(void)
 	livestudioaudience_timer = 90;
 }
 
-static boolean maxplayers_warned = false;
+static dboolean maxplayers_warned = false;
 
 static void M_MaxplayersSelect(INT32 choice)
 {
@@ -7676,8 +7676,8 @@ void Got_DiscordInfo(const UINT8 **p, INT32 playernum)
 	// Don't do anything with the information if we don't have Discord RP support
 #ifdef HAVE_DISCORDRPC
 	discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
-	discordInfo.everyoneCanInvite = (boolean)READUINT8(*p);
+	discordInfo.joinsAllowed = (dboolean)READUINT8(*p);
+	discordInfo.everyoneCanInvite = (dboolean)READUINT8(*p);
 
 	DRPC_UpdatePresence();
 #else

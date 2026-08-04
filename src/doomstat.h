@@ -45,7 +45,7 @@ extern "C" {
 
 // Selected by user.
 extern INT16 gamemap;
-extern boolean g_reloadingMap;
+extern dboolean g_reloadingMap;
 extern char mapmusname[7];
 extern UINT32 mapmusposition;
 extern UINT32 mapmusresume;
@@ -198,18 +198,18 @@ struct cupwindata_t
 {
 	UINT8 best_placement;
 	gp_rank_e best_grade;
-	boolean got_emerald;
+	dboolean got_emerald;
 	skinreference_t best_skin;
 };
 
 // Set if homebrew PWAD stuff has been added.
-extern boolean modifiedgame;
-extern boolean majormods;
+extern dboolean modifiedgame;
+extern dboolean majormods;
 extern UINT16 mainwads;
 extern UINT16 musicwads;
-extern boolean savemoddata; // This mod saves time/emblem data.
-extern boolean usedCheats;
-extern boolean imcontinuing; // Temporary flag while continuing
+extern dboolean savemoddata; // This mod saves time/emblem data.
+extern dboolean usedCheats;
+extern dboolean imcontinuing; // Temporary flag while continuing
 
 #define ATTACKING_NONE	0
 #define ATTACKING_TIME	1
@@ -224,16 +224,16 @@ extern UINT32 demoDelayTime;
 extern UINT32 demoIdleTime;
 
 // Netgame? only true in a netgame
-extern boolean netgame;
-extern boolean addedtogame; // true after the server has added you
+extern dboolean netgame;
+extern dboolean addedtogame; // true after the server has added you
 // Only true if >1 player. netgame => multiplayer but not (multiplayer=>netgame)
-extern boolean multiplayer;
+extern dboolean multiplayer;
 
 extern UINT8 splitscreen;
 extern int r_splitscreen;
 
-extern boolean forceresetplayers, deferencoremode, forcespecialstage;
-extern boolean staffsync;
+extern dboolean forceresetplayers, deferencoremode, forcespecialstage;
+extern dboolean staffsync;
 extern UINT32 staffsync_map, staffsync_ghost, staffsync_done, staffsync_total, staffsync_failed;
 
 struct staffsync_t
@@ -253,24 +253,24 @@ extern staffsync_t staffsync_results[1024];
 // Internal parameters for sound rendering.
 // ========================================
 
-extern boolean sound_disabled;
-extern boolean digital_disabled;
-extern boolean g_voice_disabled;
+extern dboolean sound_disabled;
+extern dboolean digital_disabled;
+extern dboolean g_voice_disabled;
 
 // =========================
 // Status flags for refresh.
 // =========================
 //
 
-extern boolean menuactive; // Menu overlaid?
+extern dboolean menuactive; // Menu overlaid?
 extern UINT8 paused; // Game paused?
 extern UINT8 window_notinfocus; // are we in focus? (backend independant -- handles auto pausing and display of "focus lost" message)
 extern INT32 window_x;
 extern INT32 window_y;
 
-extern boolean nodrawers;
-extern boolean noblit;
-extern boolean lastdraw;
+extern dboolean nodrawers;
+extern dboolean noblit;
+extern dboolean lastdraw;
 extern postimg_t postimgtype[MAXSPLITSCREENPLAYERS];
 extern INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 
@@ -284,8 +284,8 @@ extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
 extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 extern char * titlemap;
-extern boolean hidetitlepics;
-extern boolean looptitle;
+extern dboolean hidetitlepics;
+extern dboolean looptitle;
 
 extern char * bootmap; //bootmap for loading a map on startup
 extern char * podiummap; // map to load for podium
@@ -297,7 +297,7 @@ extern UINT8 tutorialchallenge;
 #define TUTORIALSKIP_FAILED 1
 #define TUTORIALSKIP_INPROGRESS 2
 
-extern boolean exitfadestarted;
+extern dboolean exitfadestarted;
 
 struct scene_t
 {
@@ -359,8 +359,8 @@ struct textpage_t
 	char tag[33]; // page tag
 	char name[34]; // narrator name, extra char for color
 	char iconname[8]; // narrator icon lump
-	boolean rightside; // narrator side, false = left, true = right
-	boolean iconflip; // narrator flip icon horizontally
+	dboolean rightside; // narrator side, false = left, true = right
+	dboolean iconflip; // narrator flip icon horizontally
 	UINT8 hidehud; // hide hud, 0 = show all, 1 = hide depending on prompt position (top/bottom), 2 = hide all
 	UINT8 lines; // # of lines to show. If name is specified, name takes one of the lines. If 0, defaults to 4.
 	INT32 backcolor; // see CON_SetupBackColormap: 0-11, INT32_MAX for user-defined (CONS_BACKCOLOR)
@@ -449,7 +449,7 @@ struct cupheader_t
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
 
 	// Modifiable in mainwads only
-	boolean playcredits;					///< Play the credits?
+	dboolean playcredits;					///< Play the credits?
 	UINT16 hintcondition;					///< Hint condition for 2.4 Super Cup
 
 	// Truly internal data
@@ -492,7 +492,7 @@ struct mapheader_lighting_t
 {
 	UINT8 light_contrast;				///< Range of wall lighting. 0 is no lighting.
 	SINT8 sprite_backlight;				///< Subtract from wall lighting for sprites only.
-	boolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
+	dboolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
 	angle_t light_angle;				///< Angle of directional wall lighting.
 };
 
@@ -575,7 +575,7 @@ struct mapheader_t
 
 	mapheader_lighting_t lighting;			///< Wall and sprite lighting
 	mapheader_lighting_t lighting_encore;	///< Alternative lighting for Encore mode
-	boolean use_encore_lighting;			///< Whether to use separate Encore lighting
+	dboolean use_encore_lighting;			///< Whether to use separate Encore lighting
 
 	fixed_t cameraHeight;					///< Player camera height to use on this map
 
@@ -795,12 +795,12 @@ extern teaminfo_t g_teaminfo[TEAM__MAX];
 extern UINT32 g_teamscores[TEAM__MAX];
 
 // Eliminates unnecessary searching.
-extern boolean CheckForBustableBlocks;
-extern boolean CheckForBouncySector;
-extern boolean CheckForQuicksand;
-extern boolean CheckForMarioBlocks;
-extern boolean CheckForFloatBob;
-extern boolean CheckForReverseGravity;
+extern dboolean CheckForBustableBlocks;
+extern dboolean CheckForBouncySector;
+extern dboolean CheckForQuicksand;
+extern dboolean CheckForMarioBlocks;
+extern dboolean CheckForFloatBob;
+extern dboolean CheckForReverseGravity;
 
 // Powerup durations
 extern UINT16 invulntics;
@@ -841,8 +841,8 @@ extern UINT8 maxXtraLife; // Max extra lives from rings
 
 struct exitcondition_t
 {
-	boolean losing;
-	boolean retry;
+	dboolean losing;
+	dboolean retry;
 };
 
 // For racing
@@ -859,7 +859,7 @@ extern struct darkness_t
 extern struct musicfade_t
 {
 	tic_t start, end, fade;
-	boolean ticked;
+	dboolean ticked;
 } g_musicfade;
 
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)
@@ -870,32 +870,32 @@ extern struct maplighting
 {
 	UINT8 contrast;
 	SINT8 backlight;
-	boolean directional;
+	dboolean directional;
 	angle_t angle;
 } maplighting;
 
 // SRB2kart
 extern UINT8 numlaps;
 extern UINT8 gamespeed;
-extern boolean franticitems;
-extern boolean encoremode, prevencoremode;
-extern boolean g_teamplay;
-extern boolean g_duelpermitted;
+extern dboolean franticitems;
+extern dboolean encoremode, prevencoremode;
+extern dboolean g_teamplay;
+extern dboolean g_duelpermitted;
 
 extern tic_t wantedcalcdelay;
 extern tic_t itemCooldowns[NUMKARTITEMS - 1];
 extern tic_t mapreset;
-extern boolean thwompsactive;
+extern dboolean thwompsactive;
 extern UINT8 lastLowestLap;
 extern SINT8 spbplace;
-extern boolean rainbowstartavailable;
+extern dboolean rainbowstartavailable;
 extern tic_t attacktimingstarted;
-extern boolean inDuel;
+extern dboolean inDuel;
 extern UINT8 overtimecheckpoints;
 
 extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
-extern boolean legitimateexit;
-extern boolean comebackshowninfo;
+extern dboolean legitimateexit;
+extern dboolean comebackshowninfo;
 
 #define VOTE_NUM_LEVELS (4)
 #define VOTE_NOT_PICKED (-1)
@@ -908,7 +908,7 @@ extern boolean comebackshowninfo;
 extern UINT16 g_voteLevels[VOTE_NUM_LEVELS][2];
 extern SINT8 g_votes[VOTE_TOTAL];
 extern SINT8 g_pickedVote;
-extern boolean g_votes_striked[VOTE_NUM_LEVELS];
+extern dboolean g_votes_striked[VOTE_NUM_LEVELS];
 
 // ===========================
 // Internal parameters, fixed.
@@ -933,10 +933,10 @@ extern UINT16 numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
 void P_AddTubeWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint);
 mobj_t *P_GetFirstTubeWaypoint(UINT8 sequence);
 mobj_t *P_GetLastTubeWaypoint(UINT8 sequence);
-mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, boolean wrap);
-mobj_t *P_GetNextTubeWaypoint(mobj_t *current, boolean wrap);
+mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, dboolean wrap);
+mobj_t *P_GetNextTubeWaypoint(mobj_t *current, dboolean wrap);
 mobj_t *P_GetClosestTubeWaypoint(UINT8 sequence, mobj_t *mo);
-boolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence);
+dboolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence);
 
 // =====================================
 // Internal parameters, used for engine.
@@ -959,7 +959,7 @@ extern INT32 debugload;
 #endif
 
 // if true, load all graphics at level load
-extern boolean precache;
+extern dboolean precache;
 
 // wipegamestate can be set to -1
 //  to force a wipe on the next draw
@@ -968,7 +968,7 @@ extern INT16 wipetypepre;
 extern INT16 wipetypepost;
 
 // debug flag to cancel adaptiveness
-extern boolean g_singletics;
+extern dboolean g_singletics;
 extern tic_t g_fast_forward;
 extern tic_t g_fast_forward_clock_stop;
 

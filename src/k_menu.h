@@ -176,8 +176,8 @@ struct menu_t
 	void           (*bgroutine)(void); // draw routine, but, like, for the background
 	void         (*tickroutine)(void); // ticker routine
 	void         (*initroutine)(void); // called when starting a new menu
-	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
-	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
+	dboolean      (*quitroutine)(void); // called before quit a menu return true if we can
+	dboolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
 };
 
 struct menu_anim_t
@@ -233,9 +233,9 @@ void M_GonerTutorial(INT32 choice);
 void M_GonerPlayground(INT32 choice);
 void M_GonerResetLooking(int type);
 void M_GonerCheckLooking(void);
-void M_GonerResetText(boolean completely);
-void M_GonerGDQ(boolean opinion);
-boolean M_GonerMusicPlayable(void);
+void M_GonerResetText(dboolean completely);
+void M_GonerGDQ(dboolean opinion);
+dboolean M_GonerMusicPlayable(void);
 
 extern menuitem_t PLAY_CharSelect[];
 extern menu_t PLAY_CharSelectDef;
@@ -634,15 +634,15 @@ extern INT16 shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW];
 typedef const char *(*vkb_query_fn_t)(const char *replace);
 extern struct menutyping_s
 {
-	boolean active;				// Active
-	boolean menutypingclose;	// Closing
-	boolean keyboardtyping;		// If true, all keystrokes are treated as typing (ignores MBT_A etc). This is unset if you try moving the cursor on the virtual keyboard or use your controller
+	dboolean active;				// Active
+	dboolean menutypingclose;	// Closing
+	dboolean keyboardtyping;		// If true, all keystrokes are treated as typing (ignores MBT_A etc). This is unset if you try moving the cursor on the virtual keyboard or use your controller
 	SINT8 menutypingfade;		// fade in and out
 
 	SINT8 keyboardx;
 	SINT8 keyboardy;
-	boolean keyboardcapslock;
-	boolean keyboardshift;
+	dboolean keyboardcapslock;
+	dboolean keyboardshift;
 
 	vkb_query_fn_t queryfn; // callback on open and close
 	menu_t *dummymenu;
@@ -663,7 +663,7 @@ typedef enum
 #define MENUMESSAGECLOSE 2
 extern struct menumessage_s
 {
-	boolean active;
+	dboolean active;
 	UINT8 closing;
 
 	INT32 flags;		// MM_
@@ -684,7 +684,7 @@ extern struct menumessage_s
 } menumessage;
 
 void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
-boolean M_MenuMessageTick(void);
+dboolean M_MenuMessageTick(void);
 void M_HandleMenuMessage(void);
 void M_StopMessage(INT32 choice);
 void M_DrawMenuMessage(void);
@@ -729,10 +729,10 @@ extern struct menutransition_s {
 	INT16 dest;
 	menu_t *startmenu;
 	menu_t *endmenu;
-	boolean in;
+	dboolean in;
 } menutransition;
 
-extern boolean menuwipe;
+extern dboolean menuwipe;
 
 extern consvar_t cv_showfocuslost;
 extern consvar_t cv_chooseskin, cv_serversort, cv_menujam_update, cv_menujam;
@@ -744,42 +744,42 @@ void M_SetMenuDelay(UINT8 i);
 
 void M_SortServerList(void);
 
-void M_UpdateMenuCMD(UINT8 i, boolean bailrequired, boolean chat_open);
-boolean M_Responder(event_t *ev);
-boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
-boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
+void M_UpdateMenuCMD(UINT8 i, dboolean bailrequired, dboolean chat_open);
+dboolean M_Responder(event_t *ev);
+dboolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
+dboolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
 
-boolean M_ChangeStringCvar(INT32 choice);
+dboolean M_ChangeStringCvar(INT32 choice);
 void M_ChangeCvarDirect(INT32 choice, consvar_t *cv);
-boolean M_NextOpt(void);
-boolean M_PrevOpt(void);
+dboolean M_NextOpt(void);
+dboolean M_PrevOpt(void);
 
-boolean M_MenuConfirmPressed(UINT8 pid);
-boolean M_MenuConfirmHeld(UINT8 pid);
-boolean M_MenuBackPressed(UINT8 pid);
-boolean M_MenuBackHeld(UINT8 pid);
-boolean M_MenuExtraPressed(UINT8 pid);
-boolean M_MenuExtraHeld(UINT8 pid);
+dboolean M_MenuConfirmPressed(UINT8 pid);
+dboolean M_MenuConfirmHeld(UINT8 pid);
+dboolean M_MenuBackPressed(UINT8 pid);
+dboolean M_MenuBackHeld(UINT8 pid);
+dboolean M_MenuExtraPressed(UINT8 pid);
+dboolean M_MenuExtraHeld(UINT8 pid);
 
 void M_StartControlPanel(void);
 void M_ValidateRestoreMenu(void);
 menu_t *M_SpecificMenuRestore(menu_t *torestore);
-void M_ClearMenus(boolean callexitmenufunc);
-void M_ClearMenusNoTitle(boolean callexitmenufunc);
+void M_ClearMenus(dboolean callexitmenufunc);
+void M_ClearMenusNoTitle(dboolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);
-void M_SetupNextMenu(menu_t *menudef, boolean nofade);
+void M_SetupNextMenu(menu_t *menudef, dboolean nofade);
 void M_GoBack(INT32 choice);
 void M_Ticker(void);
 void M_Init(void);
 
 void M_PlayMenuJam(void);
 
-boolean M_ConsiderSealedSwapAlert(void);
+dboolean M_ConsiderSealedSwapAlert(void);
 
 void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
 void M_AbortVirtualKeyboard(void);
 void M_MenuTypingInput(INT32 key);
-void M_SwitchVirtualKeyboard(boolean gamepad);
+void M_SwitchVirtualKeyboard(dboolean gamepad);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
@@ -832,8 +832,8 @@ struct setup_player_t
 	UINT8 delay;
 	UINT16 color;
 	UINT8 mdepth;
-	boolean hitlag;
-	boolean showextra;
+	dboolean hitlag;
+	dboolean showextra;
 
 	// Hack, save player 1's original device even if they init charsel with keyboard.
 	// If they play ALONE, allow them to retain that original device, otherwise, ignore this.
@@ -884,11 +884,11 @@ extern consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
 void M_CharacterSelectInit(void);
 void M_CharacterSelect(INT32 choice);
-void M_SetupReadyExplosions(boolean charsel, UINT16 basex, UINT16 basey, UINT16 color);
-boolean M_CharacterSelectForceInAction(void);
-boolean M_CharacterSelectHandler(INT32 choice);
+void M_SetupReadyExplosions(dboolean charsel, UINT16 basex, UINT16 basey, UINT16 color);
+dboolean M_CharacterSelectForceInAction(void);
+dboolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
-boolean M_CharacterSelectQuit(void);
+dboolean M_CharacterSelectQuit(void);
 
 void M_SetupPlayMenu(INT32 choice);
 void M_SetupGametypeMenu(INT32 choice);
@@ -905,17 +905,17 @@ extern struct cupgrid_s {
 	size_t numpages;
 	size_t cappages;
 	tic_t previewanim;
-	boolean cache_secondrowlocked;
+	dboolean cache_secondrowlocked;
 } cupgrid;
 
 typedef struct levelsearch_s {
 	UINT32 typeoflevel;
 	cupheader_t *cup;
-	boolean timeattack;
-	boolean tutorial;
-	boolean grandprix;
-	boolean cupmode;
-	boolean checklocked;
+	dboolean timeattack;
+	dboolean tutorial;
+	dboolean grandprix;
+	dboolean cupmode;
+	dboolean checklocked;
 } levelsearch_t;
 
 #define M_LEVELLIST_SLIDETIME 4
@@ -929,8 +929,8 @@ typedef struct levellist_s {
 	UINT8 newgametype;
 	UINT8 guessgt;
 	levelsearch_t levelsearch;
-	boolean netgame;	// Start the game in an actual server
-	boolean canqueue;
+	dboolean netgame;	// Start the game in an actual server
+	dboolean canqueue;
 	menu_t *backMenu;
 } levellist_t;
 
@@ -939,12 +939,12 @@ extern levellist_t restorelevellist;
 
 extern cupheader_t dummy_lostandfound;
 
-boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
+dboolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
 UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch);
 UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch);
 UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch);
 void M_LevelSelectScrollDest(void);
-boolean M_LevelListFromGametype(INT16 gt);
+dboolean M_LevelListFromGametype(INT16 gt);
 
 void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);
@@ -953,9 +953,9 @@ void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
 INT16 M_LevelFromScrolledList(INT16 add);
-void M_MenuToLevelPreamble(UINT8 ssplayers, boolean nowipe);
-void M_LevelSelected(INT16 add, boolean menuupdate);
-boolean M_LevelSelectCupSwitch(boolean next, boolean skipones);
+void M_MenuToLevelPreamble(UINT8 ssplayers, dboolean nowipe);
+void M_LevelSelected(INT16 add, dboolean menuupdate);
+dboolean M_LevelSelectCupSwitch(dboolean next, dboolean skipones);
 
 void M_LevelConfirmHandler(void);
 void M_ClearQueueHandler(void);
@@ -1002,20 +1002,20 @@ void M_PleaseWait(void);
 void M_PopupMasterServerRules(void);
 
 // Time Attack
-void M_PrepareTimeAttack(boolean menuupdate);
+void M_PrepareTimeAttack(dboolean menuupdate);
 void M_StartTimeAttack(INT32 choice);
 void M_ReplayTimeAttack(INT32 choice);
 void M_HandleStaffReplay(INT32 choice);
 void M_SetGuestReplay(INT32 choice);
 void M_TimeAttackTick(void);
-boolean M_EncoreAttackTogglePermitted(void);
-boolean M_TimeAttackInputs (INT32 choice);
+dboolean M_EncoreAttackTogglePermitted(void);
+dboolean M_TimeAttackInputs (INT32 choice);
 
 // MP selection
 void M_MPOptSelect(INT32 choice);
 void M_MPOptSelectInit(INT32 choice);
 void M_MPOptSelectTick(void);
-boolean M_MPResetOpts(void);
+dboolean M_MPResetOpts(void);
 extern consvar_t cv_dummyip;			// I HAVE
 								// HAVE YOUR IP ADDRESS (This just the hack Cvar we'll type into and then it apends itself to "connect" in the console for IP join)
 
@@ -1025,7 +1025,7 @@ void M_MPSetupNetgameMapSelect(INT32 choice);
 
 // MP join by IP
 void M_MPJoinIPInit(INT32 choice);
-boolean M_JoinIPInputs(INT32 ch);
+dboolean M_JoinIPInputs(INT32 ch);
 void M_JoinIP(const char *ipa);
 
 // Server browser room selection
@@ -1038,7 +1038,7 @@ void M_SetWaitingMode(int mode);
 int M_GetWaitingMode(void);
 
 void M_MPServerBrowserTick(void);
-boolean M_ServerBrowserInputs(INT32 ch);
+dboolean M_ServerBrowserInputs(INT32 ch);
 
 #ifdef MASTERSERVER
 #ifdef HAVE_THREADS
@@ -1088,11 +1088,11 @@ extern struct optionsmenu_s {
 	tic_t topt_start;
 
 	// profile garbage
-	boolean profilemenu;		// In profile menu. (Used to know when to get the "PROFILE SETUP" button away....
-	boolean resetprofilemenu;	// Reset button behaviour when exiting
+	dboolean profilemenu;		// In profile menu. (Used to know when to get the "PROFILE SETUP" button away....
+	dboolean resetprofilemenu;	// Reset button behaviour when exiting
 	SINT8 profilen;				// # of the selected profile.
 
-	boolean resetprofile;		// After going back from the edit menu, this tells the profile select menu to kill the profile data after the transition.
+	dboolean resetprofile;		// After going back from the edit menu, this tells the profile select menu to kill the profile data after the transition.
 	profile_t *profile;			// Pointer to the profile we're editing
 
 	INT32 tempcontrols[num_gamecontrols][MAXINPUTMAPPING];
@@ -1153,8 +1153,8 @@ extern consvar_t cv_dummyprofilefov;
 void M_ResetOptions(void);
 void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
 void M_OptionsTick(void);
-boolean M_OptionsInputs(INT32 ch);
-boolean M_OptionsQuit(void);	// resets buttons when you quit the options.
+dboolean M_OptionsInputs(INT32 ch);
+dboolean M_OptionsQuit(void);	// resets buttons when you quit the options.
 void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour for options
 
 void M_VideoOptions(INT32 choice);
@@ -1178,10 +1178,10 @@ void M_HandleProfileSelect(INT32 ch);
 void M_HandleProfileEdit(void);
 void M_ProfileDeviceSelect(INT32 choice);
 void M_ConfirmProfile(INT32 choice);
-boolean M_ProfileEditInputs(INT32 ch);
+dboolean M_ProfileEditInputs(INT32 ch);
 
 void M_HandleProfileControls(void);
-boolean M_ProfileControlsInputs(INT32 ch);
+dboolean M_ProfileControlsInputs(INT32 ch);
 void M_ProfileSetControl(INT32 ch);
 void M_ProfileDefaultControls(INT32 ch);
 void M_ProfileClearControls(INT32 ch);
@@ -1200,7 +1200,7 @@ void M_HandleProfileErase(INT32 choice);
 void M_DrawMasterServerReminder(void);
 
 // Draws the EGGA CHANNEL background.
-void M_DrawEggaChannelAlignable(boolean centered);
+void M_DrawEggaChannelAlignable(dboolean centered);
 void M_DrawEggaChannel(void);
 
 // Extras menu:
@@ -1248,8 +1248,8 @@ typedef enum
 
 void M_InitExtras(INT32 choice); // init for the struct
 void M_ExtrasTick(void);
-boolean M_ExtrasInputs(INT32 ch);
-boolean M_ExtrasQuit(void);	// resets buttons when you quit
+dboolean M_ExtrasInputs(INT32 ch);
+dboolean M_ExtrasQuit(void);	// resets buttons when you quit
 
 
 // Extras: Egg TV
@@ -1266,21 +1266,21 @@ extern struct pausemenu_s {
 	menu_anim_t offset;		// To make the icons move smoothly when we transition!
 
 	menu_anim_t openoffset;	// Used when you open / close the menu to slide everything in.
-	boolean closing;		// When this is set, the open offset goes backwards to close the menu smoothly.
+	dboolean closing;		// When this is set, the open offset goes backwards to close the menu smoothly.
 
 	UINT8 splitscreenfocusid; // This is not exclusively visual, but thog dont care. For selecting splitscreen players to individually change their spectator state.
 } pausemenu;
 
 void M_OpenPauseMenu(void);
 void M_QuitPauseMenu(INT32 choice);
-boolean M_PauseInputs(INT32 ch);
+dboolean M_PauseInputs(INT32 ch);
 void M_PauseTick(void);
 
 extern struct playerkickmenu_s {
 	tic_t ticker;
 	UINT8 player;
 	UINT8 poke;
-	boolean adminpowered;
+	dboolean adminpowered;
 } playerkickmenu;
 
 void M_KickHandler(INT32 choice);
@@ -1340,22 +1340,22 @@ void M_DrawUnderline(INT32 left, INT32 right, INT32 y);
 UINT16 M_GetCvPlayerColor(UINT8 pnum);
 
 void M_PickMenuBGMap(void);
-void M_UpdateMenuBGImage(boolean forceReset);
+void M_UpdateMenuBGImage(dboolean forceReset);
 void M_DrawMenuBackground(void);
 void M_DrawMenuForeground(void);
 void M_Drawer(void);
 void M_DrawGenericMenu(void);
 void M_DrawKartGamemodeMenu(void);
-void M_FlipKartGamemodeMenu(boolean slide);
+void M_FlipKartGamemodeMenu(dboolean slide);
 void M_DrawHorizontalMenu(void);
 void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines);
 void M_DrawMessageMenu(void);
 void M_DrawImageDef(void);
 
 void M_DrawCharacterSelect(void);
-boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap);
+dboolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap);
 
-void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, boolean isTrophy, UINT8 placement);
+void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, dboolean isTrophy, UINT8 placement);
 void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);
 void M_DrawSealedBack(void);
@@ -1383,7 +1383,7 @@ void M_DrawOptionsColorProfile(void);
 void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
-void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p);
+void M_DrawProfileCard(INT32 x, INT32 y, dboolean greyedout, profile_t *p);
 void M_DrawProfileSelect(void);
 void M_DrawEditProfileTooltips(void);
 void M_DrawEditProfile(void);
@@ -1463,15 +1463,15 @@ extern struct challengesmenu_s {
 
 	challengegridextradata_t *extradata;
 
-	boolean pending;
-	boolean requestnew;
+	dboolean pending;
+	dboolean requestnew;
 
-	boolean chaokeyadd, keywasadded;
+	dboolean chaokeyadd, keywasadded;
 	UINT8 chaokeyhold;
 
 	UINT16 tutorialfound;
 
-	boolean requestflip;
+	dboolean requestflip;
 	UINT16 nowplayingtile;
 
 	UINT16 unlockcount[CMC_MAX];
@@ -1480,7 +1480,7 @@ extern struct challengesmenu_s {
 
 	UINT8 hornposting;
 
-	boolean cache_secondrowlocked;
+	dboolean cache_secondrowlocked;
 
 	patch_t *tile_category[10][2];
 } challengesmenu;
@@ -1489,8 +1489,8 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);
 void M_Challenges(INT32 choice);
 void M_DrawChallenges(void);
 void M_ChallengesTick(void);
-boolean M_ChallengesInputs(INT32 ch);
-boolean M_CanKeyHiliTile(void);
+dboolean M_ChallengesInputs(INT32 ch);
+dboolean M_CanKeyHiliTile(void);
 
 typedef enum
 {
@@ -1517,10 +1517,10 @@ extern struct statisticsmenu_s {
 
 void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
-boolean M_StatisticsInputs(INT32 ch);
+dboolean M_StatisticsInputs(INT32 ch);
 
 void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT16 skin, UINT8 *colormap, UINT16 baseskin);
-fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, boolean flash, boolean statsmode);
+fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, dboolean flash, dboolean statsmode);
 
 #define MAXWRONGPLAYER MAXSPLITSCREENPLAYERS
 #define WRONGPLAYEROFFSCREEN 48
@@ -1532,7 +1532,7 @@ extern struct wrongwarp_s {
 	{
 		UINT16 skin;
 		INT16 across;
-		boolean spinout;
+		dboolean spinout;
 	} wrongplayers[MAXWRONGPLAYER];
 } wrongwarp;
 
@@ -1560,8 +1560,8 @@ extern struct discordrequestmenu_s {
 	tic_t ticker;
 	tic_t confirmDelay;
 	tic_t confirmLength;
-	boolean confirmAccept;
-	boolean removeRequest;
+	dboolean confirmAccept;
+	dboolean removeRequest;
 } discordrequestmenu;
 
 void M_DrawDiscordRequests(void);

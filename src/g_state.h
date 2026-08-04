@@ -59,12 +59,12 @@ typedef enum
 } gameaction_t;
 
 extern gamestate_t gamestate;
-extern boolean titlemapinaction;
-extern boolean ultimatemode; // was sk_insane
+extern dboolean titlemapinaction;
+extern dboolean ultimatemode; // was sk_insane
 extern gameaction_t gameaction;
 
 void G_SetGamestate(gamestate_t newstate);
-boolean G_GamestateUsesLevel(void);
+dboolean G_GamestateUsesLevel(void);
 
 #ifdef __cplusplus
 } // extern "C"

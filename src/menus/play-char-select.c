@@ -162,7 +162,7 @@ UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount
 
 static void M_NewPlayerColors(setup_player_t *p)
 {
-	const boolean follower = (p->mdepth >= CSSTEP_FOLLOWER);
+	const dboolean follower = (p->mdepth >= CSSTEP_FOLLOWER);
 	INT32 i = INT32_MAX;
 
 	M_ClearMenuColors(&p->colors);
@@ -419,7 +419,7 @@ static void M_GetFollowerState(setup_player_t *p)
 	p->follower_frame = p->follower_state->frame & FF_FRAMEMASK;
 }
 
-static boolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
+static dboolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
 {
 	INT32 i;
 
@@ -447,7 +447,7 @@ static boolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
 	return true;
 }
 
-static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
+static dboolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 {
 	INT32 i, j;
 	INT32 num_gamepads_available;
@@ -552,7 +552,7 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 	return false;
 }
 
-static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
+static dboolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 {
 	const UINT8 maxp = PR_GetNumProfiles() -1;
 	UINT8 realnum = num;	// Used for profile when using splitdevice.
@@ -726,7 +726,7 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 	}
 }
 
-boolean M_CharacterSelectForceInAction(void)
+dboolean M_CharacterSelectForceInAction(void)
 {
 	if (!Playing())
 		return false;
@@ -739,7 +739,7 @@ boolean M_CharacterSelectForceInAction(void)
 
 static void M_HandleBackToChars(setup_player_t *p)
 {
-	boolean forceskin = M_CharacterSelectForceInAction();
+	dboolean forceskin = M_CharacterSelectForceInAction();
 
 	if (forceskin
 	|| setup_chargrid[p->gridx][p->gridy].numskins == 1)
@@ -752,7 +752,7 @@ static void M_HandleBackToChars(setup_player_t *p)
 	}
 }
 
-static boolean M_HandleBeginningColors(setup_player_t *p)
+static dboolean M_HandleBeginningColors(setup_player_t *p)
 {
 	p->mdepth = CSSTEP_COLORS;
 
@@ -801,11 +801,11 @@ static void M_HandleBeginningColorsOrFollowers(setup_player_t *p)
 		M_HandleBeginningFollowers(p);
 }
 
-static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
+static dboolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones;
 	INT32 skin;
-	boolean forceskin = M_CharacterSelectForceInAction();
+	dboolean forceskin = M_CharacterSelectForceInAction();
 
 	if (cv_splitdevice.value)
 		num = 0;
@@ -1271,17 +1271,17 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 }
 
-boolean M_CharacterSelectHandler(INT32 choice)
+dboolean M_CharacterSelectHandler(INT32 choice)
 {
 	INT32 i;
-	boolean forceskin = M_CharacterSelectForceInAction();
+	dboolean forceskin = M_CharacterSelectForceInAction();
 
 	(void)choice;
 
 	for (i = MAXSPLITSCREENPLAYERS-1; i >= 0; i--)
 	{
 		setup_player_t *p = &setup_player[i];
-		boolean playersChanged = false;
+		dboolean playersChanged = false;
 
 		if (p->mdepth > CSSTEP_FOLLOWER)
 		{
@@ -1423,7 +1423,7 @@ static void M_MPConfirmCharacterSelection(void)
 void M_CharacterSelectTick(void)
 {
 	UINT8 i;
-	boolean setupnext = true;
+	dboolean setupnext = true;
 
 	setup_animcounter++;
 
@@ -1520,7 +1520,7 @@ void M_CharacterSelectTick(void)
 		M_OptionsTick();
 }
 
-boolean M_CharacterSelectQuit(void)
+dboolean M_CharacterSelectQuit(void)
 {
 	return true;
 }

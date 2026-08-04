@@ -146,7 +146,7 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 	WRITEUINT8(save->p, 0xFE);
 }
 
-static boolean P_UnArchivePlayer(savebuffer_t *save)
+static dboolean P_UnArchivePlayer(savebuffer_t *save)
 {
 	savedata.lives = READSINT8(save->p);
 	savedata.score = READUINT32(save->p);
@@ -195,8 +195,8 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 		savedata.bots[pid].skin = skin;
 
 		savedata.bots[pid].difficulty = READUINT8(save->p);
-		savedata.bots[pid].rival = (boolean)READUINT8(save->p);
-		savedata.bots[pid].foe = (boolean)READUINT8(save->p);
+		savedata.bots[pid].rival = (dboolean)READUINT8(save->p);
+		savedata.bots[pid].foe = (dboolean)READUINT8(save->p);
 		savedata.bots[pid].score = READUINT32(save->p);
 	}
 
@@ -1173,7 +1173,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].stunned = READUINT16(save->p);
 
 		players[i].justDI = READUINT8(save->p);
-		players[i].flipDI = (boolean)READUINT8(save->p);
+		players[i].flipDI = (dboolean)READUINT8(save->p);
 
 		players[i].cangrabitems = READUINT8(save->p);
 
@@ -1411,8 +1411,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].outrun = READFIXED(save->p);
 		players[i].transfer = READFIXED(save->p);
 
-		players[i].rideroid = (boolean)READUINT8(save->p);
-		players[i].rdnodepull = (boolean)READUINT8(save->p);
+		players[i].rideroid = (dboolean)READUINT8(save->p);
+		players[i].rdnodepull = (dboolean)READUINT8(save->p);
 		players[i].rideroidangle = READINT32(save->p);
 		players[i].rideroidspeed = READFIXED(save->p);
 		players[i].rideroidrollangle = READINT32(save->p);
@@ -1429,18 +1429,18 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].dlzrocketanglev = READINT32(save->p);
 		players[i].dlzrocketspd = READFIXED(save->p);
 
-		players[i].seasaw = (boolean)READUINT8(save->p);
+		players[i].seasaw = (dboolean)READUINT8(save->p);
 		players[i].seasawcooldown = READUINT32(save->p);
 		players[i].seasawdist = READFIXED(save->p);
 		players[i].seasawangle = READINT32(save->p);
 		players[i].seasawangleadd = READINT32(save->p);
 		players[i].seasawmoreangle = READINT32(save->p);
-		players[i].seasawdir = (boolean)READUINT8(save->p);
+		players[i].seasawdir = (dboolean)READUINT8(save->p);
 
 		players[i].turbine = (tic_t)READUINT32(save->p);
 		players[i].turbineangle = READINT32(save->p);
 		players[i].turbineheight = READFIXED(save->p);
-		players[i].turbinespd = (boolean)READUINT8(save->p);
+		players[i].turbinespd = (dboolean)READUINT8(save->p);
 
 		players[i].cloud = (tic_t)READUINT32(save->p);
 		players[i].cloudlaunch = (tic_t)READUINT32(save->p);
@@ -1456,7 +1456,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].respawn.pointx = READFIXED(save->p);
 		players[i].respawn.pointy = READFIXED(save->p);
 		players[i].respawn.pointz = READFIXED(save->p);
-		players[i].respawn.flip = (boolean)READUINT8(save->p);
+		players[i].respawn.flip = (dboolean)READUINT8(save->p);
 		players[i].respawn.timer = READUINT32(save->p);
 		players[i].respawn.airtimer = READUINT32(save->p);
 		players[i].respawn.distanceleft = READUINT32(save->p);
@@ -1471,8 +1471,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.style = static_cast<botStyle_e>(READUINT8(save->p));
 		players[i].botvars.difficulty = READUINT8(save->p);
 		players[i].botvars.diffincrease = READUINT8(save->p);
-		players[i].botvars.rival = (boolean)READUINT8(save->p);
-		players[i].botvars.foe = (boolean)READUINT8(save->p);
+		players[i].botvars.rival = (dboolean)READUINT8(save->p);
+		players[i].botvars.foe = (dboolean)READUINT8(save->p);
 		players[i].botvars.rubberband = READFIXED(save->p);
 		players[i].botvars.bumpslow = READUINT8(save->p);
 		players[i].botvars.itemdelay = READUINT32(save->p);
@@ -1487,7 +1487,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.lastAngle = READUINT32(save->p);
 
 		// itemroulette_t
-		players[i].itemRoulette.active = (boolean)READUINT8(save->p);
+		players[i].itemRoulette.active = (dboolean)READUINT8(save->p);
 
 #ifdef ITEM_LIST_SIZE
 		players[i].itemRoulette.itemList.len = (size_t)READUINT32(save->p);
@@ -1539,9 +1539,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].itemRoulette.speed = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.tics = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.elapsed = (tic_t)READUINT32(save->p);
-		players[i].itemRoulette.eggman = (boolean)READUINT8(save->p);
-		players[i].itemRoulette.ringbox = (boolean)READUINT8(save->p);
-		players[i].itemRoulette.autoroulette = (boolean)READUINT8(save->p);
+		players[i].itemRoulette.eggman = (dboolean)READUINT8(save->p);
+		players[i].itemRoulette.ringbox = (dboolean)READUINT8(save->p);
+		players[i].itemRoulette.autoroulette = (dboolean)READUINT8(save->p);
 		players[i].itemRoulette.reserved = READUINT8(save->p);
 
 		// sonicloopsvars_t
@@ -1585,12 +1585,12 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		{
 			players[i].tally.owner = &players[i];
 			players[i].tally.gt = READUINT16(save->p);
-			players[i].tally.gotThru = (boolean)READUINT8(save->p);
+			players[i].tally.gotThru = (dboolean)READUINT8(save->p);
 
 			READSTRINGN(save->p, players[i].tally.header, 63);
 			players[i].tally.header[63] = '\0';
 
-			players[i].tally.showRoundNum = (boolean)READUINT8(save->p);
+			players[i].tally.showRoundNum = (dboolean)READUINT8(save->p);
 			players[i].tally.gradeVoice = (sfxenum_t)READINT32(save->p);
 
 			players[i].tally.time = READINT32(save->p);
@@ -1625,8 +1625,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 				players[i].tally.displayBonus[q] = READINT32(save->p);
 			players[i].tally.tickSound = READUINT8(save->p);
 			players[i].tally.xtraBlink = READUINT8(save->p);
-			players[i].tally.showGrade = (boolean)READUINT8(save->p);
-			players[i].tally.done = (boolean)READUINT8(save->p);
+			players[i].tally.showGrade = (dboolean)READUINT8(save->p);
+			players[i].tally.done = (dboolean)READUINT8(save->p);
 		}
 
 		// icecubevars_t
@@ -1755,9 +1755,9 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 	{
 		roundqueue.entries[i].mapnum = 0; // TEST RUN -- dummy, has to be < nummapheaders
 		roundqueue.entries[i].gametype = READUINT8(save->p);
-		roundqueue.entries[i].encore = (boolean)READUINT8(save->p);
-		roundqueue.entries[i].rankrestricted = (boolean)READUINT8(save->p);
-		roundqueue.entries[i].overridden = (boolean)READUINT8(save->p);
+		roundqueue.entries[i].encore = (dboolean)READUINT8(save->p);
+		roundqueue.entries[i].rankrestricted = (dboolean)READUINT8(save->p);
+		roundqueue.entries[i].overridden = (dboolean)READUINT8(save->p);
 	}
 
 	TracyCZoneEnd(__zone);
@@ -1816,7 +1816,7 @@ static void P_NetUnArchiveZVote(savebuffer_t *save)
 	}
 
 	K_ResetMidVote();
-	g_midVote.active = (boolean)READUINT8(save->p);
+	g_midVote.active = (dboolean)READUINT8(save->p);
 
 	if (g_midVote.active == true)
 	{
@@ -1835,7 +1835,7 @@ static void P_NetUnArchiveZVote(savebuffer_t *save)
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			g_midVote.votes[i] = (boolean)READUINT8(save->p);
+			g_midVote.votes[i] = (dboolean)READUINT8(save->p);
 		}
 
 		g_midVote.type = (midVoteType_e)READUINT8(save->p);
@@ -2140,7 +2140,7 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 #define SD_ACTIVATION 0x01
 #define SD_BOTCONTROLLER 0x02
 
-static boolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
+static dboolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 {
 	UINT8 i;
 	for (i = 0; i < NUM_SCRIPT_ARGS; i++)
@@ -2150,7 +2150,7 @@ static boolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 	return true;
 }
 
-static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawnsc)
+static dboolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 {
 	UINT8 i;
 	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
@@ -2192,7 +2192,7 @@ static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawn
 // diff3 flags
 #define LD_ACTIVATION    0x01
 
-static boolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
+static dboolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
 {
 	UINT8 i;
 	for (i = 0; i < NUM_SCRIPT_ARGS; i++)
@@ -2202,7 +2202,7 @@ static boolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
 	return true;
 }
 
-static boolean P_LineStringArgsEqual(const line_t *li, const line_t *spawnli)
+static dboolean P_LineStringArgsEqual(const line_t *li, const line_t *spawnli)
 {
 	UINT8 i;
 	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
@@ -2226,7 +2226,7 @@ static boolean P_LineStringArgsEqual(const line_t *li, const line_t *spawnli)
 #define FD_ALPHA 0x02
 
 // Check if any of the sector's FOFs differ from how they spawned
-static boolean CheckFFloorDiff(const sector_t *ss)
+static dboolean CheckFFloorDiff(const sector_t *ss)
 {
 	ffloor_t *rover;
 
@@ -2964,7 +2964,7 @@ static void P_NetUnArchiveWorld(savebuffer_t *save)
 // Thinkers
 //
 
-static boolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
+static dboolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 {
 	UINT8 i;
 	for (i = 0; i < NUM_MAPTHING_ARGS; i++)
@@ -2988,7 +2988,7 @@ static boolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 	return true;
 }
 
-static boolean P_ThingScriptEqual(const mobj_t *mobj, const mapthing_t *mapthing)
+static dboolean P_ThingScriptEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 {
 	UINT8 i;
 	if (mobj->special != mapthing->special)
@@ -3172,7 +3172,7 @@ static UINT32 SaveSlope(const pslope_t *slope)
 	return 0xFFFFFFFF;
 }
 
-boolean TypeIsNetSynced(mobjtype_t type)
+dboolean TypeIsNetSynced(mobjtype_t type)
 {
 	// Ignore stationary hoops - these will be respawned from mapthings.
 	if (type == MT_HOOP)
@@ -5002,7 +5002,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	}
 	if (diff2 & MD2_FROZEN)
 	{
-		mobj->frozen = (boolean)READUINT8(save->p);
+		mobj->frozen = (dboolean)READUINT8(save->p);
 	}
 	if (diff2 & MD2_TERRAIN)
 	{
@@ -5356,7 +5356,7 @@ static thinker_t* LoadFireflickerThinker(savebuffer_t *save, actionf_p1 thinker)
 	return &ht->thinker;
 }
 
-static thinker_t* LoadElevatorThinker(savebuffer_t *save, actionf_p1 thinker, boolean setplanedata)
+static thinker_t* LoadElevatorThinker(savebuffer_t *save, actionf_p1 thinker, dboolean setplanedata)
 {
 	elevator_t *ht = (elevator_t*)Z_LevelPoolMalloc(sizeof (*ht));
 	ht->thinker.alloctype = TAT_LEVELPOOL;
@@ -5535,7 +5535,7 @@ static inline thinker_t* LoadFadeThinker(savebuffer_t *save, actionf_p1 thinker)
 	ht->destvalue = READINT16(save->p);
 	ht->destlightlevel = READINT16(save->p);
 	ht->speed = READINT16(save->p);
-	ht->ticbased = (boolean)READUINT8(save->p);
+	ht->ticbased = (dboolean)READUINT8(save->p);
 	ht->timer = READINT32(save->p);
 	ht->doexists = READUINT8(save->p);
 	ht->dotranslucent = READUINT8(save->p);
@@ -5573,7 +5573,7 @@ static inline thinker_t* LoadFadeColormapThinker(savebuffer_t *save, actionf_p1 
 	ht->sector = LoadSector(READUINT32(save->p));
 	ht->source_exc = GetNetColormapFromList(READUINT32(save->p));
 	ht->dest_exc = GetNetColormapFromList(READUINT32(save->p));
-	ht->ticbased = (boolean)READUINT8(save->p);
+	ht->ticbased = (dboolean)READUINT8(save->p);
 	ht->duration = READINT32(save->p);
 	ht->timer = READINT32(save->p);
 	if (ht->sector)
@@ -5749,9 +5749,9 @@ static thinker_t* LoadPolyfadeThinker(savebuffer_t *save, actionf_p1 thinker)
 	ht->polyObjNum = READINT32(save->p);
 	ht->sourcevalue = READINT32(save->p);
 	ht->destvalue = READINT32(save->p);
-	ht->docollision = (boolean)READUINT8(save->p);
-	ht->doghostfade = (boolean)READUINT8(save->p);
-	ht->ticbased = (boolean)READUINT8(save->p);
+	ht->docollision = (dboolean)READUINT8(save->p);
+	ht->doghostfade = (dboolean)READUINT8(save->p);
+	ht->ticbased = (dboolean)READUINT8(save->p);
 	ht->duration = READINT32(save->p);
 	ht->timer = READINT32(save->p);
 	return &ht->thinker;
@@ -6583,8 +6583,8 @@ void P_GetBackupCupData(savebuffer_t *save)
 	// Grand Prix information
 
 	cupsavedata.difficulty = READUINT8(save->p);
-	cupsavedata.encore = (boolean)READUINT8(save->p);
-	boolean masterbots = (boolean)READUINT8(save->p);
+	cupsavedata.encore = (dboolean)READUINT8(save->p);
+	dboolean masterbots = (dboolean)READUINT8(save->p);
 
 	save->p += 4; // specialDamage
 
@@ -6610,7 +6610,7 @@ void P_GetBackupCupData(savebuffer_t *save)
 	// Okay, no further! We've got everything we need.
 }
 
-static boolean P_UnArchiveSPGame(savebuffer_t *save)
+static dboolean P_UnArchiveSPGame(savebuffer_t *save)
 {
 	char testname[sizeof(timeattackfolder)];
 
@@ -6634,8 +6634,8 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 	// Grand Prix information
 
 	grandprixinfo.gamespeed = READUINT8(save->p);
-	grandprixinfo.encore = (boolean)READUINT8(save->p);
-	grandprixinfo.masterbots = (boolean)READUINT8(save->p);
+	grandprixinfo.encore = (dboolean)READUINT8(save->p);
+	grandprixinfo.masterbots = (dboolean)READUINT8(save->p);
 
 	grandprixinfo.specialDamage = READUINT32(save->p);
 
@@ -6689,7 +6689,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 	for (i = 0; i < roundqueue.size; i++)
 	{
-		roundqueue.entries[i].overridden = (boolean)READUINT8(save->p);
+		roundqueue.entries[i].overridden = (dboolean)READUINT8(save->p);
 		if (roundqueue.entries[i].overridden == true)
 		{
 			if (i >= roundqueue.position)
@@ -6775,7 +6775,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		rank->rings = READUINT32(save->p);
 		rank->totalRings = READUINT32(save->p);
 
-		rank->specialWon = (boolean)READUINT8(save->p);
+		rank->specialWon = (dboolean)READUINT8(save->p);
 
 		rank->scorePosition = READINT32(save->p);
 		rank->scoreGPPoints = READINT32(save->p);
@@ -6793,8 +6793,8 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 			return false;
 		}
 
-		boolean seeninqueue[ROUNDQUEUE_MAX];
-		memset(seeninqueue, 0, sizeof (boolean) * roundqueue.size);
+		dboolean seeninqueue[ROUNDQUEUE_MAX];
+		memset(seeninqueue, 0, sizeof (dboolean) * roundqueue.size);
 
 		for (i = 0; i < rank->numLevels; i++)
 		{
@@ -6840,7 +6840,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 				plr->rings = READUINT8(save->p);
 				plr->exp = READUINT16(save->p);
 				plr->prisons = READUINT16(save->p);
-				plr->gotSpecialPrize = (boolean)READUINT8(save->p);
+				plr->gotSpecialPrize = (dboolean)READUINT8(save->p);
 				plr->grade = (gp_rank_e)READSINT8(save->p);
 			}
 		}
@@ -6857,7 +6857,7 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 	return true;
 }
 
-static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
+static void P_NetArchiveMisc(savebuffer_t *save, dboolean resending)
 {
 	TracyCZone(__zone, true);
 
@@ -7028,7 +7028,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	TracyCZoneEnd(__zone);
 }
 
-static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
+static dboolean P_NetUnArchiveMisc(savebuffer_t *save, dboolean reloading)
 {
 	TracyCZone(__zone, true);
 
@@ -7073,7 +7073,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 		i += j;
 	}
 
-	encoremode = (boolean)READUINT8(save->p);
+	encoremode = (dboolean)READUINT8(save->p);
 
 	mapmusrng = READUINT8(save->p);
 
@@ -7292,7 +7292,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	{
 		g_voteLevels[i][0] = READUINT16(save->p);
 		g_voteLevels[i][1] = READUINT16(save->p);
-		g_votes_striked[i] = (boolean)READUINT8(save->p);
+		g_votes_striked[i] = (dboolean)READUINT8(save->p);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -7330,13 +7330,13 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	numtargets = READUINT8(save->p);
 	maptargets = READUINT8(save->p);
 	nummapboxes = READINT32(save->p);
-	battleprisons = (boolean)READUINT8(save->p);
+	battleprisons = (dboolean)READUINT8(save->p);
 	g_emeraldWin = (tic_t)READUINT32(save->p);
 
 	gamespeed = READUINT8(save->p);
 	numlaps = READUINT8(save->p);
-	franticitems = (boolean)READUINT8(save->p);
-	g_teamplay = (boolean)READUINT8(save->p);
+	franticitems = (dboolean)READUINT8(save->p);
+	g_teamplay = (dboolean)READUINT8(save->p);
 
 	speedscramble = READSINT8(save->p);
 	encorescramble = READSINT8(save->p);
@@ -7361,12 +7361,12 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	spectateGriefed = READUINT8(save->p);
 
-	thwompsactive = (boolean)READUINT8(save->p);
+	thwompsactive = (dboolean)READUINT8(save->p);
 	lastLowestLap = READUINT8(save->p);
 	spbplace = READSINT8(save->p);
-	rainbowstartavailable = (boolean)READUINT8(save->p);
-	inDuel = (boolean)READUINT8(save->p);
-	overtimecheckpoints = (boolean)READUINT8(save->p);
+	rainbowstartavailable = (dboolean)READUINT8(save->p);
+	inDuel = (dboolean)READUINT8(save->p);
+	overtimecheckpoints = (dboolean)READUINT8(save->p);
 
 	introtime = READUINT32(save->p);
 	starttime = READUINT32(save->p);
@@ -7440,11 +7440,11 @@ static inline void P_ArchiveLuabanksAndConsistency(savebuffer_t *save)
 	TracyCZoneEnd(__zone);
 }
 
-static inline boolean P_UnArchiveLuabanksAndConsistency(savebuffer_t *save)
+static inline dboolean P_UnArchiveLuabanksAndConsistency(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	boolean ret = true;
+	dboolean ret = true;
 	switch (READUINT8(save->p))
 	{
 		case 0xb7: // luabanks marker
@@ -7521,7 +7521,7 @@ void P_SaveGame(savebuffer_t *save)
 	P_ArchiveLuabanksAndConsistency(save);
 }
 
-void P_SaveNetGame(savebuffer_t *save, boolean resending)
+void P_SaveNetGame(savebuffer_t *save, dboolean resending)
 {
 	TracyCZone(__zone, true);
 
@@ -7578,7 +7578,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 	TracyCZoneEnd(__zone);
 }
 
-boolean P_LoadGame(savebuffer_t *save)
+dboolean P_LoadGame(savebuffer_t *save)
 {
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
@@ -7606,7 +7606,7 @@ badloadgame:
 	return false;
 }
 
-boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
+dboolean P_LoadNetGame(savebuffer_t *save, dboolean reloading)
 {
 	TracyCZone(__zone, true);
 
@@ -7647,13 +7647,13 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 	// so the thinkers would be deleted later. Therefore, P_SetupLevel will *not* spawn
 	// precipitation when loading a netgame save. Instead, precip has to be spawned here.
 	// This is done in P_NetUnArchiveSpecials now.
-	boolean ret = P_UnArchiveLuabanksAndConsistency(save);
+	dboolean ret = P_UnArchiveLuabanksAndConsistency(save);
 
 	TracyCZoneEnd(__zone);
 	return ret;
 }
 
-boolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, void *user)
+dboolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, void *user)
 {
 	I_Assert(save->buffer == NULL);
 	save->buffer = (UINT8 *)Z_Malloc(alloc_size, tag, user);
@@ -7670,7 +7670,7 @@ boolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, voi
 	return true;
 }
 
-boolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, size_t existing_size)
+dboolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, size_t existing_size)
 {
 	I_Assert(save->buffer == NULL);
 
@@ -7688,7 +7688,7 @@ boolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, siz
 	return true;
 }
 
-boolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump)
+dboolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump)
 {
 	I_Assert(save->buffer == NULL);
 
@@ -7712,7 +7712,7 @@ boolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump)
 	return true;
 }
 
-boolean P_SaveBufferFromFile(savebuffer_t *save, char const *name)
+dboolean P_SaveBufferFromFile(savebuffer_t *save, char const *name)
 {
 	size_t len = 0;
 

@@ -166,7 +166,7 @@ void menu_open()
 	PAUSE_CheatsDef.numitems = g_menu.size();
 }
 
-boolean menu_close()
+dboolean menu_close()
 {
 	PAUSE_CheatsDef.menuitems = nullptr;
 	PAUSE_CheatsDef.numitems = 0;
@@ -177,7 +177,7 @@ boolean menu_close()
 	return true;
 }
 
-boolean menu_input(INT32)
+dboolean menu_input(INT32)
 {
 	// C button: cycle through modes
 	if (M_MenuButtonPressed(0, MBT_Y))

@@ -131,7 +131,7 @@ struct wadfile_t
 	UINT32 filesize; // for network
 	UINT8 md5sum[16];
 
-	boolean important; // also network - !W_VerifyNMUSlumps
+	dboolean important; // also network - !W_VerifyNMUSlumps
 
 	mod_metadata_t *metadata;
 };
@@ -147,9 +147,9 @@ extern wadfile_t *wadfiles[MAX_WADFILES];
 void W_Shutdown(void);
 
 // Opens a WAD file. Returns the FILE * handle for the file, or NULL if not found or could not be opened
-FILE *W_OpenWadFile(const char **filename, const char *priorityfolder, boolean useerrors);
+FILE *W_OpenWadFile(const char **filename, const char *priorityfolder, dboolean useerrors);
 // Load and add a wadfile to the active wad files, returns numbers of lumps, INT16_MAX on error
-UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup, const char *md5expected);
+UINT16 W_InitFile(const char *filename, dboolean mainfile, dboolean startup, const char *md5expected);
 
 typedef struct initmultiplefilesentry_t
 {
@@ -159,7 +159,7 @@ typedef struct initmultiplefilesentry_t
 // W_InitMultipleFiles returns 1 if all is okay, 0 otherwise,
 // so that it stops with a message if a file was not found, but not if all is okay.
 // W_InitMultipleFiles exits if a file was not found, but not if all is okay.
-INT32 W_InitMultipleFiles(const initmultiplefilesentry_t *entries, INT32 count, boolean addons);
+INT32 W_InitMultipleFiles(const initmultiplefilesentry_t *entries, INT32 count, dboolean addons);
 
 const char *W_CheckNameForNumPwad(UINT16 wad, UINT16 lump);
 const char *W_CheckNameForNum(lumpnum_t lumpnum);
@@ -179,7 +179,7 @@ UINT16 W_CheckNumForFullNamePK3(const char *name, UINT16 wad, UINT16 startlump);
 UINT16 W_CheckNumForFolderStartPK3(const char *name, UINT16 wad, UINT16 startlump);
 UINT16 W_CheckNumForFolderEndPK3(const char *name, UINT16 wad, UINT16 startlump);
 
-lumpnum_t W_CheckNumForMap(const char *name, boolean checktofirst);
+lumpnum_t W_CheckNumForMap(const char *name, dboolean checktofirst);
 lumpnum_t W_CheckNumForName(const char *name);
 lumpnum_t W_CheckNumForLongName(const char *name);
 lumpnum_t W_GetNumForName(const char *name); // like W_CheckNumForName but I_Error on LUMPERROR
@@ -194,8 +194,8 @@ lumpnum_t W_LumpFromNetSave(lumpnum_t lump);
 size_t W_LumpLengthPwad(UINT16 wad, UINT16 lump);
 size_t W_LumpLength(lumpnum_t lumpnum);
 
-boolean W_IsLumpWad(lumpnum_t lumpnum); // for loading maps from WADs in PK3s
-boolean W_IsLumpFolder(UINT16 wad, UINT16 lump); // for detecting folder "lumps"
+dboolean W_IsLumpWad(lumpnum_t lumpnum); // for loading maps from WADs in PK3s
+dboolean W_IsLumpFolder(UINT16 wad, UINT16 lump); // for detecting folder "lumps"
 
 #ifdef HAVE_ZLIB
 void zerr(int ret); // zlib error checking
@@ -210,8 +210,8 @@ void *W_CacheLumpNumPwad(UINT16 wad, UINT16 lump, INT32 tag);
 void *W_CacheLumpNum(lumpnum_t lump, INT32 tag);
 void *W_CacheLumpNumForce(lumpnum_t lumpnum, INT32 tag);
 
-boolean W_IsLumpCached(lumpnum_t lump, void *ptr);
-boolean W_IsPatchCached(lumpnum_t lump, void *ptr);
+dboolean W_IsLumpCached(lumpnum_t lump, void *ptr);
+dboolean W_IsPatchCached(lumpnum_t lump, void *ptr);
 
 void *W_CacheLumpName(const char *name, INT32 tag);
 void *W_CachePatchName(const char *name, INT32 tag);
@@ -229,11 +229,11 @@ void *W_CacheSoftwarePatchNum(lumpnum_t lumpnum, INT32 tag);
 
 void W_UnlockCachedPatch(void *patch);
 
-int W_VerifyNMUSlumps(const char *filename, FILE *handle, boolean exit_on_error);
+int W_VerifyNMUSlumps(const char *filename, FILE *handle, dboolean exit_on_error);
 
 /// Initialize non-legacy GL shader lookup, which lives outside the lump management system.
 void W_InitShaderLookup(const char *filename);
-boolean W_ReadShader(const char *filename, size_t *size, void *dest);
+dboolean W_ReadShader(const char *filename, size_t *size, void *dest);
 
 #ifdef __cplusplus
 } // extern "C"

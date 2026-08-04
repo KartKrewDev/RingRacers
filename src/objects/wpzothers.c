@@ -41,7 +41,7 @@ void Obj_WPZFountainThink(mobj_t *mo)
 void Obj_WPZKuragenThink(mobj_t *mo)
 {
 	//(void)mo;
-	boolean active = false;
+	dboolean active = false;
 
 	// .....and i need to do this... because?
 	if (!mo->cusval)

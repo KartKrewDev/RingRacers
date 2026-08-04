@@ -22,7 +22,7 @@ extern "C" {
 
 extern struct specialstageinfo
 {
-	boolean valid;						///< If true, then data in this struct is valid
+	dboolean valid;						///< If true, then data in this struct is valid
 
 	mobj_t *ufo;						///< The Chaos Emerald capsule.
 	UINT32 maxDist;						///< The distance from one end of the track to another.
@@ -69,7 +69,7 @@ void K_TickSpecialStage(void);
 mobj_t *K_GetPossibleSpecialTarget(void);
 
 /*--------------------------------------------------
-	boolean K_PlayerIsEmptyHandedInSpecial(player_t *player)
+	dboolean K_PlayerIsEmptyHandedInSpecial(player_t *player)
 
 		Gets whether the player has failed a Sealed
 		Star via finishing without an Emerald
@@ -81,7 +81,7 @@ mobj_t *K_GetPossibleSpecialTarget(void);
 		Should player fail or not
 --------------------------------------------------*/
 
-boolean K_PlayerIsEmptyHandedInSpecial(player_t *player);
+dboolean K_PlayerIsEmptyHandedInSpecial(player_t *player);
 
 /*--------------------------------------------------
 	void K_FadeOutSpecialMusic(UINT32 distance)

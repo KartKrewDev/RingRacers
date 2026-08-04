@@ -156,7 +156,7 @@ void M_HandleProfileSelect(INT32 ch)
 {
 	const UINT8 pid = 0;
 	INT32 maxp = PR_GetNumProfiles();
-	boolean creatable = (maxp < MAXPROFILES);
+	dboolean creatable = (maxp < MAXPROFILES);
 	(void) ch;
 
 	if (menutransition.tics == 0 && optionsmenu.resetprofile)

@@ -35,7 +35,7 @@
 
 #define HUDONLY if (!hud_running) return luaL_error(L, "HUD rendering code should not be called outside of rendering hooks!");
 
-boolean hud_running = false;
+dboolean hud_running = false;
 static UINT8 hud_enabled[(hud_MAX/8)+1];
 
 static UINT8 camnum = 1;
@@ -373,7 +373,7 @@ static int libd_getSprite2Patch(lua_State *L)
 	UINT8 angle = 0;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
-	boolean super = false; // add FF_SPR2SUPER to sprite2 if true
+	dboolean super = false; // add FF_SPR2SUPER to sprite2 if true
 	HUDONLY
 
 	// get skin first!
@@ -415,19 +415,19 @@ static int libd_getSprite2Patch(lua_State *L)
 		for (j = 0; j < free_spr2; j++)
 			if (fastcmp(name, spr2names[j]))
 				break;
-		// if you want super flags you'll have to use the optional boolean following this
+		// if you want super flags you'll have to use the optional dboolean following this
 		if (j >= free_spr2)
 			return 0;
 	}
 	else
 		return 0;
 
-	if (lua_isboolean(L, 2)) // optional boolean for superness
+	if (lua_isboolean(L, 2)) // optional dboolean for superness
 	{
 		super = lua_toboolean(L, 2); // note: this can override FF_SPR2SUPER from sprite number
 		lua_remove(L, 2); // remove
 	}
-	// if it's not boolean then just assume it's the frame number
+	// if it's not dboolean then just assume it's the frame number
 
 	if (super)
 		j |= FF_SPR2SUPER;
@@ -584,7 +584,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	fixed_t x, y, scale;	// coordinates of the object
 	patch_t *patch;	// patch we want to draw
 	UINT8 *colormap = NULL;	// do we want to colormap this patch?
-	boolean centered;	// the patch is centered and doesn't need readjusting on x/y coordinates.
+	dboolean centered;	// the patch is centered and doesn't need readjusting on x/y coordinates.
 	huddrawlist_h list;
 
 	// variables used to replicate k_kart's mmap drawer:
@@ -853,10 +853,10 @@ static int libd_drawTitleCardString(lua_State *L)
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
 	INT32 flags = luaL_optinteger(L, 4, 0);
-	boolean rightalign = lua_optboolean(L, 5);
+	dboolean rightalign = lua_optboolean(L, 5);
 	INT32 timer = luaL_optinteger(L, 6, 0);
 	INT32 threshold = luaL_optinteger(L, 7, 0);
-	boolean p4 = lua_optboolean(L, 8);
+	dboolean p4 = lua_optboolean(L, 8);
 	huddrawlist_h list;
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
@@ -937,7 +937,7 @@ static int libd_clearClipRect(lua_State *L)
 static int libd_titleCardStringWidth(lua_State *L)
 {
 	const char *str = luaL_checkstring(L, 1);
-	boolean p4 = lua_optboolean(L, 2);
+	dboolean p4 = lua_optboolean(L, 2);
 	HUDONLY
 
 	lua_pushinteger(L, V_TitleCardStringWidth(str, p4));
@@ -1279,7 +1279,7 @@ int LUA_HudLib(lua_State *L)
 	return 0;
 }
 
-boolean LUA_HudEnabled(enum hud option)
+dboolean LUA_HudEnabled(enum hud option)
 {
 	if (!gL || hud_enabled[option/8] & (1<<(option%8)))
 		return true;

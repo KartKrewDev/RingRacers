@@ -77,7 +77,7 @@ void Obj_SpawnFlameShieldVisuals(mobj_t *shield)
 	Visual::spawn(static_cast<Shield*>(shield), S_FLMB1, -1);
 }
 
-boolean Obj_TickFlameShieldVisual(mobj_t *mobj)
+dboolean Obj_TickFlameShieldVisual(mobj_t *mobj)
 {
 	return static_cast<Visual*>(mobj)->tick();
 }

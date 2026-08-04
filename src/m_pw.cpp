@@ -102,7 +102,7 @@ void iter_conditions(F&& f)
 void f_tournament()
 {
 	UINT16 i;
-	boolean success = false;
+	dboolean success = false;
 
 	/*if (modifiedgame)
 		return 0;*/
@@ -258,7 +258,7 @@ void f_levelskull()
 void f_colors()
 {
 	UINT16 i;
-	boolean success = false;
+	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -290,7 +290,7 @@ void f_colors()
 void f_followers()
 {
 	UINT16 i;
-	boolean success = false;
+	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -322,7 +322,7 @@ void f_followers()
 void f_maps()
 {
 	UINT16 i;
-	boolean success = false;
+	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -368,7 +368,7 @@ void f_maps()
 void f_tutorials()
 {
 	UINT16 i;
-	boolean success = false;
+	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -473,7 +473,7 @@ void f_tutorials()
 void f_characters()
 {
 	UINT16 i;
-	boolean success = false;
+	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -505,7 +505,7 @@ void f_characters()
 void f_altmusic()
 {
 	UINT16 i;
-	boolean success = false;
+	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -537,8 +537,8 @@ void f_altmusic()
 void f_timeattack()
 {
 	UINT16 i;
-	boolean success = false;
-	boolean already_have_encore = M_SecretUnlocked(SECRET_ENCORE, true);
+	dboolean success = false;
+	dboolean already_have_encore = M_SecretUnlocked(SECRET_ENCORE, true);
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -581,8 +581,8 @@ void f_timeattack()
 void f_encore()
 {
 	UINT16 i;
-	boolean success = false;
-	boolean already_have_timeattacks = (
+	dboolean success = false;
+	dboolean already_have_timeattacks = (
 		M_SecretUnlocked(SECRET_TIMEATTACK, true)
 		&& M_SecretUnlocked(SECRET_PRISONBREAK, true)
 		&& M_SecretUnlocked(SECRET_SPECIALATTACK, true)
@@ -627,7 +627,7 @@ void f_encore()
 void f_difficulty()
 {
 	UINT16 i;
-	boolean success = false;
+	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
@@ -738,7 +738,7 @@ void f_proceed()
 
 }; // namespace
 
-try_password_e M_TryPassword(const char *password, boolean conditions)
+try_password_e M_TryPassword(const char *password, dboolean conditions)
 {
 	using var = std::variant<std::monostate, condition_t*, Pw*>;
 
@@ -795,7 +795,7 @@ try_password_e M_TryPassword(const char *password, boolean conditions)
 	return return_code;
 }
 
-boolean M_TryExactPassword(const char *password, const char *encodedhash)
+dboolean M_TryExactPassword(const char *password, const char *encodedhash)
 {
 	// Normalize input casing
 	srb2::String key = password;

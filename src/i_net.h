@@ -98,11 +98,11 @@ extern holepunch_t *holepunchpacket;
 
 /**	\brief return packet in doomcom struct
 */
-extern boolean (*I_NetGet)(void);
+extern dboolean (*I_NetGet)(void);
 
 /**	\brief ask to driver if there is data waiting
 */
-extern boolean (*I_NetCanGet)(void);
+extern dboolean (*I_NetCanGet)(void);
 
 /**	\brief send packet within doomcom struct
 */
@@ -110,7 +110,7 @@ extern void (*I_NetSend)(void);
 
 /**	\brief ask to driver if all is ok to send data now
 */
-extern boolean (*I_NetCanSend)(void);
+extern dboolean (*I_NetCanSend)(void);
 
 /**	\brief	close a connection
 
@@ -146,7 +146,7 @@ extern SINT8 (*I_NetMakeNodewPort)(const char *address, const char *port);
 
 /**	\brief open connection
 */
-extern boolean (*I_NetOpenSocket)(void);
+extern dboolean (*I_NetOpenSocket)(void);
 
 /**	\brief close all connections no more allow geting any packet
 */
@@ -164,7 +164,7 @@ extern void (*I_NetRegisterHolePunch)(void);
 
 extern const char *(*I_GetNodeAddress) (INT32 node);
 extern UINT32 (*I_GetNodeAddressInt) (INT32 node);
-extern boolean (*I_IsExternalAddress) (const void *p);
+extern dboolean (*I_IsExternalAddress) (const void *p);
 
 struct bannednode_t
 {
@@ -174,7 +174,7 @@ struct bannednode_t
 extern bannednode_t *bannednode;
 
 /// \brief Called by D_SRB2Main to be defined by extern network driver
-boolean I_InitNetwork(void);
+dboolean I_InitNetwork(void);
 
 #ifdef __cplusplus
 } // extern "C"

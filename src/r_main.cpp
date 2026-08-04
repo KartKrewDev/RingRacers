@@ -91,7 +91,7 @@ int r_splitscreen;
 fixed_t rendertimefrac;
 fixed_t rendertimefrac_unpaused;
 fixed_t renderdeltatics;
-boolean renderisnewtic;
+dboolean renderisnewtic;
 
 //
 // precalculated math tables
@@ -426,7 +426,7 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle)
 // Checks viewz and top/bottom heights of an item against culling planes
 // Returns true if the item is to be culled, i.e it shouldn't be drawn!
 // if args[1] is set, the camera view is required to be in the same area for culling to occur
-boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph)
+dboolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph)
 {
 	fixed_t cullplane;
 
@@ -616,7 +616,7 @@ static struct viewmorph {
 	INT32 x1; // clip rendering horizontally for efficiency
 	INT16 ceilingclip[MAXVIDWIDTH], floorclip[MAXVIDWIDTH];
 
-	boolean use;
+	dboolean use;
 } viewmorph[MAXSPLITSCREENPLAYERS] = {
 	AHHHH_IM_SO_MAAAAD,
 	AHHHH_IM_SO_MAAAAD,
@@ -961,7 +961,7 @@ angle_t R_ViewRollAngle(const player_t *player, UINT8 viewnum)
 // because it might be in the middle of a refresh.
 // The change will take effect next refresh.
 //
-boolean setsizeneeded;
+dboolean setsizeneeded;
 
 void R_SetViewSize(void)
 {
@@ -980,14 +980,14 @@ void R_CheckFOV(void)
 	}
 }
 
-boolean R_ShowHUD(void)
+dboolean R_ShowHUD(void)
 {
 	if (g_takemapthumbnail != TMT_NO)
 	{
 		return false;
 	}
 
-	return (boolean)cv_showhud.value;
+	return (dboolean)cv_showhud.value;
 }
 
 //
@@ -1260,7 +1260,7 @@ void R_SetupFrame(int s)
 {
 	player_t *player = &players[displayplayers[s]];
 	camera_t *thiscam = &camera[s];
-	boolean chasecam = (cv_chasecam[s].value != 0);
+	dboolean chasecam = (cv_chasecam[s].value != 0);
 
 	R_SetViewContext(static_cast<viewcontext_e>(VIEWCONTEXT_PLAYER1 + s));
 
@@ -1419,9 +1419,9 @@ void R_SkyboxFrame(int s)
 	R_SetupCommonFrame(player, r_viewmobj->subsector);
 }
 
-boolean R_ViewpointHasChasecam(player_t *player)
+dboolean R_ViewpointHasChasecam(player_t *player)
 {
-	boolean chasecam = false;
+	dboolean chasecam = false;
 	UINT8 i;
 
 	for (i = 0; i <= splitscreen; i++)
@@ -1439,9 +1439,9 @@ boolean R_ViewpointHasChasecam(player_t *player)
 	return chasecam;
 }
 
-boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
+dboolean R_IsViewpointThirdPerson(player_t *player, dboolean skybox)
 {
-	boolean chasecam = false;
+	dboolean chasecam = false;
 
 	// Prevent game crash if player is ever invalid.
 	if (!player)

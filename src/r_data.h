@@ -58,22 +58,22 @@ extern size_t flatmemory, spritememory, texturememory;
 void R_InitColormaps(void);
 void R_ReInitColormaps(UINT16 num, void *newencoremap, size_t encoremapsize);
 void R_ClearColormaps(void);
-extracolormap_t *R_CreateDefaultColormap(boolean lighttable);
+extracolormap_t *R_CreateDefaultColormap(dboolean lighttable);
 extracolormap_t *R_GetDefaultColormap(void);
-extracolormap_t *R_CopyColormap(extracolormap_t *extra_colormap, boolean lighttable);
+extracolormap_t *R_CopyColormap(extracolormap_t *extra_colormap, dboolean lighttable);
 void R_AddColormapToList(extracolormap_t *extra_colormap);
 
 #ifdef EXTRACOLORMAPLUMPS
-boolean R_CheckDefaultColormapByValues(boolean checkrgba, boolean checkfadergba, boolean checkparams,
+dboolean R_CheckDefaultColormapByValues(dboolean checkrgba, dboolean checkfadergba, dboolean checkparams,
 	INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags, lumpnum_t lump);
 extracolormap_t *R_GetColormapFromListByValues(INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags, lumpnum_t lump);
 #else
-boolean R_CheckDefaultColormapByValues(boolean checkrgba, boolean checkfadergba, boolean checkparams,
+dboolean R_CheckDefaultColormapByValues(dboolean checkrgba, dboolean checkfadergba, dboolean checkparams,
 	INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags);
 extracolormap_t *R_GetColormapFromListByValues(INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags);
 #endif
-boolean R_CheckDefaultColormap(extracolormap_t *extra_colormap, boolean checkrgba, boolean checkfadergba, boolean checkparams);
-boolean R_CheckEqualColormaps(extracolormap_t *exc_a, extracolormap_t *exc_b, boolean checkrgba, boolean checkfadergba, boolean checkparams);
+dboolean R_CheckDefaultColormap(extracolormap_t *extra_colormap, dboolean checkrgba, dboolean checkfadergba, dboolean checkparams);
+dboolean R_CheckEqualColormaps(extracolormap_t *exc_a, extracolormap_t *exc_b, dboolean checkrgba, dboolean checkfadergba, dboolean checkparams);
 extracolormap_t *R_GetColormapFromList(extracolormap_t *extra_colormap);
 
 typedef int textmapcolormapflags_t;
@@ -96,10 +96,10 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap);
 extracolormap_t * R_CreateColormapFromLinedef(char *p1, char *p2, char *p3);
 extracolormap_t* R_CreateColormap(INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags);
 extracolormap_t *R_AddColormaps(extracolormap_t *exc_augend, extracolormap_t *exc_addend,
-	boolean subR, boolean subG, boolean subB, boolean subA,
-	boolean subFadeR, boolean subFadeG, boolean subFadeB, boolean subFadeA,
-	boolean subFadeStart, boolean subFadeEnd, boolean ignoreFlags,
-	boolean lighttable);
+	dboolean subR, dboolean subG, dboolean subB, dboolean subA,
+	dboolean subFadeR, dboolean subFadeG, dboolean subFadeB, dboolean subFadeA,
+	dboolean subFadeStart, dboolean subFadeEnd, dboolean ignoreFlags,
+	dboolean lighttable);
 #ifdef EXTRACOLORMAPLUMPS
 extracolormap_t *R_ColormapForName(char *name);
 const char *R_NameForColormap(extracolormap_t *extra_colormap);

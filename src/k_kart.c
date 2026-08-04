@@ -122,18 +122,18 @@ void K_PopBubbleShield(player_t *player)
 	player->bubbledrag = false;
 }
 
-boolean K_ThunderDome(void)
+dboolean K_ThunderDome(void)
 {
 	if (K_CanChangeRules(true))
 	{
-		return (boolean)cv_thunderdome.value;
+		return (dboolean)cv_thunderdome.value;
 	}
 
 	return false;
 }
 
 // lat: used for when the player is in some weird state where it wouldn't be wise for it to be overwritten by another object that does similarly wacky shit.
-boolean K_isPlayerInSpecialState(player_t *p)
+dboolean K_isPlayerInSpecialState(player_t *p)
 {
 	return (
 		p->rideroid
@@ -145,7 +145,7 @@ boolean K_isPlayerInSpecialState(player_t *p)
 	);
 }
 
-boolean K_IsDuelItem(mobjtype_t type)
+dboolean K_IsDuelItem(mobjtype_t type)
 {
 	switch (type)
 	{
@@ -164,12 +164,12 @@ boolean K_IsDuelItem(mobjtype_t type)
 	}
 }
 
-boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
+dboolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
 {
 	return !!(mt->thing_args[0]);
 }
 
-boolean K_InRaceDuel(void)
+dboolean K_InRaceDuel(void)
 {
 	return (
 		inDuel &&
@@ -250,7 +250,7 @@ static void K_SpawnItemCapsules(void)
 
 	for (i = 0; i < nummapthings; i++, mt++)
 	{
-		boolean isRingCapsule = false;
+		dboolean isRingCapsule = false;
 		INT32 modeFlags = 0;
 
 		if (mt->type != mobjinfo[MT_ITEMCAPSULE].doomednum)
@@ -305,7 +305,7 @@ void K_TimerInit(void)
 {
 	UINT8 i;
 	UINT8 numPlayers = 0;
-	boolean domodeattack = ((modeattacking != ATTACKING_NONE)
+	dboolean domodeattack = ((modeattacking != ATTACKING_NONE)
 		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
 	if (K_PodiumSequence() == true)
@@ -314,7 +314,7 @@ void K_TimerInit(void)
 		return;
 	}
 
-	const boolean bossintro = K_CheckBossIntro();
+	const dboolean bossintro = K_CheckBossIntro();
 
 	// Rooooooolllling staaaaaaart
 	if ((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT))
@@ -459,7 +459,7 @@ void K_ReduceVFXForEveryone(mobj_t *mo)
 angle_t K_ReflectAngle(angle_t yourangle, angle_t theirangle, fixed_t yourspeed, fixed_t theirspeed)
 {
 	INT32 angoffset;
-	boolean subtract = false;
+	dboolean subtract = false;
 
 	angoffset = yourangle - theirangle;
 
@@ -497,7 +497,7 @@ angle_t K_ReflectAngle(angle_t yourangle, angle_t theirangle, fixed_t yourspeed,
 	return (angle_t)angoffset;
 }
 
-boolean K_IsPlayerLosing(player_t *player)
+dboolean K_IsPlayerLosing(player_t *player)
 {
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
@@ -744,7 +744,7 @@ void K_RunItemCooldowns(void)
 	}
 }
 
-boolean K_TimeAttackRules(void)
+dboolean K_TimeAttackRules(void)
 {
 	UINT8 playing = 0;
 	UINT8 i;
@@ -798,7 +798,7 @@ boolean K_TimeAttackRules(void)
 	return (playing <= 1);
 }
 
-boolean K_CapsuleTimeAttackRules(void)
+dboolean K_CapsuleTimeAttackRules(void)
 {
 	switch (cv_capsuletest.value)
 	{
@@ -1022,7 +1022,7 @@ void K_PlayerJustBumped(player_t *player)
 	}
 }
 
-static boolean K_JustBumpedException(mobj_t *mobj)
+static dboolean K_JustBumpedException(mobj_t *mobj)
 {
 	switch (mobj->type)
 	{
@@ -1102,7 +1102,7 @@ static fixed_t K_GetBounceForce(mobj_t *mobj1, mobj_t *mobj2, fixed_t distx, fix
 	return FixedMul(force, forceMul);
 }
 
-boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
+dboolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 {
 	const fixed_t minBump = 25*mapobjectscale;
 	mobj_t *goombaBounce = NULL;
@@ -1247,7 +1247,7 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 }
 
 // K_KartBouncing, but simplified to act like P_BouncePlayerMove
-boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
+dboolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 {
 	const fixed_t minBump = 25*mapobjectscale;
 	fixed_t distx, disty;
@@ -1374,7 +1374,7 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 
 	\param	mo	player mobj object
 
-	\return	boolean
+	\return	dboolean
 */
 static fixed_t K_CheckOffroadCollide(mobj_t *mo)
 {
@@ -1482,7 +1482,7 @@ static void K_UpdateOffroad(player_t *player)
 		player->offroad = 0;
 }
 
-static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdist, fixed_t maxdist, boolean transparent)
+static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdist, fixed_t maxdist, dboolean transparent)
 {
 #define CHAOTIXBANDLEN 15
 #define CHAOTIXBANDCOLORS 9
@@ -1584,7 +1584,7 @@ static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdi
 #undef CHAOTIXBANDLEN
 }
 
-static boolean K_HasInfiniteTether(player_t *player)
+static dboolean K_HasInfiniteTether(player_t *player)
 {
 	switch (player->curshield)
 	{
@@ -1607,7 +1607,7 @@ static boolean K_HasInfiniteTether(player_t *player)
 	return false;
 }
 
-static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed_t draftdistance, UINT8 leniency)
+static dboolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed_t draftdistance, UINT8 leniency)
 {
 //#define EASYDRAFTTEST
 	fixed_t dist, olddraft;
@@ -2185,7 +2185,7 @@ void K_SpawnDriftBoostClipSpark(mobj_t *clip)
 	spark->momy = clip->momx/2;
 }
 
-static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
+static void K_SpawnGenericSpeedLines(player_t *player, dboolean top)
 {
 	fixed_t rand_x;
 	fixed_t rand_y;
@@ -2333,7 +2333,7 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 
 static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 {
-	const boolean shrink = (timer < 0);
+	const dboolean shrink = (timer < 0);
 	const INT32 maxTime = (10*TICRATE);
 	const INT32 noTime = (2*TICRATE);
 	INT32 spawnFreq = 1;
@@ -2471,14 +2471,14 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 	}
 }
 
-static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
+static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, dboolean horn)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const angle_t blindSpotSize = ANG10; // ANG5
 	SINT8 glanceDir = 0;
 	SINT8 lastValidGlance = 0;
-	const boolean podiumspecial = (K_PodiumSequence() == true && glancePlayer->nextwaypoint == NULL && glancePlayer->speed == 0);
-	boolean mysticmelodyspecial = false;
+	const dboolean podiumspecial = (K_PodiumSequence() == true && glancePlayer->nextwaypoint == NULL && glancePlayer->speed == 0);
+	dboolean mysticmelodyspecial = false;
 
 	if (podiumspecial)
 	{
@@ -2596,7 +2596,7 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 
 	if (horn == true && lastValidGlance != 0)
 	{
-		const boolean tasteful = (glancePlayer->karthud[khud_taunthorns] == 0);
+		const dboolean tasteful = (glancePlayer->karthud[khud_taunthorns] == 0);
 
 		K_FollowerHornTaunt(glancePlayer, glancePlayer, mysticmelodyspecial);
 
@@ -2629,11 +2629,11 @@ void K_KartMoveAnimation(player_t *player)
 	const fixed_t fastspeed = (K_GetKartSpeed(player, false, true) * 17) / 20; // 85%
 	const fixed_t speedthreshold = player->mo->scale / 8;
 
-	const boolean onground = P_IsObjectOnGround(player->mo);
+	const dboolean onground = P_IsObjectOnGround(player->mo);
 
 	UINT16 buttons = K_GetKartButtons(player);
-	const boolean spinningwheels = (((buttons & BT_ACCELERATE) == BT_ACCELERATE) || (onground && player->speed > 0));
-	const boolean lookback = ((buttons & BT_LOOKBACK) == BT_LOOKBACK);
+	const dboolean spinningwheels = (((buttons & BT_ACCELERATE) == BT_ACCELERATE) || (onground && player->speed > 0));
+	const dboolean lookback = ((buttons & BT_LOOKBACK) == BT_LOOKBACK);
 
 	SINT8 turndir = 0;
 	SINT8 destGlanceDir = 0;
@@ -2680,7 +2680,7 @@ void K_KartMoveAnimation(player_t *player)
 	{
 		// Only try glancing if you're driving straight.
 		// This avoids all-players loops when we don't need it.
-		const boolean horn = lookback && !(player->pflags & PF_GAINAX);
+		const dboolean horn = lookback && !(player->pflags & PF_GAINAX);
 		destGlanceDir = K_GlanceAtPlayers(player, horn);
 
 		if (lookback == true)
@@ -3023,7 +3023,7 @@ static void K_PlayGenericTastefulTaunt(mobj_t *source, sfxenum_t sfx_id)
 	if (skinid >= numskins)
 		return;
 
-	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
+	dboolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
 
 	if (
 		(
@@ -3062,7 +3062,7 @@ void K_PlayOvertakeSound(mobj_t *source)
 	if (skinid >= numskins)
 		return;
 
-	boolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
+	dboolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
 
 	if (
 		(
@@ -3087,7 +3087,7 @@ static void K_PlayGenericCombatSound(mobj_t *source, mobj_t *other, sfxenum_t sf
 	if (skinid >= numskins)
 		return;
 
-	boolean alwaysHear = false;
+	dboolean alwaysHear = false;
 
 	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
 	{
@@ -3229,7 +3229,7 @@ void K_MomentumToFacing(player_t *player)
 	player->mo->momy = FixedMul(player->mo->momy - player->cmomy, player->mo->friction) + player->cmomy;
 }
 
-boolean K_ApplyOffroad(const player_t *player)
+dboolean K_ApplyOffroad(const player_t *player)
 {
 	if (player->invincibilitytimer || player->hyudorotimer || player->sneakertimer || player->panelsneakertimer|| player->weaksneakertimer)
 		return false;
@@ -3238,7 +3238,7 @@ boolean K_ApplyOffroad(const player_t *player)
 	return true;
 }
 
-boolean K_SlopeResistance(const player_t *player)
+dboolean K_SlopeResistance(const player_t *player)
 {
 	if (player->invincibilitytimer || player->sneakertimer || player->panelsneakertimer || player->weaksneakertimer || player->tiregrease || player->flamedash || player->baildrop)
 		return true;
@@ -3360,17 +3360,17 @@ tripwirepass_t K_TripwirePassConditions(const player_t *player)
 	return TRIPWIRE_NONE;
 }
 
-boolean K_TripwirePass(const player_t *player)
+dboolean K_TripwirePass(const player_t *player)
 {
 	return (player->tripwirePass != TRIPWIRE_NONE);
 }
 
-boolean K_MovingHorizontally(mobj_t *mobj)
+dboolean K_MovingHorizontally(mobj_t *mobj)
 {
 	return (P_AproxDistance(mobj->momx, mobj->momy) / 4 > abs(mobj->momz));
 }
 
-boolean K_WaterRun(mobj_t *mobj)
+dboolean K_WaterRun(mobj_t *mobj)
 {
 	switch (mobj->type)
 	{
@@ -3452,7 +3452,7 @@ boolean K_WaterRun(mobj_t *mobj)
 	}
 }
 
-boolean K_WaterSkip(mobj_t *mobj)
+dboolean K_WaterSkip(mobj_t *mobj)
 {
 	if (mobj->waterskip >= 2)
 	{
@@ -3667,7 +3667,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 	}
 }
 
-boolean K_IsRidingFloatingTop(const player_t *player)
+dboolean K_IsRidingFloatingTop(const player_t *player)
 {
 	if (player->curshield != KSHIELD_TOP)
 	{
@@ -3677,7 +3677,7 @@ boolean K_IsRidingFloatingTop(const player_t *player)
 	return !Obj_GardenTopPlayerIsGrinding(player);
 }
 
-boolean K_IsHoldingDownTop(const player_t *player)
+dboolean K_IsHoldingDownTop(const player_t *player)
 {
 	if (player->curshield != KSHIELD_TOP)
 	{
@@ -4189,9 +4189,9 @@ static fixed_t K_GetKartSpeedAssist(const player_t *player)
 	return FixedMul(player->loneliness, MAX_SPEED_ASSIST);
 }
 
-fixed_t K_GetKartSpeed(const player_t *player, boolean doboostpower, boolean dorubberband)
+fixed_t K_GetKartSpeed(const player_t *player, dboolean doboostpower, dboolean dorubberband)
 {
-	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
+	const dboolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
 	const fixed_t physicsScale = mobjValid ? K_GrowShrinkSpeedMul(player) : FRACUNIT;
 	fixed_t finalspeed = 0;
 
@@ -4341,7 +4341,7 @@ UINT16 K_GetKartFlashing(const player_t *player)
 	return tics;
 }
 
-boolean K_PlayerShrinkCheat(const player_t *player)
+dboolean K_PlayerShrinkCheat(const player_t *player)
 {
 	return (
 		(player->pflags & PF_SHRINKACTIVE)
@@ -4352,7 +4352,7 @@ boolean K_PlayerShrinkCheat(const player_t *player)
 
 void K_UpdateShrinkCheat(player_t *player)
 {
-	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
+	const dboolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
 
 	if (player->pflags & PF_SHRINKME)
 	{
@@ -4369,7 +4369,7 @@ void K_UpdateShrinkCheat(player_t *player)
 	}
 }
 
-boolean K_KartKickstart(const player_t *player)
+dboolean K_KartKickstart(const player_t *player)
 {
 	return ((player->pflags & PF_KICKSTARTACCEL)
 		&& (!K_PlayerUsesBotMovement(player))
@@ -4548,7 +4548,7 @@ angle_t K_MomentumAngleReal(const mobj_t *mo)
 }
 
 // Scale amp rewards for crab bucketing. Play ambitiously!
-boolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
+dboolean K_PvPAmpReward(UINT32 award, player_t *attacker, player_t *defender)
 {
 	if (G_SameTeam(attacker, defender) == true)
 	{
@@ -4650,7 +4650,7 @@ void K_SpawnEXP(player_t *player, UINT8 exp, mobj_t *impact)
 	if (exp == 0)
 		return;
 
-	boolean special = false;
+	dboolean special = false;
 
 	if (player->gradingpointnum == K_GetNumGradingPoints())
 	{
@@ -4722,7 +4722,7 @@ void K_AwardPlayerAmps(player_t *player, UINT8 amps)
 	}
 }
 
-void K_AwardPlayerRings(player_t *player, UINT16 rings, boolean overload)
+void K_AwardPlayerRings(player_t *player, UINT16 rings, dboolean overload)
 {
 	UINT16 superring;
 
@@ -4937,8 +4937,8 @@ void K_CheckpointCrossAward(player_t *player)
 		}
 
 		player_t *opp = K_DuelOpponent(player);
-		boolean clutch = (player->duelscore - opp->duelscore == (DUELWINNINGSCORE-1));
-		boolean win = (player->duelscore - opp->duelscore == DUELWINNINGSCORE);
+		dboolean clutch = (player->duelscore - opp->duelscore == (DUELWINNINGSCORE-1));
+		dboolean win = (player->duelscore - opp->duelscore == DUELWINNINGSCORE);
 
 		if (!win)
 		{
@@ -4998,7 +4998,7 @@ void K_CheckpointCrossAward(player_t *player)
 
 }
 
-boolean K_Overdrive(player_t *player)
+dboolean K_Overdrive(player_t *player)
 {
 	if (player->amps == 0)
 		return false;
@@ -5027,7 +5027,7 @@ boolean K_Overdrive(player_t *player)
 	return true;
 }
 
-boolean K_DefensiveOverdrive(player_t *player)
+dboolean K_DefensiveOverdrive(player_t *player)
 {
 	if (player->amps == 0)
 		return false;
@@ -5078,10 +5078,10 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	mobj_t *clash;
 	UINT8 lag1 = 10; // Base value used for kartitem-to-player collision.
 	UINT8 lag2 = 10; // We want to preserve shooting invinc players to hinder them!
-	boolean slow1 = false; // If we _are_ hitting a kartitem, keep that value.
-	boolean slow2 = false; // Otherwise, route to K_AddHitLagFromCollision.
+	dboolean slow1 = false; // If we _are_ hitting a kartitem, keep that value.
+	dboolean slow2 = false; // Otherwise, route to K_AddHitLagFromCollision.
 
-	boolean stripbubble = (gametyperules & GTR_BUMPERS);
+	dboolean stripbubble = (gametyperules & GTR_BUMPERS);
 
 	// short-circuit instashield for vfx visibility
 	if (t1->player)
@@ -5162,8 +5162,8 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 damage)
 {
 	UINT8 points = 1;
-	boolean trapItem = false;
-	boolean finishOff = (victim->mo->health > 0) && (victim->mo->health <= damage);
+	dboolean trapItem = false;
+	dboolean finishOff = (victim->mo->health > 0) && (victim->mo->health <= damage);
 
 	if (!(gametyperules & GTR_POINTLIMIT))
 	{
@@ -5288,7 +5288,7 @@ void K_RemoveGrowShrink(player_t *player)
 
 // Should this object actually scale check?
 // Scale-to-scale comparisons only make sense for objects that expect to have dynamic scale.
-static boolean K_IsScaledItem(mobj_t *mobj)
+static dboolean K_IsScaledItem(mobj_t *mobj)
 {
 	return mobj && !P_MobjWasRemoved(mobj) &&
 		(mobj->type == MT_ORBINAUT || mobj->type == MT_JAWZ || mobj->type == MT_GACHABOM || mobj->type == MT_STONESHOE
@@ -5298,7 +5298,7 @@ static boolean K_IsScaledItem(mobj_t *mobj)
 }
 
 
-boolean K_IsBigger(mobj_t *compare, mobj_t *other)
+dboolean K_IsBigger(mobj_t *compare, mobj_t *other)
 {
 	fixed_t compareScale, otherScale;
 	const fixed_t requiredDifference = (mapobjectscale/4);
@@ -5359,7 +5359,7 @@ static fixed_t K_TumbleZ(mobj_t *mo, fixed_t input)
 	return FixedMul(input, -gravityAdjust);
 }
 
-void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source, boolean soften)
+void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source, dboolean soften)
 {
 	(void)source;
 
@@ -5443,7 +5443,7 @@ void K_StumblePlayer(player_t *player)
 	P_ResetPitchRoll(player->mo);
 }
 
-boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
+dboolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, dboolean fromAir)
 {
 	angle_t steepVal = ANGLE_MAX;
 	angle_t oldSlope, newSlope;
@@ -5608,7 +5608,7 @@ void K_UpdateStumbleIndicator(player_t *player)
 	const angle_t fudge = ANG15;
 	mobj_t *mobj = NULL;
 
-	boolean air = false;
+	dboolean air = false;
 	angle_t steepVal = STUMBLE_STEEP_VAL;
 	angle_t slopeSteep = 0;
 	angle_t steepRange = ANGLE_90;
@@ -5708,7 +5708,7 @@ void K_UpdateStumbleIndicator(player_t *player)
 	}
 }
 
-static boolean K_IsLosingWavedash(player_t *player)
+static dboolean K_IsLosingWavedash(player_t *player)
 {
 	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 		return true;
@@ -5861,7 +5861,7 @@ void K_UpdateTrickIndicator(player_t *player)
 	}
 }
 
-static boolean K_LastTumbleBounceCondition(player_t *player)
+static dboolean K_LastTumbleBounceCondition(player_t *player)
 {
 	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 60);
 }
@@ -6766,7 +6766,7 @@ static void K_SpawnDriftElectricity(player_t *player)
 	}
 }
 
-void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
+void K_SpawnDriftElectricSparks(player_t *player, int color, dboolean shockwave)
 {
 	SINT8 hdir, vdir, i;
 	int shockscale = shockwave ? 2 : 1;
@@ -7226,7 +7226,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 		SINT8 sign = 1;
 		UINT8 foff = 0;
 		mobj_t *dust;
-		boolean drifting = false;
+		dboolean drifting = false;
 
 		if (mo->player)
 		{
@@ -7367,7 +7367,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 			INT32 warntime = driftval/3;
 			INT32 dc = spawner->player->driftcharge;
 			UINT8 c = SKINCOLOR_NONE;
-			boolean rainbow = false;
+			dboolean rainbow = false;
 
 			if (dc >= 0)
 			{
@@ -7453,7 +7453,7 @@ static mobj_t *K_FindLastTrailMobj(player_t *player)
 	return trail;
 }
 
-mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset, fixed_t tossX, fixed_t tossY)
+mobj_t *K_ThrowKartItemEx(player_t *player, dboolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset, fixed_t tossX, fixed_t tossY)
 {
 	mobj_t *mo;
 	fixed_t dir = FRACUNIT;
@@ -7736,7 +7736,7 @@ mobj_t *K_ThrowKartItemEx(player_t *player, boolean missile, mobjtype_t mapthing
 	return mo;
 }
 
-mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset)
+mobj_t *K_ThrowKartItem(player_t *player, dboolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset)
 {
 	return K_ThrowKartItemEx(player, missile, mapthing, defaultDir, altthrow, angleOffset, 0, 0);
 }
@@ -8092,7 +8092,7 @@ static void K_DoShrink(player_t *user)
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 {
 	fixed_t thrust = 0;
-	boolean dontapplymomz = false;
+	dboolean dontapplymomz = false;
 
 	if (mo->player && mo->player->spectator)
 		return;
@@ -8202,7 +8202,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 	}
 }
 
-boolean K_CanSuperTransfer(player_t *player)
+dboolean K_CanSuperTransfer(player_t *player)
 {
 	if (!player->transfer)
 		return false;
@@ -8293,7 +8293,7 @@ killnext:
 }
 
 // Just for firing/dropping items.
-void K_UpdateHnextList(player_t *player, boolean clean)
+void K_UpdateHnextList(player_t *player, dboolean clean)
 {
 	mobj_t *work = player->mo, *nextwork;
 
@@ -8398,7 +8398,7 @@ void K_DropHnextList(player_t *player)
 	mobj_t *work = player->mo, *nextwork, *dropwork;
 	INT32 flip;
 	mobjtype_t type;
-	boolean orbit, ponground, dropall = true;
+	dboolean orbit, ponground, dropall = true;
 
 	if (work == NULL || P_MobjWasRemoved(work))
 	{
@@ -8770,7 +8770,7 @@ void K_DropRocketSneaker(player_t *player)
 {
 	mobj_t *shoe = player->mo;
 	fixed_t flingangle;
-	boolean leftshoe = true; //left shoe is first
+	dboolean leftshoe = true; //left shoe is first
 
 	if (!(player->mo && !P_MobjWasRemoved(player->mo) && player->mo->hnext && !P_MobjWasRemoved(player->mo->hnext)))
 		return;
@@ -8864,7 +8864,7 @@ void K_RepairOrbitChain(mobj_t *orbit)
 }
 
 // Simplified version of a code bit in P_MobjFloorZ
-static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, boolean ceiling)
+static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, dboolean ceiling)
 {
 	fixed_t testx, testy;
 
@@ -8898,7 +8898,7 @@ static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t z, 
 	return P_GetZAt(slope, testx, testy, z);
 }
 
-void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player)
+void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, dboolean flip, dboolean player)
 {
 	fixed_t newz;
 	sector_t *sec;
@@ -9170,7 +9170,7 @@ static void K_MoveHeldObjects(player_t *player)
 				while (cur && !P_MobjWasRemoved(cur))
 				{
 					const fixed_t radius = FixedHypot(player->mo->radius, player->mo->radius) + FixedHypot(cur->radius, cur->radius);
-					boolean vibrate = ((leveltime & 1) && !cur->tracer);
+					dboolean vibrate = ((leveltime & 1) && !cur->tracer);
 					angle_t angoffset;
 					fixed_t targx, targy, targz;
 
@@ -9204,7 +9204,7 @@ static void K_MoveHeldObjects(player_t *player)
 #if 1
 					{
 						angle_t input = player->drawangle - cur->angle;
-						boolean invert = (input > ANGLE_180);
+						dboolean invert = (input > ANGLE_180);
 						if (invert)
 							input = InvAngle(input);
 
@@ -9806,7 +9806,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 	return BMIT_CONTINUE; // find other rings
 }
 
-boolean K_LegacyRingboost(const player_t *player)
+dboolean K_LegacyRingboost(const player_t *player)
 {
 	if (netgame)
 		return false;
@@ -9848,10 +9848,10 @@ static void K_LookForRings(mobj_t *pmo)
 static void K_UpdateTripwire(player_t *player)
 {
 	fixed_t speedThreshold = (3*K_GetKartSpeed(player, false, true))/4;
-	boolean goodSpeed = (player->speed >= speedThreshold);
-	boolean boostExists = (player->tripwireLeniency > 0); // can't be checked later because of subtractions...
+	dboolean goodSpeed = (player->speed >= speedThreshold);
+	dboolean boostExists = (player->tripwireLeniency > 0); // can't be checked later because of subtractions...
 	tripwirepass_t triplevel = K_TripwirePassConditions(player);
-	boolean mightplaysound = false;
+	dboolean mightplaysound = false;
 
 	if (triplevel != TRIPWIRE_NONE) // Sonic Boom, able to pass tripwire
 	{
@@ -9933,7 +9933,7 @@ static void K_UpdateTripwire(player_t *player)
 	}
 }
 
-boolean K_PressingEBrake(const player_t *player)
+dboolean K_PressingEBrake(const player_t *player)
 {
 	return ((K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK);
 }
@@ -9947,7 +9947,7 @@ boolean K_PressingEBrake(const player_t *player)
 */
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 {
-	const boolean onground = P_IsObjectOnGround(player->mo);
+	const dboolean onground = P_IsObjectOnGround(player->mo);
 	const fixed_t scamming = K_PlayerScamPercentage(player, FRACUNIT);
 
 	/* reset sprite offsets :) */
@@ -11843,7 +11843,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 void K_KartResetPlayerColor(player_t *player)
 {
-	boolean fullbright = false;
+	dboolean fullbright = false;
 
 	if (!player->mo || P_MobjWasRemoved(player->mo)) // Can't do anything
 		return;
@@ -11899,7 +11899,7 @@ void K_KartResetPlayerColor(player_t *player)
 	{
 		const tic_t defaultTime = itemtime+(2*TICRATE);
 		tic_t flicker = 2;
-		boolean skip = false;
+		dboolean skip = false;
 
 		fullbright = true;
 
@@ -11966,7 +11966,7 @@ void K_KartResetPlayerColor(player_t *player)
 		goto finalise;
 	}
 
-	boolean allowflashing = true;
+	dboolean allowflashing = true;
 	int flashingrate = 1;
 	if (demo.playback && cv_reducevfx.value && !R_CanShowSkinInDemo(player->skin))
 	{
@@ -12168,7 +12168,7 @@ void K_KartPlayerAfterThink(player_t *player)
 }
 
 /*--------------------------------------------------
-	static boolean K_SetPlayerNextWaypoint(player_t *player)
+	static dboolean K_SetPlayerNextWaypoint(player_t *player)
 
 		Sets the next waypoint of a player, by finding their closest waypoint, then checking which of itself and next or
 		previous waypoints are infront of the player.
@@ -12180,11 +12180,11 @@ void K_KartPlayerAfterThink(player_t *player)
 	Return:-
 		Whether it is safe to update the respawn waypoint
 --------------------------------------------------*/
-static boolean K_SetPlayerNextWaypoint(player_t *player)
+static dboolean K_SetPlayerNextWaypoint(player_t *player)
 {
 	waypoint_t *finishline = K_GetFinishLineWaypoint();
 	waypoint_t *bestwaypoint = NULL;
-	boolean    updaterespawn = false;
+	dboolean    updaterespawn = false;
 
 	if ((player != NULL) && (player->mo != NULL) && (P_MobjWasRemoved(player->mo) == false))
 	{
@@ -12418,9 +12418,9 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 		}
 		else if ((player->currentwaypoint != NULL) && (player->nextwaypoint != NULL) && (finishline != NULL))
 		{
-			const boolean useshortcuts = false;
-			const boolean huntbackwards = false;
-			boolean pathfindsuccess = false;
+			const dboolean useshortcuts = false;
+			const dboolean huntbackwards = false;
+			dboolean pathfindsuccess = false;
 			path_t pathtofinish = {0};
 
 			pathfindsuccess =
@@ -12430,8 +12430,8 @@ static void K_UpdateDistanceFromFinishLine(player_t *const player)
 			// Using shortcuts won't find a path, so distance won't be updated until the player gets back on track
 			if (pathfindsuccess == true)
 			{
-				const boolean pathBackwardsReverse = ((player->pflags & PF_WRONGWAY) == 0);
-				boolean pathBackwardsSuccess = false;
+				const dboolean pathBackwardsReverse = ((player->pflags & PF_WRONGWAY) == 0);
+				dboolean pathBackwardsSuccess = false;
 				path_t pathBackwards = {0};
 
 				fixed_t disttonext = 0;
@@ -12610,7 +12610,7 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	waypoint_t *const old_currentwaypoint = player->currentwaypoint;
 	waypoint_t *const old_nextwaypoint = player->nextwaypoint;
 
-	boolean updaterespawn = K_SetPlayerNextWaypoint(player);
+	dboolean updaterespawn = K_SetPlayerNextWaypoint(player);
 
 	// Update prev value (used for grief prevention code)
 	player->distancetofinishprev = player->distancetofinish;
@@ -12677,7 +12677,7 @@ static void K_UpdatePlayerWaypoints(player_t *const player)
 	player->pflags &= ~PF_TRUSTWAYPOINTS; // clear special exception
 }
 
-INT32 K_GetKartRingPower(const player_t *player, boolean boosted)
+INT32 K_GetKartRingPower(const player_t *player, dboolean boosted)
 {
 	fixed_t ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) * (FRACUNIT/4);
 
@@ -12689,7 +12689,7 @@ INT32 K_GetKartRingPower(const player_t *player, boolean boosted)
 	return max(ringPower / FRACUNIT, 1);
 }
 
-INT32 K_GetFullKartRingPower(const player_t *player, boolean boosted)
+INT32 K_GetFullKartRingPower(const player_t *player, dboolean boosted)
 {
 	return 7 + K_GetKartRingPower(player, boosted);
 }
@@ -12697,7 +12697,7 @@ INT32 K_GetFullKartRingPower(const player_t *player, boolean boosted)
 // Returns false if this player being placed here causes them to collide with any other player
 // Used in g_game.c for match etc. respawning
 // This does not check along the z because the z is not correctly set for the spawnee at this point
-boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y)
+dboolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y)
 {
 	INT32 i;
 	fixed_t p1radius = players[playernum].mo->radius;
@@ -13096,7 +13096,7 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 	overlay->extravalue1 = stage;
 }
 
-static void K_KartDrift(player_t *player, boolean onground)
+static void K_KartDrift(player_t *player, dboolean onground)
 {
 	const fixed_t minspeed = (10 * player->mo->scale);
 
@@ -13107,7 +13107,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	const UINT16 buttons = K_GetKartButtons(player);
 
-	boolean dokicker = false;
+	dboolean dokicker = false;
 
 	// Drifting is actually straffing + automatic turning.
 	// Holding the Jump button will enable drifting.
@@ -13277,7 +13277,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		// Incease/decrease the drift value to continue drifting in that direction
 		fixed_t driftadditive = 24;
-		boolean playsound = false;
+		dboolean playsound = false;
 
 		if (onground)
 		{
@@ -13377,7 +13377,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	// No longer meet the conditions to sliptide?
 	// We'll spot you the sliptide as long as you keep turning, but no charging wavedashes.
-	boolean extendedSliptide = false;
+	dboolean extendedSliptide = false;
 
 	// We don't meet sliptide conditions!
 	if ((player->handleboost < SLIPTIDEHANDLING)
@@ -13609,7 +13609,7 @@ void K_KartUpdatePosition(player_t *player)
 
 			realplayers++;
 
-			const boolean same_team = G_SameTeam(player, &players[i]);
+			const dboolean same_team = G_SameTeam(player, &players[i]);
 
 #define increment_position(condition) \
 	if (condition) \
@@ -13894,7 +13894,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 	return min(FLAMESHIELD_MAX, (FLAMESHIELD_MAX / 16) + (disttofinish / distv)); // Ditto for this minimum, old value was 1/16
 }
 
-boolean K_PlayerEBrake(const player_t *player)
+dboolean K_PlayerEBrake(const player_t *player)
 {
 	if (player->respawn.state != RESPAWNST_NONE
 		&& (player->respawn.init == true || player->respawn.fromRingShooter == true))
@@ -13932,7 +13932,7 @@ boolean K_PlayerEBrake(const player_t *player)
 	return false;
 }
 
-boolean K_PlayerGuard(const player_t *player)
+dboolean K_PlayerGuard(const player_t *player)
 {
 	if (player->defenseLockout != 0)
 	{
@@ -14083,7 +14083,7 @@ void K_KartEbrakeVisuals(player_t *p)
 			if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev))
 			{
 				const INT16 overcharge = (p->spindash - MAXCHARGETIME);
-				const boolean desperation = (p->rings <= 0); // desperation spindash
+				const dboolean desperation = (p->rings <= 0); // desperation spindash
 
 				UINT8 frame = min(1 + ((p->spindash*3) / MAXCHARGETIME), 4);
 
@@ -14236,10 +14236,10 @@ static void K_KartSpindashWind(mobj_t *parent)
 
 static void K_KartSpindash(player_t *player)
 {
-	const boolean onGround = P_IsObjectOnGround(player->mo);
+	const dboolean onGround = P_IsObjectOnGround(player->mo);
 	const INT16 MAXCHARGETIME = K_GetSpindashChargeTime(player);
 	UINT16 buttons = K_GetKartButtons(player);
-	boolean spawnWind = (leveltime % 2 == 0);
+	dboolean spawnWind = (leveltime % 2 == 0);
 
 	if (player->mo->hitlag > 0 || P_PlayerInPain(player) || player->curshield == KSHIELD_TOP)
 	{
@@ -14370,11 +14370,11 @@ static void K_KartSpindash(player_t *player)
 				oldbuttons |= BT_ACCELERATE; // Not strictly correct, but better than nothing.
 			// Kickstart needs substantial attention if we want this sort of thing to be clean.
 
-			boolean ebrakelasttic = ((oldbuttons & BT_EBRAKEMASK) == BT_EBRAKEMASK);
+			dboolean ebrakelasttic = ((oldbuttons & BT_EBRAKEMASK) == BT_EBRAKEMASK);
 			if (player->pflags2 & PF2_STRICTFASTFALL && !(oldbuttons & BT_SPINDASH))
 				ebrakelasttic = false;
 
-			boolean ebrakenow = K_PressingEBrake(player);
+			dboolean ebrakenow = K_PressingEBrake(player);
 			if (player->pflags2 & PF2_STRICTFASTFALL && !(nowbuttons & BT_SPINDASH))
 				ebrakenow = false;
 
@@ -14415,7 +14415,7 @@ static void K_KartSpindash(player_t *player)
 		if ((buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
 			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
-			boolean spawnOldEffect = true;
+			dboolean spawnOldEffect = true;
 			UINT8 soundvol = 255;
 
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
@@ -14494,7 +14494,7 @@ static void K_KartSpindash(player_t *player)
 
 #undef SPINDASHTHRUSTTIME
 
-boolean K_FastFallBounce(player_t *player)
+dboolean K_FastFallBounce(player_t *player)
 {
 	// Handle fastfall bounce.
 	if (player->fastfall != 0)
@@ -14611,8 +14611,8 @@ void K_DappleEmployment(player_t *player)
 {
 	if (player->curshield == KSHIELD_BUBBLE)
 	{
-		const boolean JustWallBonked = !!(player->mo->eflags & MFE_JUSTBOUNCEDWALL); // some shit about signed...
-		const boolean NoMoreBubbleWallHump = (player->ignoreAirtimeLeniency > 0) && JustWallBonked;
+		const dboolean JustWallBonked = !!(player->mo->eflags & MFE_JUSTBOUNCEDWALL); // some shit about signed...
+		const dboolean NoMoreBubbleWallHump = (player->ignoreAirtimeLeniency > 0) && JustWallBonked;
 
 		// No more vertical wall humping
 		if (NoMoreBubbleWallHump)
@@ -14936,12 +14936,12 @@ void K_UnsetItemOut(player_t *player)
 //
 // K_MoveKartPlayer
 //
-void K_MoveKartPlayer(player_t *player, boolean onground)
+void K_MoveKartPlayer(player_t *player, dboolean onground)
 {
 	ticcmd_t *cmd = &player->cmd;
-	boolean ATTACK_IS_DOWN = ((cmd->buttons & BT_ATTACK) && !(player->oldcmd.buttons & BT_ATTACK) && (player->respawn.state == RESPAWNST_NONE));
-	boolean HOLDING_ITEM = (player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT));
-	boolean NO_HYUDORO = (player->stealingtimer == 0);
+	dboolean ATTACK_IS_DOWN = ((cmd->buttons & BT_ATTACK) && !(player->oldcmd.buttons & BT_ATTACK) && (player->respawn.state == RESPAWNST_NONE));
+	dboolean HOLDING_ITEM = (player->itemflags & (IF_ITEMOUT|IF_EGGMANOUT));
+	dboolean NO_HYUDORO = (player->stealingtimer == 0);
 
 	// Play overtake sounds, but only if
 	// - your place changed
@@ -15087,8 +15087,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	// which is allowed during painstate as a last-ditch defensive option.
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !mapreset && leveltime > introtime)
 	{
-		boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout) && (player->defenseLockout <= PUNISHWINDOW) && (!player->itemRoulette.active);
-		boolean releasedwhip = (!(cmd->buttons & BT_ATTACK)) && (player->rings <= 0 && player->instaWhipCharge) && !(P_PlayerInPain(player));
+		dboolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout) && (player->defenseLockout <= PUNISHWINDOW) && (!player->itemRoulette.active);
+		dboolean releasedwhip = (!(cmd->buttons & BT_ATTACK)) && (player->rings <= 0 && player->instaWhipCharge) && !(P_PlayerInPain(player));
 
 		if (K_PowerUpRemaining(player, POWERUP_BADGE))
 		{
@@ -15203,7 +15203,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		else if ((player->itemtype && player->itemamount) || (player->rings + player->superring + player->pickuprings > 0) || player->itemRoulette.active)
 		{
 			// Set up bail charge, provided we have something to bail with (any rings or item resource).
-			// boolean grounded = P_IsObjectOnGround(player->mo);
+			// dboolean grounded = P_IsObjectOnGround(player->mo);
 			// onground && player->tumbleBounces == 0 ?  player->bailcharge += 2 : player->bailcharge++; // charge twice as fast on the ground
 			player->bailcharge += 2;
 			// if ((P_PlayerInPain(player) && player->bailcharge == 1) || (grounded && P_PlayerInPain(player) && player->bailcharge == 2)) // this is brittle ..
@@ -15705,7 +15705,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								if (player->ballhogcharge == 0)
 									player->ballhogtap = false;
 
-								boolean realcharge = (cmd->buttons & BT_ATTACK) && (player->itemflags & IF_HOLDREADY) /*&& (player->ballhogcharge < ballhogmax)*/;
+								dboolean realcharge = (cmd->buttons & BT_ATTACK) && (player->itemflags & IF_HOLDREADY) /*&& (player->ballhogcharge < ballhogmax)*/;
 								if ((realcharge && !player->ballhogtap) || (player->ballhogtap && player->ballhogcharge < BALLHOGINCREMENT))
 								{
 									if (player->ballhogcharge < ballhogmax)
@@ -16431,7 +16431,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				// Old ambiguous-input filter, no longer needed for 2.2 tricks
 				// INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
-				boolean cantrick = true;
+				dboolean cantrick = true;
 				UINT16 buttons = player->cmd.buttons;
 				INT16 TRICKTHRESHOLD = 2*KART_FULLTURN/3;
 
@@ -16759,7 +16759,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	K_UpdateBallhogReticules(player, hog_count, false);
 }
 
-void K_CheckSpectateStatus(boolean considermapreset)
+void K_CheckSpectateStatus(dboolean considermapreset)
 {
 	UINT8 respawnlist[MAXPLAYERS];
 	UINT8 i, j, numingame = 0, numjoiners = 0;
@@ -16968,7 +16968,7 @@ UINT8 K_GetOrbinautItemFrame(UINT8 count)
 	return min(count - 1, 3);
 }
 
-boolean K_IsSPBInGame(void)
+dboolean K_IsSPBInGame(void)
 {
 	// is there an SPB chasing anyone?
 	if (spbplace != -1)
@@ -17147,7 +17147,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	if (victim->eggmanexplode)
 		return;
 
-	boolean prank = false;
+	dboolean prank = false;
 
 	if (victim->itemRoulette.eggman)
 	{
@@ -17315,7 +17315,7 @@ UINT32 K_PointLimitForGametype(void)
 	return ptsCap;
 }
 
-boolean K_Cooperative(void)
+dboolean K_Cooperative(void)
 {
 	if (battleprisons)
 	{
@@ -17362,12 +17362,12 @@ void K_SetTireGrease(player_t *player, tic_t tics)
 }
 
 // somewhat sensible check for HUD sounds in a post-bot-takeover world
-boolean K_IsPlayingDisplayPlayer(player_t *player)
+dboolean K_IsPlayingDisplayPlayer(player_t *player)
 {
 	return P_IsDisplayPlayer(player) && (!player->exiting);
 }
 
-boolean K_PlayerCanPunt(player_t *player)
+dboolean K_PlayerCanPunt(player_t *player)
 {
 	if (player->trickpanel > TRICKSTATE_READY)
 	{
@@ -17412,7 +17412,7 @@ void K_MakeObjectReappear(mobj_t *mo)
 	(!P_MobjWasRemoved(mo->punt_ref) ? mo->punt_ref : mo)->reappear = leveltime + (30*TICRATE);
 }
 
-boolean K_PlayerCanUseItem(player_t *player)
+dboolean K_PlayerCanUseItem(player_t *player)
 {
 	if (player->icecube.frozen)
 		return false;
@@ -17427,7 +17427,7 @@ boolean K_PlayerCanUseItem(player_t *player)
 // THE EXP ZONE
 // ===
 
-static boolean K_IsValidOpponent(player_t *me, player_t *them)
+static dboolean K_IsValidOpponent(player_t *me, player_t *them)
 {
 	UINT8 i = (them - players);
 
@@ -17525,7 +17525,7 @@ fixed_t K_GetGradingFactorAdjustment(player_t *player, UINT32 gradingpoint)
 	return result;
 }
 
-fixed_t K_GetGradingFactorMinMax(player_t *player, boolean max)
+fixed_t K_GetGradingFactorMinMax(player_t *player, dboolean max)
 {
 	fixed_t factor = FRACUNIT; // Starting gradingfactor
 	UINT8 opponents = K_Opponents(player);
@@ -17596,7 +17596,7 @@ void K_BotHitPenalty(player_t *player)
 	}
 }
 
-boolean K_IsPickMeUpItem(mobjtype_t type)
+dboolean K_IsPickMeUpItem(mobjtype_t type)
 {
 	extern consvar_t cv_debugpickmeup;
 	if (cv_debugpickmeup.value)
@@ -17627,7 +17627,7 @@ boolean K_IsPickMeUpItem(mobjtype_t type)
 	}
 }
 
-static boolean K_PickUp(player_t *player, mobj_t *picked)
+static dboolean K_PickUp(player_t *player, mobj_t *picked)
 {
 	SINT8 type = -1;
 	SINT8 amount = 1;
@@ -17732,7 +17732,7 @@ static boolean K_PickUp(player_t *player, mobj_t *picked)
 }
 
 // ACHTUNG this destroys items when returning true, make sure to bail out
-boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile)
+dboolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, dboolean allowHostile)
 {
 	extern consvar_t cv_debugpickmeup;
 	if (cv_debugpickmeup.value)
@@ -17765,7 +17765,7 @@ boolean K_TryPickMeUp(mobj_t *m1, mobj_t *m2, boolean allowHostile)
 	if (!victim->player)
 		return false;
 
-	boolean allied = (inflictor->target == victim);
+	dboolean allied = (inflictor->target == victim);
 
 	if (!allied && inflictor->target && !P_MobjWasRemoved(inflictor->target))
 		if (inflictor->target->player && G_SameTeam(inflictor->target->player, victim->player))

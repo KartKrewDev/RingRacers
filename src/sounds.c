@@ -1619,7 +1619,7 @@ sfxenum_t sfxfree = sfx_freeslot0;
 
 // Add a new sound fx into a free sfx slot.
 //
-sfxenum_t S_AddSoundFx(const char *name, boolean singular, INT32 flags, boolean skinsound)
+sfxenum_t S_AddSoundFx(const char *name, dboolean singular, INT32 flags, dboolean skinsound)
 {
 	sfxenum_t i;
 

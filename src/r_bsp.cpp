@@ -53,14 +53,14 @@ INT32 doorclosed;
 
 // A wall was drawn covering the whole screen, which means we
 // can block off the BSP across that seg.
-boolean g_walloffscreen;
+dboolean g_walloffscreen;
 
 static std::vector<std::vector<INT32>> node_cache;
 static std::vector<INT32>* current_node_cache;
 
-boolean R_NoEncore(sector_t *sector, levelflat_t *flat, boolean ceiling)
+dboolean R_NoEncore(sector_t *sector, levelflat_t *flat, dboolean ceiling)
 {
-	const boolean invertEncore = (sector->flags & MSF_INVERTENCORE);
+	const dboolean invertEncore = (sector->flags & MSF_INVERTENCORE);
 	const terrain_t *terrain = (flat != NULL ? flat->terrain : NULL);
 
 	if ((terrain == NULL) || (terrain->flags & TRF_REMAP))
@@ -75,13 +75,13 @@ boolean R_NoEncore(sector_t *sector, levelflat_t *flat, boolean ceiling)
 
 	if (ceiling)
 	{
-		return ((boolean)(sector->flags & MSF_FLIPSPECIAL_CEILING));
+		return ((dboolean)(sector->flags & MSF_FLIPSPECIAL_CEILING));
 	}
 
-	return ((boolean)(sector->flags & MSF_FLIPSPECIAL_FLOOR));
+	return ((dboolean)(sector->flags & MSF_FLIPSPECIAL_FLOOR));
 }
 
-boolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling)
+dboolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling)
 {
 	return rover ? (rover->fofflags & FOF_RIPPLE) :
 		(sector->flags & (MSF_RIPPLE_FLOOR << ceiling));
@@ -263,7 +263,7 @@ void R_PortalClearClipSegs(INT32 start, INT32 end)
 // Similar for ceiling, only reflected.
 //
 sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
-	INT32 *ceilinglightlevel, boolean back)
+	INT32 *ceilinglightlevel, dboolean back)
 {
 	if (floorlightlevel)
 		*floorlightlevel = sec->floorlightsec == -1 ?
@@ -281,7 +281,7 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 		const sector_t *s = &sectors[sec->heightsec];
 		mobj_t *viewmobj = viewplayer->mo;
 		INT32 heightsec;
-		boolean underwater;
+		dboolean underwater;
 		UINT8 i = R_GetViewNumber();
 
 		if (camera[i].chase)
@@ -381,7 +381,7 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 	return sec;
 }
 
-boolean R_IsEmptyLine(seg_t *line, sector_t *front, sector_t *back)
+dboolean R_IsEmptyLine(seg_t *line, sector_t *front, sector_t *back)
 {
 	return (
 		!R_IsDebugLine(line) &&
@@ -413,7 +413,7 @@ boolean R_IsEmptyLine(seg_t *line, sector_t *front, sector_t *back)
 		&& (!cv_debugfinishline.value || back->damagetype == front->damagetype));
 }
 
-boolean R_IsDebugLine(seg_t *line)
+dboolean R_IsDebugLine(seg_t *line)
 {
 	if (cv_debugfinishline.value)
 	{
@@ -429,7 +429,7 @@ boolean R_IsDebugLine(seg_t *line)
 	return false;
 }
 
-boolean R_ShouldFlipTripWire(const line_t *ld)
+dboolean R_ShouldFlipTripWire(const line_t *ld)
 {
 	// Flip tripwire textures when they are unpegged
 	// so the energy flows downward instead of upward, matching collision behavior
@@ -445,7 +445,7 @@ static void R_AddLine(seg_t *line)
 	INT32 x1, x2;
 	angle_t angle1, angle2, span, tspan;
 	static sector_t tempsec;
-	boolean bothceilingssky = false, bothfloorssky = false;
+	dboolean bothceilingssky = false, bothfloorssky = false;
 
 	g_portal = NULL;
 
@@ -680,7 +680,7 @@ INT32 checkcoord[12][4] =
 	{2, 1, 3, 0}
 };
 
-static boolean R_CheckBBox(const fixed_t *bspcoord)
+static dboolean R_CheckBBox(const fixed_t *bspcoord)
 {
 	angle_t angle1, angle2;
 	INT32 sx1, sx2, boxpos;
@@ -940,7 +940,7 @@ static void R_Subsector(size_t num)
 	// Check and prep all 3D floors. Set the sector floor/ceiling light levels and colormaps.
 	if (frontsector->ffloors)
 	{
-		boolean anyMoved = frontsector->moved;
+		dboolean anyMoved = frontsector->moved;
 
 		if (anyMoved == false)
 		{
@@ -1368,7 +1368,7 @@ void R_Prep3DFloors(sector_t *sector)
 	}
 }
 
-INT32 R_GetPlaneLight(sector_t *sector, fixed_t planeheight, boolean underside)
+INT32 R_GetPlaneLight(sector_t *sector, fixed_t planeheight, dboolean underside)
 {
 	INT32 i;
 

@@ -24,7 +24,7 @@ void M_ServerListFillDebug(void);
 #endif
 
 // Quit
-static boolean M_ServerBrowserQuit(void)
+static dboolean M_ServerBrowserQuit(void)
 {
 	serverlistultimatecount = 0;
 	serverlistmode = false;
@@ -488,7 +488,7 @@ static void M_ServerBrowserConfirm(INT32 choice)
 }
 
 // Input handler for server browser.
-boolean M_ServerBrowserInputs(INT32 ch)
+dboolean M_ServerBrowserInputs(INT32 ch)
 {
 	UINT8 pid = 0;
 	INT16 maxscroll = serverlistcount - (SERVERSPERPAGE/2) - 2; // Why? Because

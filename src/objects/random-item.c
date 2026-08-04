@@ -178,7 +178,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	}
 }
 
-boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
+dboolean Obj_RandomItemSpawnIn(mobj_t *mobj)
 {
 	// We don't want item spawnpoints to be visible during
 	// POSITION in Battle.

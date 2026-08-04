@@ -318,7 +318,7 @@ void LoadModelSprite2(model_t *model)
 		char framechars[4];
 		UINT8 frame = 0;
 		UINT8 spr2idx;
-		boolean interpolate = false;
+		dboolean interpolate = false;
 
 		memset(&prefix, 0x00, 6);
 		memset(&name, 0x00, 5);
@@ -327,7 +327,7 @@ void LoadModelSprite2(model_t *model)
 
 		if (strlen(framename) >= 9)
 		{
-			boolean super;
+			dboolean super;
 			char *modelframename = framename;
 			memcpy(&prefix, modelframename, 5);
 			modelframename += 5;
@@ -488,7 +488,7 @@ typedef struct materiallist_s
 	material_t *material;
 } materiallist_t;
 
-static boolean AddMaterialToList(materiallist_t **head, material_t *material)
+static dboolean AddMaterialToList(materiallist_t **head, material_t *material)
 {
 	materiallist_t *node, *newMatNode;
 	for (node = *head; node; node = node->next)

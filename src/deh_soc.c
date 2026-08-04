@@ -650,7 +650,7 @@ void readskincolor(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "ACCESSIBLE"))
 			{
 				if (num > FIRSTSUPERCOLOR)
-					skincolors[num].accessible = (boolean)(atoi(word2) || word2[0] == 'T' || word2[0] == 'Y');
+					skincolors[num].accessible = (dboolean)(atoi(word2) || word2[0] == 'T' || word2[0] == 'Y');
 			}
 			else
 				deh_warning("Skincolor %d: unknown word '%s'", num, word);
@@ -2169,7 +2169,7 @@ void readframe(MYFILE *f, INT32 num)
 			else if (fastcmp(word1, "ACTION"))
 			{
 				size_t z;
-				boolean found = false;
+				dboolean found = false;
 				char actiontocompare[32];
 
 				memset(actiontocompare, 0x00, sizeof(actiontocompare));
@@ -2304,7 +2304,7 @@ void readsound(MYFILE *f, INT32 num)
  * \sa readmaincfg()
  * \author Graue <graue@oceanbase.org>
  */
-static boolean GoodDataFileName(const char *s)
+static dboolean GoodDataFileName(const char *s)
 {
 	const char *p;
 	const char *tail = ".dat";
@@ -3448,14 +3448,14 @@ void readconditionset(MYFILE *f, UINT16 setnum)
 	Z_Free(s);
 }
 
-void readmaincfg(MYFILE *f, boolean mainfile)
+void readmaincfg(MYFILE *f, dboolean mainfile)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 	char *word = s;
 	char *word2;
 	char *tmp;
 	INT32 value;
-	boolean doClearLevels = false;
+	dboolean doClearLevels = false;
 
 #ifdef DEVELOP
 	(void)mainfile;
@@ -3662,7 +3662,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "HIDETITLEPICS") || fastcmp(word, "TITLEPICSHIDE"))
 			{
-				hidetitlepics = (boolean)(value != 0 || word2[0] == 'T' || word2[0] == 'Y');
+				hidetitlepics = (dboolean)(value != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLEPICSMODE"))
@@ -4148,7 +4148,7 @@ void readfollower(MYFILE *f)
 	char *tmp;
 	char testname[SKINNAMESIZE+1];
 
-	boolean nameset;
+	dboolean nameset;
 	INT32 fallbackstate = 0;
 	INT32 res;
 	INT32 i;
@@ -4463,7 +4463,7 @@ void readfollowercategory(MYFILE *f)
 	char *word, *word2;
 	char *tmp;
 
-	boolean nameset;
+	dboolean nameset;
 
 	if (numfollowercategories == MAXFOLLOWERCATEGORIES)
 	{

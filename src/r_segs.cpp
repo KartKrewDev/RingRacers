@@ -46,11 +46,11 @@ extern "C" consvar_t cv_debugfinishline;
 // OPTIMIZE: closed two sided lines as single sided
 
 // True if any of the segs textures might be visible.
-static boolean segtextured;
-static boolean markfloor; // False if the back side is the same plane.
-static boolean markceiling;
+static dboolean segtextured;
+static dboolean markfloor; // False if the back side is the same plane.
+static dboolean markceiling;
 
-static boolean maskedtexture;
+static dboolean maskedtexture;
 static INT32 toptexture, bottomtexture, midtexture;
 static bool topbrightmapped, bottombrightmapped, midbrightmapped;
 static bool topremap, bottomremap, midremap;
@@ -76,8 +76,8 @@ static fixed_t rw_toptextureslide, rw_midtextureslide, rw_bottomtextureslide; //
 static fixed_t rw_midtextureback, rw_midtexturebackslide; // Values for masked midtexture height calculation
 
 // Lactozilla: 3D floor clipping
-static boolean rw_floormarked = false;
-static boolean rw_ceilingmarked = false;
+static dboolean rw_floormarked = false;
+static dboolean rw_ceilingmarked = false;
 
 static INT32 *rw_silhouette = NULL;
 static fixed_t *rw_tsilheight = NULL;
@@ -186,7 +186,7 @@ transnum_t R_GetLinedefTransTable(fixed_t alpha)
 	}
 }
 
-static inline boolean R_OverflowTest(drawcolumndata_t* dc)
+static inline dboolean R_OverflowTest(drawcolumndata_t* dc)
 {
 	INT64 overflow_test;
 	overflow_test = (INT64)centeryfrac - (((INT64)dc->texturemid*spryscale)>>FRACBITS);
@@ -208,9 +208,9 @@ static void R_RenderMaskedSegLoop(drawcolumndata_t* dc, drawseg_t *drawseg, INT3
 	INT32 range;
 	sector_t *front, *back;
 	INT32 times, repeats;
-	boolean tripwire;
-	boolean brightmapped = R_TextureHasBrightmap(texnum);
-	boolean remap = encoremap && R_TextureCanRemap(basetexnum);
+	dboolean tripwire;
+	dboolean brightmapped = R_TextureHasBrightmap(texnum);
+	dboolean remap = encoremap && R_TextureCanRemap(basetexnum);
 
 	ldef = curline->linedef;
 	tripwire = P_IsLineTripWire(ldef);
@@ -609,7 +609,7 @@ static INT32 R_GetTwoSidedMidTexture(seg_t *line)
 	return line->sidedef->midtexture;
 }
 
-static boolean R_CheckBlendMode(drawcolumndata_t* dc, const line_t *ldef, boolean brightmapped)
+static dboolean R_CheckBlendMode(drawcolumndata_t* dc, const line_t *ldef, dboolean brightmapped)
 {
 	transnum_t transtable = NUMTRANSMAPS;
 	patchalphastyle_t blendmode = AST_COPY;
@@ -661,7 +661,7 @@ void R_RenderMaskedSegRange(drawseg_t *drawseg, INT32 x1, INT32 x2)
 	INT32 texnum, basetexnum;
 	void (*colfunc_2s)(drawcolumndata_t*, column_t *, column_t *, INT32);
 	line_t *ldef;
-	const boolean debug = R_IsDebugLine(drawseg->curline);
+	const dboolean debug = R_IsDebugLine(drawseg->curline);
 	drawcolumndata_t *dc = &g_dc;
 
 	// Calculate light table.
@@ -786,7 +786,7 @@ static void R_DrawRepeatFlippedMaskedColumn(drawcolumndata_t* dc, column_t *col,
 }
 
 // Returns true if a fake floor is translucent.
-static boolean R_IsFFloorTranslucent(visffloor_t *pfloor)
+static dboolean R_IsFFloorTranslucent(visffloor_t *pfloor)
 {
 	if (pfloor->polyobj)
 		return (pfloor->polyobj->translucency > 0);
@@ -821,7 +821,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	// NOTE: INT64 instead of fixed_t because overflow concerns
 	INT64         top_frac, top_step, bottom_frac, bottom_step;
 	// skew FOF walls with slopes?
-	boolean	      slopeskew = false;
+	dboolean	      slopeskew = false;
 	fixed_t       ffloortextureslide = 0;
 	INT32         oldx = -1;
 	fixed_t       left_top, left_bottom; // needed here for slope skewing
@@ -851,14 +851,14 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 
 	texnum = R_GetTextureNum(basetexnum);
 
-	boolean brightmapped = R_TextureHasBrightmap(texnum);
-	boolean remap = encoremap && R_TextureCanRemap(basetexnum);
+	dboolean brightmapped = R_TextureHasBrightmap(texnum);
+	dboolean remap = encoremap && R_TextureCanRemap(basetexnum);
 
 	R_SetColumnFunc(BASEDRAWFUNC, brightmapped);
 
 	if (pfloor->fofflags & FOF_TRANSLUCENT)
 	{
-		boolean fuzzy = true;
+		dboolean fuzzy = true;
 
 		// Hacked up support for alpha value in software mode Tails 09-24-2002
 		// ...unhacked by toaster 04-01-2021
@@ -1352,7 +1352,7 @@ static inline void R_ExpandPlaneY(visplane_t *pl, INT32 x, INT16 top, INT16 bott
 // R_FFloorCanClip
 //
 // Returns true if a fake floor can clip a column away.
-static boolean R_FFloorCanClip(visffloor_t *pfloor)
+static dboolean R_FFloorCanClip(visffloor_t *pfloor)
 {
 	return (cv_ffloorclip.value && !R_IsFFloorTranslucent(pfloor) && !pfloor->polyobj);
 }
@@ -1378,7 +1378,7 @@ UINT32 nombre = 100000;
 #endif
 //profile stuff ---------------------------------------------------------
 
-static void R_DrawWallColumn(drawcolumndata_t* dc, INT32 yl, INT32 yh, fixed_t mid, fixed_t texturecolumn, INT32 texture, boolean brightmapped, boolean remap)
+static void R_DrawWallColumn(drawcolumndata_t* dc, INT32 yl, INT32 yh, fixed_t mid, fixed_t texturecolumn, INT32 texture, dboolean brightmapped, dboolean remap)
 {
 	dc->yl = yl;
 	dc->yh = yh;
@@ -1821,7 +1821,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	fixed_t       hyp;
 	fixed_t       sineval;
 	angle_t       distangle, offsetangle;
-	boolean longboi;
+	dboolean longboi;
 	INT32           lightnum;
 	INT32           i, p;
 	lightlist_t   *light;
@@ -2119,8 +2119,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	else
 	{
 		// two sided line
-		boolean bothceilingssky = false; // turned on if both back and front ceilings are sky
-		boolean bothfloorssky = false; // likewise, but for floors
+		dboolean bothceilingssky = false; // turned on if both back and front ceilings are sky
+		dboolean bothfloorssky = false; // likewise, but for floors
 
 		SLOPEPARAMS(backsector->c_slope, worldhigh, worldhighslope, backsector->ceilingheight)
 		SLOPEPARAMS(backsector->f_slope, worldlow,  worldlowslope,  backsector->floorheight)

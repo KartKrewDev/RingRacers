@@ -27,7 +27,7 @@ extern "C" {
 #define RESPAWNST_DROP 0x02
 
 /*--------------------------------------------------
-	fixed_t K_RespawnOffset(player_t *player, boolean flip);
+	fixed_t K_RespawnOffset(player_t *player, dboolean flip);
 
 		Updates the player's flip flags, and returns a
 		Z offset for respawning.
@@ -40,7 +40,7 @@ extern "C" {
 		Z position offset.
 --------------------------------------------------*/
 
-fixed_t K_RespawnOffset(player_t *player, boolean flip);
+fixed_t K_RespawnOffset(player_t *player, dboolean flip);
 
 /*--------------------------------------------------
 	void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)

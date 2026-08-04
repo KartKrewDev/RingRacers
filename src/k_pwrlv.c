@@ -80,7 +80,7 @@ void K_ClearClientPowerLevels(void)
 
 // "Tyron sneaks mahjong ratings into Ring Racers"
 // A system that allows player ratings to inflate over time, then settle based on their winrate.
-static fixed_t K_CalculatePowerLevelInc(UINT16 you, UINT16 them, boolean won)
+static fixed_t K_CalculatePowerLevelInc(UINT16 you, UINT16 them, dboolean won)
 {
 	// == ★ TUNING ZONE ★ ==
 
@@ -238,10 +238,10 @@ INT16 K_CalculatePowerLevelAvg(void)
 	return (INT16)avg;
 }
 
-void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
+void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, dboolean forfeit)
 {
 	const UINT8 playerNum = player - players;
-	const boolean exitBonus = ((gradingpoint >= K_GetNumGradingPoints()) || (player->pflags & PF_NOCONTEST));
+	const dboolean exitBonus = ((gradingpoint >= K_GetNumGradingPoints()) || (player->pflags & PF_NOCONTEST));
 
 	SINT8 powerType = K_UsingPowerLevels();
 
@@ -295,7 +295,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 
 	CONS_Debug(DBG_PWRLV, "========\n");
 
-	boolean dueling = K_InRaceDuel();
+	dboolean dueling = K_InRaceDuel();
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		UINT16 theirScore = 0;
@@ -304,7 +304,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 		fixed_t ourinc = 0; // Total pt increment
 		fixed_t theirinc = 0;
 
-		boolean won = false;
+		dboolean won = false;
 
 		if (i == playerNum) // Same person
 		{
@@ -420,7 +420,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 gradingpoint, boolean forfeit)
 	}
 }
 
-void K_UpdatePowerLevelsFinalize(player_t *player, boolean onForfeit)
+void K_UpdatePowerLevelsFinalize(player_t *player, dboolean onForfeit)
 {
 	if (player->finalized)
 		return;
@@ -561,7 +561,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 			if (cv_kartspeed.value == -1 || cv_kartencore.value == -1)
 			{
 				UINT8 speed = KARTSPEED_EASY;
-				boolean encore = false;
+				dboolean encore = false;
 				INT16 avg = 0, min = 0;
 				UINT8 i, t = 1;
 
@@ -663,7 +663,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 	}
 }
 
-void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
+void K_PlayerForfeit(UINT8 playerNum, dboolean pointLoss)
 {
 	UINT8 p = 0;
 

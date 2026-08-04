@@ -137,7 +137,7 @@ typedef enum
 // mouse values are used once
 extern consvar_t cv_controlperkey;
 
-// current state of the keys: JOYAXISRANGE or 0 when boolean.
+// current state of the keys: JOYAXISRANGE or 0 when dboolean.
 // Or anything inbetween for analog values
 #define MAXDEVICES (MAXGAMEPADS + 1) // Gamepads + keyboard & mouse
 #define KEYBOARD_MOUSE_DEVICE (0)
@@ -205,8 +205,8 @@ void G_ResetAllDeviceRumbles(void);
 INT32* G_GetDeviceGameKeyDownArray(INT32 device);
 void G_ResetAllDeviceGameKeyDown(void);
 
-boolean G_IsDeviceResponding(INT32 device);
-void G_SetDeviceResponding(INT32 device, boolean responding);
+dboolean G_IsDeviceResponding(INT32 device);
+void G_SetDeviceResponding(INT32 device, dboolean responding);
 void G_ResetAllDeviceResponding(void);
 
 void HandleGamepadDeviceEvents(event_t *ev);
@@ -219,8 +219,8 @@ const char *G_KeynumToString(INT32 keynum);
 const char *G_KeynumToShortString(INT32 keynum);
 INT32 G_KeyStringtoNum(const char *keystr);
 
-boolean G_KeyBindIsNecessary(INT32 gc);
-boolean G_KeyIsAvailable(INT32 key, INT32 deviceID);
+dboolean G_KeyBindIsNecessary(INT32 gc);
+dboolean G_KeyIsAvailable(INT32 key, INT32 deviceID);
 
 // detach any keys associated to the given game control
 void G_ClearControlKeys(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 control);
@@ -233,7 +233,7 @@ void G_DefineDefaultControls(void);
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen);
 void G_ApplyControlScheme(UINT8 splitplayer, INT32 (*fromcontrols)[MAXINPUTMAPPING]);
 void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*fromcontrolsb)[MAXINPUTMAPPING], INT32 (*fromcontrolsc)[MAXINPUTMAPPING], INT32 (*fromcontrolsd)[MAXINPUTMAPPING]);
-INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify);
+INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, dboolean modify);
 
 INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control);
 

@@ -112,7 +112,7 @@ static pathfindnode_t *K_NodesArrayContainsNodeData(
 }
 
 /*--------------------------------------------------
-	static boolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_t *node, size_t closedsetcount)
+	static dboolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_t *node, size_t closedsetcount)
 
 		Checks whether the Closedset contains a node. Searches from the end to the start for speed reasons.
 
@@ -124,9 +124,9 @@ static pathfindnode_t *K_NodesArrayContainsNodeData(
 	Return:-
 		True if the node is in the closed set, false if it isn't
 --------------------------------------------------*/
-static boolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_t *node, size_t closedsetcount)
+static dboolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_t *node, size_t closedsetcount)
 {
-	boolean nodeisinclosedset = false;
+	dboolean nodeisinclosedset = false;
 	size_t i = 0U;
 
 	I_Assert(closedset != NULL);
@@ -146,7 +146,7 @@ static boolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_
 }
 
 /*--------------------------------------------------
-	static boolean K_PathfindSetupValid(const pathfindsetup_t *const pathfindsetup)
+	static dboolean K_PathfindSetupValid(const pathfindsetup_t *const pathfindsetup)
 
 		Checks that the setup given for pathfinding is valid and can be used.
 
@@ -156,9 +156,9 @@ static boolean K_ClosedsetContainsNode(pathfindnode_t **closedset, pathfindnode_
 	Return:-
 		True if pathfinding setup is valid, false if it isn't.
 --------------------------------------------------*/
-static boolean K_PathfindSetupValid(const pathfindsetup_t *const pathfindsetup)
+static dboolean K_PathfindSetupValid(const pathfindsetup_t *const pathfindsetup)
 {
-	boolean pathfindsetupvalid = false;
+	dboolean pathfindsetupvalid = false;
 	size_t sourcenodenumconnectednodes = 0U;
 	size_t endnodenumconnectednodes    = 0U;
 
@@ -218,9 +218,9 @@ static boolean K_PathfindSetupValid(const pathfindsetup_t *const pathfindsetup)
 	return pathfindsetupvalid;
 }
 
-static boolean K_ReconstructPath(path_t *const path, pathfindnode_t *const destinationnode)
+static dboolean K_ReconstructPath(path_t *const path, pathfindnode_t *const destinationnode)
 {
-	boolean reconstructsuccess = false;
+	dboolean reconstructsuccess = false;
 
 	I_Assert(path != NULL);
 	I_Assert(destinationnode != NULL);
@@ -279,13 +279,13 @@ static boolean K_ReconstructPath(path_t *const path, pathfindnode_t *const desti
 }
 
 /*--------------------------------------------------
-	boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup)
+	dboolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup)
+dboolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup)
 {
-	boolean pathfindsuccess = false;
+	dboolean pathfindsuccess = false;
 
 	if (path == NULL)
 	{

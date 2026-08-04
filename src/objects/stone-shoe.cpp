@@ -328,12 +328,12 @@ mobj_t *Obj_SpawnStoneShoe(INT32 owner, mobj_t *victim)
 	return Shoe::spawn(owner, static_cast<Player*>(victim));
 }
 
-boolean Obj_TickStoneShoe(mobj_t *shoe)
+dboolean Obj_TickStoneShoe(mobj_t *shoe)
 {
 	return static_cast<Shoe*>(shoe)->tick();
 }
 
-boolean Obj_TickStoneShoeChain(mobj_t *chain)
+dboolean Obj_TickStoneShoeChain(mobj_t *chain)
 {
 	return static_cast<Chain*>(chain)->tick();
 }

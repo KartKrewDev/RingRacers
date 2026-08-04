@@ -148,20 +148,20 @@ static const mline_t thintriangle_guy[] = {
 #undef R
 #define NUMTHINTRIANGLEGUYLINES (sizeof (thintriangle_guy)/sizeof (mline_t))
 
-static boolean bigstate;	// user view and large view (full map view)
-static boolean draw_grid = false;
+static dboolean bigstate;	// user view and large view (full map view)
+static dboolean draw_grid = false;
 
-boolean automapactive = false;
-boolean am_recalc = false; //added : 05-02-98 : true when screen size changes
-static boolean am_stopped = true;
-static boolean am_minigen = false;
+dboolean automapactive = false;
+dboolean am_recalc = false; //added : 05-02-98 : true when screen size changes
+static dboolean am_stopped = true;
+static dboolean am_minigen = false;
 
 static UINT8 *am_buf = NULL;
 
 static INT32 f_x, f_y;	// location of window on screen (always zero for both)
 static INT32 f_w, f_h;	// size of window on screen (always the screen width and height respectively)
 
-static boolean m_keydown[4]; // which window panning keys are being pressed down?
+static dboolean m_keydown[4]; // which window panning keys are being pressed down?
 static mpoint_t m_paninc; // how far the window pans each tic (map coords)
 static fixed_t mtof_zoommul; // how far the window zooms in each tic (map coords)
 static fixed_t ftom_zoommul; // how far the window zooms in each tic (fb coords)
@@ -201,7 +201,7 @@ static fixed_t scale_ftom;
 
 static player_t *plr; // the player represented by an arrow
 
-static boolean followplayer = true; // specifies whether to follow the player around
+static dboolean followplayer = true; // specifies whether to follow the player around
 
 // function for drawing lines, depends on rendermode
 typedef void (*AMDRAWFLINEFUNC) (const fline_t *fl, INT32 color);
@@ -439,7 +439,7 @@ static void AM_setWindowPanning(void)
   * \param ev Event to possibly respond to.
   * \return True if the automap responder ate the event.
   */
-boolean AM_Responder(event_t *ev)
+dboolean AM_Responder(event_t *ev)
 {
 	INT32 rc = false;
 
@@ -650,7 +650,7 @@ static void AM_clearFB(INT32 color)
   * \param fl Resulting framebuffer coordinates?
   * \return True if the line is inside the boundaries.
   */
-static boolean AM_clipMline(const mline_t *ml, fline_t *fl)
+static dboolean AM_clipMline(const mline_t *ml, fline_t *fl)
 {
 	enum
 	{

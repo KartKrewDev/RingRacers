@@ -57,7 +57,7 @@ menu_t OPTIONS_EditProfileDef = {
 };
 
 // Returns true if the profile can be saved, false otherwise. Also starts messages if necessary.
-static boolean M_ProfileEditEnd(const UINT8 pid)
+static dboolean M_ProfileEditEnd(const UINT8 pid)
 {
 	UINT8 i;
 
@@ -142,7 +142,7 @@ static void M_ProfileEditExit(void)
 }
 
 // For profile edit, just make sure going back resets the card to its position, the rest is taken care of automatically.
-boolean M_ProfileEditInputs(INT32 ch)
+dboolean M_ProfileEditInputs(INT32 ch)
 {
 
 	(void) ch;

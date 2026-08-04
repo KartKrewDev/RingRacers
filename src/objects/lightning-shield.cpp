@@ -76,7 +76,7 @@ void Obj_SpawnLightningShieldVisuals(mobj_t *shield)
 	Visual::spawn(static_cast<Shield*>(shield));
 }
 
-boolean Obj_TickLightningShieldVisual(mobj_t *mobj)
+dboolean Obj_TickLightningShieldVisual(mobj_t *mobj)
 {
 	return static_cast<Visual*>(mobj)->tick();
 }

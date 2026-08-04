@@ -60,7 +60,7 @@ static void InitLogging(void)
 	const char *format;
 	const char *reldir;
 	int left;
-	boolean fileabs;
+	dboolean fileabs;
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 	const char *link;
 #endif

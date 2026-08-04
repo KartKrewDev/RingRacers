@@ -109,7 +109,7 @@ void Z_FreeTags(INT32 lowtag, INT32 hightag);
 
 // Iterate memory by tag
 #define Z_IterateTag(tagnum, func) Z_IterateTags(tagnum, tagnum, func)
-void Z_IterateTags(INT32 lowtag, INT32 hightag, boolean (*iterfunc)(void *));
+void Z_IterateTags(INT32 lowtag, INT32 hightag, dboolean (*iterfunc)(void *));
 
 //
 // Utility functions

@@ -80,7 +80,7 @@ mtag_t Tag_FGet (const taglist_t* list)
 }
 
 /// Returns true if the given tag exist inside the list.
-boolean Tag_Find (const taglist_t* list, const mtag_t tag)
+dboolean Tag_Find (const taglist_t* list, const mtag_t tag)
 {
 	size_t i;
 	for (i = 0; i < list->count; i++)
@@ -91,7 +91,7 @@ boolean Tag_Find (const taglist_t* list, const mtag_t tag)
 }
 
 /// Returns true if at least one tag is shared between two given lists.
-boolean Tag_Share (const taglist_t* list1, const taglist_t* list2)
+dboolean Tag_Share (const taglist_t* list1, const taglist_t* list2)
 {
 	size_t i;
 	for (i = 0; i < list1->count; i++)
@@ -102,7 +102,7 @@ boolean Tag_Share (const taglist_t* list1, const taglist_t* list2)
 }
 
 /// Returns true if both lists are identical.
-boolean Tag_Compare (const taglist_t* list1, const taglist_t* list2)
+dboolean Tag_Compare (const taglist_t* list1, const taglist_t* list2)
 {
 	size_t i;
 

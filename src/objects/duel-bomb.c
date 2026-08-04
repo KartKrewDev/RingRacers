@@ -41,7 +41,7 @@ static void UpdateBombMovement(mobj_t *bomb)
 
 void Obj_DuelBombThink(mobj_t *bomb)
 {
-	boolean grounded = P_IsObjectOnGround(bomb);
+	dboolean grounded = P_IsObjectOnGround(bomb);
 
 	if (grounded == true)
 	{

@@ -52,7 +52,7 @@ void Obj_EggBallSpawnerThink(mobj_t *mo)
 
 void Obj_EggBallThink(mobj_t *mo)
 {
-	const boolean onground = P_IsObjectOnGround(mo);
+	const dboolean onground = P_IsObjectOnGround(mo);
 
 	if (mo->eflags & MFE_JUSTHITFLOOR)
 	{

@@ -31,13 +31,13 @@
 #include "byteptr.h"
 
 #ifdef HAVE_ANIGIF
-static boolean gif_optimize = false; // So nobody can do something dumb
-static boolean gif_downscale = false; // like changing cvars mid output
+static dboolean gif_optimize = false; // So nobody can do something dumb
+static dboolean gif_downscale = false; // like changing cvars mid output
 static UINT8 gif_dynamicdelay = (UINT8)0; // and messing something up
 
 // Palette handling
-static boolean gif_localcolortable = false;
-static boolean gif_colorprofile = false;
+static dboolean gif_localcolortable = false;
+static dboolean gif_colorprofile = false;
 static RGBA_t *gif_headerpalette = NULL;
 static RGBA_t *gif_framepalette = NULL;
 
@@ -527,7 +527,7 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 	UINT8 *p;
 	UINT8 *movie_screen = screens[2];
 	INT32 blitx, blity, blitw, blith;
-	boolean palchanged;
+	dboolean palchanged;
 
 	(void)input_width;
 	(void)input_height;

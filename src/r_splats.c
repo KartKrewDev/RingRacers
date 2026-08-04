@@ -139,8 +139,8 @@ void R_DrawFloorSplat(vissprite_t *spr)
 	fixed_t leftoffset, topoffset;
 	INT32 i;
 
-	boolean hflip = (spr->xiscale < 0);
-	boolean vflip = (spr->cut & SC_VFLIP);
+	dboolean hflip = (spr->xiscale < 0);
+	dboolean vflip = (spr->cut & SC_VFLIP);
 	UINT8 flipflags = 0;
 
 	renderflags_t renderflags = spr->renderflags;
@@ -448,7 +448,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 
 	for (y = miny; y <= maxy; y++)
 	{
-		boolean cliptab[MAXVIDWIDTH+1];
+		dboolean cliptab[MAXVIDWIDTH+1];
 
 		x1 = rastertab[y].minx>>FRACBITS;
 		x2 = rastertab[y].maxx>>FRACBITS;

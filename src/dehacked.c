@@ -17,11 +17,11 @@
 #include "deh_soc.h"
 #include "deh_tables.h"
 
-boolean deh_loaded = false;
+dboolean deh_loaded = false;
 
-boolean gamedataadded = false;
-boolean titlechanged = false;
-boolean introchanged = false;
+dboolean gamedataadded = false;
+dboolean titlechanged = false;
+dboolean introchanged = false;
 
 static int dbg_line;
 static INT32 deh_num_warning = 0;
@@ -178,7 +178,7 @@ static void ignorelines(MYFILE *f)
 	Z_Free(s);
 }
 
-static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
+static void DEH_LoadDehackedFile(MYFILE *f, dboolean mainfile)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 	char textline[MAXLINELEN];
@@ -648,7 +648,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 // read dehacked lump in a wad (there is special trick for for deh
 // file that are converted to wad in w_wad.c)
-void DEH_LoadDehackedLumpPwad(UINT16 wad, UINT16 lump, boolean mainfile)
+void DEH_LoadDehackedLumpPwad(UINT16 wad, UINT16 lump, dboolean mainfile)
 {
 	MYFILE f;
 	f.wad = wad;

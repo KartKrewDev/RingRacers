@@ -29,7 +29,7 @@ char **myargv;
 
 /** \brief did we alloc myargv ourselves?
 */
-boolean myargmalloc = false;
+dboolean myargmalloc = false;
 
 /**	\brief founded the parm
 */
@@ -84,7 +84,7 @@ INT32 M_CheckParm(const char *check)
   \return  true if there is an available next parameter
 */
 
-boolean M_IsNextParm(void)
+dboolean M_IsNextParm(void)
 {
 	if (found > 0 && found + 1 < myargc && myargv[found+1][0] != '-' && myargv[found+1][0] != '+')
 		return true;
@@ -148,7 +148,7 @@ void M_FindResponseFile(void)
 			FILE *handle;
 			INT32 k, pindex, indexinfile;
 			long size;
-			boolean inquote = false;
+			dboolean inquote = false;
 			UINT8 *infile;
 			char *file;
 			char *moreargs[20];

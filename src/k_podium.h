@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 /*--------------------------------------------------
-	boolean K_PodiumSequence(void);
+	dboolean K_PodiumSequence(void);
 
 		Returns whenver or not we are in the podium
 		cutscene mode.
@@ -35,11 +35,11 @@ extern "C" {
 		true if we're in GS_CEREMONY, otherwise false.
 --------------------------------------------------*/
 
-boolean K_PodiumSequence(void);
+dboolean K_PodiumSequence(void);
 
 
 /*--------------------------------------------------
-	boolean K_PodiumRanking(void);
+	dboolean K_PodiumRanking(void);
 
 		Returns whenver or not we are in the podium
 		final state.
@@ -51,11 +51,11 @@ boolean K_PodiumSequence(void);
 		true if we're in GS_CEREMONY, otherwise false.
 --------------------------------------------------*/
 
-boolean K_PodiumRanking(void);
+dboolean K_PodiumRanking(void);
 
 
 /*--------------------------------------------------
-	boolean K_PodiumGrade(void)
+	dboolean K_PodiumGrade(void)
 
 		Returns the podium grade.
 
@@ -70,7 +70,7 @@ gp_rank_e K_PodiumGrade(void);
 
 
 /*--------------------------------------------------
-	boolean K_PodiumHasEmerald(void)
+	dboolean K_PodiumHasEmerald(void)
 
 		Returns whether the Emerald or Prize was collected.
 
@@ -81,7 +81,7 @@ gp_rank_e K_PodiumGrade(void);
 		true if the Emerald/Prize was collected during the GP, otherwise false.
 --------------------------------------------------*/
 
-boolean K_PodiumHasEmerald(void);
+dboolean K_PodiumHasEmerald(void);
 
 
 /*--------------------------------------------------
@@ -135,7 +135,7 @@ void K_UpdatePodiumWaypoints(player_t *const player);
 
 
 /*--------------------------------------------------
-	boolean K_StartCeremony(void);
+	dboolean K_StartCeremony(void);
 
 		Loads the podium map and changes the gamestate
 		to the podium cutscene mode.
@@ -148,7 +148,7 @@ void K_UpdatePodiumWaypoints(player_t *const player);
 		if there is no podium map defined.
 --------------------------------------------------*/
 
-boolean K_StartCeremony(void);
+dboolean K_StartCeremony(void);
 
 
 /*--------------------------------------------------
@@ -173,7 +173,7 @@ void K_ResetCeremony(void);
 
 
 /*--------------------------------------------------
-	void K_CeremonyTicker(boolean run);
+	void K_CeremonyTicker(dboolean run);
 
 		Ticker function to be ran during the podium
 		cutscene mode gamestate. Handles updating
@@ -187,7 +187,7 @@ void K_ResetCeremony(void);
 		N/A
 --------------------------------------------------*/
 
-void K_CeremonyTicker(boolean run);
+void K_CeremonyTicker(dboolean run);
 
 
 /*--------------------------------------------------

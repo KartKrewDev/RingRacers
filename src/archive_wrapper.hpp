@@ -84,18 +84,18 @@ WRITE_SPEC(vector3_t, n)
 	write<fixed_t>(n.z);
 }
 
-// Specializations for boolean, so it can stored as char
+// Specializations for dboolean, so it can stored as char
 // instead of int.
 
 template <>
-void ArchiveWrapperBase::read<bool, boolean>(boolean& n)
+void ArchiveWrapperBase::read<bool, dboolean>(dboolean& n)
 {
 	SRB2_ASSERT(n == true || n == false);
 	n = READUINT8(p_);
 }
 
 template <>
-void ArchiveWrapperBase::write<bool, boolean>(const boolean& n)
+void ArchiveWrapperBase::write<bool, dboolean>(const dboolean& n)
 {
 	SRB2_ASSERT(n == true || n == false);
 	WRITEUINT8(p_, n);

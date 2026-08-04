@@ -25,7 +25,7 @@
 #include "lua_hook.h" // hook_cmd_running errors
 #include "k_profiles.h" // GetPrettyRRID
 
-boolean constplayer = false;
+dboolean constplayer = false;
 
 static int lib_iteratePlayers(lua_State *L)
 {

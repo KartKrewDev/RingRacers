@@ -97,7 +97,7 @@ void I_UpdateSound(void);
 
 	\return	0 if no longer playing, 1 if playing.
 */
-boolean I_SoundIsPlaying(INT32 handle);
+dboolean I_SoundIsPlaying(INT32 handle);
 
 /**	\brief	Updates the sfx handle
 
@@ -137,14 +137,14 @@ void I_ShutdownMusic(void);
 /// ------------------------
 
 const char *I_SongType(void);
-boolean I_SongPlaying(void);
-boolean I_SongPaused(void);
+dboolean I_SongPlaying(void);
+dboolean I_SongPaused(void);
 
 /// ------------------------
 //  MUSIC EFFECTS
 /// ------------------------
 
-boolean I_SetSongSpeed(float speed);
+dboolean I_SetSongSpeed(float speed);
 
 /// ------------------------
 //  MUSIC SEEKING
@@ -152,10 +152,10 @@ boolean I_SetSongSpeed(float speed);
 
 UINT32 I_GetSongLength(void);
 
-boolean I_SetSongLoopPoint(UINT32 looppoint);
+dboolean I_SetSongLoopPoint(UINT32 looppoint);
 UINT32 I_GetSongLoopPoint(void);
 
-boolean I_SetSongPosition(UINT32 position);
+dboolean I_SetSongPosition(UINT32 position);
 UINT32 I_GetSongPosition(void);
 
 void I_UpdateSongLagThreshold (void);
@@ -174,7 +174,7 @@ void I_UpdateSongLagConditions (void);
 
 	\todo Remove this
 */
-boolean I_LoadSong(char *data, size_t len);
+dboolean I_LoadSong(char *data, size_t len);
 
 /**	\brief	See ::I_LoadSong, then think backwards
 
@@ -194,7 +194,7 @@ void I_UnloadSong(void);
 
 	\todo pass music name, not handle
 */
-boolean I_PlaySong(boolean looping);
+dboolean I_PlaySong(dboolean looping);
 
 /**	\brief	Stops a song over 3 seconds
 
@@ -237,7 +237,7 @@ void I_SetCurrentSongVolume(int volume);
 
 // TODO refactor fades to control Song Volume exclusively in tandem with RR musicdef volume multiplier.
 
-boolean I_SetSongTrack(INT32 track);
+dboolean I_SetSongTrack(INT32 track);
 
 void I_SetMasterVolume(int volume);
 
@@ -247,14 +247,14 @@ void I_SetMasterVolume(int volume);
 
 void I_SetInternalMusicVolume(UINT8 volume);
 void I_StopFadingSong(void);
-boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void));
-boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void));
-boolean I_FadeOutStopSong(UINT32 ms);
-boolean I_FadeInPlaySong(UINT32 ms, boolean looping);
+dboolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void));
+dboolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void));
+dboolean I_FadeOutStopSong(UINT32 ms);
+dboolean I_FadeInPlaySong(UINT32 ms, dboolean looping);
 
 // AUDIO INPUT (Microphones)
-boolean I_SoundInputIsEnabled(void);
-boolean I_SoundInputSetEnabled(boolean enabled);
+dboolean I_SoundInputIsEnabled(void);
+dboolean I_SoundInputSetEnabled(dboolean enabled);
 UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len);
 UINT32 I_SoundInputRemainingSamples(void);
 
@@ -262,7 +262,7 @@ UINT32 I_SoundInputRemainingSamples(void);
 
 /// Queue a frame of samples of voice data from a player. Voice format is MONO F32 SYSTEM ENDIANNESS.
 /// If there is too much data being queued, old samples will be truncated
-void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal);
+void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, dboolean terminal);
 
 void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep);
 

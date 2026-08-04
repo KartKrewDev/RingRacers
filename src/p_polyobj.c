@@ -142,7 +142,7 @@ FUNCINLINE static ATTRINLINE void Polyobj_vecSub2(vertex_t *dst, vertex_t *v1, v
 	dst->y = v1->y - v2->y;
 }
 
-boolean P_PointInsidePolyobj(polyobj_t *po, fixed_t x, fixed_t y)
+dboolean P_PointInsidePolyobj(polyobj_t *po, fixed_t x, fixed_t y)
 {
 	size_t i;
 
@@ -155,7 +155,7 @@ boolean P_PointInsidePolyobj(polyobj_t *po, fixed_t x, fixed_t y)
 	return true;
 }
 
-boolean P_MobjTouchingPolyobj(polyobj_t *po, mobj_t *mo)
+dboolean P_MobjTouchingPolyobj(polyobj_t *po, mobj_t *mo)
 {
 	fixed_t mbbox[4];
 	size_t i;
@@ -174,7 +174,7 @@ boolean P_MobjTouchingPolyobj(polyobj_t *po, mobj_t *mo)
 	return false;
 }
 
-boolean P_MobjInsidePolyobj(polyobj_t *po, mobj_t *mo)
+dboolean P_MobjInsidePolyobj(polyobj_t *po, mobj_t *mo)
 {
 	fixed_t mbbox[4];
 	size_t i;
@@ -193,7 +193,7 @@ boolean P_MobjInsidePolyobj(polyobj_t *po, mobj_t *mo)
 	return true;
 }
 
-boolean P_BBoxInsidePolyobj(polyobj_t *po, fixed_t *bbox)
+dboolean P_BBoxInsidePolyobj(polyobj_t *po, fixed_t *bbox)
 {
 	size_t i;
 
@@ -770,7 +770,7 @@ static void Polyobj_removeFromBlockmap(polyobj_t *po)
 // A version of Lee's routine from p_maputl.c that accepts an mobj pointer
 // argument instead of using g_tm.thing. Returns true if the line isn't contacted
 // and false otherwise.
-static inline boolean Polyobj_untouched(line_t *ld, mobj_t *mo)
+static inline dboolean Polyobj_untouched(line_t *ld, mobj_t *mo)
 {
 	fixed_t x, y, ptmbbox[4];
 
@@ -977,7 +977,7 @@ static INT32 Polyobj_clipThings(polyobj_t *po, line_t *line)
 
 
 // Moves a polyobject on the x-y plane.
-boolean Polyobj_moveXY(polyobj_t *po, fixed_t x, fixed_t y, boolean checkmobjs)
+dboolean Polyobj_moveXY(polyobj_t *po, fixed_t x, fixed_t y, dboolean checkmobjs)
 {
 	size_t i;
 	vertex_t vec;
@@ -1091,7 +1091,7 @@ static void Polyobj_rotateLine(line_t *ld)
 }
 
 // Causes objects resting on top of the rotating polyobject to 'ride' with its movement.
-static void Polyobj_rotateThings(polyobj_t *po, vector2_t origin, angle_t delta, boolean turnplayers, boolean turnothers)
+static void Polyobj_rotateThings(polyobj_t *po, vector2_t origin, angle_t delta, dboolean turnplayers, dboolean turnothers)
 {
 	static INT32 pomovecount = 10000;
 	INT32 x, y;
@@ -1165,7 +1165,7 @@ static void Polyobj_rotateThings(polyobj_t *po, vector2_t origin, angle_t delta,
 }
 
 // Rotates a polyobject around its start point.
-boolean Polyobj_rotate(polyobj_t *po, angle_t delta, boolean turnplayers, boolean turnothers, boolean checkmobjs)
+dboolean Polyobj_rotate(polyobj_t *po, angle_t delta, dboolean turnplayers, dboolean turnothers, dboolean checkmobjs)
 {
 	size_t i;
 	angle_t angle;
@@ -1572,7 +1572,7 @@ static void T_MovePolyObj(polyobj_t *po, fixed_t distx, fixed_t disty, fixed_t d
 	// Sal: Remember to check your sectors!
 	// Monster Iestyn: we only need to bother with the back sector, now that P_CheckSector automatically checks the blockmap
 	//  updating objects in the front one too just added teleporting to ground bugs
-	P_CheckSector(po->lines[0]->backsector, (boolean)(po->damage));
+	P_CheckSector(po->lines[0]->backsector, (dboolean)(po->damage));
 	// Apply action to mirroring polyobjects as well
 	start = 0;
 	while ((child = Polyobj_GetChild(po, &start)))
@@ -1584,7 +1584,7 @@ static void T_MovePolyObj(polyobj_t *po, fixed_t distx, fixed_t disty, fixed_t d
 		// TODO: use T_MovePlane
 		child->lines[0]->backsector->floorheight += distz;
 		child->lines[0]->backsector->ceilingheight += distz;
-		P_CheckSector(child->lines[0]->backsector, (boolean)(child->damage));
+		P_CheckSector(child->lines[0]->backsector, (dboolean)(child->damage));
 	}
 }
 
@@ -1973,7 +1973,7 @@ static inline INT32 Polyobj_AngSpeed(INT32 speed)
 
 // Linedef Handlers
 
-boolean EV_DoPolyObjRotate(polyrotdata_t *prdata)
+dboolean EV_DoPolyObjRotate(polyrotdata_t *prdata)
 {
 	polyobj_t *po;
 	polyobj_t *oldpo;
@@ -2047,7 +2047,7 @@ boolean EV_DoPolyObjRotate(polyrotdata_t *prdata)
 	return true;
 }
 
-boolean EV_DoPolyObjMove(polymovedata_t *pmdata)
+dboolean EV_DoPolyObjMove(polymovedata_t *pmdata)
 {
 	polyobj_t *po;
 	polyobj_t *oldpo;
@@ -2111,7 +2111,7 @@ boolean EV_DoPolyObjMove(polymovedata_t *pmdata)
 	return true;
 }
 
-boolean EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
+dboolean EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
 {
 	polyobj_t *po;
 	polyobj_t *oldpo;
@@ -2294,7 +2294,7 @@ static void Polyobj_doSwingDoor(polyobj_t *po, polydoordata_t *doordata)
 		Polyobj_doSwingDoor(po, doordata);
 }
 
-boolean EV_DoPolyDoor(polydoordata_t *doordata)
+dboolean EV_DoPolyDoor(polydoordata_t *doordata)
 {
 	polyobj_t *po;
 
@@ -2325,7 +2325,7 @@ boolean EV_DoPolyDoor(polydoordata_t *doordata)
 	return true;
 }
 
-boolean EV_DoPolyObjDisplace(polydisplacedata_t *prdata)
+dboolean EV_DoPolyObjDisplace(polydisplacedata_t *prdata)
 {
 	polyobj_t *po;
 	polyobj_t *oldpo;
@@ -2376,7 +2376,7 @@ boolean EV_DoPolyObjDisplace(polydisplacedata_t *prdata)
 	return true;
 }
 
-boolean EV_DoPolyObjRotDisplace(polyrotdisplacedata_t *prdata)
+dboolean EV_DoPolyObjRotDisplace(polyrotdisplacedata_t *prdata)
 {
 	polyobj_t *po;
 	polyobj_t *oldpo;
@@ -2469,7 +2469,7 @@ void T_PolyObjFlag(polymove_t *th)
 	Polyobj_attachToSubsec(po);     // relink to subsector
 }
 
-boolean EV_DoPolyObjFlag(polyflagdata_t *pfdata)
+dboolean EV_DoPolyObjFlag(polyflagdata_t *pfdata)
 {
 	polyobj_t *po;
 	polyobj_t *oldpo;
@@ -2534,7 +2534,7 @@ boolean EV_DoPolyObjFlag(polyflagdata_t *pfdata)
 
 void T_PolyObjFade(polyfade_t *th)
 {
-	boolean stillfading = false;
+	dboolean stillfading = false;
 	polyobj_t *po = Polyobj_GetForNum(th->polyObjNum);
 
 	if (!po)
@@ -2623,7 +2623,7 @@ void T_PolyObjFade(polyfade_t *th)
 	}
 }
 
-boolean EV_DoPolyObjFade(polyfadedata_t *pfdata)
+dboolean EV_DoPolyObjFade(polyfadedata_t *pfdata)
 {
 	polyobj_t *po;
 	polyobj_t *oldpo;

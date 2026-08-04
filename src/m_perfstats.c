@@ -106,7 +106,7 @@ static void PS_SetFrameTime(void)
 	ps_prevframetime = currenttime;
 }
 
-static boolean M_HighResolution(void)
+static dboolean M_HighResolution(void)
 {
 	return (vid.width >= 640 && vid.height >= 400);
 }
@@ -118,7 +118,7 @@ enum {
 
 static void M_DrawPerfString(perfstatcol_t *col, int type)
 {
-	const boolean hires = M_HighResolution();
+	const dboolean hires = M_HighResolution();
 
 	INT32 draw_flags = V_MONOSPACE | col->color;
 
@@ -165,7 +165,7 @@ static void M_DrawPerfCount(perfstatcol_t *col)
 
 static void M_DrawRenderStats(void)
 {
-	const boolean hires = M_HighResolution();
+	const dboolean hires = M_HighResolution();
 
 	const int half_row = hires ? 5 : 4;
 
@@ -260,7 +260,7 @@ static void M_DrawRenderStats(void)
 	perfstatcol_t     batchcalls_col = {220, 200, V_PURPLEMAP,     batchcalls_row};
 
 
-	boolean rendering = G_GamestateUsesLevel();
+	dboolean rendering = G_GamestateUsesLevel();
 
 	draw_row = 10;
 	M_DrawPerfTiming(&frametime_col);

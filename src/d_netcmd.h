@@ -139,9 +139,9 @@ extern consvar_t cv_schedule;
 extern consvar_t cv_livestudioaudience;
 
 extern char timedemo_name[256];
-extern boolean timedemo_csv;
+extern dboolean timedemo_csv;
 extern char timedemo_csv_id[256];
-extern boolean timedemo_quit;
+extern dboolean timedemo_quit;
 
 typedef enum
 {
@@ -200,9 +200,9 @@ extern const char *netxcmdnames[MAXNETXCMD - 1];
 void D_RegisterServerCommands(void);
 void D_RegisterClientCommands(void);
 void CleanupPlayerName(INT32 playernum, const char *newname);
-boolean IsPlayerNameUnique(const char *name, INT32 playernum);
-boolean IsPlayerNameGood(char *name);
-boolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
+dboolean IsPlayerNameUnique(const char *name, INT32 playernum);
+dboolean IsPlayerNameGood(char *name);
+dboolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
 void D_FillPlayerSkinAndColor(const UINT8 n, const player_t *player, player_config_t *config);
 void D_PlayerChangeSkinAndColor(player_t *player, UINT16 skin, UINT16 color, INT16 follower, UINT16 followercolor);
 void D_FillPlayerWeaponPref(const UINT8 n, player_config_t *config);
@@ -213,16 +213,16 @@ size_t WeaponPref_Parse(const UINT8 *p, INT32 playernum);
 void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
-void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode);
-boolean G_GamestateUsesExitLevel(void);
+void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, dboolean newencoremode);
+dboolean G_GamestateUsesExitLevel(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
-void D_MapChange(UINT16 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pforcespecialstage);
+void D_MapChange(UINT16 pmapnum, INT32 pgametype, dboolean pencoremode, dboolean presetplayers, INT32 pdelay, dboolean pskipprecutscene, dboolean pforcespecialstage);
 void D_SetupVote(INT16 newgametype);
 void D_ModifyClientVote(UINT8 player, SINT8 voted);
 void D_PickVote(SINT8 angry_map);
 void ObjectPlace_OnChange(void);
 void P_SetPlayerSpectator(INT32 playernum);
-boolean IsPlayerAdmin(INT32 playernum);
+dboolean IsPlayerAdmin(INT32 playernum);
 void SetAdminPlayer(INT32 playernum);
 void ClearAdminPlayers(void);
 void RemoveAdminPlayer(INT32 playernum);
@@ -276,7 +276,7 @@ typedef enum
 void D_Cheat(INT32 playernum, INT32 cheat, ...);
 
 // used for the player setup menu
-boolean CanChangeSkin(INT32 playernum);
+dboolean CanChangeSkin(INT32 playernum);
 
 #ifdef __cplusplus
 } // extern "C"

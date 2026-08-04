@@ -26,7 +26,7 @@
 // (Currently only called in power clash, but in the future...?)
 void K_AddHitLagFromCollision(mobj_t *mo, INT32 tics)
 {
-	boolean doAnything = true;
+	dboolean doAnything = true;
 
 	if (mo->player == NULL || mo->type != MT_PLAYER)
 		doAnything = false;
@@ -43,11 +43,11 @@ void K_AddHitLagFromCollision(mobj_t *mo, INT32 tics)
 }
 
 /*--------------------------------------------------
-	void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
+	void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
+void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage)
 {
 	if (mo == NULL || P_MobjWasRemoved(mo) || (mo->flags & MF_NOHITLAGFORME && mo->type != MT_PLAYER))
 	{
@@ -272,11 +272,11 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 }
 
 /*--------------------------------------------------
-	void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, INT32 tics, boolean fromDamage)
+	void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, INT32 tics, dboolean fromDamage)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, INT32 tics, boolean fromDamage)
+void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, INT32 tics, dboolean fromDamage)
 {
 	INT32 finalTics = tics;
 

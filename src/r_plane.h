@@ -60,8 +60,8 @@ struct visplane_t
 	polyobj_t *polyobj;
 	pslope_t *slope;
 
-	boolean noencore;
-	boolean ripple;
+	dboolean noencore;
+	dboolean ripple;
 	sectordamage_t damage;
 };
 
@@ -85,18 +85,18 @@ void R_ClearFFloorClips (void);
 
 void R_DrawPlanes(void);
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel, fixed_t xoff, fixed_t yoff, angle_t plangle,
-	extracolormap_t *planecolormap, ffloor_t *ffloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore,
-	boolean ripple, boolean reverseLight, const sector_t *lighting_sector, sectordamage_t damage);
+	extracolormap_t *planecolormap, ffloor_t *ffloor, polyobj_t *polyobj, pslope_t *slope, dboolean noencore,
+	dboolean ripple, dboolean reverseLight, const sector_t *lighting_sector, sectordamage_t damage);
 visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_PlaneBounds(visplane_t *plane);
 
 size_t R_FlatDimensionsFromLumpSize(size_t size);
 void R_CheckFlatLength(drawspandata_t* ds, size_t size);
-boolean R_CheckPowersOfTwo(drawspandata_t* ds);
+dboolean R_CheckPowersOfTwo(drawspandata_t* ds);
 
 // Draws a single visplane.
-void R_DrawSinglePlane(drawspandata_t* ds, visplane_t *pl, boolean allow_parallel);
+void R_DrawSinglePlane(drawspandata_t* ds, visplane_t *pl, dboolean allow_parallel);
 
 // Calculates the slope vectors needed for tilted span drawing.
 void R_SetSlopePlane(drawspandata_t* ds, pslope_t *slope, fixed_t xpos, fixed_t ypos, fixed_t zpos, fixed_t xoff, fixed_t yoff, angle_t angle, angle_t plangle);

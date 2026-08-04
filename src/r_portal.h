@@ -36,7 +36,7 @@ struct portal_t
 	angle_t viewangle;
 
 	UINT8 pass;			/**< Keeps track of the portal's recursion depth. */
-	boolean isskybox;
+	dboolean isskybox;
 	INT32 clipline;		/**< Optional clipline for line-based portals. */
 
 	// Clipping information.
@@ -50,7 +50,7 @@ struct portal_t
 extern portal_t* portal_base;
 extern portal_t* portal_cap;
 extern UINT8 portalrender;
-extern boolean portalskipprecipmobjs;
+extern dboolean portalskipprecipmobjs;
 
 extern line_t *portalclipline;
 extern sector_t *portalcullsector;

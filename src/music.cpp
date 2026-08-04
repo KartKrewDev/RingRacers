@@ -278,7 +278,7 @@ void Music_SetFadeOut(const char* id, int fade_out)
 	}
 }
 
-void Music_SetFadeIn(const char* id, int fade_in, boolean resume)
+void Music_SetFadeIn(const char* id, int fade_in, dboolean resume)
 {
 	Tune* tune = g_tunes.find(id);
 
@@ -413,7 +413,7 @@ void Music_Remap(const char* id, const char* song)
 	}
 }
 
-boolean Music_TuneExists(const char* id)
+dboolean Music_TuneExists(const char* id)
 {
 	const Tune* tune = g_tunes.find(id);
 
@@ -424,19 +424,19 @@ boolean Music_TuneExists(const char* id)
 	return false;
 }
 
-boolean Music_Playing(const char* id)
+dboolean Music_Playing(const char* id)
 {
 	const Tune* tune = g_tunes.find(id);
 	return tune && tune->playing();
 }
 
-boolean Music_Paused(const char* id)
+dboolean Music_Paused(const char* id)
 {
 	const Tune* tune = g_tunes.find(id);
 	return tune && tune->paused();
 }
 
-boolean Music_Suspended(const char* id)
+dboolean Music_Suspended(const char* id)
 {
 	const Tune* tune = g_tunes.find(id);
 	return tune && tune->suspend;
@@ -466,7 +466,7 @@ unsigned int Music_FadeOutDuration(const char* id)
 	return tune ? tune->fade_out : 0;
 }
 
-void Music_Loop(const char* id, boolean loop)
+void Music_Loop(const char* id, dboolean loop)
 {
 	Tune* tune = g_tunes.find(id);
 
@@ -478,13 +478,13 @@ void Music_Loop(const char* id, boolean loop)
 	}
 }
 
-boolean Music_CanLoop(const char* id)
+dboolean Music_CanLoop(const char* id)
 {
 	const Tune* tune = g_tunes.find(id);
 	return tune && tune->loop;
 }
 
-boolean Music_CanEnd(const char* id)
+dboolean Music_CanEnd(const char* id)
 {
 	const Tune* tune = g_tunes.find(id);
 	return tune && tune->can_end();

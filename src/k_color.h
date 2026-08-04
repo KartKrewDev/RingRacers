@@ -117,7 +117,7 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t 
 
 
 /*--------------------------------------------------
-	boolean K_ColorUsable(skincolornum_t color, skin_t *skin, follower_t *follower, boolean locked);
+	dboolean K_ColorUsable(skincolornum_t color, skin_t *skin, follower_t *follower, dboolean locked);
 
 		Determines whenever or not we meet the unlockable conditions
 		to use a certain color.
@@ -131,7 +131,7 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t 
 		true if we can use it, otherwise false.
 --------------------------------------------------*/
 
-boolean K_ColorUsable(skincolornum_t color, boolean follower, boolean locked);
+dboolean K_ColorUsable(skincolornum_t color, dboolean follower, dboolean locked);
 
 
 #ifdef __cplusplus

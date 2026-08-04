@@ -288,11 +288,11 @@ static sfxenum_t ringboxsound[] =
 };
 
 /*--------------------------------------------------
-	boolean K_ItemEnabled(kartitems_t item)
+	dboolean K_ItemEnabled(kartitems_t item)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_ItemEnabled(kartitems_t item)
+dboolean K_ItemEnabled(kartitems_t item)
 {
 	if (item < 1 || item >= NUMKARTRESULTS)
 	{
@@ -311,11 +311,11 @@ boolean K_ItemEnabled(kartitems_t item)
 }
 
 /*--------------------------------------------------
-	boolean K_ItemSingularity(kartitems_t item)
+	dboolean K_ItemSingularity(kartitems_t item)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_ItemSingularity(kartitems_t item)
+dboolean K_ItemSingularity(kartitems_t item)
 {
 	switch (item)
 	{
@@ -566,11 +566,11 @@ UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 }
 
 /*--------------------------------------------------
-	boolean K_DenyShieldOdds(kartitems_t item)
+	dboolean K_DenyShieldOdds(kartitems_t item)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_DenyShieldOdds(kartitems_t item)
+dboolean K_DenyShieldOdds(kartitems_t item)
 {
 	const INT32 shieldType = K_GetShieldFromItem(item);
 	size_t i;
@@ -602,7 +602,7 @@ boolean K_DenyShieldOdds(kartitems_t item)
 	return false;
 }
 
-static boolean K_DenyAutoRouletteOdds(kartitems_t item)
+static dboolean K_DenyAutoRouletteOdds(kartitems_t item)
 {
 	// Deny items that are too hard for newbies
 	switch (item)
@@ -681,11 +681,11 @@ INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item)
 }
 
 /*--------------------------------------------------
-	static boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
+	static dboolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
+dboolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
 {
 	if (K_ItemEnabled(KITEM_SPB) == false)
 	{
@@ -979,7 +979,7 @@ void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 // Honestly, the "power item" class is kind of a vestigial concept,
 // but we'll faithfully port it over since it's not hurting anything so far
 // (and it's at least ostensibly a Rival balancing mechanism, wheee).
-static boolean K_IsItemPower(kartitems_t item)
+static dboolean K_IsItemPower(kartitems_t item)
 {
 	switch (item)
 	{
@@ -1004,7 +1004,7 @@ static boolean K_IsItemPower(kartitems_t item)
 	}
 }
 
-static boolean K_IsItemFirstOnly(kartitems_t item)
+static dboolean K_IsItemFirstOnly(kartitems_t item)
 {
 	switch (item)
 	{
@@ -1020,7 +1020,7 @@ static boolean K_IsItemFirstOnly(kartitems_t item)
 	}
 }
 
-static boolean K_IsItemFirstPermitted(kartitems_t item)
+static dboolean K_IsItemFirstPermitted(kartitems_t item)
 {
 	if (K_IsItemFirstOnly(item))
 		return true;
@@ -1037,7 +1037,7 @@ static boolean K_IsItemFirstPermitted(kartitems_t item)
 	}
 }
 
-ATTRUNUSED static boolean K_IsItemUselessAlone(kartitems_t item)
+ATTRUNUSED static dboolean K_IsItemUselessAlone(kartitems_t item)
 {
 	switch (item)
 	{
@@ -1055,7 +1055,7 @@ ATTRUNUSED static boolean K_IsItemUselessAlone(kartitems_t item)
 	}
 }
 
-static boolean K_IsItemSpeed(kartitems_t item)
+static dboolean K_IsItemSpeed(kartitems_t item)
 {
 	switch (item)
 	{
@@ -1087,7 +1087,7 @@ static fixed_t K_RequiredXPForItem(kartitems_t item)
 }
 
 // Which items are disallowed for this player's specific placement?
-static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
+static dboolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 {
 	if (!(gametyperules & GTR_CIRCUIT))
 		return true;
@@ -1115,15 +1115,15 @@ static boolean K_ShouldPlayerAllowItem(kartitems_t item, const player_t *player)
 }
 
 // Which items are disallowed because it's the wrong time for them?
-static boolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roulette)
+static dboolean K_TimingPermitsItem(kartitems_t item, const itemroulette_t *roulette)
 {
 	if (!(gametyperules & GTR_CIRCUIT))
 		return true;
 	if (specialstageinfo.valid == true)
 		return true;
 
-	boolean notNearEnd = false;
-	boolean cooldownOnStart = false;
+	dboolean notNearEnd = false;
+	dboolean cooldownOnStart = false;
 
 	switch (item)
 	{
@@ -1208,11 +1208,11 @@ static void K_FixEmptyRoulette(const player_t *player, itemroulette_t *const rou
 }
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, dboolean ringbox)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, boolean ringbox)
+void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, dboolean ringbox)
 {
 	K_InitRoulette(roulette);
 
@@ -1249,11 +1249,11 @@ void K_FillItemRoulette(player_t *const player, itemroulette_t *const roulette, 
 }
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, dboolean ringbox, dboolean dryrun)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun)
+void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, dboolean ringbox, dboolean dryrun)
 {
 	UINT32 spawnChance[NUMKARTRESULTS] = {0};
 	UINT32 totalSpawnChance = 0;
@@ -1434,7 +1434,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	UINT32 deltas[NUMKARTRESULTS]; // how different is that strength from target?
 	UINT32 candidates[NUMKARTRESULTS]; // how many of this item should we try to insert?
 	UINT32 dupetolerance[NUMKARTRESULTS]; // how willing are we to select this item after already selecting it? higher values = lower dupe penalty
-	boolean permit[NUMKARTRESULTS]; // is this item allowed?
+	dboolean permit[NUMKARTRESULTS]; // is this item allowed?
 
 	UINT32 lonelinessSuppressor = DISTVAR; // This close to 1st? Dampen loneliness (you have a target!)
 	UINT32 maxEXPDistanceCut = 3*DISTVAR; // The maximum amount you can be displaced by EXP
@@ -1465,8 +1465,8 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	if (!(specialstageinfo.valid))
 		targetpower = Easing_Linear(crowdingFirst, targetpower, targetpower/2);
 
-	boolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
-	boolean filterweakitems = true; // strip unusually weak items from reel?
+	dboolean rival = (player->bot && (player->botvars.rival || cv_levelskull.value));
+	dboolean filterweakitems = true; // strip unusually weak items from reel?
 	UINT8 reelsize = 15; // How many items to attempt to add in prepass?
 	UINT32 humanscaler = 250; // Scaler that converts "useodds" style distances in odds tables to raw distances. Affects general item distance scale.
 
@@ -1554,7 +1554,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 	// This can appear anywhere from 0 to its specified distance, to pad the
 	// reels with non-disruptive catchup (since we have a ton of offensive items
 	// and not many front/mid speed items).
-	boolean canfiltersuperring = true;
+	dboolean canfiltersuperring = true;
 	if ((gametyperules & GTR_CIRCUIT) && (specialstageinfo.valid == false) && K_ItemEnabled(KITEM_SUPERRING))
 	{
 		if (targetpower > powers[KITEM_SUPERRING])
@@ -1762,7 +1762,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		// This can happen in regions of the odds with a lot of items that
 		// don't really like to be duplicated. Favor the player; high-rolling
 		// feels exciting, low-rolling feels punishing!
-		boolean reject = (filterweakitems) && (powers[i] + DISTVAR < meanreelpower);
+		dboolean reject = (filterweakitems) && (powers[i] + DISTVAR < meanreelpower);
 
 		// If we're far away from interactions, be extra aggressive about tossing attack items.
 		if (filterweakitems && !reject && !K_IsItemSpeed(i))
@@ -1845,7 +1845,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 
 		See header file for description.
 --------------------------------------------------*/
-void K_StartItemRoulette(player_t *const player, boolean ringbox)
+void K_StartItemRoulette(player_t *const player, dboolean ringbox)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
 	size_t i;
@@ -1971,7 +1971,7 @@ void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
-	boolean confirmItem = false;
+	dboolean confirmItem = false;
 
 	if (roulette->reserved > 0)
 	{

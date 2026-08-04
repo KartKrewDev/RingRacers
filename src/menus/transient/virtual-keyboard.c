@@ -46,7 +46,7 @@ typedef enum
 	CVCPM_PASTE
 } cvarcopypastemode_t;
 
-boolean M_ChangeStringCvar(INT32 choice)
+dboolean M_ChangeStringCvar(INT32 choice)
 {
 	size_t len;
 	cvarcopypastemode_t copypastemode = CVCPM_NONE;
@@ -213,7 +213,7 @@ void M_MenuTypingInput(INT32 key)
 	// Determine when to check for keyboard inputs or controller inputs using menuKey, which is the key passed here as argument.
 	if (key > 0)
 	{
-		boolean gamepad = (key >= NUMKEYS);
+		dboolean gamepad = (key >= NUMKEYS);
 		M_SwitchVirtualKeyboard(gamepad);
 		if (gamepad)
 			return;
@@ -414,7 +414,7 @@ void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dumm
 	}
 }
 
-void M_SwitchVirtualKeyboard(boolean gamepad)
+void M_SwitchVirtualKeyboard(dboolean gamepad)
 {
 	extern consvar_t cv_debugvirtualkeyboard;
 	menutyping.keyboardtyping = cv_debugvirtualkeyboard.value ? false : !gamepad;

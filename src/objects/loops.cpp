@@ -27,7 +27,7 @@
 #define center_alpha(o) ((o)->target)
 #define center_beta(o) ((o)->tracer)
 
-static inline boolean
+static inline dboolean
 center_has_flip (const mobj_t *center)
 {
 	return (center->flags2 & MF2_AMBUSH) == MF2_AMBUSH;
@@ -36,7 +36,7 @@ center_has_flip (const mobj_t *center)
 static inline void
 center_set_flip
 (		mobj_t * center,
-		boolean mode)
+		dboolean mode)
 {
 	center->flags2 = (center->flags2 & ~(MF2_AMBUSH)) |
 		((mode != false) * MF2_AMBUSH);
@@ -108,7 +108,7 @@ crisscross
 	}
 }
 
-static boolean
+static dboolean
 moving_toward_gate
 (		const player_t * player,
 		const mobj_t * anchor,

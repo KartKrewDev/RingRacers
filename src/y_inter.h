@@ -20,13 +20,13 @@ extern "C" {
 
 typedef struct
 {
-	boolean rankingsmode; // rankings mode
-	boolean gotthrough; // show "got through"
-	boolean showrank; // show rank-restricted queue entry at the end, if it exists
-	boolean encore; // encore mode
-	boolean isduel; // duel mode
+	dboolean rankingsmode; // rankings mode
+	dboolean gotthrough; // show "got through"
+	dboolean showrank; // show rank-restricted queue entry at the end, if it exists
+	dboolean encore; // encore mode
+	dboolean isduel; // duel mode
 	UINT8 winningteam; // teamplay
-	boolean showroundnum; // round number
+	dboolean showroundnum; // round number
 
 	char headerstring[64]; // holds levelnames up to 64 characters
 
@@ -48,15 +48,15 @@ typedef struct
 	INT32 linemeter; // For GP only
 } y_data_t;
 
-void Y_DrawIntermissionHeader(INT32 x, INT32 y, boolean gotthrough, const char *headerstring, boolean showroundnum, boolean small);
+void Y_DrawIntermissionHeader(INT32 x, INT32 y, dboolean gotthrough, const char *headerstring, dboolean showroundnum, dboolean small);
 void Y_IntermissionDrawer(void);
 void Y_Ticker(void);
 
 // Specific sub-drawers
 void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset);
-void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations, boolean widescreen, boolean adminmode);
-void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescreen);
-void Y_DrawRankMode(INT32 x, INT32 y, boolean center);
+void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, dboolean doanimations, dboolean widescreen, dboolean adminmode);
+void Y_DrawIntermissionButton(INT32 startslide, INT32 through, dboolean widescreen);
+void Y_DrawRankMode(INT32 x, INT32 y, dboolean center);
 
 void Y_StartIntermission(void);
 void Y_MidIntermission(void);
@@ -64,7 +64,7 @@ void Y_EndIntermission(void);
 
 void Y_PlayIntermissionMusic(void);
 
-boolean Y_IntermissionPlayerLock(void);
+dboolean Y_IntermissionPlayerLock(void);
 
 typedef enum
 {
@@ -76,7 +76,7 @@ typedef enum
 
 extern intertype_t intertype;
 
-boolean Y_ShouldDoIntermission(void);
+dboolean Y_ShouldDoIntermission(void);
 intertype_t Y_GetIntermissionType(void);
 void Y_DetermineIntermissionType(void);
 

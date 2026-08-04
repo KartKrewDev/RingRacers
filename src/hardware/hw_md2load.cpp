@@ -241,7 +241,7 @@ typedef struct
 } md2frame_t;
 
 // Load the model
-model_t *MD2_LoadModel(const char *fileName, int ztag, boolean useFloat)
+model_t *MD2_LoadModel(const char *fileName, int ztag, dboolean useFloat)
 {
 	FILE *f;
 

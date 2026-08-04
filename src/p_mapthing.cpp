@@ -34,7 +34,7 @@ fixed_t P_GetMobjSpawnHeight(
 	const fixed_t dz,
 	const fixed_t offset,
 	const size_t layer,
-	const boolean flip,
+	const dboolean flip,
 	const fixed_t scale
 )
 {

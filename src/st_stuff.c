@@ -84,7 +84,7 @@ static huddrawlist_h luahuddrawlist_titlecard;
 // STATUS BAR CODE
 //
 
-boolean ST_SameTeam(player_t *a, player_t *b)
+dboolean ST_SameTeam(player_t *a, player_t *b)
 {
 	// Spectator chat.
 	if (a->spectator && b->spectator)
@@ -103,9 +103,9 @@ boolean ST_SameTeam(player_t *a, player_t *b)
 	return true;
 }
 
-static boolean st_stopped = true;
+static dboolean st_stopped = true;
 
-void ST_Ticker(boolean run)
+void ST_Ticker(dboolean run)
 {
 	if (st_stopped)
 		return;
@@ -272,7 +272,7 @@ void ST_changeDemoView(void)
 //                         STATUS BAR OVERLAY
 // =========================================================================
 
-boolean st_overlay;
+dboolean st_overlay;
 
 /*
 static INT32 SCZ(INT32 z)
@@ -386,7 +386,7 @@ static void ST_pushDebugTimeMS(INT32 *height, const char *label, UINT32 ms)
 static void ST_drawMusicDebug(INT32 *height)
 {
 	const char *mname = Music_CurrentSong();
-	boolean looping = Music_CanLoop(Music_CurrentId());
+	dboolean looping = Music_CanLoop(Music_CurrentId());
 	UINT8 i = 0;
 
 	const musicdef_t *def;
@@ -756,7 +756,7 @@ void ST_preDrawTitleCard(void)
 	// Kart: nothing
 }
 
-patch_t *ST_getRoundPicture(boolean small)
+patch_t *ST_getRoundPicture(dboolean small)
 {
 	patch_t *roundico = NULL;
 
@@ -790,9 +790,9 @@ patch_t *ST_getRoundPicture(boolean small)
 //
 void ST_runTitleCard(void)
 {
-	boolean run = !(paused || P_AutoPause() || (g_fast_forward > 0 && demo.simplerewind == DEMO_REWIND_OFF));
+	dboolean run = !(paused || P_AutoPause() || (g_fast_forward > 0 && demo.simplerewind == DEMO_REWIND_OFF));
 	INT32 auxticker;
-	boolean doroundicon = (ST_getRoundPicture(false) != NULL);
+	dboolean doroundicon = (ST_getRoundPicture(false) != NULL);
 
 	if (run && lt_fade < 16)
 	{
@@ -1041,7 +1041,7 @@ void ST_drawTitleCard(void)
 
 			patch_t *localwarn;
 			INT32 transp;
-			boolean encorehack = ((levelfadecol == 0) && lt_ticker <= PRELEVELTIME+4);
+			dboolean encorehack = ((levelfadecol == 0) && lt_ticker <= PRELEVELTIME+4);
 
 #define DRAWBOSSWARN(pat) \
 			localwarn = pat[encoremode ? 1 : 0];\
@@ -1383,7 +1383,7 @@ static INT32 ST_ServerSplash_OpacityFlag(INT32 opacity)
 #define SPLASH_LEN ((FRACUNIT * TICRATE) * 3)
 #define SPLASH_WAIT ((FRACUNIT * TICRATE) / 2)
 
-void ST_DrawServerSplash(boolean timelimited)
+void ST_DrawServerSplash(dboolean timelimited)
 {
 	static fixed_t splashTime = -SPLASH_WAIT;
 	static char prevContext[8] = {0};
@@ -1563,7 +1563,7 @@ static fixed_t ST_CalculateFadeIn(player_t *player)
 
 void ST_Drawer(void)
 {
-	boolean stagetitle = false; // Decide whether to draw the stage title or not
+	dboolean stagetitle = false; // Decide whether to draw the stage title or not
 
 	// Doom's status bar only updated if necessary.
 	// However, ours updates every frame regardless, so the "refresh" param was removed

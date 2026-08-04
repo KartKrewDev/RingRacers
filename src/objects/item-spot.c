@@ -18,7 +18,7 @@
 #define spot_monitor(o) ((o)->target)
 #define spot_cool(o) ((o)->threshold)
 
-boolean
+dboolean
 Obj_ItemSpotIsAvailable (const mobj_t *spot)
 {
 	return P_MobjWasRemoved(spot_monitor(spot)) &&

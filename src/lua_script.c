@@ -528,7 +528,7 @@ void LUA_ClearExtVars(void)
 INT32 lua_lumploading = 0;
 
 // Load a script from a MYFILE
-static inline void LUA_LoadFile(MYFILE *f, char *name, boolean noresults)
+static inline void LUA_LoadFile(MYFILE *f, char *name, dboolean noresults)
 {
 	int errorhandlerindex;
 
@@ -555,7 +555,7 @@ static inline void LUA_LoadFile(MYFILE *f, char *name, boolean noresults)
 }
 
 // Load a script from a lump
-void LUA_LoadLump(UINT16 wad, UINT16 lump, boolean noresults)
+void LUA_LoadLump(UINT16 wad, UINT16 lump, dboolean noresults)
 {
 	MYFILE f;
 	char *name;
@@ -1036,7 +1036,7 @@ static UINT8 ArchiveValue(UINT8 **p, int TABLESINDEX, int myindex)
 	}
 	case LUA_TTABLE:
 	{
-		boolean found = false;
+		dboolean found = false;
 		INT32 i;
 		UINT16 t = (UINT16)lua_objlen(gL, TABLESINDEX);
 
@@ -1572,7 +1572,7 @@ void LUA_Step(void)
 	lua_gc(gL, LUA_GCSTEP, 1);
 }
 
-void LUA_Archive(savebuffer_t *save, boolean network)
+void LUA_Archive(savebuffer_t *save, dboolean network)
 {
 	INT32 i;
 	thinker_t *th;
@@ -1614,7 +1614,7 @@ void LUA_Archive(savebuffer_t *save, boolean network)
 		lua_pop(gL, 1); // pop tables
 }
 
-void LUA_UnArchive(savebuffer_t *save, boolean network)
+void LUA_UnArchive(savebuffer_t *save, dboolean network)
 {
 	UINT32 mobjnum;
 	INT32 i;

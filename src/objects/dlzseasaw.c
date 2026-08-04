@@ -26,7 +26,7 @@
 #include "../k_collide.h"
 
 // updates the seasaw's visuals and hitboxes using the hnext/hprev list.
-static void Obj_DLZSeasawUpdate(mobj_t *mo, boolean ghostme)
+static void Obj_DLZSeasawUpdate(mobj_t *mo, dboolean ghostme)
 {
 
 	mobj_t *ptr = mo;
@@ -201,7 +201,7 @@ static void Obj_DLZSeasawReset(mobj_t *mo)
 // main seasaw thinker.
 void Obj_DLZSeasawThink(mobj_t *mo)
 {
-	boolean ghost = false;
+	dboolean ghost = false;
 	SINT8 rot = 1;
 	fixed_t px, py;
 
@@ -306,7 +306,7 @@ void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2)
 {
 	player_t *p = mo->player;
 	INT32 momangle;
-	boolean invert = false;
+	dboolean invert = false;
 
 	// cooldown / respawning
 	if (p->seasawcooldown || p->respawn.timer)

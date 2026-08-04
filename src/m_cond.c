@@ -36,7 +36,7 @@
 #include "k_objects.h" // Obj_AllAncientGearsCollected
 
 gamedata_t *gamedata = NULL;
-boolean netUnlocked[MAXUNLOCKABLES];
+dboolean netUnlocked[MAXUNLOCKABLES];
 
 // The meat of this system lies in condition sets
 conditionset_t conditionSets[MAXCONDITIONSETS];
@@ -416,7 +416,7 @@ static void M_ChallengeGridExtraDataAdjacencyRules(challengegridextradata_t *ext
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 {
 	UINT16 i, j, num, id, tempid, work;
-	boolean idchange;
+	dboolean idchange;
 
 	if (gamedata->challengegrid == NULL)
 	{
@@ -1460,7 +1460,7 @@ void M_UpdateConditionSetsPending(void)
 	}
 }
 
-boolean M_NotFreePlay(void)
+dboolean M_NotFreePlay(void)
 {
 	UINT8 i;
 	UINT8 nump = 0;
@@ -1537,7 +1537,7 @@ UINT16 M_CheckCupEmeralds(UINT8 difficulty)
 }
 
 // See also M_GetConditionString
-boolean M_CheckCondition(condition_t *cn, player_t *player)
+dboolean M_CheckCondition(condition_t *cn, player_t *player)
 {
 	switch (cn->type)
 	{
@@ -2141,12 +2141,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 	return false;
 }
 
-static boolean M_CheckConditionSet(conditionset_t *c, player_t *player)
+static dboolean M_CheckConditionSet(conditionset_t *c, player_t *player)
 {
 	UINT32 i;
 	UINT32 lastID = 0;
 	condition_t *cn;
-	boolean achievedSoFar = true;
+	dboolean achievedSoFar = true;
 
 	for (i = 0; i < c->numconditions; ++i)
 	{
@@ -2217,10 +2217,10 @@ static char *M_BuildConditionTitle(UINT16 map)
 	return title;
 }
 
-static const char *M_GetConditionCharacter(INT32 skin, boolean directlyrequires)
+static const char *M_GetConditionCharacter(INT32 skin, dboolean directlyrequires)
 {
 	// First we check for direct unlock.
-	boolean permitname = R_SkinUsable(-1, skin, false);
+	dboolean permitname = R_SkinUsable(-1, skin, false);
 
 	if (permitname == false && directlyrequires == false)
 	{
@@ -2586,7 +2586,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_UNLOCKPERCENT:
 		{
-			boolean checkavailable = false;
+			dboolean checkavailable = false;
 
 			switch (cn->extrainfo1)
 			{
@@ -3204,11 +3204,11 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 	);
 }
 
-static boolean M_CheckUnlockConditions(player_t *player)
+static dboolean M_CheckUnlockConditions(player_t *player)
 {
 	UINT32 i;
 	conditionset_t *c;
-	boolean ret = false;
+	dboolean ret = false;
 
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 	{
@@ -3225,7 +3225,7 @@ static boolean M_CheckUnlockConditions(player_t *player)
 	return ret;
 }
 
-boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
+dboolean M_UpdateUnlockablesAndExtraEmblems(dboolean loud, dboolean doall)
 {
 	UINT16 i = 0, response = 0, newkeys = 0;
 
@@ -3338,7 +3338,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 	return false;
 }
 
-UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys)
+UINT16 M_GetNextAchievedUnlock(dboolean canskipchaokeys)
 {
 	UINT16 i;
 
@@ -3403,7 +3403,7 @@ UINT16 M_CheckLevelEmblems(void)
 	INT32 valToReach;
 	INT16 tag;
 	INT16 levelnum;
-	boolean res;
+	dboolean res;
 	UINT16 somethingUnlocked = 0;
 
 	// Update Score, Time, Rings emblems
@@ -3463,7 +3463,7 @@ UINT16 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separ
 	INT32 i;
 	INT32 embtype;
 	INT16 levelnum;
-	boolean res;
+	dboolean res;
 	UINT16 somethingUnlocked = 0;
 	UINT8 flags;
 
@@ -3503,7 +3503,7 @@ UINT16 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separ
 // Quick unlock checks
 // -------------------
 
-boolean M_GameTrulyStarted(void)
+dboolean M_GameTrulyStarted(void)
 {
 	// Fail safe
 	if (gamedata == NULL)
@@ -3527,7 +3527,7 @@ boolean M_GameTrulyStarted(void)
 	return (gamedata->gonerlevel == GDGONER_DONE);
 }
 
-boolean M_GameAboutToStart(void)
+dboolean M_GameAboutToStart(void)
 {
 	// Fail safe
 	if (gamedata == NULL)
@@ -3544,7 +3544,7 @@ boolean M_GameAboutToStart(void)
 	);
 }
 
-boolean M_CheckNetUnlockByID(UINT16 unlockid)
+dboolean M_CheckNetUnlockByID(UINT16 unlockid)
 {
 	if (unlockid >= MAXUNLOCKABLES
 		|| !unlockables[unlockid].conditionset)
@@ -3560,7 +3560,7 @@ boolean M_CheckNetUnlockByID(UINT16 unlockid)
 	return gamedata->unlocked[unlockid];
 }
 
-boolean M_SecretUnlocked(INT32 type, boolean local)
+dboolean M_SecretUnlocked(INT32 type, dboolean local)
 {
 	INT32 i;
 
@@ -3585,7 +3585,7 @@ boolean M_SecretUnlocked(INT32 type, boolean local)
 #endif //if 0
 }
 
-boolean M_CupLocked(cupheader_t *cup)
+dboolean M_CupLocked(cupheader_t *cup)
 {
 	// No skipping over any part of your marathon.
 	if (marathonmode)
@@ -3613,7 +3613,7 @@ boolean M_CupLocked(cupheader_t *cup)
 	return false;
 }
 
-boolean M_CupSecondRowLocked(void)
+dboolean M_CupSecondRowLocked(void)
 {
 	// The following was pre-optimised for cached behaviour.
 	// It would need a refactor if the cache system were to
@@ -3640,7 +3640,7 @@ boolean M_CupSecondRowLocked(void)
 	return true;
 }
 
-boolean M_MapLocked(UINT16 mapnum)
+dboolean M_MapLocked(UINT16 mapnum)
 {
 	// No skipping over any part of your marathon.
 	if (marathonmode)
@@ -3676,7 +3676,7 @@ boolean M_MapLocked(UINT16 mapnum)
 	return false;
 }
 
-INT32 M_CountMedals(boolean all, boolean extraonly)
+INT32 M_CountMedals(dboolean all, dboolean extraonly)
 {
 	INT32 found = 0, i;
 	if (!extraonly)
@@ -3726,7 +3726,7 @@ INT32 M_CountMedals(boolean all, boolean extraonly)
 
 // Theoretically faster than using M_CountMedals()
 // Stops when it reaches the target number of medals.
-boolean M_GotEnoughMedals(INT32 number)
+dboolean M_GotEnoughMedals(INT32 number)
 {
 	INT32 i, gottenmedals = 0;
 	for (i = 0; i < numemblems; ++i)
@@ -3768,7 +3768,7 @@ boolean M_GotEnoughMedals(INT32 number)
 	return false;
 }
 
-boolean M_GotLowEnoughTime(INT32 tictime)
+dboolean M_GotLowEnoughTime(INT32 tictime)
 {
 	INT32 curtics = 0;
 	INT32 i;
@@ -4048,7 +4048,7 @@ skincolornum_t M_GetEmblemColor(emblem_t *em)
 	return em->color;
 }
 
-const char *M_GetEmblemPatch(emblem_t *em, boolean big)
+const char *M_GetEmblemPatch(emblem_t *em, dboolean big)
 {
 	static char pnamebuf[7];
 
@@ -4067,13 +4067,13 @@ const char *M_GetEmblemPatch(emblem_t *em, boolean big)
 	return pnamebuf;
 }
 
-boolean M_UseAlternateTitleScreen(void)
+dboolean M_UseAlternateTitleScreen(void)
 {
 	extern consvar_t cv_alttitle;
 	return cv_alttitle.value && M_SecretUnlocked(SECRET_ALTTITLE, true);
 }
 
-INT32 M_GameDataGameType(INT32 lgametype, boolean lbattleprisons)
+INT32 M_GameDataGameType(INT32 lgametype, dboolean lbattleprisons)
 {
 	INT32 playtimemode = GDGT_CUSTOM;
 	if (lgametype == GT_RACE)

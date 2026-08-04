@@ -129,7 +129,7 @@ void Obj_WPZTurbineThinker(mobj_t *mo)
 
 	UINT8 i;
 	mapthing_t *mt = mo->spawnpoint;
-	boolean opt1 = mt->thing_args[0] != 0;
+	dboolean opt1 = mt->thing_args[0] != 0;
 	fixed_t baseheight = (mt->thing_args[2]) ? (mt->thing_args[2]*FRACUNIT) : (mo->z+mapobjectscale*1024);
 	fixed_t sneakerheight = (mt->thing_args[3]) ? (mt->thing_args[3]*FRACUNIT) : (mo->z+mapobjectscale*1768);
 	fixed_t range = (mt->thing_args[7]) ? (mt->thing_args[7]*FRACUNIT) : (FixedMul(mapobjectscale, TURBINE_RANGE));
@@ -196,11 +196,11 @@ void Obj_playerWPZTurbine(player_t *p)
 	mobj_t *pmo = p->mo;
 	mobj_t *t = pmo->tracer;
 	mapthing_t *mt;
-	boolean opt1;
+	dboolean opt1;
 	fixed_t dist = FixedMul(mapobjectscale, TURBINE_SPIN)*FRACUNIT;
 	INT32 speed = ANG1*3;
-	boolean mode = false;
-	boolean distreached;
+	dboolean mode = false;
+	dboolean distreached;
 
 	fixed_t tx, ty, tz;
 	fixed_t momz;

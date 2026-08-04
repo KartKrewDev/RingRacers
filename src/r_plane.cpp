@@ -145,7 +145,7 @@ static bool R_CheckMapPlane(const char* funcname, INT32 y, INT32 x1, INT32 x2)
 	return false;
 }
 
-static void R_MapPlane(drawspandata_t *ds, spandrawfunc_t *spanfunc, INT32 y, INT32 x1, INT32 x2, boolean allow_parallel)
+static void R_MapPlane(drawspandata_t *ds, spandrawfunc_t *spanfunc, INT32 y, INT32 x1, INT32 x2, dboolean allow_parallel)
 {
 	ZoneScoped;
 	angle_t angle, planecos, planesin;
@@ -227,7 +227,7 @@ static void R_MapPlane(drawspandata_t *ds, spandrawfunc_t *spanfunc, INT32 y, IN
 	spanfunc(ds);
 }
 
-static void R_MapTiltedPlane(drawspandata_t *ds, void(*spanfunc)(drawspandata_t*), INT32 y, INT32 x1, INT32 x2, boolean allow_parallel)
+static void R_MapTiltedPlane(drawspandata_t *ds, void(*spanfunc)(drawspandata_t*), INT32 y, INT32 x1, INT32 x2, dboolean allow_parallel)
 {
 	ZoneScoped;
 
@@ -348,8 +348,8 @@ static visplane_t *new_visplane(unsigned hash)
 //
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	fixed_t xoff, fixed_t yoff, angle_t plangle, extracolormap_t *planecolormap,
-	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore,
-	boolean ripple, boolean reverseLight, const sector_t *lighting_sector,
+	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, dboolean noencore,
+	dboolean ripple, dboolean reverseLight, const sector_t *lighting_sector,
 	sectordamage_t damage)
 {
 	visplane_t *check;
@@ -578,7 +578,7 @@ void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop)
 	if (pl->maxx < stop)  pl->maxx = stop;
 }
 
-static void R_MakeSpans(void (*mapfunc)(drawspandata_t* ds, void(*spanfunc)(drawspandata_t*), INT32, INT32, INT32, boolean), spandrawfunc_t* spanfunc, drawspandata_t* ds, INT32 x, INT32 t1, INT32 b1, INT32 t2, INT32 b2, boolean allow_parallel)
+static void R_MakeSpans(void (*mapfunc)(drawspandata_t* ds, void(*spanfunc)(drawspandata_t*), INT32, INT32, INT32, dboolean), spandrawfunc_t* spanfunc, drawspandata_t* ds, INT32 x, INT32 t1, INT32 b1, INT32 t2, INT32 b2, dboolean allow_parallel)
 {
 	ZoneScoped;
 	//    Alam: from r_splats's R_RasterizeFloorSplat
@@ -686,7 +686,7 @@ void R_DrawPlanes(void)
 // Draws the sky within the plane's top/bottom bounds
 // Note: this uses column drawers instead of span drawers, since the sky is always a texture
 //
-static void R_DrawSkyPlane(visplane_t *pl, void(*colfunc)(drawcolumndata_t*), boolean allow_parallel)
+static void R_DrawSkyPlane(visplane_t *pl, void(*colfunc)(drawcolumndata_t*), dboolean allow_parallel)
 {
 	INT32 x;
 	drawcolumndata_t dc {0};
@@ -942,7 +942,7 @@ static inline void R_AdjustSlopeCoordinatesNPO2(drawspandata_t* ds, vector3_t *o
 	ds->yoffs += (origin->y + oy);
 }
 
-void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_parallel)
+void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, dboolean allow_parallel)
 {
 	levelflat_t *levelflat;
 	INT32 light = 0;
@@ -950,7 +950,7 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, boolean allow_paralle
 	ffloor_t *rover;
 	INT32 type, spanfunctype = BASEDRAWFUNC;
 	debugrender_highlight_t debug = debugrender_highlight_t::SW_HI_PLANES;
-	void (*mapfunc)(drawspandata_t*, void(*)(drawspandata_t*), INT32, INT32, INT32, boolean) = R_MapPlane;
+	void (*mapfunc)(drawspandata_t*, void(*)(drawspandata_t*), INT32, INT32, INT32, dboolean) = R_MapPlane;
 	INT16 highlight = R_PlaneIsHighlighted(pl);
 
 	if (!(pl->minx <= pl->maxx))

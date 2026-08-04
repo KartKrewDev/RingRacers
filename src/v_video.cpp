@@ -88,12 +88,12 @@ toast 18/04/17
 */
 
 float Cubepal[2][2][2][3];
-boolean Cubeapply = false;
+dboolean Cubeapply = false;
 
 // returns whether to apply cube, selectively avoiding expensive operations
-static boolean InitCube(void)
+static dboolean InitCube(void)
 {
-	boolean apply = false;
+	dboolean apply = false;
 	UINT8 q;
 	float working[2][2][2][3] = // the initial positions of the corners of the colour cube!
 	{
@@ -120,7 +120,7 @@ static boolean InitCube(void)
 	};
 	float desatur[3]; // grey
 	float globalgammamul, globalgammaoffs;
-	boolean doinggamma;
+	dboolean doinggamma;
 
 	if (con_startup_loadprogress < LOADED_CONFIG)
 		return false;
@@ -583,7 +583,7 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 		{
 			if ((options & (V_SNAPTORIGHT|V_SNAPTOLEFT|V_SPLITSCREEN)) != 0)
 			{
-				boolean slidefromright = false;
+				dboolean slidefromright = false;
 
 				const fixed_t offsetAmount = (screenwidth * FRACUNIT/2);
 				INT32 offset = (offsetAmount - FixedMul(offsetAmount, st_fadein)) / FRACUNIT;
@@ -1400,7 +1400,7 @@ void V_DrawPatchFill(patch_t *pat)
 	}
 }
 
-void V_DrawVhsEffect(boolean rewind)
+void V_DrawVhsEffect(dboolean rewind)
 {
 	static fixed_t upbary = 100, downbary = 150;
 
@@ -1693,7 +1693,7 @@ INT32 V_DanceYOffset(INT32 counter)
 	return abs(step - (duration / 2)) - (duration / 4);
 }
 
-static boolean V_CharacterValid(font_t *font, int c)
+static dboolean V_CharacterValid(font_t *font, int c)
 {
 	return (c >= 0 && c < font->size && font->font[c] != NULL);
 }
@@ -1710,9 +1710,9 @@ void V_DrawCharacterScaled(
 	UINT8 *colormap)
 {
 	font_t *font = &fontv[fontno];
-	boolean notColored = false;
+	dboolean notColored = false;
 
-	const boolean uppercase = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
+	const dboolean uppercase = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
 	flags &= ~(V_FLIP); /* These two (V_FORCEUPPERCASE) share a bit. */
 
 	if (colormap == NULL)
@@ -1766,7 +1766,7 @@ void V_DrawCharacterScaled(
 	);
 }
 
-void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase)
+void V_DrawCharacter(INT32 x, INT32 y, INT32 c, dboolean lowercase)
 {
 	// Backwards compatibility
 	if (lowercase == false)
@@ -1785,7 +1785,7 @@ void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase)
 	);
 }
 
-void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase, UINT8 *colormap)
+void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, dboolean lowercase, UINT8 *colormap)
 {
 	// Backwards compatibility
 	if (lowercase == false)
@@ -1805,7 +1805,7 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase, UINT8 *co
 }
 
 template <bool Centered>
-static INT32 Internal_TitleCardStringOffset(const char *str, boolean p4)
+static INT32 Internal_TitleCardStringOffset(const char *str, dboolean p4)
 {
 	int bg_font = GTOL_FONT;
 	int fg_font = GTFN_FONT;
@@ -1928,14 +1928,14 @@ static INT32 Internal_TitleCardStringOffset(const char *str, boolean p4)
 
 // V_TitleCardStringWidth
 // Get the string's width using the titlecard font.
-INT32 V_TitleCardStringWidth(const char *str, boolean p4)
+INT32 V_TitleCardStringWidth(const char *str, dboolean p4)
 {
 	return Internal_TitleCardStringOffset<false>(str, p4);
 }
 
 // V_CenteredTitleCardStringOffset
 // Subtract this offset from an X coordinate to center the string around that point.
-INT32 V_CenteredTitleCardStringOffset(const char *str, boolean p4)
+INT32 V_CenteredTitleCardStringOffset(const char *str, dboolean p4)
 {
 	return Internal_TitleCardStringOffset<true>(str, p4);
 }
@@ -1943,7 +1943,7 @@ INT32 V_CenteredTitleCardStringOffset(const char *str, boolean p4)
 // V_DrawTitleCardStringFixed.
 // see v_video.h's prototype for more information.
 //
-void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold, boolean p4)
+void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, INT32 flags, dboolean bossmode, INT32 timer, INT32 threshold, dboolean p4)
 {
 	int bg_font = GTOL_FONT;
 	int fg_font = GTFN_FONT;
@@ -2420,7 +2420,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 	}
 }
 
-static UINT8 V_GetButtonCodeWidth(UINT8 c, boolean largebutton)
+static UINT8 V_GetButtonCodeWidth(UINT8 c, dboolean largebutton)
 {
 	UINT8 x = 14;
 
@@ -2461,7 +2461,7 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c, boolean largebutton)
 	return x;
 }
 
-static UINT8 V_GetGenericButtonCodeWidth(UINT8 c, boolean largebutton)
+static UINT8 V_GetGenericButtonCodeWidth(UINT8 c, dboolean largebutton)
 {
 	UINT8 x = 16;
 
@@ -2526,22 +2526,22 @@ void V_DrawStringScaled(
 
 	font_t   *font;
 
-	boolean uppercase;
-	boolean notcolored;
+	dboolean uppercase;
+	dboolean notcolored;
 	UINT8 boxed = 0;
-	boolean descriptive = false;
+	dboolean descriptive = false;
 
-	boolean debugalternation = false;
+	dboolean debugalternation = false;
 	UINT8 debugcolor1 = 181;
 	UINT8 debugcolor2 = 96;
 
-	boolean   dance;
-	boolean nodanceoverride;
+	dboolean   dance;
+	dboolean nodanceoverride;
 	INT32     dancecounter;
 
 	INT32 boxedflags = ((flags) & (~V_HUDTRANS)) | (V_40TRANS);
 
-	boolean largebutton = false;
+	dboolean largebutton = false;
 
 	fixed_t cx, cy;
 	fixed_t cxsave;
@@ -3001,10 +3001,10 @@ fixed_t V_StringScaledWidth(
 
 	font_t   *font;
 
-	boolean uppercase;
-	boolean boxed = false;
-	boolean descriptive = false;
-	boolean largebutton = false;
+	dboolean uppercase;
+	dboolean boxed = false;
+	dboolean descriptive = false;
+	dboolean largebutton = false;
 
 	fixed_t cx;
 	fixed_t right;
@@ -3160,10 +3160,10 @@ char * V_ScaledWordWrap(
 
 	font_t   *font;
 
-	boolean uppercase;
-	boolean largebutton = false;
-	boolean descriptive = false;
-	boolean boxed = false;
+	dboolean uppercase;
+	dboolean largebutton = false;
+	dboolean descriptive = false;
+	dboolean boxed = false;
 
 	fixed_t cx;
 	fixed_t right;
@@ -3499,7 +3499,7 @@ void V_DrawRightAlignedLSTitleLowString(INT32 x, INT32 y, INT32 option, const ch
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 {
 	INT32 w = SHORT(fontv[TALLNUM_FONT].font[0]->width);
-	boolean neg;
+	dboolean neg;
 
 	if (flags & V_NOSCALESTART)
 		w *= vid.dupx;
@@ -3579,7 +3579,7 @@ INT32 V_LevelNameHeight(const char *string)
 }
 
 // Generates a RGB565 color look-up table
-void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, boolean makecolors)
+void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, dboolean makecolors)
 {
 	size_t palsize = (sizeof(RGBA_t) * 256);
 

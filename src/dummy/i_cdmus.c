@@ -42,7 +42,7 @@ void I_PlayCD(UINT8 track, UINT8 looping)
 	(void)looping;
 }
 
-boolean I_SetVolumeCD(int volume)
+dboolean I_SetVolumeCD(int volume)
 {
 	(void)volume;
 	return false;

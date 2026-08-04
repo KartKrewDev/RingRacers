@@ -125,7 +125,7 @@ void Obj_SpawnMegaBarrier(player_t* p)
 	}
 }
 
-boolean Obj_MegaBarrierThink(mobj_t* mobj)
+dboolean Obj_MegaBarrierThink(mobj_t* mobj)
 {
 	return static_cast<Barrier*>(mobj)->think();
 }

@@ -92,8 +92,8 @@ static menu_t TitleEntryDef = {
 	NULL
 };
 
-boolean nodrawers; // for comparative timing purposes
-boolean noblit; // for comparative timing purposes
+dboolean nodrawers; // for comparative timing purposes
+dboolean noblit; // for comparative timing purposes
 tic_t demostarttime; // for comparative timing purposes
 
 static constexpr DemoBufferSizes get_buffer_sizes(UINT16 version)
@@ -122,8 +122,8 @@ static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf = {0};
 static UINT8 *demotime_p, *demoinfo_p, *demoattack_p, *demosplits_p;
 static UINT16 demoflags;
-extern "C" boolean demosynced;
-boolean demosynced = true; // console warning message
+extern "C" dboolean demosynced;
+dboolean demosynced = true; // console warning message
 
 struct demovars_s demo;
 
@@ -188,7 +188,7 @@ demoghost *ghosts = NULL;
 #define MINDEMOVERSION 0x000E
 #define DEMOVERSION 0x0014
 
-boolean G_CompatLevel(UINT16 level)
+dboolean G_CompatLevel(UINT16 level)
 {
 	if (demo.playback)
 	{
@@ -284,7 +284,7 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 
 static mobj_t oldghost[MAXPLAYERS];
 
-boolean G_ConsiderEndingDemoWrite(void)
+dboolean G_ConsiderEndingDemoWrite(void)
 {
 	// chill, we reserved extra memory so it's
 	// "safe" to have written a bit past the end
@@ -295,7 +295,7 @@ boolean G_ConsiderEndingDemoWrite(void)
 	return true;
 }
 
-boolean G_ConsiderEndingDemoRead(void)
+dboolean G_ConsiderEndingDemoRead(void)
 {
 	if (*demobuf.p != DEMOMARKER)
 		return false;
@@ -305,7 +305,7 @@ boolean G_ConsiderEndingDemoRead(void)
 }
 
 // Demo failed sync during a sync test! Log the failure to be reported later.
-static boolean G_FailStaffSync(staffsync_reason_t reason, UINT32 extra)
+static dboolean G_FailStaffSync(staffsync_reason_t reason, UINT32 extra)
 {
 	if (demo.attract != DEMO_ATTRACT_OFF) // Don't shout about RNG desyncs in titledemos
 		return false;
@@ -372,8 +372,8 @@ void G_ReadDemoExtraData(void)
 			{
 				players[p].botvars.difficulty = READUINT8(demobuf.p);
 				players[p].botvars.diffincrease = READINT16(demobuf.p); // needed to avoid having to duplicate logic
-				players[p].botvars.rival = (boolean)READUINT8(demobuf.p);
-				players[p].botvars.foe = (boolean)READUINT8(demobuf.p);
+				players[p].botvars.rival = (dboolean)READUINT8(demobuf.p);
+				players[p].botvars.foe = (dboolean)READUINT8(demobuf.p);
 			}
 		}
 		if (extradata & DXD_PLAYSTATE)
@@ -491,7 +491,7 @@ void G_ReadDemoExtraData(void)
 	while (p != DW_END)
 	{
 		UINT32 rng;
-		boolean storesynced = demosynced;
+		dboolean storesynced = demosynced;
 
 		switch (p)
 		{
@@ -1798,8 +1798,8 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 	char filename[MAX_WADPATH];
 	UINT8 md5sum[16];
 	filestatus_t ncs;
-	boolean toomany = false;
-	boolean alreadyloaded;
+	dboolean toomany = false;
+	dboolean alreadyloaded;
 	UINT8 i, j;
 
 	totalfiles = READUINT8((*pp));
@@ -1879,13 +1879,13 @@ static void G_SkipDemoExtraFiles(UINT8 **pp)
 
 // G_CheckDemoExtraFiles: checks if our loaded WAD list matches the demo's.
 // Enabling quick prevents filesystem checks to see if needed files are available to load.
-static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, boolean quick)
+static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, dboolean quick)
 {
 	UINT8 totalfiles, filesloaded, nmusfilecount;
 	char filename[MAX_WADPATH];
 	UINT8 md5sum[16];
-	boolean toomany = false;
-	boolean alreadyloaded;
+	dboolean toomany = false;
+	dboolean alreadyloaded;
 	UINT8 i, j;
 	UINT8 error = 0;
 
@@ -1986,7 +1986,7 @@ static void G_SaveDemoSkins(UINT8 **pp, const DemoBufferSizes &psizes)
 	}
 }
 
-static democharlist_t *G_LoadDemoSkins(const DemoBufferSizes &psizes, savebuffer_t *info, UINT16 *worknumskins, boolean getclosest)
+static democharlist_t *G_LoadDemoSkins(const DemoBufferSizes &psizes, savebuffer_t *info, UINT16 *worknumskins, dboolean getclosest)
 {
 	UINT16 i;
 	UINT8 byte, shif;
@@ -2390,7 +2390,7 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 	UINT32 lowestskin = ((skin_t*)player->mo->skin)->skinnum;
 	UINT32 lowestcolor = player->skincolor;
 
-	boolean polite = (cv_attacksplits.value == 1);
+	dboolean polite = (cv_attacksplits.value == 1);
 
 	// Class R doesn't have coherent times, just watch the leader.
 	if (K_LegacyRingboost(player))
@@ -2406,7 +2406,7 @@ void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint)
 
 		for (g = ghosts; g; g = g->next)
 		{
-			boolean newtargetghost = false;
+			dboolean newtargetghost = false;
 
 			tic_t endtime = UINT32_MAX;
 			if (points <= MAXSPLITS)
@@ -2530,7 +2530,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	UINT8 c;
 	UINT16 s ATTRUNUSED;
 	UINT8 aflags = 0;
-	boolean uselaps = false;
+	dboolean uselaps = false;
 
 	// load the new file
 	FIL_DefaultExtension(newname, ".lmp");
@@ -2695,7 +2695,7 @@ static bool load_ubjson_standing(menudemo_t* pdemo, std::span<std::byte> slice, 
 	return true;
 }
 
-void G_LoadDemoInfo(menudemo_t *pdemo, boolean allownonmultiplayer)
+void G_LoadDemoInfo(menudemo_t *pdemo, dboolean allownonmultiplayer)
 {
 	savebuffer_t info = {0};
 	UINT8 *extrainfo_p;
@@ -2975,7 +2975,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	UINT32 num_classes;
 	char msg[1024];
 
-	boolean spectator, bot;
+	dboolean spectator, bot;
 	UINT8 slots[MAXPLAYERS];
 	UINT16 lastfakeskin[MAXPLAYERS];
 
@@ -2984,7 +2984,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 	// happen when we make bugfixes/changes...
 	// Unlike usual, true by default since most codepaths in this func are internal
 	// lumps (or for restarted external files, shouldn't re-print existing errors)
-	boolean skiperrors = true;
+	dboolean skiperrors = true;
 #endif
 
 	gtname[MAXGAMETYPELENGTH-1] = '\0';
@@ -3330,7 +3330,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		UINT32 unlocksread = std::min<UINT32>(unlockables, MAXUNLOCKABLES);
 		for (size_t i = 0; i < unlocksread; i++)
 		{
-			netUnlocked[i] = static_cast<boolean>(READUINT8(demobuf.p));
+			netUnlocked[i] = static_cast<dboolean>(READUINT8(demobuf.p));
 		}
 		// skip remainder
 		demobuf.p += unlockables - unlocksread;
@@ -3442,8 +3442,8 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum)
 		{
 			players[p].botvars.difficulty = READUINT8(demobuf.p);
 			players[p].botvars.diffincrease = READINT16(demobuf.p); // needed to avoid having to duplicate logic
-			players[p].botvars.rival = (boolean)READUINT8(demobuf.p);
-			players[p].botvars.foe = (boolean)READUINT8(demobuf.p);
+			players[p].botvars.rival = (dboolean)READUINT8(demobuf.p);
+			players[p].botvars.foe = (dboolean)READUINT8(demobuf.p);
 		}
 
 		K_UpdateShrinkCheat(&players[p]);
@@ -4100,7 +4100,7 @@ static void G_StopTimingDemo(void)
 		const char *csvpath = va("%s" PATHSEP "%s", srb2home, "timedemo.csv");
 		const char *header = "id,demoname,seconds,avgfps,leveltime,demotime,framecount,ticrate,rendermode,vidmode,vidwidth,vidheight,procbits\n";
 		const char *rowformat = "\"%s\",\"%s\",%f,%f,%u,%d,%u,%u,%u,%u,%u,%u,%u\n";
-		boolean headerrow = !FIL_FileExists(csvpath);
+		dboolean headerrow = !FIL_FileExists(csvpath);
 		UINT8 procbits = 0;
 
 		// Bitness
@@ -4169,7 +4169,7 @@ void G_StopDemo(void)
 	D_ClearState();
 }
 
-boolean G_CheckDemoStatus(void)
+dboolean G_CheckDemoStatus(void)
 {
 	G_FreeGhosts();
 
@@ -4278,7 +4278,7 @@ void G_SaveDemo(void)
 		char demo_slug[128];
 		char *writepoint;
 		size_t i, strindex = 0;
-		boolean dash = true;
+		dboolean dash = true;
 
 		for (i = 0; demo.titlename[i] && i < 127; i++)
 		{
@@ -4365,7 +4365,7 @@ void G_SaveDemo(void)
 	}
 }
 
-boolean G_CheckDemoTitleEntry(void)
+dboolean G_CheckDemoTitleEntry(void)
 {
 	if (menuactive || chat_on)
 		return false;

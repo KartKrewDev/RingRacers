@@ -82,7 +82,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	99  // wipe_cutscene_final (hardcoded)
 };
 
-static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
+static dboolean g_wipedef_toblack[NUMWIPEDEFS] = {
 	true, // wipe_credits_intermediate (0)
 
 	true, // wipe_level_toblack
@@ -113,7 +113,7 @@ static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
 	true  // wipe_cutscene_final (hardcoded)
 };
 
-static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
+static dboolean g_wipedef_toinvert[NUMWIPEDEFS] = {
 	false, // wipe_credits_intermediate (0)
 
 	false, // wipe_level_toblack
@@ -144,7 +144,7 @@ static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
 	false  // wipe_cutscene_final (hardcoded)
 };
 
-static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
+static dboolean g_wipedef_towhite[NUMWIPEDEFS] = {
 	false, // wipe_credits_intermediate (0)
 
 	false, // wipe_level_toblack
@@ -175,7 +175,7 @@ static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
 	false  // wipe_cutscene_final (hardcoded)
 };
 
-static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
+static dboolean g_wipedef_crossfade[NUMWIPEDEFS] = {
 	false, // wipe_credits_intermediate (0)
 
 	false, // wipe_level_toblack
@@ -210,13 +210,13 @@ static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
 //                        SCREEN WIPE PACKAGE
 //--------------------------------------------------------------------------
 
-boolean WipeInAction = false;
+dboolean WipeInAction = false;
 UINT8 g_wipemode = 0;
 UINT8 g_wipetype = 0;
 UINT8 g_wipeframe = 0;
-boolean g_wipereverse = false;
-boolean g_wipeencorewiggle = false;
-boolean WipeStageTitle = false;
+dboolean g_wipereverse = false;
+dboolean g_wipeencorewiggle = false;
+dboolean WipeStageTitle = false;
 INT32 lastwipetic = 0;
 
 #ifndef NOWIPE
@@ -423,7 +423,7 @@ void F_WipeStageTitle(void)
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle)
+void F_RunWipe(UINT8 wipemode, UINT8 wipetype, dboolean drawMenu, const char *colormap, dboolean reverse, dboolean encorewiggle)
 {
 #ifdef NOWIPE
 	(void)wipemode;
@@ -588,7 +588,7 @@ tic_t F_GetWipeLength(UINT8 wipetype)
 
 /** Does the specified wipe exist?
   */
-boolean F_WipeExists(UINT8 wipetype)
+dboolean F_WipeExists(UINT8 wipetype)
 {
 #ifdef NOWIPE
 	(void)wipetype;
@@ -607,22 +607,22 @@ boolean F_WipeExists(UINT8 wipetype)
 #endif
 }
 
-boolean F_WipeIsToBlack(UINT8 wipemode)
+dboolean F_WipeIsToBlack(UINT8 wipemode)
 {
 	return g_wipedef_toblack[wipemode];
 }
 
-boolean F_WipeIsToWhite(UINT8 wipemode)
+dboolean F_WipeIsToWhite(UINT8 wipemode)
 {
 	return g_wipedef_towhite[wipemode];
 }
 
-boolean F_WipeIsToInvert(UINT8 wipemode)
+dboolean F_WipeIsToInvert(UINT8 wipemode)
 {
 	return g_wipedef_toinvert[wipemode];
 }
 
-boolean F_WipeIsCrossfade(UINT8 wipemode)
+dboolean F_WipeIsCrossfade(UINT8 wipemode)
 {
 	return g_wipedef_crossfade[wipemode];
 }

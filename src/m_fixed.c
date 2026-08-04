@@ -255,7 +255,7 @@ vector2_t *FV2_Negate(vector2_t *a_1)
 	return FV2_NegateEx(a_1, a_1);
 }
 
-boolean FV2_Equal(const vector2_t *a_1, const vector2_t *a_2)
+dboolean FV2_Equal(const vector2_t *a_1, const vector2_t *a_2)
 {
 	fixed_t Epsilon = FRACUNIT / FRACUNIT;
 
@@ -414,7 +414,7 @@ vector3_t *FV3_Negate(vector3_t *a_1)
 	return FV3_NegateEx(a_1, a_1);
 }
 
-boolean FV3_Equal(const vector3_t *a_1, const vector3_t *a_2)
+dboolean FV3_Equal(const vector3_t *a_1, const vector3_t *a_2)
 {
 	fixed_t Epsilon = FRACUNIT / FRACUNIT;
 
@@ -594,7 +594,7 @@ fixed_t FV3_PlaneDistance(const vector3_t *a_normal, const vector3_t *a_point)
 	return -(FixedMul(a_normal->x, a_point->x) + FixedMul(a_normal->y, a_point->y) + FixedMul(a_normal->z, a_point->z));
 }
 
-boolean FV3_IntersectedPlane(const vector3_t *a_triangle, const vector3_t *a_line, vector3_t *a_normal, fixed_t *originDistance)
+dboolean FV3_IntersectedPlane(const vector3_t *a_triangle, const vector3_t *a_line, vector3_t *a_normal, fixed_t *originDistance)
 {
 	fixed_t distance1 = 0, distance2 = 0;
 
@@ -750,7 +750,7 @@ UINT8 FV3_PointOnLineSide(const vector3_t *point, const vector3_t *line)
 // determines if the supplied point is
 // inside the box or not.
 //
-boolean FV3_PointInsideBox(const vector3_t *point, const vector3_t *box)
+dboolean FV3_PointInsideBox(const vector3_t *point, const vector3_t *box)
 {
 	vector3_t lastLine[2];
 

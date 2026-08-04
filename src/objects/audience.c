@@ -41,7 +41,7 @@ Obj_AudienceInit
 		mapthing_t *mthing,
 		INT32 followerpick)
 {
-	const boolean ourchoiceofvisuals = (followerpick < 0 || followerpick > numfollowers);
+	const dboolean ourchoiceofvisuals = (followerpick < 0 || followerpick > numfollowers);
 	INT16 *reflist = NULL;
 	INT16 tempreflist[MAXHEADERFOLLOWERS];
 	UINT8 numref = 0;
@@ -215,10 +215,10 @@ Obj_AudienceInit
 void
 Obj_AudienceThink
 (		mobj_t * mobj,
-		boolean focusonplayer,
-		boolean checkdeathpit)
+		dboolean focusonplayer,
+		dboolean checkdeathpit)
 {
-	boolean landed = false;
+	dboolean landed = false;
 
 	if (mobj->fuse && mobj->fuse < (TICRATE/2))
 	{
@@ -300,7 +300,7 @@ Obj_AudienceThink
 				players[audience_focusplayer(mobj)].mo->y
 			) - mobj->angle;
 
-			boolean reverse = (diff >= ANGLE_180);
+			dboolean reverse = (diff >= ANGLE_180);
 
 			if (reverse)
 				diff = InvAngle(diff);

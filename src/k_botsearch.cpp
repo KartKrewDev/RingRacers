@@ -123,7 +123,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 }
 
 /*--------------------------------------------------
-	static boolean K_BotHatesThisSectorsSpecial(const player_t *player, sector_t *sec)
+	static dboolean K_BotHatesThisSectorsSpecial(const player_t *player, sector_t *sec)
 
 		Tells us if a bot will play more careful around
 		this sector's special type.
@@ -135,7 +135,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 	Return:-
 		true if avoiding this sector special, false otherwise.
 --------------------------------------------------*/
-static boolean K_BotHatesThisSectorsSpecial(const player_t *player, sector_t *sec, const boolean flip)
+static dboolean K_BotHatesThisSectorsSpecial(const player_t *player, sector_t *sec, const dboolean flip)
 {
 	terrain_t *terrain = K_GetTerrainForFlatNum(flip ? sec->ceilingpic : sec->floorpic);
 
@@ -168,13 +168,13 @@ static boolean K_BotHatesThisSectorsSpecial(const player_t *player, sector_t *se
 }
 
 /*--------------------------------------------------
-	boolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+	dboolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+dboolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 {
-	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
+	const dboolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
 	fixed_t highestfloor = INT32_MAX;
 	sector_t *bestsector = NULL;
 	ffloor_t *rover;
@@ -353,7 +353,7 @@ static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 }
 
 /*--------------------------------------------------
-	static boolean K_PlayerAttackSteer(mobj_t *thing, boolean friendly_fire, UINT8 side, UINT8 weight, boolean attackCond, boolean dodgeCond)
+	static dboolean K_PlayerAttackSteer(mobj_t *thing, dboolean friendly_fire, UINT8 side, UINT8 weight, dboolean attackCond, dboolean dodgeCond)
 
 		Checks two conditions to determine if the object should be
 		attacked or dodged.
@@ -369,7 +369,7 @@ static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 	Return:-
 		true if either condition is successful.
 --------------------------------------------------*/
-static boolean K_PlayerAttackSteer(mobj_t *thing, boolean friendly_fire, UINT8 side, UINT8 weight, boolean attackCond, boolean dodgeCond)
+static dboolean K_PlayerAttackSteer(mobj_t *thing, dboolean friendly_fire, UINT8 side, UINT8 weight, dboolean attackCond, dboolean dodgeCond)
 {
 	if (friendly_fire == true && attackCond == true && dodgeCond == false)
 	{
@@ -555,7 +555,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				&& !thing->player->hyudorotimer
 				&& !g_nudgeSearch.botmo->player->hyudorotimer)
 			{
-				const boolean same_team = G_SameTeam(g_nudgeSearch.botmo->player, thing->player);
+				const dboolean same_team = G_SameTeam(g_nudgeSearch.botmo->player, thing->player);
 
 				// There REALLY ought to be a better way to handle this logic, right?!
 				// Squishing

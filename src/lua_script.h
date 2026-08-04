@@ -52,14 +52,14 @@ extern INT32 lua_lumploading; // is LUA_LoadLump being called?
 
 int LUA_GetErrorMessage(lua_State *L);
 int LUA_Call(lua_State *L, int nargs, int nresults, int errorhandlerindex);
-void LUA_LoadLump(UINT16 wad, UINT16 lump, boolean noresults);
+void LUA_LoadLump(UINT16 wad, UINT16 lump, dboolean noresults);
 #ifdef LUA_ALLOW_BYTECODE
 void LUA_DumpFile(const char *filename);
 #endif
 fixed_t LUA_EvalMath(const char *word);
 void LUA_Step(void);
-void LUA_Archive(savebuffer_t *save, boolean network);
-void LUA_UnArchive(savebuffer_t *save, boolean network);
+void LUA_Archive(savebuffer_t *save, dboolean network);
+void LUA_UnArchive(savebuffer_t *save, dboolean network);
 
 int LUA_PushGlobals(lua_State *L, const char *word);
 int LUA_WriteGlobals(lua_State *L, const char *word);

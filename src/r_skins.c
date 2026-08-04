@@ -188,13 +188,13 @@ void R_InitSkins(void)
 	M_UpdateConditionSetsPending();
 }
 
-UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter)
+UINT8 *R_GetSkinAvailabilities(dboolean demolock, INT32 botforcecharacter)
 {
 	UINT16 i;
 	UINT8 shif, byte;
 	INT32 skinid;
 	static UINT8 responsebuffer[MAXAVAILABILITY];
-	const boolean forbots = (botforcecharacter != -1);
+	const dboolean forbots = (botforcecharacter != -1);
 
 	memset(&responsebuffer, 0, sizeof(responsebuffer));
 
@@ -225,10 +225,10 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock, INT32 botforcecharacter)
 
 // returns true if available in circumstances, otherwise nope
 // warning don't use with an invalid skinnum other than -1 which always returns true
-boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
+dboolean R_SkinUsable(INT32 playernum, INT32 skinnum, dboolean demoskins)
 {
-	boolean needsunlocked = false;
-	boolean useplayerstruct = ((Playing() || demo.playback) && playernum >= 0);
+	dboolean needsunlocked = false;
+	dboolean useplayerstruct = ((Playing() || demo.playback) && playernum >= 0);
 	UINT16 i;
 	INT32 skinid;
 
@@ -301,10 +301,10 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 		return M_CheckNetUnlockByID(i);
 
 	// Use the unlockables table directly
-	return (boolean)(gamedata->unlocked[i]);
+	return (dboolean)(gamedata->unlocked[i]);
 }
 
-boolean R_CanShowSkinInDemo(INT32 skinnum)
+dboolean R_CanShowSkinInDemo(INT32 skinnum)
 {
 	if (modeattacking == ATTACKING_NONE && !(demo.playback && demo.attract))
 		return true;
@@ -337,7 +337,7 @@ INT32 R_SkinAvailable(const char *name)
 	return R_SkinAvailableEx(name, true);
 }
 
-INT32 R_SkinAvailableEx(const char *name, boolean demoskins)
+INT32 R_SkinAvailableEx(const char *name, dboolean demoskins)
 {
 	INT32 i;
 	UINT32 hash = quickncasehash(name, SKINNAMESIZE);
@@ -515,7 +515,7 @@ void SetFakePlayerSkin(player_t* player, INT32 skinid)
 }
 
 // Loudly rerandomize
-void SetRandomFakePlayerSkin(player_t* player, boolean fast, boolean instant)
+void SetRandomFakePlayerSkin(player_t* player, dboolean fast, dboolean instant)
 {
 	INT32 i;
 	UINT16 usableskins = 0, maxskinpick;
@@ -628,11 +628,11 @@ void ClearFakePlayerSkin(player_t* player)
 }
 
 // Finds a skin with the closest stats if the expected skin doesn't exist.
-INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock)
+INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, dboolean unlock)
 {
 	INT32 i, closest_skin = 0;
 	UINT8 closest_stats, stat_diff;
-	boolean doflagcheck = true;
+	dboolean doflagcheck = true;
 	UINT32 flagcheck = flags;
 
 flaglessretry:
@@ -768,7 +768,7 @@ static void R_LoadSkinSprites(UINT16 wadnum, UINT16 *lump, UINT16 *lastlump, ski
 }
 
 // returns whether found appropriate property
-static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
+static dboolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 {
 	if (!stricmp(stoken, "rivals"))
 	{
@@ -878,7 +878,7 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 
 	else // let's check if it's a sound, otherwise error out
 	{
-		boolean found = false;
+		dboolean found = false;
 		sfxenum_t i;
 		size_t stokenadjust;
 
@@ -917,7 +917,7 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 //
 // Find skin sprites, sounds & optional status bar face, & add them
 //
-void R_AddSkins(UINT16 wadnum, boolean mainfile)
+void R_AddSkins(UINT16 wadnum, dboolean mainfile)
 {
 	UINT16 lump, lastlump = 0;
 	char *buf;
@@ -926,7 +926,7 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 	char *value;
 	size_t size;
 	skin_t *skin;
-	boolean realname;
+	dboolean realname;
 
 	//
 	// search for all skin markers in pwad
@@ -1110,7 +1110,7 @@ next_token:
 //
 // Patch skin sprites
 //
-void R_PatchSkins(UINT16 wadnum, boolean mainfile)
+void R_PatchSkins(UINT16 wadnum, dboolean mainfile)
 {
 	UINT16 lump, lastlump = 0;
 	char *buf;
@@ -1119,7 +1119,7 @@ void R_PatchSkins(UINT16 wadnum, boolean mainfile)
 	char *value;
 	size_t size;
 	skin_t *skin;
-	boolean noskincomplain, realname;
+	dboolean noskincomplain, realname;
 
 	//
 	// search for all skin patch markers in pwad

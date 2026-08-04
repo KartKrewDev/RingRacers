@@ -187,7 +187,7 @@ spawn_monitor_parts
 	}
 }
 
-static inline boolean
+static inline dboolean
 can_shard_state_roll (statenum_t state)
 {
 	switch (state)
@@ -375,7 +375,7 @@ get_age (const mobj_t *monitor)
 	return (leveltime - monitor_spawntic(monitor));
 }
 
-static inline boolean
+static inline dboolean
 is_flickering (const mobj_t *part)
 {
 	const mobj_t *monitor = part_monitor(part);
@@ -444,7 +444,7 @@ get_damage_multiplier (const mobj_t *monitor)
 	return FixedDiv(monitor_damage(monitor), HEALTHFACTOR);
 }
 
-static inline boolean
+static inline dboolean
 has_state
 (		const mobj_t * mobj,
 		statenum_t state)

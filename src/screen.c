@@ -190,7 +190,7 @@ void SCR_SetDrawFuncs(void)
 	R_SetSpanFunc(BASEDRAWFUNC, false, false);
 }
 
-void R_SetColumnFunc(size_t id, boolean brightmapped)
+void R_SetColumnFunc(size_t id, dboolean brightmapped)
 {
 	I_Assert(id < COLDRAWFUNC_MAX);
 
@@ -210,7 +210,7 @@ void R_SetColumnFunc(size_t id, boolean brightmapped)
 	}
 }
 
-void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
+void R_SetSpanFunc(size_t id, dboolean npo2, dboolean brightmapped)
 {
 	I_Assert(id < SPANDRAWFUNC_MAX);
 
@@ -243,7 +243,7 @@ void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
 	}
 }
 
-boolean R_SetSpanFuncFlat(size_t id)
+dboolean R_SetSpanFuncFlat(size_t id)
 {
 	I_Assert(id < SPANDRAWFUNC_MAX);
 
@@ -257,7 +257,7 @@ boolean R_SetSpanFuncFlat(size_t id)
 	return true;
 }
 
-boolean R_CheckColumnFunc(size_t id)
+dboolean R_CheckColumnFunc(size_t id)
 {
 	size_t i;
 
@@ -469,7 +469,7 @@ void SCR_ChangeRenderer(void)
 	setrenderneeded = cv_renderer.value;
 }
 
-boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
+dboolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 {
 	return
 	 (  width % BASEVIDWIDTH == 0
@@ -490,7 +490,7 @@ static double total_frame_time = 0.0;
 static int frame_index;
 #endif
 
-static boolean fps_init = false;
+static dboolean fps_init = false;
 static precise_t fps_enter = 0;
 
 void SCR_CalculateFPS(void)
@@ -588,7 +588,7 @@ void SCR_DisplayLocalPing(void)
 void SCR_ClosedCaptions(void)
 {
 	UINT8 i;
-	boolean gamestopped = (paused || P_AutoPause());
+	dboolean gamestopped = (paused || P_AutoPause());
 	INT32 basey = BASEVIDHEIGHT;
 
 	if (gamestate != wipegamestate)
@@ -606,7 +606,7 @@ void SCR_ClosedCaptions(void)
 	{
 		INT32 flags, y;
 		char dot;
-		boolean music;
+		dboolean music;
 
 		if (!closedcaptions[i].s)
 			continue;

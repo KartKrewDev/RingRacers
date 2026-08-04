@@ -22,20 +22,20 @@ extern "C" {
 #endif
 
 extern tic_t leveltime;
-extern boolean thinkersCompleted;
+extern dboolean thinkersCompleted;
 
-boolean P_LevelIsFrozen(void);
-boolean P_FreezeCheat(void);
-void P_SetFreezeCheat(boolean value);
-void P_SetFreezeLevel(boolean value);
-boolean P_MobjIsFrozen(mobj_t *mobj);
+dboolean P_LevelIsFrozen(void);
+dboolean P_FreezeCheat(void);
+void P_SetFreezeCheat(dboolean value);
+void P_SetFreezeLevel(dboolean value);
+dboolean P_MobjIsFrozen(mobj_t *mobj);
 
 // Called by G_Ticker. Carries out all thinking of enemies and players.
 void Command_Numthinkers_f(void);
 void Command_CountMobjs_f(void);
 
 void P_RunChaseCameras(void);
-void P_Ticker(boolean run);
+void P_Ticker(dboolean run);
 void P_PreTicker(INT32 frames);
 void P_DoTeamscrambling(void);
 void P_RemoveThinkerDelayed(thinker_t *thinker); //killed

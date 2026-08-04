@@ -48,7 +48,7 @@ void D_SanitizeKeepColors(char *out, const char *in, size_t out_size); // Saniti
 void D_ParseCarets(char *out, const char *in, size_t out_size); // ParseMode::kConsume
 
 // returns string width in pixels
-INT32 M_DrawCaretString(INT32 x, INT32 y, const char *string, boolean preserve);
+INT32 M_DrawCaretString(INT32 x, INT32 y, const char *string, dboolean preserve);
 
 #ifdef __cplusplus
 } // extern "C"

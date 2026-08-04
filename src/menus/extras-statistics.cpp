@@ -21,7 +21,7 @@
 
 struct statisticsmenu_s statisticsmenu;
 
-static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headerexists, boolean tutorial)
+static dboolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, dboolean *headerexists, dboolean tutorial)
 {
 	if (!mapheaderinfo[map])
 		return false;
@@ -81,7 +81,7 @@ static void M_StatisticsMaps(void)
 {
 	cupheader_t *cup;
 	UINT16 i;
-	boolean headerexists;
+	dboolean headerexists;
 
 	statisticsmenu.maplist = static_cast<UINT16*>(Z_Malloc(sizeof(UINT16) * (nummapheaders+1 + numkartcupheaders), PU_STATIC, NULL));
 	statisticsmenu.nummaps = 0;
@@ -325,7 +325,7 @@ void M_Statistics(INT32 choice)
 	M_SetupNextMenu(&MISC_StatisticsDef, false);
 }
 
-boolean M_StatisticsInputs(INT32 ch)
+dboolean M_StatisticsInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
 

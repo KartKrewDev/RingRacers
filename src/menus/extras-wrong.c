@@ -40,8 +40,8 @@ void M_WrongWarp(INT32 choice)
 
 static void M_WrongWarpTick(void)
 {
-	static boolean firsteggman = true;
-	static boolean antitailgate = false;
+	static dboolean firsteggman = true;
+	static dboolean antitailgate = false;
 
 	UINT8 i, j;
 
@@ -138,7 +138,7 @@ static void M_WrongWarpTick(void)
 	antitailgate = !!(i & 1);
 }
 
-static boolean M_WrongWarpInputs(INT32 ch)
+static dboolean M_WrongWarpInputs(INT32 ch)
 {
 	(void)ch;
 

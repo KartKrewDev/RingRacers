@@ -264,7 +264,7 @@ void init_routine(void)
 	}
 }
 
-boolean input_routine(INT32)
+dboolean input_routine(INT32)
 {
 	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
 

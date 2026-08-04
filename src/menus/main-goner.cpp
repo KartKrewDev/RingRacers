@@ -34,7 +34,7 @@
 static void M_GonerDrawer(void);
 static void M_GonerChoiceDrawer(void);
 static void M_GonerConclude(INT32 choice);
-static boolean M_GonerInputs(INT32 ch);
+static dboolean M_GonerInputs(INT32 ch);
 
 static menuitem_t MAIN_GonerAccessibility[] =
 {
@@ -920,7 +920,7 @@ void M_GonerResetLooking(int type)
 	goner_youactuallylooked = 0;
 }
 
-boolean M_GonerMusicPlayable(void)
+dboolean M_GonerMusicPlayable(void)
 {
 	if (!MAIN_Goner[0].mvar2)
 		return false;
@@ -1239,7 +1239,7 @@ static void M_GonerDrawer(void)
 
 	float newy = currentMenu->y - 12;
 
-	boolean first = true;
+	dboolean first = true;
 	int lastspeaker = MAXGONERSPEAKERS;
 	int workscroll = goner_scroll;
 
@@ -1644,7 +1644,7 @@ static void M_GonerConclude(INT32 choice)
 	M_GonerResetText(true);
 }
 
-void M_GonerGDQ(boolean opinion)
+void M_GonerGDQ(dboolean opinion)
 {
 	if (currentMenu != &MAIN_GonerDef || goner_gdq == true)
 		return;
@@ -1685,7 +1685,7 @@ void M_GonerGDQ(boolean opinion)
 	}
 }
 
-static boolean M_GonerInputs(INT32 ch)
+static dboolean M_GonerInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
 	static int holdtime = 0;
@@ -1727,7 +1727,7 @@ static boolean M_GonerInputs(INT32 ch)
 	return false;
 }
 
-void M_GonerResetText(boolean completely)
+void M_GonerResetText(dboolean completely)
 {
 	goner_typewriter.ClearText();
 	LinesToDigest.clear();

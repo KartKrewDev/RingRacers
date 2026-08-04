@@ -85,10 +85,10 @@ typedef struct gl_vissprite_s
 	UINT32 renderflags;
 	UINT8 rotateflags;
 
-	boolean flip, vflip;
-	boolean precip; // Tails 08-25-2002
-	boolean bbox;
-	boolean rotated;
+	dboolean flip, vflip;
+	dboolean precip; // Tails 08-25-2002
+	dboolean bbox;
+	dboolean rotated;
 	UINT8 translucency;       //alpha level 0-255
 
 	angle_t angle; // for splats
@@ -101,7 +101,7 @@ typedef struct gl_vissprite_s
 	mobj_t *mobj; // NOTE: This is a precipmobj_t if precip is true !!! Watch out.
 } gl_vissprite_t;
 
-void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32 *lightlevel, boolean model);
+void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32 *lightlevel, dboolean model);
 
 // --------
 // hw_bsp.c
@@ -130,8 +130,8 @@ void HWR_GetFadeMask(lumpnum_t fademasklumpnum);
 patch_t *HWR_GetPic(lumpnum_t lumpnum);
 
 GLMapTexture_t *HWR_GetTexture(INT32 tex, INT32 basetex);
-void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap);
-void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap);
+void HWR_GetLevelFlat(levelflat_t *levelflat, dboolean noencoremap);
+void HWR_GetRawFlat(lumpnum_t flatlumpnum, dboolean noencoremap);
 
 void HWR_FreeTexture(patch_t *patch);
 void HWR_FreeTextureData(patch_t *patch);

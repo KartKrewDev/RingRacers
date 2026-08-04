@@ -109,8 +109,8 @@ INT32 R_GetRollAngle(angle_t rollangle)
 
 vector2_t* R_RotateSpriteOffsetsByPitchRoll(
 	mobj_t* mobj,
-	boolean vflip,
-	boolean hflip,
+	dboolean vflip,
+	dboolean hflip,
 	vector2_t* out)
 {
 	fixed_t rotcos, rotsin, finx, finy;
@@ -197,7 +197,7 @@ vector2_t* R_RotateSpriteOffsetsByPitchRoll(
 
 #undef VISROTMUL
 
-patch_t *Patch_GetRotated(patch_t *patch, INT32 angle, boolean flip)
+patch_t *Patch_GetRotated(patch_t *patch, INT32 angle, dboolean flip)
 {
 	rotsprite_t *rotsprite = patch->rotated;
 	if (rotsprite == NULL || angle < 1 || angle >= ROTANGLES)
@@ -212,7 +212,7 @@ patch_t *Patch_GetRotated(patch_t *patch, INT32 angle, boolean flip)
 patch_t *Patch_GetRotatedSprite(
 	spriteframe_t *sprite,
 	size_t frame, size_t spriteangle,
-	boolean flip, boolean adjustfeet,
+	dboolean flip, dboolean adjustfeet,
 	void *info, INT32 rotationangle)
 {
 	rotsprite_t *rotsprite;
@@ -271,7 +271,7 @@ patch_t *Patch_GetRotatedSprite(
 	return rotsprite->patches[idx];
 }
 
-void Patch_Rotate(patch_t *patch, INT32 angle, INT32 xpivot, INT32 ypivot, boolean flip)
+void Patch_Rotate(patch_t *patch, INT32 angle, INT32 xpivot, INT32 ypivot, dboolean flip)
 {
 	if (patch->rotated == NULL)
 		patch->rotated = RotatedPatch_Create(ROTANGLES);
@@ -308,7 +308,7 @@ static void RotatedPatch_CalculateDimensions(
 	*newheight = max(height, max(h1, h2));
 }
 
-void RotatedPatch_DoRotation(rotsprite_t *rotsprite, patch_t *patch, INT32 angle, INT32 xpivot, INT32 ypivot, boolean flip)
+void RotatedPatch_DoRotation(rotsprite_t *rotsprite, patch_t *patch, INT32 angle, INT32 xpivot, INT32 ypivot, dboolean flip)
 {
 	patch_t *rotated;
 	UINT16 *rawdst, *rawconv;

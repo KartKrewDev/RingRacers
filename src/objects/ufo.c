@@ -146,12 +146,12 @@ static fixed_t GenericDistance(
 	return P_AproxDistance(P_AproxDistance(destx - curx, desty - cury), destz - curz);
 }
 
-static boolean UFOEmeraldChase(mobj_t *ufo)
+static dboolean UFOEmeraldChase(mobj_t *ufo)
 {
 	return (ufo->health <= 1);
 }
 
-static boolean UFOPieceValid(mobj_t *piece)
+static dboolean UFOPieceValid(mobj_t *piece)
 {
 	return (piece != NULL && P_MobjWasRemoved(piece) == false && piece->health > 0);
 }
@@ -163,9 +163,9 @@ static void UFOUpdateDistanceToFinish(mobj_t *ufo)
 
 	if (nextWaypoint != NULL && finishLine != NULL)
 	{
-		const boolean useshortcuts = false;
-		const boolean huntbackwards = false;
-		boolean pathfindsuccess = false;
+		const dboolean useshortcuts = false;
+		const dboolean huntbackwards = false;
+		dboolean pathfindsuccess = false;
 		path_t pathtofinish = {0};
 
 		pathfindsuccess =
@@ -356,8 +356,8 @@ waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo)
 static void UFOMoveToDistance(mobj_t *ufo, UINT32 distancetofinish)
 {
 	waypoint_t *finishline = K_GetFinishLineWaypoint();
-	const boolean useshortcuts = false;
-	const boolean huntbackwards = true;
+	const dboolean useshortcuts = false;
+	const dboolean huntbackwards = true;
 	path_t pathtofinish = {0};
 
 	if (finishline == NULL)
@@ -365,7 +365,7 @@ static void UFOMoveToDistance(mobj_t *ufo, UINT32 distancetofinish)
 		return;
 	}
 
-	boolean pathfindsuccess = K_PathfindThruCircuit(
+	dboolean pathfindsuccess = K_PathfindThruCircuit(
 		finishline,
 		distancetofinish,
 		&pathtofinish,
@@ -422,13 +422,13 @@ static void UFOMove(mobj_t *ufo)
 	fixed_t newZ = ufo->z;
 	const fixed_t floatHeight = 24 * ufo->scale;
 
-	const boolean useshortcuts = false;
-	const boolean huntbackwards = false;
-	boolean pathfindsuccess = false;
+	const dboolean useshortcuts = false;
+	const dboolean huntbackwards = false;
+	dboolean pathfindsuccess = false;
 	path_t pathtofinish = {0};
 	size_t pathIndex = 0;
 
-	boolean reachedEnd = false;
+	dboolean reachedEnd = false;
 
 	curWaypoint = K_GetSpecialUFOWaypoint(ufo);
 	destWaypoint = K_GetFinishLineWaypoint();
@@ -549,7 +549,7 @@ static void UFOEmeraldVFX(mobj_t *emerald)
 	Obj_SpawnEmeraldSparks(emerald);
 }
 
-static boolean UFOHumPlaying(mobj_t *ufo) {
+static dboolean UFOHumPlaying(mobj_t *ufo) {
 	INT32 i;
 	for (i = 0; i <= maxhum; i++)
 	{
@@ -626,7 +626,7 @@ void Obj_SpecialUFOThinker(mobj_t *ufo)
 
 #define shard_can_roll(o) ((o)->extravalue1)
 
-static inline boolean
+static inline dboolean
 can_shard_state_roll (statenum_t state)
 {
 	switch (state)
@@ -958,7 +958,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 	}
 }
 
-boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType)
+dboolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType)
 {
 	const fixed_t addSpeed = FixedMul(UFO_DAMAGED_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 	UINT8 damage = 1;
@@ -1110,7 +1110,7 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 	}
 }
 
-boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
+dboolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
 {
 	mobj_t *emerald = ufo_emerald(ufo);
 

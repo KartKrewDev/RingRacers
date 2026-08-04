@@ -122,9 +122,9 @@ FUNCMATH angle_t FixedAcos(fixed_t x);
 /// Fixed Point Vector functions
 angle_t FV2_AngleBetweenVectors(const vector2_t *Vector1, const vector2_t *Vector2);
 angle_t FV3_AngleBetweenVectors(const vector3_t *Vector1, const vector3_t *Vector2);
-boolean FV2_InsidePolygon(const vector2_t *vIntersection, const vector2_t *Poly, const INT32 vertexCount);
-boolean FV3_InsidePolygon(const vector3_t *vIntersection, const vector3_t *Poly, const INT32 vertexCount);
-boolean FV3_IntersectedPolygon(const vector3_t *vPoly, const vector3_t *vLine, const INT32 vertexCount, vector3_t *collisionPoint);
+dboolean FV2_InsidePolygon(const vector2_t *vIntersection, const vector2_t *Poly, const INT32 vertexCount);
+dboolean FV3_InsidePolygon(const vector3_t *vIntersection, const vector3_t *Poly, const INT32 vertexCount);
+dboolean FV3_IntersectedPolygon(const vector3_t *vPoly, const vector3_t *vLine, const INT32 vertexCount, vector3_t *collisionPoint);
 void FV3_Rotate(vector3_t *rotVec, const vector3_t *axisVec, const angle_t angle);
 /// Fixed Point Matrix functions
 void FM_Rotate(matrix_t *dest, angle_t angle, fixed_t x, fixed_t y, fixed_t z);

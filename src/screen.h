@@ -116,12 +116,12 @@ void SCR_SetMode(void);
 void SCR_SetDrawFuncs(void);
 
 // Set current column / span drawers
-void R_SetColumnFunc(size_t id, boolean brightmapped);
-void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped);
-boolean R_SetSpanFuncFlat(size_t id); // flat color
+void R_SetColumnFunc(size_t id, dboolean brightmapped);
+void R_SetSpanFunc(size_t id, dboolean npo2, dboolean brightmapped);
+dboolean R_SetSpanFuncFlat(size_t id); // flat color
 
 // Compare current column drawer
-boolean R_CheckColumnFunc(size_t id);
+dboolean R_CheckColumnFunc(size_t id);
 
 // Recalc screen size dependent stuff
 void SCR_Recalc(void);
@@ -134,7 +134,7 @@ void SCR_SetDefaultMode(void);
 
 void SCR_CalculateFPS(void);
 
-FUNCMATH boolean SCR_IsAspectCorrect(INT32 width, INT32 height);
+FUNCMATH dboolean SCR_IsAspectCorrect(INT32 width, INT32 height);
 
 // move out to main code for consistency
 void SCR_DisplayTicRate(void);

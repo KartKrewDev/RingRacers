@@ -39,16 +39,16 @@ struct midVoteGUI_t
 {
 	tic_t slide;				// Slide in when Z is first pressed.
 	tic_t confirm;				// How long this player has held Z.
-	boolean unpress;			// Z button needs unpressed to continue accepting input.
+	dboolean unpress;			// Z button needs unpressed to continue accepting input.
 };
 
 struct midVote_t
 {
-	boolean active;				// If true, a vote is currently running.
+	dboolean active;				// If true, a vote is currently running.
 
 	player_t *caller;			// The player that called for this vote.
 	player_t *victim;			// If non-NULL, then this vote targets a player (kicks), don't let them vote on it.
-	boolean votes[MAXPLAYERS];	// Votes recieved from each player.
+	dboolean votes[MAXPLAYERS];	// Votes recieved from each player.
 
 	midVoteType_e type;			// Type of vote that was called, see midVoteType_e.
 	INT32 variable;				// Extra variable, unique purpose for each vote type.
@@ -66,7 +66,7 @@ struct midVote_t
 extern midVote_t g_midVote;
 
 /*--------------------------------------------------
-	boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
+	dboolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
 
 		Specifies whenever or not a vote type is intended
 		to specify a "victim", or a player that would be
@@ -79,7 +79,7 @@ extern midVote_t g_midVote;
 		true if it uses a victim, otherwise false.
 --------------------------------------------------*/
 
-boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType);
+dboolean K_MidVoteTypeUsesVictim(midVoteType_e voteType);
 
 
 /*--------------------------------------------------
@@ -118,7 +118,7 @@ void K_ResetMidVote(void);
 
 
 /*--------------------------------------------------
-	boolean K_AnyMidVotesAllowed(void);
+	dboolean K_AnyMidVotesAllowed(void);
 
 		Determines if the server has enabled any types
 		of Z-votes. If this is false, then any menu options
@@ -131,11 +131,11 @@ void K_ResetMidVote(void);
 		true if any vote types are enabled, otherwise false.
 --------------------------------------------------*/
 
-boolean K_AnyMidVotesAllowed(void);
+dboolean K_AnyMidVotesAllowed(void);
 
 
 /*--------------------------------------------------
-	midVoteType_e K_GetNextCallableMidVote(midVoteType_e seed, boolean backwards)
+	midVoteType_e K_GetNextCallableMidVote(midVoteType_e seed, dboolean backwards)
 
 		Gets the next enabled Z-vote type in the list.
 
@@ -147,11 +147,11 @@ boolean K_AnyMidVotesAllowed(void);
 		next Z-vote id if any vote types are enabled, otherwise MVT__MAX.
 --------------------------------------------------*/
 
-midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, boolean backwards);
+midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, dboolean backwards);
 
 
 /*--------------------------------------------------
-	boolean K_PlayerIDAllowedInMidVote(const UINT8 id);
+	dboolean K_PlayerIDAllowedInMidVote(const UINT8 id);
 
 		Determines if this player ID is allowed to
 		vote or not.
@@ -163,7 +163,7 @@ midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, boolean backwards);
 		true if the player index can vote, otherwise false.
 --------------------------------------------------*/
 
-boolean K_PlayerIDAllowedInMidVote(const UINT8 id);
+dboolean K_PlayerIDAllowedInMidVote(const UINT8 id);
 
 
 /*--------------------------------------------------
@@ -186,7 +186,7 @@ UINT8 K_RequiredMidVotes(void);
 
 
 /*--------------------------------------------------
-	boolean K_PlayerIDMidVoted(const UINT8 id);
+	dboolean K_PlayerIDMidVoted(const UINT8 id);
 
 		Determines if this player ID has voted for
 		the current issue or not. Is mostly safety
@@ -202,7 +202,7 @@ UINT8 K_RequiredMidVotes(void);
 		true if the player index voted yes, otherwise false.
 --------------------------------------------------*/
 
-boolean K_PlayerIDMidVoted(const UINT8 id);
+dboolean K_PlayerIDMidVoted(const UINT8 id);
 
 
 /*--------------------------------------------------
@@ -222,7 +222,7 @@ UINT8 K_CountMidVotes(void);
 
 
 /*--------------------------------------------------
-	boolean K_MinimalCheckNewMidVote(midVoteType_e type)
+	dboolean K_MinimalCheckNewMidVote(midVoteType_e type)
 
 		Returns if the variables given are a valid state for
 		pause menu Z-vote flow.
@@ -231,10 +231,10 @@ UINT8 K_CountMidVotes(void);
 		type - The type of vote they're trying to call.
 --------------------------------------------------*/
 
-boolean K_MinimalCheckNewMidVote(midVoteType_e type);
+dboolean K_MinimalCheckNewMidVote(midVoteType_e type);
 
 /*--------------------------------------------------
-	boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim);
+	dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim);
 
 		Returns if the variables given are a valid state for
 		K_InitNewMidVote. Creates console alerts if it's not.
@@ -250,7 +250,7 @@ boolean K_MinimalCheckNewMidVote(midVoteType_e type);
 		true if we can start a new vote, otherwise false.
 --------------------------------------------------*/
 
-boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim);
+dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim);
 
 
 /*--------------------------------------------------

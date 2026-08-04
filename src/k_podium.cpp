@@ -70,7 +70,7 @@ typedef enum
 
 static struct podiumData_s
 {
-	boolean ranking;
+	dboolean ranking;
 	gpRank_t rank;
 	gp_rank_e grade;
 
@@ -84,7 +84,7 @@ static struct podiumData_s
 	cupheader_t *cup;
 	UINT8 emeraldnum;
 
-	boolean fastForward;
+	dboolean fastForward;
 
 	char header[64];
 	char difficulty[64];
@@ -500,7 +500,7 @@ void podiumData_s::Draw(void)
 			break;
 	}
 
-	const boolean singlePlayer = (rank.numPlayers == 1);
+	const dboolean singlePlayer = (rank.numPlayers == 1);
 	player_t *bestHuman = &players[consoleplayer];
 
 	if (singlePlayer == false)
@@ -671,7 +671,7 @@ void podiumData_s::Draw(void)
 								srb2::Draw drawer_emerald = drawer_gametype;
 								UINT8 emeraldNum = g_podiumData.emeraldnum;
 
-								boolean useWhiteFrame = ((leveltime & 1) || !dta->gotSpecialPrize);
+								dboolean useWhiteFrame = ((leveltime & 1) || !dta->gotSpecialPrize);
 								patch_t *emeraldPatch = nullptr;
 								skincolornum_t emeraldColor = SKINCOLOR_NONE;
 
@@ -948,7 +948,7 @@ void podiumData_s::Draw(void)
 		{
 			UINT8 emeraldNum = g_podiumData.emeraldnum;
 
-			const boolean emeraldBlink = (leveltime & 1);
+			const dboolean emeraldBlink = (leveltime & 1);
 			patch_t *emeraldOverlay = nullptr;
 			patch_t *emeraldUnderlay = nullptr;
 			skincolornum_t emeraldColor = SKINCOLOR_NONE;
@@ -1049,27 +1049,27 @@ void podiumData_s::Draw(void)
 }
 
 /*--------------------------------------------------
-	boolean K_PodiumSequence(void)
+	dboolean K_PodiumSequence(void)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PodiumSequence(void)
+dboolean K_PodiumSequence(void)
 {
 	return (gamestate == GS_CEREMONY);
 }
 
 /*--------------------------------------------------
-	boolean K_PodiumRanking(void)
+	dboolean K_PodiumRanking(void)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PodiumRanking(void)
+dboolean K_PodiumRanking(void)
 {
 	return (gamestate == GS_CEREMONY && g_podiumData.ranking == true);
 }
 
 /*--------------------------------------------------
-	boolean K_PodiumGrade(void)
+	dboolean K_PodiumGrade(void)
 
 		See header file for description.
 --------------------------------------------------*/
@@ -1084,11 +1084,11 @@ gp_rank_e K_PodiumGrade(void)
 }
 
 /*--------------------------------------------------
-	boolean K_PodiumHasEmerald(void)
+	dboolean K_PodiumHasEmerald(void)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PodiumHasEmerald(void)
+dboolean K_PodiumHasEmerald(void)
 {
 	if (K_PodiumSequence() == false)
 	{
@@ -1237,11 +1237,11 @@ void K_UpdatePodiumWaypoints(player_t *const player)
 }
 
 /*--------------------------------------------------
-	boolean K_StartCeremony(void)
+	dboolean K_StartCeremony(void)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_StartCeremony(void)
+dboolean K_StartCeremony(void)
 {
 	if (grandprixinfo.gp == false)
 	{
@@ -1431,7 +1431,7 @@ void K_ResetCeremony(void)
 	// who's just won on Normal from feeling obligated to complete Easy too.
 	for (; i >= 0; i--)
 	{
-		boolean anymerit = false;
+		dboolean anymerit = false;
 
 		if ((grandprixinfo.cup->windata[i].best_placement == 0) // First run
 			|| (g_podiumData.rank.position <= grandprixinfo.cup->windata[i].best_placement)) // Later, better run
@@ -1474,11 +1474,11 @@ void K_ResetCeremony(void)
 }
 
 /*--------------------------------------------------
-	void K_CeremonyTicker(boolean run)
+	void K_CeremonyTicker(dboolean run)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_CeremonyTicker(boolean run)
+void K_CeremonyTicker(dboolean run)
 {
 	// don't trigger if doing anything besides idling
 	if (gameaction != ga_nothing || gamestate != GS_CEREMONY)

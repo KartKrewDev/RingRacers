@@ -39,7 +39,7 @@ static FTextureInfo* gr_cachehead = NULL;
 static INT32 NextTexAvail = FIRST_TEX_AVAIL;
 static UINT32 tex_downloaded = 0;
 static INT32 texids[MAX_SRB2_TEXTURES];
-static boolean scalehack = false;
+static dboolean scalehack = false;
 
 
 static void GenerateTextureNames(void)
@@ -82,7 +82,7 @@ static void SetAlpha(UINT8 alpha)
 
 
 
-boolean NDS3D_Init(I_Error_t ErrorFunction)
+dboolean NDS3D_Init(I_Error_t ErrorFunction)
 {
 	I_Error_GL = ErrorFunction;
 	glPolyFmt(CurrentGLPolyFmt | POLY_ALPHA(CurrentPolyAlpha));

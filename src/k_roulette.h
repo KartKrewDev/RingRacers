@@ -27,7 +27,7 @@ extern "C" {
 #define SLOT_SPACING_SPLITSCREEN (22 << FRACBITS)
 
 /*--------------------------------------------------
-	boolean K_ItemEnabled(kartitems_t item);
+	dboolean K_ItemEnabled(kartitems_t item);
 
 		Determines whenever or not an item should
 		be enabled. Accounts for situations where
@@ -40,11 +40,11 @@ extern "C" {
 		true if the item is enabled, otherwise false.
 --------------------------------------------------*/
 
-boolean K_ItemEnabled(kartitems_t item);
+dboolean K_ItemEnabled(kartitems_t item);
 
 
 /*--------------------------------------------------
-	boolean K_ItemSingularity(kartitems_t item);
+	dboolean K_ItemSingularity(kartitems_t item);
 
 		Determines whenever or not this item should
 		be using special cases to prevent more than
@@ -57,7 +57,7 @@ boolean K_ItemEnabled(kartitems_t item);
 		true to use the special rules, otherwise false.
 --------------------------------------------------*/
 
-boolean K_ItemSingularity(kartitems_t item);
+dboolean K_ItemSingularity(kartitems_t item);
 
 
 /*--------------------------------------------------
@@ -209,7 +209,7 @@ void K_CalculateRouletteSpeed(itemroulette_t *const roulette);
 INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 
 /*--------------------------------------------------
-	void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
+	void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, dboolean ringbox);
 
 		Entry point for roulette builder.
 		Includes Lua hooks.
@@ -224,11 +224,11 @@ INT32 K_KartGetBattleOdds(const player_t *player, UINT8 pos, kartitems_t item);
 		N/A
 --------------------------------------------------*/
 
-void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
+void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, dboolean ringbox);
 
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
+	void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, dboolean ringbox, dboolean dryrun);
 
 		Fills out the item roulette struct when it is
 		initially created. This function needs to be
@@ -246,11 +246,11 @@ void K_FillItemRoulette(player_t *player, itemroulette_t *const roulette, boolea
 		N/A
 --------------------------------------------------*/
 
-void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, boolean ringbox, boolean dryrun);
+void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, dboolean ringbox, dboolean dryrun);
 
 
 /*--------------------------------------------------
-	void K_StartItemRoulette(player_t *const player, boolean ringbox);
+	void K_StartItemRoulette(player_t *const player, dboolean ringbox);
 
 		Starts the item roulette sequence for a player.
 		This stage can only be used by gameplay, thus
@@ -264,7 +264,7 @@ void K_FillItemRouletteData(player_t *player, itemroulette_t *const roulette, bo
 		N/A
 --------------------------------------------------*/
 
-void K_StartItemRoulette(player_t *const player, boolean ringbox);
+void K_StartItemRoulette(player_t *const player, dboolean ringbox);
 
 
 /*--------------------------------------------------
@@ -373,7 +373,7 @@ void K_KartGetItemResult(player_t *const player, kartitems_t getitem);
 UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers);
 
 /*--------------------------------------------------
-	boolean K_DenyShieldOdds(kartitems_t item)
+	dboolean K_DenyShieldOdds(kartitems_t item)
 
 		Checks if this type of shield already exists in
 		another player's inventory.
@@ -386,10 +386,10 @@ UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers);
 		at this time.
 --------------------------------------------------*/
 
-boolean K_DenyShieldOdds(kartitems_t item);
+dboolean K_DenyShieldOdds(kartitems_t item);
 
 /*--------------------------------------------------
-	boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
+	dboolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
 
 		Determines special conditions where we want
 		to forcefully give the player an SPB.
@@ -403,7 +403,7 @@ boolean K_DenyShieldOdds(kartitems_t item);
 		otherwise false.
 --------------------------------------------------*/
 
-boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette);
+dboolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette);
 
 #ifdef __cplusplus
 } // extern "C"

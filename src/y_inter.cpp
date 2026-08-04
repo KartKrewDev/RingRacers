@@ -94,7 +94,7 @@ intertype_t intertype = int_none;
 
 static huddrawlist_h luahuddrawlist_intermission;
 
-static boolean Y_CanSkipIntermission(void)
+static dboolean Y_CanSkipIntermission(void)
 {
 	if (!netgame)
 	{
@@ -104,7 +104,7 @@ static boolean Y_CanSkipIntermission(void)
 	return false;
 }
 
-boolean Y_IntermissionPlayerLock(void)
+dboolean Y_IntermissionPlayerLock(void)
 {
 	return (gamestate == GS_INTERMISSION && data.rankingsmode == false);
 }
@@ -159,15 +159,15 @@ static void Y_CompareRank(INT32 i)
 static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 {
 	INT32 i, j;
-	boolean completed[MAXPLAYERS];
+	dboolean completed[MAXPLAYERS];
 	INT32 numplayersingame = 0;
-	boolean getmainplayer = false;
+	dboolean getmainplayer = false;
 	UINT32 topscore = 0, btopemeralds = 0;
 
 	// Initialize variables
 	if (rankingsmode > 1)
 		;
-	else if ((data.rankingsmode = (boolean)rankingsmode))
+	else if ((data.rankingsmode = (dboolean)rankingsmode))
 	{
 		snprintf(data.headerstring, sizeof data.headerstring, "Total Rankings");
 		data.gotthrough = false;
@@ -602,9 +602,9 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	INT32 x, y;
 	INT32 x2, returny, inwardshim = 0;
 
-	boolean verticalresults = (standings->numplayers < 4 && (standings->numplayers == 1 || standings->isduel == false));
-	boolean datarightofcolumn = false;
-	boolean drawping = (netgame && gamestate == GS_LEVEL);
+	dboolean verticalresults = (standings->numplayers < 4 && (standings->numplayers == 1 || standings->isduel == false));
+	dboolean datarightofcolumn = false;
+	dboolean drawping = (netgame && gamestate == GS_LEVEL);
 
 	INT32 hilicol = highlightflags;
 
@@ -664,13 +664,13 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 	returny = y;
 
-	boolean (*_isHighlightedPlayer)(const player_t *) =
+	dboolean (*_isHighlightedPlayer)(const player_t *) =
 		(demo.playback
 			? P_IsDisplayPlayer
 			: P_IsPartyPlayer
 		);
 
-	boolean doreverse = (
+	dboolean doreverse = (
 		standings->isduel && standings->numplayers == 2
 		&& standings->num[0] > standings->num[1]
 	);
@@ -1013,7 +1013,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 // Handles drawing the bottom-of-screen progression.
 // Currently requires intermission y_data for animation only.
 //
-void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations, boolean widescreen, boolean adminmode)
+void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, dboolean doanimations, dboolean widescreen, dboolean adminmode)
 {
 	if (roundqueue.size == 0)
 	{
@@ -1118,7 +1118,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 	oppositemap = R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(skincolors[pcolor].invcolor), GTC_CACHE);
 
 	UINT8 workingqueuesize = roundqueue.size;
-	boolean upwa = false;
+	dboolean upwa = false;
 
 	if (roundqueue.size > 1
 		&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
@@ -1355,7 +1355,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 				NULL
 			);
 
-			boolean lineisfull = false, recttoclear = false;
+			dboolean lineisfull = false, recttoclear = false;
 
 			if (roundqueue.position > i+1)
 			{
@@ -1481,7 +1481,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 
 				if (barend - 2 >= barstart)
 				{
-					boolean lineisfull = false, recttoclear = false;
+					dboolean lineisfull = false, recttoclear = false;
 
 					xiter = barstart;
 
@@ -1708,11 +1708,11 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 //
 // It's a button that slides at the given time
 //
-void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescreen)
+void Y_DrawIntermissionButton(INT32 startslide, INT32 through, dboolean widescreen)
 {
 	INT32 percentslide = 0;
 	const INT32 slidetime = (TICRATE/4);
-	boolean pressed = false;
+	dboolean pressed = false;
 
 	if (startslide >= 0)
 	{
@@ -1780,9 +1780,9 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through, boolean widescree
 // x and y designate the coordinates of the most bottom-right pixel to draw from (because it is the left extent and patch heights that vary),
 // or the bottom-center if center is true.
 //
-void Y_DrawRankMode(INT32 x, INT32 y, boolean center)
+void Y_DrawRankMode(INT32 x, INT32 y, dboolean center)
 {
-	boolean	useMobiums = (powertype != PWRLV_DISABLED);
+	dboolean	useMobiums = (powertype != PWRLV_DISABLED);
 	INT32	textWidth, middleLeftEdge, middleRightEdge, middleWidth;
 
 	char	text[8];
@@ -1855,7 +1855,7 @@ void Y_DrawRankMode(INT32 x, INT32 y, boolean center)
 	V_DrawThinString(middleLeftEdge - 1, y - 9, 0, text);
 }
 
-void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const char *headerstring, boolean showroundnum, boolean small)
+void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, dboolean gotthrough, const char *headerstring, dboolean showroundnum, dboolean small)
 {
 	const INT32 v_width = (small ? BASEVIDWIDTH/2 : BASEVIDWIDTH);
 	const fixed_t frac = (small ? FRACUNIT/2 : FRACUNIT);
@@ -2136,7 +2136,7 @@ void Y_Ticker(void)
 			return;
 		}
 
-		boolean preventintertic = (intertic == INTERBUTTONSLIDEIN);
+		dboolean preventintertic = (intertic == INTERBUTTONSLIDEIN);
 
 		if (!menuactive && M_MenuConfirmPressed(0))
 		{
@@ -2262,7 +2262,7 @@ void Y_Ticker(void)
 			if (data.rankingsmode && intertic > sorttic+16+(2*TICRATE))
 			{
 				INT32 q=0,r=0;
-				boolean kaching = true;
+				dboolean kaching = true;
 
 				for (q = 0; q < data.numplayers; q++)
 				{
@@ -2332,7 +2332,7 @@ void Y_Ticker(void)
 	}
 }
 
-boolean Y_ShouldDoIntermission(void)
+dboolean Y_ShouldDoIntermission(void)
 {
 	// no intermission for GP events
 	if ((grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
@@ -2449,7 +2449,7 @@ static UINT32 Y_EstimatePodiumScore(player_t *const player, UINT8 numPlaying)
 	return ourScore;
 }
 
-static boolean Y_GuaranteedGPFirstPlace(void)
+static dboolean Y_GuaranteedGPFirstPlace(void)
 {
 	player_t *bestInParty = nullptr;
 	UINT32 bestPartyScore = 0;
@@ -2560,7 +2560,7 @@ void Y_PlayIntermissionMusic(void)
 		Music_Play("intermission");
 }
 
-extern "C" boolean blockreset;
+extern "C" dboolean blockreset;
 
 //
 // Y_StartIntermission

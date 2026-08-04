@@ -782,7 +782,7 @@ static float HWR_DistP2D(FOutVector *p1, FOutVector *p2, FVector *p3, FVector *i
 }
 
 // check if sphere (radius r) centred in p3 touch the bounding box defined by p1, p2
-static boolean SphereTouchBBox3D(FOutVector *p1, FOutVector *p2, FVector *p3, float r)
+static dboolean SphereTouchBBox3D(FOutVector *p1, FOutVector *p2, FVector *p3, float r)
 {
 	float minx = p1->x,maxx = p2->x,miny = p2->y,maxy = p1->y,minz = p2->z,maxz = p1->z;
 

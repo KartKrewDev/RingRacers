@@ -27,8 +27,8 @@ extern consvar_t cv_discordasks;
 
 extern struct discordInfo_s {
 	UINT8 maxPlayers;
-	boolean joinsAllowed;
-	boolean everyoneCanInvite;
+	dboolean joinsAllowed;
+	dboolean everyoneCanInvite;
 } discordInfo;
 
 struct discordRequest_t {

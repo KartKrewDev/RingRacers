@@ -434,7 +434,7 @@ static UINT32 ACS_SectorThingCounter(sector_t *sec, mtag_t thingTag, bool (*filt
 static UINT32 ACS_SectorIterateThingCounter(sector_t *sec, mtag_t thingTag, bool (*filter)(mobj_t *))
 {
 	UINT32 count = 0;
-	boolean FOFsector = false;
+	dboolean FOFsector = false;
 	size_t i;
 
 	if (sec == nullptr)
@@ -2886,7 +2886,7 @@ bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 
 	UINT8 sideID = 0;
 	side_t *side = NULL;
-	boolean tryBoth = false;
+	dboolean tryBoth = false;
 
 	INT32 property = SIDE_PROP__MAX;
 	INT32 value = 0;

@@ -67,7 +67,7 @@ void Obj_ChargeAuraThink (mobj_t *aura)
         aura->renderflags |= RF_PAPERSPRITE|RF_ADD;
 
         // fuck
-        boolean forceinvisible = !!!((leveltime - aura->cvmem) % 4);
+        dboolean forceinvisible = !!!((leveltime - aura->cvmem) % 4);
         if (aura->extravalue1 || !(player->driftcharge > K_GetKartDriftSparkValueForStage(player, 3)))
             forceinvisible = false;
 

@@ -31,22 +31,22 @@ extern "C" {
 
 // Local Play
 void P_SaveGame(savebuffer_t *save);
-boolean P_LoadGame(savebuffer_t *save);
+dboolean P_LoadGame(savebuffer_t *save);
 void P_GetBackupCupData(savebuffer_t *save);
 
 // Online
-void P_SaveNetGame(savebuffer_t *save, boolean resending);
-boolean P_LoadNetGame(savebuffer_t *save, boolean reloading);
+void P_SaveNetGame(savebuffer_t *save, dboolean resending);
+dboolean P_LoadNetGame(savebuffer_t *save, dboolean reloading);
 
 mobj_t *P_FindNewPosition(UINT32 oldposition);
 
 struct savedata_bot_s
 {
-	boolean valid;
+	dboolean valid;
 	UINT16 skin;
 	UINT8 difficulty;
-	boolean rival;
-	boolean foe;
+	dboolean rival;
+	dboolean foe;
 	UINT32 score;
 };
 
@@ -70,7 +70,7 @@ struct savedata_cup_t
 {
 	cupheader_t *cup;
 	UINT8 difficulty;
-	boolean encore;
+	dboolean encore;
 };
 
 extern savedata_cup_t cupsavedata;
@@ -83,15 +83,15 @@ struct savebuffer_t
 	size_t size;
 };
 
-boolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, void *user);
+dboolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, void *user);
 #define P_SaveBufferAlloc(a,b) P_SaveBufferZAlloc(a, b, PU_STATIC, NULL)
-boolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, size_t existing_size);
-boolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump);
-boolean P_SaveBufferFromFile(savebuffer_t *save, char const *name);
+dboolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, size_t existing_size);
+dboolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump);
+dboolean P_SaveBufferFromFile(savebuffer_t *save, char const *name);
 void P_SaveBufferFree(savebuffer_t *save);
 size_t P_SaveBufferRemaining(const savebuffer_t *save);
 
-boolean TypeIsNetSynced(mobjtype_t type);
+dboolean TypeIsNetSynced(mobjtype_t type);
 
 #ifdef __cplusplus
 } // extern "C"

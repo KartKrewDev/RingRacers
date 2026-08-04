@@ -170,7 +170,7 @@ static int has_valid_field(lua_State *L)
 	return equal;
 }
 
-static taglist_t * valid_taglist(lua_State *L, int idx, boolean getting)
+static taglist_t * valid_taglist(lua_State *L, int idx, dboolean getting)
 {
 	taglist_t *list = *(taglist_t **)lua_touserdata(L, idx);
 

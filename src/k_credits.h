@@ -28,7 +28,7 @@ void F_StartCredits(void);
 
 void F_DeferContinueCredits(void);
 
-boolean F_IsDeferredContinueCredits(void);
+dboolean F_IsDeferredContinueCredits(void);
 
 void F_ContinueCredits(void);
 

@@ -24,8 +24,12 @@
 #include "config.h"
 
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef RPC_NO_WINDOWS_H
 #define RPC_NO_WINDOWS_H
+#endif
 #include <windows.h>
 // win32 sucks
 #undef min
@@ -106,14 +110,7 @@ size_t srb2_strlcpy(char *dst, const char *src, size_t siz);
 #include <stdbool.h>
 #endif
 
-#ifndef _WIN32
-typedef int32_t boolean;
-#else
-// Did you know including windows.h on mingw typedefs boolean?
-// I wonder how long this has quietly broken rpcndr.h.
-// Anyway, this should probably be fixed. God I hate WIN32.
-#define boolean BOOL
-#endif
+typedef int32_t dboolean;
 
 /* Compiler-specific attributes and other macros */
 

@@ -291,9 +291,9 @@ static ceiling_t *CreateCeilingThinker(sector_t *sec)
 	return ceiling;
 }
 
-boolean EV_DoRaiseCeilingToHighest(mtag_t tag)
+dboolean EV_DoRaiseCeilingToHighest(mtag_t tag)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -320,9 +320,9 @@ boolean EV_DoRaiseCeilingToHighest(mtag_t tag)
 	return rtn;
 }
 
-boolean EV_DoLowerCeilingToLowestFast(mtag_t tag)
+dboolean EV_DoLowerCeilingToLowestFast(mtag_t tag)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -349,9 +349,9 @@ boolean EV_DoLowerCeilingToLowestFast(mtag_t tag)
 	return rtn;
 }
 
-boolean EV_DoInstantRaiseCeiling(mtag_t tag)
+dboolean EV_DoInstantRaiseCeiling(mtag_t tag)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -378,10 +378,10 @@ boolean EV_DoInstantRaiseCeiling(mtag_t tag)
 	return rtn;
 }
 
-boolean EV_DoMoveCeilingByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture)
+dboolean EV_DoMoveCeilingByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture)
 {
-	boolean rtn = false;
-	boolean firstone = true;
+	dboolean rtn = false;
+	dboolean firstone = true;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -425,9 +425,9 @@ boolean EV_DoMoveCeilingByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag
 	return rtn;
 }
 
-boolean EV_DoInstantMoveCeilingByHeight(mtag_t tag, fixed_t height, INT32 texture)
+dboolean EV_DoInstantMoveCeilingByHeight(mtag_t tag, fixed_t height, INT32 texture)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -465,9 +465,9 @@ boolean EV_DoInstantMoveCeilingByHeight(mtag_t tag, fixed_t height, INT32 textur
 	return rtn;
 }
 
-boolean EV_DoMoveCeilingByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant)
+dboolean EV_DoMoveCeilingByDistance(mtag_t tag, fixed_t distance, fixed_t speed, dboolean instant)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -506,9 +506,9 @@ boolean EV_DoMoveCeilingByDistance(mtag_t tag, fixed_t distance, fixed_t speed, 
 	return rtn;
 }
 
-boolean EV_DoBounceCeiling(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay)
+dboolean EV_DoBounceCeiling(mtag_t tag, dboolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -618,9 +618,9 @@ static ceiling_t *CreateCrushThinker(sector_t *sec)
 	return ceiling;
 }
 
-boolean EV_DoRaiseAndCrushCeiling(mtag_t tag, fixed_t speed, fixed_t returnSpeed)
+dboolean EV_DoRaiseAndCrushCeiling(mtag_t tag, fixed_t speed, fixed_t returnSpeed)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -650,9 +650,9 @@ boolean EV_DoRaiseAndCrushCeiling(mtag_t tag, fixed_t speed, fixed_t returnSpeed
 	return rtn;
 }
 
-boolean EV_DoCrushBothOnce(mtag_t tag, fixed_t speed)
+dboolean EV_DoCrushBothOnce(mtag_t tag, fixed_t speed)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 
@@ -680,9 +680,9 @@ boolean EV_DoCrushBothOnce(mtag_t tag, fixed_t speed)
 	return rtn;
 }
 
-boolean EV_DoCrushCeilingOnce(mtag_t tag, fixed_t speed)
+dboolean EV_DoCrushCeilingOnce(mtag_t tag, fixed_t speed)
 {
-	boolean rtn = false;
+	dboolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
 

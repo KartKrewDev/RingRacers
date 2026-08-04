@@ -121,7 +121,7 @@ ENUM (STRING_HOOK);
 #define LUA_HOOK(type) LUA_HookVoid(HOOK(type))
 //#define LUA_HUDHOOK(type) LUA_HookHUD(HUD_HOOK(type))
 
-extern boolean hook_cmd_running;
+extern dboolean hook_cmd_running;
 
 void LUA_HookVoid(int hook);
 void LUA_HookHUD(huddrawlist_h, int hook);
@@ -129,7 +129,7 @@ void LUA_HookHUD(huddrawlist_h, int hook);
 int  LUA_HookMobj(mobj_t *, int hook);
 int  LUA_Hook2Mobj(mobj_t *, mobj_t *, int hook);
 void LUA_HookInt(INT32 integer, int hook);
-void LUA_HookBool(boolean value, int hook);
+void LUA_HookBool(dboolean value, int hook);
 int  LUA_HookPlayer(player_t *, int hook);
 int  LUA_HookPlayerForceResults(player_t *, int hook);
 int  LUA_HookTiccmd(player_t *, ticcmd_t *, int hook);
@@ -149,11 +149,11 @@ int  LUA_HookMapThingSpawn(mobj_t *, mapthing_t *);
 int  LUA_HookFollowMobj(player_t *, mobj_t *);
 int  LUA_HookPlayerCanDamage(player_t *, mobj_t *);
 void LUA_HookPlayerQuit(player_t *, kickreason_t);
-//int  LUA_HookTeamSwitch(player_t *, int newteam, boolean fromspectators, boolean tryingautobalance, boolean tryingscramble);
-int  LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced);
+//int  LUA_HookTeamSwitch(player_t *, int newteam, dboolean fromspectators, dboolean tryingautobalance, dboolean tryingscramble);
+int  LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, dboolean forced);
 int  LUA_HookSeenPlayer(player_t *player, player_t *seenfriend);
-int  LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
-int  LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette, boolean ringbox);
+int  LUA_HookPreFillItemRoulette(player_t *player, itemroulette_t *const roulette, dboolean ringbox);
+int  LUA_HookFillItemRoulette(player_t *player, itemroulette_t *const roulette, dboolean ringbox);
 int LUA_HookGPRankPoints(UINT8 position, UINT8 numplayers, INT16 *points);
 
 #ifdef __cplusplus

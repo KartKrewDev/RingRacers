@@ -281,7 +281,7 @@ static int lib_easeinoutexpo(lua_State *L) { EASINGFUNC(InOutExpo) }
 
 #define EASINGFUNC(easetype) \
 { \
-	boolean useparam = false; \
+	dboolean useparam = false; \
 	fixed_t param = 0; \
 	fixed_t start = 0; \
 	fixed_t end = FRACUNIT; \

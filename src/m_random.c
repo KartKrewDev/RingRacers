@@ -385,10 +385,10 @@ void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT
   * \sa P_SetRandSeed
   */
 #ifndef DEBUGRANDOM
-void P_ResetInterpHudRandSeed(boolean newframe)
+void P_ResetInterpHudRandSeed(dboolean newframe)
 {
 #else
-void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, boolean newframe)
+void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, dboolean newframe)
 {
 	CONS_Printf("P_ResetInterpHudRandSeed(%c) at: %sp %d\n", (newframe ? 'T' : 'F'), rfile, rline);
 #endif

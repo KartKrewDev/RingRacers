@@ -179,7 +179,7 @@ void MakePathDirs(char *path)
 static int CheckFileName(lua_State *L, const char *filename)
 {
 	int length = strlen(filename);
-	boolean pass = false;
+	dboolean pass = false;
 	size_t i;
 
 	if (strchr(filename, '\\'))

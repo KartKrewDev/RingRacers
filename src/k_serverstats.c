@@ -25,7 +25,7 @@
 static serverplayer_t *trackedList;
 static size_t numtracked = 0;
 static size_t numallocated = 0;
-static boolean initialized = false;
+static dboolean initialized = false;
 
 UINT16 guestpwr[PWRLV_NUMTYPES]; // All-zero power level to reference for guests
 
@@ -290,7 +290,7 @@ void SV_BumpMatchStats(void)
 
 		// It should never be advantageous to idle, only count rounds where the player accomplishes something.
 		// If you NO CONTESTed, assume no participation...
-		boolean participated = !(players[i].pflags & PF_NOCONTEST);
+		dboolean participated = !(players[i].pflags & PF_NOCONTEST);
 
 		if (gametyperules & GTR_CIRCUIT)
 		{
@@ -312,7 +312,7 @@ void SV_BumpMatchStats(void)
 	SV_UpdateTempMutes();
 }
 
-static void SV_UpdateTempMute(player_t *player, boolean mute)
+static void SV_UpdateTempMute(player_t *player, dboolean mute)
 {
 	UINT8 buf[2];
 

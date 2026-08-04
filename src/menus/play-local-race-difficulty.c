@@ -15,7 +15,7 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 
-boolean interceptedDefaultDifficulty = false;
+dboolean interceptedDefaultDifficulty = false;
 
 menuitem_t PLAY_RaceDifficulty[] =
 {
@@ -74,7 +74,7 @@ static void tick_routine(void)
 	g_drace_timer.dist = -1;
 }
 
-static boolean input_routine(INT32 ch)
+static dboolean input_routine(INT32 ch)
 {
 	if (g_drace_timer.dist != -1)
 	{

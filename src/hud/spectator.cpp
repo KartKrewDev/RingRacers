@@ -117,7 +117,7 @@ private:
 
 }; // namespace
 
-void K_drawSpectatorHUD(boolean director)
+void K_drawSpectatorHUD(dboolean director)
 {
 	const UINT8 viewnum = R_GetViewNumber();
 

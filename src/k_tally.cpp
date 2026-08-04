@@ -39,7 +39,7 @@
 #include "k_objects.h"
 #include "k_director.h"
 
-boolean level_tally_t::UseBonuses(void)
+dboolean level_tally_t::UseBonuses(void)
 {
 	if ((gametyperules & GTR_SPECIALSTART) || (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_SPECIAL))
 	{
@@ -302,7 +302,7 @@ void level_tally_t::Init(player_t *player)
 	owner = player;
 	gt = gametype;
 
-	const boolean game_over = (
+	const dboolean game_over = (
 		G_GametypeUsesLives()
 		? ((player->pflags & PF_LOSTLIFE) == PF_LOSTLIFE)
 		: (tutorialchallenge == TUTORIALSKIP_INPROGRESS && K_IsPlayerLosing(player))
@@ -589,7 +589,7 @@ void level_tally_t::NewLine(void)
 	delay = TICRATE/5;
 }
 
-boolean level_tally_t::IncrementLine(void)
+dboolean level_tally_t::IncrementLine(void)
 {
 	UINT8 count = lines;
 
@@ -599,7 +599,7 @@ boolean level_tally_t::IncrementLine(void)
 	INT32 amount = 1;
 	INT32 freq = 2;
 
-	boolean lives_check = false;
+	dboolean lives_check = false;
 
 	for (int i = 0; i < TALLY_WINDOW_SIZE; i++)
 	{
@@ -700,7 +700,7 @@ boolean level_tally_t::IncrementLine(void)
 		return true;
 	}
 
-	const boolean playSounds = P_IsDisplayPlayer(owner);
+	const dboolean playSounds = P_IsDisplayPlayer(owner);
 
 	if (*value == dest)
 	{
@@ -817,7 +817,7 @@ void level_tally_t::Tick(void)
 		return;
 	}
 
-	const boolean playSounds = P_IsDisplayPlayer(owner);
+	const dboolean playSounds = P_IsDisplayPlayer(owner);
 
 	switch (state)
 	{
@@ -1095,7 +1095,7 @@ void level_tally_t::Draw(void)
 		&& state != TALLY_ST_GOTTHRU_SLIDEUP)
 	{
 		UINT8 numBoxes = 0;
-		boolean drawStats = false;
+		dboolean drawStats = false;
 		if (stats[0] != TALLY_STAT_NA)
 		{
 			numBoxes++;
@@ -1455,9 +1455,9 @@ void K_InitPlayerTally(player_t *player)
 
 void K_TickPlayerTally(player_t *player)
 {
-	boolean fastForwardInput = !demo.playback && P_IsMachineLocalPlayer(player) &&
+	dboolean fastForwardInput = !demo.playback && P_IsMachineLocalPlayer(player) &&
 		G_PlayerInputDown(G_LocalSplitscreenPartyPosition(player - players), gc_a, 0);
-	boolean allowFastForward = player->tally.state > TALLY_ST_GOTTHRU_SLIDEIN
+	dboolean allowFastForward = player->tally.state > TALLY_ST_GOTTHRU_SLIDEIN
 		&& player->tally.state <= TALLY_ST_DONE
 		&& player->tally.releasedFastForward
 		// - Not allowed online so we don't have to do any
@@ -1502,7 +1502,7 @@ void K_DrawPlayerTally(void)
 	stplyr->tally.Draw();
 }
 
-boolean K_PlayerTallyActive(player_t *player)
+dboolean K_PlayerTallyActive(player_t *player)
 {
 	return player->tally.active; //(player->exiting || (player->pflags & PF_NOCONTEST));
 }

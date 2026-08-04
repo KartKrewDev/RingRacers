@@ -32,7 +32,7 @@ extern "C" {
 
 #define FEETADJUST (4<<FRACBITS) // R_AddSingleSpriteDef
 
-boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16 wadnum, UINT16 startlump, UINT16 endlump);
+dboolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16 wadnum, UINT16 startlump, UINT16 endlump);
 
 //faB: find sprites in wadfile, replace existing, add new ones
 //     (only sprites from namelist are added or replaced)
@@ -74,34 +74,34 @@ void R_InitSprites(void);
 void R_ClearSprites(void);
 
 UINT8 R_GetBoundingBoxColor(mobj_t *thing);
-boolean R_ThingBoundingBoxVisible(mobj_t *thing);
+dboolean R_ThingBoundingBoxVisible(mobj_t *thing);
 
-boolean R_DrawPickups(void);
-boolean R_ThingVisible (mobj_t *thing);
+dboolean R_DrawPickups(void);
+dboolean R_ThingVisible (mobj_t *thing);
 
-boolean R_ThingWithinDist (mobj_t *thing,
+dboolean R_ThingWithinDist (mobj_t *thing,
 		fixed_t        draw_dist);
 
-boolean R_PrecipThingVisible (precipmobj_t *precipthing);
+dboolean R_PrecipThingVisible (precipmobj_t *precipthing);
 
-boolean R_ThingHorizontallyFlipped (mobj_t *thing);
-boolean R_ThingVerticallyFlipped (mobj_t *thing);
+dboolean R_ThingHorizontallyFlipped (mobj_t *thing);
+dboolean R_ThingVerticallyFlipped (mobj_t *thing);
 
-boolean R_ThingIsPaperSprite (mobj_t *thing);
-boolean R_ThingIsFloorSprite (mobj_t *thing);
+dboolean R_ThingIsPaperSprite (mobj_t *thing);
+dboolean R_ThingIsFloorSprite (mobj_t *thing);
 
-boolean R_ThingIsFullBright (mobj_t *thing);
-boolean R_ThingIsSemiBright (mobj_t *thing);
-boolean R_ThingIsFullDark (mobj_t *thing);
-boolean R_ThingModelUsesDirectionalLighting(mobj_t *thing);
+dboolean R_ThingIsFullBright (mobj_t *thing);
+dboolean R_ThingIsSemiBright (mobj_t *thing);
+dboolean R_ThingIsFullDark (mobj_t *thing);
+dboolean R_ThingModelUsesDirectionalLighting(mobj_t *thing);
 
-boolean R_ThingIsFlashing(mobj_t *thing);
+dboolean R_ThingIsFlashing(mobj_t *thing);
 
-boolean R_ThingIsUsingBakedOffsets(mobj_t *thing);
+dboolean R_ThingIsUsingBakedOffsets(mobj_t *thing);
 
 INT32 R_ThingLightLevel(mobj_t *thing);
-boolean R_SplatSlope(mobj_t *thing, vector3_t position, pslope_t *slope);
-boolean R_CustomShadowZ(mobj_t *thing, fixed_t *return_z, pslope_t **return_slope);
+dboolean R_SplatSlope(mobj_t *thing, vector3_t position, pslope_t *slope);
+dboolean R_CustomShadowZ(mobj_t *thing, fixed_t *return_z, pslope_t **return_slope);
 
 // --------------
 // MASKED DRAWING

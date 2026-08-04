@@ -57,7 +57,7 @@ void PS_SetThinkFrameHookInfo(int index, precise_t time_taken, char* short_src);
 
 struct ps_botinfo_t
 {
-	boolean isBot;
+	dboolean isBot;
 	precise_t total;
 	precise_t prediction; // K_CreateBotPrediction
 	precise_t nudge; // K_NudgePredictionTowardsObjects

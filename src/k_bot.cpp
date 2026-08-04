@@ -58,7 +58,7 @@ void K_SetNameForBot(UINT8 newplayernum, const char *realname)
 	// These names are generally sourced from skins.
 	I_Assert(MAXPLAYERNAME >= SKINNAMESIZE+2);
 
-	boolean canApplyNameChange = true;
+	dboolean canApplyNameChange = true;
 	if (netgame == true)
 	{
 		canApplyNameChange = IsPlayerNameUnique(realname, newplayernum);
@@ -185,11 +185,11 @@ void K_SetBot(UINT8 newplayernum, UINT16 skinnum, UINT8 difficulty, botStyle_e s
 }
 
 /*--------------------------------------------------
-	boolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+	dboolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+dboolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 {
 	UINT8 newplayernum = *p;
 
@@ -402,11 +402,11 @@ void K_UpdateMatchRaceBots(void)
 }
 
 /*--------------------------------------------------
-	boolean K_PlayerUsesBotMovement(const player_t *player)
+	dboolean K_PlayerUsesBotMovement(const player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_PlayerUsesBotMovement(const player_t *player)
+dboolean K_PlayerUsesBotMovement(const player_t *player)
 {
 	if (K_PodiumSequence() == true)
 		return true;
@@ -438,11 +438,11 @@ boolean K_PlayerUsesBotMovement(const player_t *player)
 }
 
 /*--------------------------------------------------
-	boolean K_BotCanTakeCut(player_t *player)
+	dboolean K_BotCanTakeCut(player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_BotCanTakeCut(const player_t *player)
+dboolean K_BotCanTakeCut(const player_t *player)
 {
 	if (
 #if 1
@@ -1026,9 +1026,9 @@ static botprediction_t *K_CreateBotPrediction(const player_t *player)
 	waypoint_t *wp = player->nextwaypoint;
 	mobj_t *prevwpmobj = player->mo;
 
-	const boolean useshortcuts = K_BotCanTakeCut(player);
-	const boolean huntbackwards = false;
-	boolean pathfindsuccess = false;
+	const dboolean useshortcuts = K_BotCanTakeCut(player);
+	const dboolean huntbackwards = false;
+	dboolean pathfindsuccess = false;
 	path_t pathtofinish = {0};
 
 	botprediction_t *predict = nullptr;
@@ -1190,8 +1190,8 @@ static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 	else
 	{
 		// Logic for normal racing.
-		boolean anyCondition = false;
-		boolean uphill = false;
+		dboolean anyCondition = false;
+		dboolean uphill = false;
 
 #define AddForCondition(x) \
 	if (x) \
@@ -1251,7 +1251,7 @@ static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
-	static boolean K_TryRingShooter(const player_t *player, const botcontroller_t *botController)
+	static dboolean K_TryRingShooter(const player_t *player, const botcontroller_t *botController)
 
 		Determines conditions where the bot should attempt to respawn.
 
@@ -1262,7 +1262,7 @@ static UINT8 K_TrySpindash(const player_t *player, ticcmd_t *cmd)
 	Return:-
 		true if we want to hold the respawn button, otherwise false.
 --------------------------------------------------*/
-static boolean K_TryRingShooter(const player_t *player, const botcontroller_t *botController)
+static dboolean K_TryRingShooter(const player_t *player, const botcontroller_t *botController)
 {
 	ZoneScoped;
 
@@ -1416,7 +1416,7 @@ static angle_t K_BotSmoothLanding(const player_t *player, angle_t destangle)
 	ZoneScoped;
 
 	angle_t newAngle = destangle;
-	boolean air = !P_IsObjectOnGround(player->mo);
+	dboolean air = !P_IsObjectOnGround(player->mo);
 	angle_t steepVal = air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL;
 	angle_t slopeSteep = std::max<angle_t>(AngleDelta(player->mo->pitch, 0), AngleDelta(player->mo->roll, 0));
 
@@ -1769,7 +1769,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 	botprediction_t *predict = nullptr;
 	auto predict_finally = srb2::finally([&predict]() { Z_Free(predict); });
 
-	boolean trySpindash = true;
+	dboolean trySpindash = true;
 	angle_t destangle = 0;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
@@ -1824,7 +1824,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 
 	destangle = player->mo->angle;
 
-	boolean forcedDir = false;
+	dboolean forcedDir = false;
 	if (botController != nullptr && (botController->flags & TMBOT_FORCEDIR) == TMBOT_FORCEDIR)
 	{
 		const fixed_t dist = DEFAULT_WAYPOINT_RADIUS * player->mo->scale;
@@ -2176,7 +2176,7 @@ void K_UpdateBotGameplayVars(player_t *player)
 	K_UpdateBotGameplayVarsItemUsage(player);
 }
 
-boolean K_BotUnderstandsItem(kartitems_t item)
+dboolean K_BotUnderstandsItem(kartitems_t item)
 {
 	if (item == KITEM_BALLHOG)
 		return false; // Sorry. MRs welcome!

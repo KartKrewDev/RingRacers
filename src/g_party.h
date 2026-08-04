@@ -50,7 +50,7 @@ UINT8 G_PartySize(UINT8 player);
 
 // True if this player is a member of the consoleplayer's
 // party.
-boolean G_IsPartyLocal(UINT8 player);
+dboolean G_IsPartyLocal(UINT8 player);
 
 // Returns the player slot present at a certain position
 // within this player's party. Do not call this function with

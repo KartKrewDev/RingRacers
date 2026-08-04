@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-boolean LUA_SetLuaAction(void *state, const char *actiontocompare);
+dboolean LUA_SetLuaAction(void *state, const char *actiontocompare);
 const char *LUA_GetActionName(void *action);
 void LUA_SetActionByName(void *state, const char *actiontocompare);
 size_t LUA_GetActionNumByName(const char *actiontocompare);

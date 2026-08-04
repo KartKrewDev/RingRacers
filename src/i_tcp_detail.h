@@ -128,7 +128,7 @@ extern mysockaddr_t clientaddress[MAXNETNODES+1];
 
 const char *SOCK_AddrToStr(mysockaddr_t *sk);
 mysockaddr_t SOCK_DirectNodeToAddr(UINT8 node);
-boolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask);
+dboolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask);
 
 #ifdef __cplusplus
 } // extern "C"

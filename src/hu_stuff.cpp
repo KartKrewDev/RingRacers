@@ -86,14 +86,14 @@ patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
 
 static player_t *plr;
-boolean hu_keystrokes; // :)
-boolean chat_keydown;
-boolean chat_on; // entering a chat message?
-boolean g_voicepushtotalk_on; // holding PTT?
+dboolean hu_keystrokes; // :)
+dboolean chat_keydown;
+dboolean chat_on; // entering a chat message?
+dboolean g_voicepushtotalk_on; // holding PTT?
 static char w_chat[HU_MAXMSGLEN + 1];
 static size_t c_input = 0; // let's try to make the chat input less shitty.
-static boolean headsupactive = false;
-boolean hu_showscores; // draw rankings
+static dboolean headsupactive = false;
+dboolean hu_showscores; // draw rankings
 static char hu_tick;
 
 //-------------------------------------------
@@ -381,7 +381,7 @@ void HU_Init(void)
 	luahuddrawlist_scores = LUA_HUD_CreateDrawList();
 }
 
-patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...)
+patch_t *HU_UpdateOrBlankPatch(patch_t **user, dboolean required, const char *format, ...)
 {
 	va_list ap;
 	char buffer[9];
@@ -477,7 +477,7 @@ struct mini_chat_log_s
 
 static srb2::Vector<mini_chat_log_s> chat_mini; // display up to 8 messages that will fade away / get overwritten
 
-static boolean chat_scrollmedown = false; // force instant scroll down on the chat log. Happens when you open it / send a message.
+static dboolean chat_scrollmedown = false; // force instant scroll down on the chat log. Happens when you open it / send a message.
 
 // remove text from minichat table
 
@@ -497,7 +497,7 @@ static void HU_removeChatText_Log(void)
 	chat_log.erase(chat_log.begin()); // lost 1 msg.
 }
 
-void HU_AddChatText(const char *text, boolean playsound)
+void HU_AddChatText(const char *text, dboolean playsound)
 {
 	if (playsound && cv_consolechat.value != 2)	// Don't play the sound if we're using hidden chat.
 		S_StartSound(NULL, sfx_radio);
@@ -671,7 +671,7 @@ static void Got_Saycmd(const UINT8 **p, INT32 playernum)
 	const char *dispname;
 	char buf[HU_MAXMSGLEN + 1];
 	char *msg;
-	boolean action = false;
+	dboolean action = false;
 	char *ptr;
 
 	CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s)\n", playernum+1, player_names[playernum]);
@@ -937,7 +937,7 @@ void HU_TickSongCredits(void)
 
 void HU_Ticker(void)
 {
-	static boolean hu_holdscores = false;
+	static dboolean hu_holdscores = false;
 
 	if (dedicated)
 		return;
@@ -999,13 +999,13 @@ void HU_Ticker(void)
 	resynch_ticker++;
 }
 
-static boolean teamtalk = false;
-static boolean justscrolleddown;
-static boolean justscrolledup;
+static dboolean teamtalk = false;
+static dboolean justscrolleddown;
+static dboolean justscrolledup;
 static INT16 typelines = 1; // number of drawfill lines we need when drawing the chat. it's some weird hack and might be one frame off but I'm lazy to make another loop.
 // It's up here since it has to be reset when we open the chat.
 
-static boolean HU_chatboxContainsOnlySpaces(void)
+static dboolean HU_chatboxContainsOnlySpaces(void)
 {
 	size_t i;
 
@@ -1106,7 +1106,7 @@ void HU_clearChatChars(void)
 //
 // Returns true if key eaten
 //
-boolean HU_Responder(event_t *ev)
+dboolean HU_Responder(event_t *ev)
 {
 	// Handle Push-to-Talk
 	if (ev->data1 == gamecontrol[0][gc_voicepushtotalk][0]
@@ -1350,7 +1350,7 @@ static void HU_drawMiniChat(void)
 	struct log_line_s
 	{
         std::string text;
-		boolean mid_wrap;
+		dboolean mid_wrap;
 		INT32 timer;
     };
 
@@ -1466,7 +1466,7 @@ static void HU_drawChatLog(INT32 offset)
 	INT32 y;
 	INT32 chat_topy, chat_bottomy;
 	INT32 highlight = V_YELLOWMAP;
-	boolean atbottom = false;
+	dboolean atbottom = false;
 
 	// make sure that our scroll position isn't "illegal"
 	if (chat_scroll > chat_maxscroll)
@@ -1930,7 +1930,7 @@ static void HU_DrawTitlecardCEcho(size_t num)
 
 	tic_t elapsed = HU_TitlecardCEchoElapsed(state);
 	UINT8 viewnum = std::max<size_t>(1, num) - 1;
-	boolean p4 = (num != 0 && r_splitscreen);
+	dboolean p4 = (num != 0 && r_splitscreen);
 
 	// If the splitscreens were somehow decreased in the
 	// middle of drawing this, don't draw it.
@@ -2165,7 +2165,7 @@ void HU_Erase(void)
 
 #ifdef HWRENDER
 	// clear hud msgs on double buffer (OpenGL mode)
-	boolean secondframe;
+	dboolean secondframe;
 	static INT32 secondframelines;
 #endif
 
@@ -2484,7 +2484,7 @@ static inline void HU_DrawSpectatorTicker(void)
 static void HU_DrawRankings(void)
 {
 	INT32 i, j, hilicol = highlightflags;
-	boolean timedone = false, pointsdone = false;
+	dboolean timedone = false, pointsdone = false;
 
 	if (!automapactive)
 		V_DrawFadeScreen(0xFF00, 16); // A little more readable, and prevents cheating the fades under other circumstances.
@@ -2498,7 +2498,7 @@ static void HU_DrawRankings(void)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametypes[gametype]->name);
 
 	// Left hand side
-	const boolean roundqueueinaction = (roundqueue.position > 0 && roundqueue.position <= roundqueue.size);
+	const dboolean roundqueueinaction = (roundqueue.position > 0 && roundqueue.position <= roundqueue.size);
 
 	if (roundqueueinaction
 		&& roundqueue.entries[roundqueue.position-1].overridden == true)
@@ -2600,7 +2600,7 @@ static void HU_DrawRankings(void)
 		V_DrawCenteredString(256, 16, hilicol, (cv_4thgear.value) ? va("4th Gear") : kartspeed_cons_t[1+gamespeed].strvalue);
 	}
 
-	boolean completed[MAXPLAYERS];
+	dboolean completed[MAXPLAYERS];
 	y_data_t standings;
 
 	memset(completed, 0, sizeof (completed));
@@ -2726,7 +2726,7 @@ void HU_ClearTitlecardCEcho(void)
 }
 
 // Similar but for titlecard CEcho and also way less convoluted because I have no clue whatever the fuck they were trying above.
-void HU_DoTitlecardCEchoForDuration(player_t *player, const char *msg, boolean interrupt, tic_t duration)
+void HU_DoTitlecardCEchoForDuration(player_t *player, const char *msg, dboolean interrupt, tic_t duration)
 {
 	if (player && !P_IsDisplayPlayer(player))
 	{
@@ -2756,7 +2756,7 @@ void HU_DoTitlecardCEchoForDuration(player_t *player, const char *msg, boolean i
 	state->duration = duration ? duration : TICRATE*6 + strlen(state->text);
 }
 
-void HU_DoTitlecardCEcho(player_t *player, const char *msg, boolean interrupt)
+void HU_DoTitlecardCEcho(player_t *player, const char *msg, dboolean interrupt)
 {
 	HU_DoTitlecardCEchoForDuration(player, msg, interrupt, 0u);
 }

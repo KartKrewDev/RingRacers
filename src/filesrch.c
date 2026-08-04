@@ -339,7 +339,7 @@ char *refreshdirname = NULL;
 #if defined (_XBOX) && defined (_MSC_VER)
 filestatus_t filesearch(char *filename, const char *startpath,
 	const char *priorityfolder, const UINT8 *wantedmd5sum,
-	boolean completepath, int maxsearchdepth)
+	dboolean completepath, int maxsearchdepth)
 {
 //NONE?
 	startpath = filename = NULL;
@@ -349,7 +349,7 @@ filestatus_t filesearch(char *filename, const char *startpath,
 	return FS_NOTFOUND;
 }
 
-void closefilemenu(boolean validsize)
+void closefilemenu(dboolean validsize)
 {
 	(void)validsize;
 	return;
@@ -361,7 +361,7 @@ void searchfilemenu(char *tempname)
 	return;
 }
 
-boolean preparefilemenu(boolean samedepth, boolean replayhut)
+dboolean preparefilemenu(dboolean samedepth, dboolean replayhut)
 {
 	(void)samedepth;
 	(void)replayhut;
@@ -371,7 +371,7 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 #elif defined (_WIN32_WCE)
 filestatus_t filesearch(char *filename, const char *startpath,
 	const char *priorityfolder, const UINT8 *wantedmd5sum,
-	boolean completepath, int maxsearchdepth)
+	dboolean completepath, int maxsearchdepth)
 {
 #ifdef __GNUC__
 //NONE?
@@ -422,7 +422,7 @@ filestatus_t filesearch(char *filename, const char *startpath,
 	return FS_NOTFOUND;
 }
 
-void closefilemenu(boolean validsize)
+void closefilemenu(dboolean validsize)
 {
 	(void)validsize;
 	return;
@@ -434,7 +434,7 @@ void searchfilemenu(char *tempname)
 	return;
 }
 
-boolean preparefilemenu(boolean samedepth, boolean replayhut)
+dboolean preparefilemenu(dboolean samedepth, dboolean replayhut)
 {
 	(void)samedepth;
 	(void)replayhut;
@@ -452,7 +452,7 @@ static const char *filesearch_exclude[] = {
 
 filestatus_t filesearch(char *filename, const char *startpath,
 	const char *priorityfolder, const UINT8 *wantedmd5sum,
-	boolean completepath, int maxsearchdepth)
+	dboolean completepath, int maxsearchdepth)
 {
 	filestatus_t retval = FS_NOTFOUND;
 	DIR **dirhandle;
@@ -623,7 +623,7 @@ char exttable[NUM_EXT_TABLE][7] = { // maximum extension length (currently 4) pl
 char filenamebuf[MAX_WADFILES][MAX_WADPATH];
 
 
-static boolean filemenucmp(char *haystack)
+static dboolean filemenucmp(char *haystack)
 {
 	static char localhaystack[128];
 	strlcpy(localhaystack, haystack, 128);
@@ -634,7 +634,7 @@ static boolean filemenucmp(char *haystack)
 	return (!strncmp(localhaystack, menusearch+1, menusearch[0]));
 }
 
-void closefilemenu(boolean validsize)
+void closefilemenu(dboolean validsize)
 {
 	// search
 	if (dirmenu)
@@ -767,7 +767,7 @@ void searchfilemenu(char *tempname)
 	}
 }
 
-boolean preparefilemenu(boolean samedepth, boolean replayhut)
+dboolean preparefilemenu(dboolean samedepth, dboolean replayhut)
 {
 	DIR *dirhandle;
 	struct dirent *dent;

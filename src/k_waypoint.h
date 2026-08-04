@@ -27,7 +27,7 @@ extern "C" {
 struct waypoint_t
 {
 	mobj_t             *mobj;
-	boolean             onaline;
+	dboolean             onaline;
 	waypoint_t        **nextwaypoints;
 	waypoint_t        **prevwaypoints;
 	UINT32             *nextwaypointdistances;
@@ -71,7 +71,7 @@ waypoint_t *K_GetStartingWaypoint(void);
 
 
 /*--------------------------------------------------
-	boolean K_GetWaypointIsFinishline(waypoint_t *waypoint)
+	dboolean K_GetWaypointIsFinishline(waypoint_t *waypoint)
 
 		Returns whether the waypoint is marked as the finishline. This may not actually be the finishline.
 
@@ -82,11 +82,11 @@ waypoint_t *K_GetStartingWaypoint(void);
 		true if the waypoint is marked as being the finishline, false if it isn't.
 --------------------------------------------------*/
 
-boolean K_GetWaypointIsFinishline(waypoint_t *waypoint);
+dboolean K_GetWaypointIsFinishline(waypoint_t *waypoint);
 
 
 /*--------------------------------------------------
-	boolean K_GetWaypointIsShortcut(waypoint_t *waypoint)
+	dboolean K_GetWaypointIsShortcut(waypoint_t *waypoint)
 
 		Returns whether the waypoint is part of a shortcut.
 
@@ -97,11 +97,11 @@ boolean K_GetWaypointIsFinishline(waypoint_t *waypoint);
 		true if the waypoint is a shortcut, false if it isn't.
 --------------------------------------------------*/
 
-boolean K_GetWaypointIsShortcut(waypoint_t *waypoint);
+dboolean K_GetWaypointIsShortcut(waypoint_t *waypoint);
 
 
 /*--------------------------------------------------
-	boolean K_GetWaypointIsEnabled(waypoint_t *waypoint)
+	dboolean K_GetWaypointIsEnabled(waypoint_t *waypoint)
 
 		Returns whether the waypoint is enabled.
 
@@ -112,11 +112,11 @@ boolean K_GetWaypointIsShortcut(waypoint_t *waypoint);
 		true if the waypoint is enabled, false if it isn't.
 --------------------------------------------------*/
 
-boolean K_GetWaypointIsEnabled(waypoint_t *waypoint);
+dboolean K_GetWaypointIsEnabled(waypoint_t *waypoint);
 
 
 /*--------------------------------------------------
-	boolean K_SetWaypointIsEnabled(waypoint_t *waypoint, boolean enabled)
+	dboolean K_SetWaypointIsEnabled(waypoint_t *waypoint, dboolean enabled)
 
 		Sets whether the waypoint is enabled or not.
 
@@ -125,10 +125,10 @@ boolean K_GetWaypointIsEnabled(waypoint_t *waypoint);
 		enabled - Boolean that sets the waypoint's enabled status.
 --------------------------------------------------*/
 
-void K_SetWaypointIsEnabled(waypoint_t *waypoint, boolean enabled);
+void K_SetWaypointIsEnabled(waypoint_t *waypoint, dboolean enabled);
 
 /*--------------------------------------------------
-	boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
+	dboolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint)
 
 		Returns whether the waypoint is a spawnpoint.
 
@@ -139,7 +139,7 @@ void K_SetWaypointIsEnabled(waypoint_t *waypoint, boolean enabled);
 		true if the waypoint is a spawnpoint, false if it isn't.
 --------------------------------------------------*/
 
-boolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint);
+dboolean K_GetWaypointIsSpawnpoint(waypoint_t *waypoint);
 
 
 /*--------------------------------------------------
@@ -249,12 +249,12 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint)
 
 
 /*--------------------------------------------------
-	boolean K_PathfindToWaypoint(
+	dboolean K_PathfindToWaypoint(
 		waypoint_t *const sourcewaypoint,
 		waypoint_t *const destinationwaypoint,
 		path_t *const     returnpath,
-		const boolean     useshortcuts,
-		const boolean     huntbackwards)
+		const dboolean     useshortcuts,
+		const dboolean     huntbackwards)
 
 		Use pathfinding to try and find the best route to the destination. Data is allocated into the returnpath,
 		and should be freed when done with. A call to this with a path already in the returnpath will free the data
@@ -271,21 +271,21 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint)
 		True if a path was found to the waypoint, false if there wasn't.
 --------------------------------------------------*/
 
-boolean K_PathfindToWaypoint(
+dboolean K_PathfindToWaypoint(
 	waypoint_t *const sourcewaypoint,
 	waypoint_t *const destinationwaypoint,
 	path_t *const     returnpath,
-	const boolean     useshortcuts,
-	const boolean     huntbackwards);
+	const dboolean     useshortcuts,
+	const dboolean     huntbackwards);
 
 
 /*--------------------------------------------------
-	boolean K_PathfindThruCircuit(
+	dboolean K_PathfindThruCircuit(
 		waypoint_t *const sourcewaypoint,
 		const UINT32      traveldistance,
 		path_t *const     returnpath,
-		const boolean     useshortcuts,
-		const boolean     huntbackwards)
+		const dboolean     useshortcuts,
+		const dboolean     huntbackwards)
 
 		Tries a pathfind to the finish line waypoint, similar to K_PathfindToWaypoint, but it will continue
 		until it reaches the specified distance. The final path returned will only have the waypoints up to the
@@ -302,21 +302,21 @@ boolean K_PathfindToWaypoint(
 		True if a circuit path could be constructed, false if it couldn't.
 --------------------------------------------------*/
 
-boolean K_PathfindThruCircuit(
+dboolean K_PathfindThruCircuit(
 	waypoint_t *const sourcewaypoint,
 	const UINT32      traveldistance,
 	path_t *const     returnpath,
-	const boolean     useshortcuts,
-	const boolean     huntbackwards);
+	const dboolean     useshortcuts,
+	const dboolean     huntbackwards);
 
 
 /*--------------------------------------------------
-	boolean K_PathfindThruCircuitSpawnable(
+	dboolean K_PathfindThruCircuitSpawnable(
 		waypoint_t *const sourcewaypoint,
 		const UINT32      traveldistance,
 		path_t *const     returnpath,
-		const boolean     useshortcuts,
-		const boolean     huntbackwards)
+		const dboolean     useshortcuts,
+		const dboolean     huntbackwards)
 
 		The same as K_PathfindThruCircuit, but continues until hitting a waypoint that
 		can be respawned at.
@@ -332,20 +332,20 @@ boolean K_PathfindThruCircuit(
 		True if a circuit path could be constructed, false if it couldn't.
 --------------------------------------------------*/
 
-boolean K_PathfindThruCircuitSpawnable(
+dboolean K_PathfindThruCircuitSpawnable(
 	waypoint_t *const sourcewaypoint,
 	const UINT32      traveldistance,
 	path_t *const     returnpath,
-	const boolean     useshortcuts,
-	const boolean     huntbackwards);
+	const dboolean     useshortcuts,
+	const dboolean     huntbackwards);
 
 
 /*--------------------------------------------------
 	waypoint_t *K_GetNextWaypointToDestination(
 		waypoint_t *const sourcewaypoint,
 		waypoint_t *const destinationwaypoint,
-		const boolean     useshortcuts,
-		const boolean     huntbackwards)
+		const dboolean     useshortcuts,
+		const dboolean     huntbackwards)
 
 		Uses pathfinding to find the next waypoint to go to in order to get to the destination waypoint, from the source
 		waypoint. If the source waypoint only has one next waypoint it will always pick that one and not do any
@@ -365,8 +365,8 @@ boolean K_PathfindThruCircuitSpawnable(
 waypoint_t *K_GetNextWaypointToDestination(
 	waypoint_t *const sourcewaypoint,
 	waypoint_t *const destinationwaypoint,
-	const boolean     useshortcuts,
-	const boolean     huntbackwards);
+	const dboolean     useshortcuts,
+	const dboolean     huntbackwards);
 
 
 /*--------------------------------------------------
@@ -451,7 +451,7 @@ void K_DebugWaypointsVisualise(void);
 
 
 /*--------------------------------------------------
-	boolean K_SetupWaypointList(void)
+	dboolean K_SetupWaypointList(void)
 
 		Sets up the waypoint list for Kart race maps, prints out warnings if something is wrong.
 
@@ -460,7 +460,7 @@ void K_DebugWaypointsVisualise(void);
 		A true return value does not necessarily mean that the waypoints on the map are completely correct
 --------------------------------------------------*/
 
-boolean K_SetupWaypointList(void);
+dboolean K_SetupWaypointList(void);
 
 
 /*--------------------------------------------------

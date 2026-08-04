@@ -102,7 +102,7 @@ INT32 VID_SetMode(INT32 modenum);
 /**	\brief Checks the render state
 	\return	true if the renderer changed
 */
-boolean VID_CheckRenderer(void);
+dboolean VID_CheckRenderer(void);
 
 /**	\brief Load OpenGL mode
 */
@@ -124,7 +124,7 @@ void VID_PrepareModeList(void); /// note hack for SDL
 
 /**	\brief can video system do fullscreen
 */
-extern boolean allow_fullscreen;
+extern dboolean allow_fullscreen;
 
 /**	\brief Update video system without updating frame
 */

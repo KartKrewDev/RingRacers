@@ -62,7 +62,7 @@ sfxenum_t get_sfx(const char *word);
 skincolornum_t get_skincolor(const char *word);
 
 void readwipes(MYFILE *f);
-void readmaincfg(MYFILE *f, boolean mainfile);
+void readmaincfg(MYFILE *f, dboolean mainfile);
 void readconditionset(MYFILE *f, UINT16 setnum);
 void readunlockable(MYFILE *f, INT32 num);
 void reademblemdata(MYFILE *f, INT32 num);

@@ -72,7 +72,7 @@ static GLboolean MipMap = GL_FALSE;
 static GLint min_filter = GL_LINEAR;
 static GLint mag_filter = GL_LINEAR;
 static GLint anisotropic_filter = 0;
-static boolean model_lighting = false;
+static dboolean model_lighting = false;
 
 const GLubyte *gl_version = NULL;
 const GLubyte *gl_renderer = NULL;
@@ -448,7 +448,7 @@ static PFNglBlendEquation pglBlendEquation;
 #define GL_STATIC_DRAW 0x88E4
 #endif
 
-boolean SetupGLfunc(void)
+dboolean SetupGLfunc(void)
 {
 #ifndef STATIC_OPENGL
 #define GETOPENGLFUNC(func, proc) \
@@ -526,7 +526,7 @@ boolean SetupGLfunc(void)
 	return true;
 }
 
-static boolean gl_shadersenabled = false;
+static dboolean gl_shadersenabled = false;
 static hwdshaderoption_t gl_allowshaders = HWD_SHADEROPTION_OFF;
 
 #ifdef GL_SHADERS
@@ -602,7 +602,7 @@ typedef struct gl_shader_s
 {
 	GLuint program;
 	GLint uniforms[gluniform_max+1];
-	boolean custom;
+	dboolean custom;
 } gl_shader_t;
 
 static gl_shader_t gl_shaders[HWR_MAXSHADERS];
@@ -615,7 +615,7 @@ typedef struct gl_shaderstate_s
 	gl_shader_t *current;
 	GLuint type;
 	GLuint program;
-	boolean changed;
+	dboolean changed;
 } gl_shaderstate_t;
 static gl_shaderstate_t gl_shaderstate;
 
@@ -628,7 +628,7 @@ static INT32 shader_light_contrast = 0;
 static INT32 shader_light_backlight = 0;
 
 // Lactozilla: Shader functions
-static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar *vert_shader, const GLchar *frag_shader);
+static dboolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar *vert_shader, const GLchar *frag_shader);
 static void Shader_CompileError(const char *message, GLuint program, INT32 shadernum);
 static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade);
 
@@ -988,7 +988,7 @@ void SetupGLFunc4(void)
 	*(void**)&pgluBuild2DMipmaps = GetGLFunc("gluBuild2DMipmaps");
 }
 
-EXPORT boolean HWRAPI(CompileShaders) (void)
+EXPORT dboolean HWRAPI(CompileShaders) (void)
 {
 #ifdef GL_SHADERS
 	GLint i;
@@ -1085,7 +1085,7 @@ EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value)
 //
 // Custom shader loading
 //
-EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, boolean isfragment)
+EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, dboolean isfragment)
 {
 #ifdef GL_SHADERS
 	shadersource_t *shader;
@@ -1492,7 +1492,7 @@ INT32 isExtAvailable(const char *extension, const GLubyte *start)
 // -----------------+
 // Init             : Initialise the OpenGL interface API
 // -----------------+
-EXPORT boolean HWRAPI(Init) (void)
+EXPORT dboolean HWRAPI(Init) (void)
 {
 	return LoadGL();
 }
@@ -1694,7 +1694,7 @@ static void SetBlendMode(FBITFIELD flags)
 	}
 	else
 	{
-		boolean blending = true;
+		dboolean blending = true;
 		switch (flags & (PF_Blending & ~(PF_Masked | PF_Occlude)))
 		{
 			case PF_Translucent:
@@ -1897,7 +1897,7 @@ EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *pTexInfo)
 {
 	// Upload a texture
 	GLuint num = pTexInfo->downloaded;
-	boolean update = true;
+	dboolean update = true;
 
 	INT32 w = pTexInfo->width, h = pTexInfo->height;
 	INT32 i, j;
@@ -2199,7 +2199,7 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 		UNIFORM_4(shader->uniforms[gluniform_tint_color], tint->red, tint->green, tint->blue, tint->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_fade_color], fade->red, fade->green, fade->blue, fade->alpha, pglUniform4f);
 
-		boolean directional = false;
+		dboolean directional = false;
 		if (Surface != NULL)
 		{
 			UNIFORM_1(shader->uniforms[gluniform_lighting], Surface->LightInfo.light_level, pglUniform1f);
@@ -2242,7 +2242,7 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 #endif
 }
 
-static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar *vert_shader, const GLchar *frag_shader)
+static dboolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar *vert_shader, const GLchar *frag_shader)
 {
 	GLuint gl_vertShader, gl_fragShader;
 	GLint result;
@@ -2514,7 +2514,7 @@ EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutV
 	// the DrawPolygon variant of this has some code about polyflags and wrapping here but havent noticed any problems from omitting it?
 }
 
-static const boolean gl_ext_arb_vertex_buffer_object = true;
+static const dboolean gl_ext_arb_vertex_buffer_object = true;
 
 #define NULL_VBO_VERTEX ((gl_skyvertex_t*)NULL)
 #define sky_vbo_x (gl_ext_arb_vertex_buffer_object ? &NULL_VBO_VERTEX->x : &sky->data[0].x)
@@ -2887,9 +2887,9 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, float duration, float 
 	float pol = 0.0f;
 	float scalex, scaley, scalez;
 
-	boolean useTinyFrames;
+	dboolean useTinyFrames;
 
-	boolean useVBO = true;
+	dboolean useVBO = true;
 
 	FBITFIELD flags;
 	int i;
@@ -2981,7 +2981,7 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, float duration, float 
 	// pos->mirror is if the screen is flipped horizontally
 	// XOR all the flips together to figure out what culling to use!
 	{
-		boolean reversecull = (flipped ^ hflipped ^ pos->flip ^ pos->mirror);
+		dboolean reversecull = (flipped ^ hflipped ^ pos->flip ^ pos->mirror);
 		if (reversecull)
 			pglCullFace(GL_FRONT);
 		else
@@ -3176,8 +3176,8 @@ EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, float duration,
 // -----------------+
 EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 {
-	static boolean special_splitscreen;
-	boolean shearing = false;
+	static dboolean special_splitscreen;
+	dboolean shearing = false;
 	float used_fov;
 
 	pglLoadIdentity();
@@ -3367,7 +3367,7 @@ EXPORT void HWRAPI(FlushScreenTextures) (void)
 EXPORT void HWRAPI(StartScreenWipe) (void)
 {
 	INT32 texsize = 2048;
-	boolean firstTime = (startScreenWipe == 0);
+	dboolean firstTime = (startScreenWipe == 0);
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
@@ -3398,7 +3398,7 @@ EXPORT void HWRAPI(StartScreenWipe) (void)
 EXPORT void HWRAPI(EndScreenWipe)(void)
 {
 	INT32 texsize = 2048;
-	boolean firstTime = (endScreenWipe == 0);
+	dboolean firstTime = (endScreenWipe == 0);
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
@@ -3569,7 +3569,7 @@ EXPORT void HWRAPI(DoScreenWipe)(void)
 EXPORT void HWRAPI(MakeScreenTexture) (void)
 {
 	INT32 texsize = 2048;
-	boolean firstTime = (screentexture == 0);
+	dboolean firstTime = (screentexture == 0);
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)
@@ -3599,7 +3599,7 @@ EXPORT void HWRAPI(MakeScreenTexture) (void)
 EXPORT void HWRAPI(MakeScreenFinalTexture) (void)
 {
 	INT32 texsize = 2048;
-	boolean firstTime = (finalScreenTexture == 0);
+	dboolean firstTime = (finalScreenTexture == 0);
 
 	// Use a power of two texture, dammit
 	if(screen_width <= 512)

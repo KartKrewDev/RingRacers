@@ -32,8 +32,8 @@ extern unsigned char mapmd5[16];
 extern mapthing_t *deathmatchstarts[MAX_DM_STARTS];
 extern INT32 numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX], numfaultstarts;
 
-extern boolean levelloading;
-extern boolean g_reloadinggamestate;
+extern dboolean levelloading;
+extern dboolean g_reloadinggamestate;
 extern UINT8 levelfadecol;
 
 extern tic_t oldbest;
@@ -105,18 +105,18 @@ INT32 P_CheckLevelFlat(const char *flatname);
 extern size_t nummapthings;
 extern mapthing_t *mapthings;
 
-void P_SetupLevelSky(const char *skytexname, boolean global);
+void P_SetupLevelSky(const char *skytexname, dboolean global);
 void P_RespawnThings(void);
 void P_FreeLevelState(void);
 void P_ResetLevelMusic(void);
-boolean P_UseContinuousLevelMusic(void);
+dboolean P_UseContinuousLevelMusic(void);
 void P_LoadLevelMusic(void);
-boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate);
+dboolean P_LoadLevel(dboolean fromnetsave, dboolean reloadinggamestate);
 void P_PostLoadLevel(void);
 #ifdef HWRENDER
 void HWR_LoadLevel(void);
 #endif
-boolean P_AddWadFile(const char *wadfilename);
+dboolean P_AddWadFile(const char *wadfilename);
 
 #define MAPRET_ADDED (1)
 #define MAPRET_CURRENTREPLACED (1<<1)
@@ -134,7 +134,7 @@ UINT16 P_PartialAddWadFile(const char *wadfilename);
 //   otherwise multiple stages
 // returns true if setup finished on this call, false otherwise (always true on fullsetup)
 // throws I_Error if called without any partial adds started as a safeguard
-boolean P_MultiSetupWadFiles(boolean fullsetup);
+dboolean P_MultiSetupWadFiles(dboolean fullsetup);
 // Get the current setup stage.
 //   if negative, no PartialAdds done since last MultiSetup
 //   if 0, partial adds done but MultiSetup not called yet
@@ -144,14 +144,14 @@ extern UINT16 partadd_earliestfile;
 
 void P_ReduceVFXTextureReload(void);
 
-boolean P_RunSOC(const char *socfilename);
+dboolean P_RunSOC(const char *socfilename);
 void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 //void P_WriteThings(void);
 void P_UpdateSegLightOffset(seg_t *li);
-boolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector);
-boolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector);
-boolean P_SectorUsesDirectionalLighting(const sector_t *sector);
+dboolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector);
+dboolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector);
+dboolean P_SectorUsesDirectionalLighting(const sector_t *sector);
 size_t P_PrecacheLevelFlats(void);
 void P_AllocMapHeader(INT16 i);
 

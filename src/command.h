@@ -51,7 +51,7 @@ struct xcommand_t
 	const char *name;
 	xcommand_t *next;
 	com_func_t function;
-	boolean debug;
+	dboolean debug;
 };
 
 extern xcommand_t *com_commands; // current commands
@@ -98,8 +98,8 @@ void COM_Init(void);
 
 struct vsbuf_t
 {
-	boolean allowoverflow; // if false, do a I_Error
-	boolean overflowed; // set to true if the buffer size failed
+	dboolean allowoverflow; // if false, do a I_Error
+	dboolean overflowed; // set to true if the buffer size failed
 	UINT8 *data;
 	size_t maxsize;
 	size_t cursize;
@@ -237,7 +237,7 @@ extern consvar_t cv_cheats;
 extern consvar_t cv_execversion;
 
 void CV_InitFilterVar(void);
-void CV_ToggleExecVersion(boolean enable);
+void CV_ToggleExecVersion(dboolean enable);
 
 // register a variable for use at the console
 void CV_RegisterVar(consvar_t *variable);
@@ -258,7 +258,7 @@ const char *CV_CompleteVar(char *partial, INT32 skips);
 // var. If an exact string value exists, it is returned in
 // valstrp. An integer value is returned in intval if it
 // is not NULL.
-boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval);
+dboolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval);
 
 // equivalent to "<varname> <value>" typed at the console
 void CV_Set(consvar_t *var, const char *value);
@@ -277,7 +277,7 @@ void CV_AddValue(consvar_t *var, INT32 increment);
 void CV_SaveVariables(FILE *f);
 
 // load/save gamesate (load and save option and for network join in game)
-void CV_SaveVars(UINT8 **p, boolean in_demo);
+void CV_SaveVars(UINT8 **p, dboolean in_demo);
 
 #define CV_SaveNetVars(p) CV_SaveVars(p, false)
 size_t CV_LoadNetVars(const UINT8 *p);
@@ -291,8 +291,8 @@ size_t CV_LoadDemoVars(const UINT8 *p);
 // reset cheat netvars after cheats is deactivated
 void CV_CheatsChanged(void);
 
-boolean CV_IsSetToDefault(consvar_t *v);
-boolean CV_CheatsEnabled(void);
+dboolean CV_IsSetToDefault(consvar_t *v);
+dboolean CV_CheatsEnabled(void);
 void CV_CheaterWarning(UINT8 playerID, const char *command);
 
 // Returns cvar by name. Exposed here for Lua.

@@ -25,11 +25,11 @@
 #include "r_defs.h"
 
 /*--------------------------------------------------
-	fixed_t K_RespawnOffset(player_t *player, boolean flip)
+	fixed_t K_RespawnOffset(player_t *player, dboolean flip)
 
 		See header file for description.
 --------------------------------------------------*/
-fixed_t K_RespawnOffset(player_t *player, boolean flip)
+fixed_t K_RespawnOffset(player_t *player, dboolean flip)
 {
 	fixed_t z = 0;
 
@@ -80,7 +80,7 @@ void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 	player->respawn.pointx = waypoint->mobj->x;
 	player->respawn.pointy = waypoint->mobj->y;
 	player->respawn.pointz = waypoint->mobj->z;
-	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
+	player->respawn.flip = (waypoint->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a dboolean!
 	player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
 
 	if (waypoint->onaline)
@@ -127,7 +127,7 @@ void K_DoFault(player_t *player)
 --------------------------------------------------*/
 void K_DoIngameRespawn(player_t *player)
 {
-	boolean faultstartfaulting = false;
+	dboolean faultstartfaulting = false;
 
 	if (!player->mo || P_MobjWasRemoved(player->mo))
 	{
@@ -230,7 +230,7 @@ void K_DoIngameRespawn(player_t *player)
 		&& Obj_GetCheckpointRespawnPosition(checkpoint, &pos))
 	{
 		player->respawn.wp = NULL;
-		player->respawn.flip = (checkpoint->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
+		player->respawn.flip = (checkpoint->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a dboolean!
 		player->respawn.pointx = pos.x;
 		player->respawn.pointy = pos.y;
 		player->respawn.pointz = pos.z + K_RespawnOffset(player, player->respawn.flip);
@@ -417,7 +417,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	UINT8 lasersteps = 4;
 	UINT32 laserdist;
 	waypoint_t *laserwp;
-	boolean laserflip;
+	dboolean laserflip;
 
 	/* speed up if in the air for a long time */
 	realstepamt += FixedMul(realstepamt,
@@ -658,7 +658,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 			dest.x = laserwp->mobj->x;
 			dest.y = laserwp->mobj->y;
 			dest.z = laserwp->mobj->z;
-			laserflip = (laserwp->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
+			laserflip = (laserwp->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a dboolean!
 
 			if (laserflip == true)
 			{
@@ -798,7 +798,7 @@ static void K_DropDashWait(player_t *player)
 
 
 /*--------------------------------------------------
-	static boolean K_CanDropDash(player_t *player)
+	static dboolean K_CanDropDash(player_t *player)
 
 		Checks if you can use the Drop Dash maneuver.
 
@@ -808,7 +808,7 @@ static void K_DropDashWait(player_t *player)
 	Return:-
 		Whether a Drop Dash should be allowed.
 --------------------------------------------------*/
-static boolean K_CanDropDash(player_t *player)
+static dboolean K_CanDropDash(player_t *player)
 {
 	const UINT16 buttons = K_GetKartButtons(player);
 

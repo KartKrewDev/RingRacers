@@ -39,7 +39,7 @@ struct bheap_t
 
 
 /*--------------------------------------------------
-	boolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity)
+	dboolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity)
 
 		Initialises a binary heap.
 
@@ -51,11 +51,11 @@ struct bheap_t
 		True if the initialisation was successful, false if it wasn't.
 --------------------------------------------------*/
 
-boolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity);
+dboolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity);
 
 
 /*--------------------------------------------------
-	boolean K_BHeapValid(bheap_t *const heap)
+	dboolean K_BHeapValid(bheap_t *const heap)
 
 		Checks a binary heap for validity
 
@@ -66,11 +66,11 @@ boolean K_BHeapInit(bheap_t *const heap, size_t initialcapacity);
 		True if the binary heap is valid, false if it isn't
 --------------------------------------------------*/
 
-boolean K_BHeapValid(bheap_t *const heap);
+dboolean K_BHeapValid(bheap_t *const heap);
 
 
 /*--------------------------------------------------
-	boolean K_BHeapPush(bheap_t *const heap, void *const item, const UINT32 value, updateindexfunc changeindexcallback)
+	dboolean K_BHeapPush(bheap_t *const heap, void *const item, const UINT32 value, updateindexfunc changeindexcallback)
 
 		Adds a new item to a binary heap.
 
@@ -84,11 +84,11 @@ boolean K_BHeapValid(bheap_t *const heap);
 		True if the push to the heap was successful, false if it wasn't due to invalid parameters
 --------------------------------------------------*/
 
-boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback);
+dboolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback);
 
 
 /*--------------------------------------------------
-	boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
+	dboolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 
 		Pops the first item off of the heap, then orders it back to be correct.
 
@@ -100,11 +100,11 @@ boolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updatei
 		true if the pop from the heap was successful, false if it wasn't.
 --------------------------------------------------*/
 
-boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage);
+dboolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage);
 
 
 /*--------------------------------------------------
-	boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+	dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
 
 		Updates the heap item's value, and reorders it in the array appropriately. Only works if the item is in a heap
 		validly. If it's a heapitem that is not currently in a heap (ie it's been popped off) just change the value
@@ -118,7 +118,7 @@ boolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage);
 		true if the update was successful, false if it wasn't
 --------------------------------------------------*/
 
-boolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue);
+dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue);
 
 
 /*--------------------------------------------------
@@ -140,7 +140,7 @@ size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index);
 
 
 /*--------------------------------------------------
-	boolean K_BHeapFree(bheap_t *const heap)
+	dboolean K_BHeapFree(bheap_t *const heap)
 
 		Free the binary heap.
 		This does NOT free the data held within the binary heap items. Make sure those can still be freed manually.
@@ -152,7 +152,7 @@ size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index);
 		True if the heap was freed successfully, false if the heap wasn't valid to free
 --------------------------------------------------*/
 
-boolean K_BHeapFree(bheap_t *const heap);
+dboolean K_BHeapFree(bheap_t *const heap);
 
 #ifdef __cplusplus
 } // extern "C"

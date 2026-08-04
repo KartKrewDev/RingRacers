@@ -21,7 +21,7 @@ extern "C" {
 
 #define VOTE_MOD_ENCORE (0x01)
 
-boolean Y_PlayerIDCanVote(const UINT8 playerId);
+dboolean Y_PlayerIDCanVote(const UINT8 playerId);
 void Y_SetPlayersVote(const UINT8 playerId, SINT8 vote);
 
 void Y_VoteDrawer(void);

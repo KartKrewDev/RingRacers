@@ -444,7 +444,7 @@ static UINT8 *MakeBlock(GLMipmap_t *grMipmap)
 // Create a composite texture from patches, adapt the texture size to a power of 2
 // height and width for the hardware texture cache.
 //
-static void HWR_GenerateTexture(GLMapTexture_t *grtex, INT32 texnum, boolean noencoremap)
+static void HWR_GenerateTexture(GLMapTexture_t *grtex, INT32 texnum, dboolean noencoremap)
 {
 	UINT8 *block;
 	texture_t *texture;
@@ -456,7 +456,7 @@ static void HWR_GenerateTexture(GLMapTexture_t *grtex, INT32 texnum, boolean noe
 	UINT8 *colormap = colormaps;
 
 	INT32 i;
-	boolean skyspecial = false; //poor hack for Legacy large skies..
+	dboolean skyspecial = false; //poor hack for Legacy large skies..
 
 	texture = textures[texnum];
 
@@ -511,7 +511,7 @@ static void HWR_GenerateTexture(GLMapTexture_t *grtex, INT32 texnum, boolean noe
 	// Composite the columns together.
 	for (i = 0, patch = texture->patches; i < texture->patchcount; i++, patch++)
 	{
-		boolean dealloc = true;
+		dboolean dealloc = true;
 		size_t lumplength = W_LumpLengthPwad(patch->wad, patch->lump);
 		pdata = (uint8_t*)W_CacheLumpNumPwad(patch->wad, patch->lump, PU_CACHE);
 		realpatch = (softwarepatch_t *)pdata;
@@ -554,7 +554,7 @@ static void HWR_GenerateTexture(GLMapTexture_t *grtex, INT32 texnum, boolean noe
 }
 
 // patch may be NULL if grMipmap has been initialised already and makebitmap is false
-void HWR_MakePatch (const patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap)
+void HWR_MakePatch (const patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, dboolean makebitmap)
 {
 	if (grMipmap->width == 0)
 	{
@@ -592,7 +592,7 @@ void HWR_MakePatch (const patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipm
 static size_t gl_numtextures = 0; // Texture count
 static GLMapTexture_t *gl_textures; // For all textures
 static GLMapTexture_t *gl_flats; // For all (texture) flats, as normal flats don't need to be cached
-boolean gl_maptexturesloaded = false;
+dboolean gl_maptexturesloaded = false;
 
 void HWR_FreeTextureData(patch_t *patch)
 {
@@ -679,23 +679,23 @@ void HWR_FreeTextureColormaps(patch_t *patch)
 	}
 }
 
-static boolean FreeTextureCallback(void *mem)
+static dboolean FreeTextureCallback(void *mem)
 {
 	patch_t *patch = (patch_t *)mem;
 	HWR_FreeTexture(patch);
 	return false;
 }
 
-static boolean FreeColormapsCallback(void *mem)
+static dboolean FreeColormapsCallback(void *mem)
 {
 	patch_t *patch = (patch_t *)mem;
 	HWR_FreeTextureColormaps(patch);
 	return false;
 }
 
-static void HWR_FreePatchCache(boolean freeall)
+static void HWR_FreePatchCache(dboolean freeall)
 {
-	boolean (*callback)(void *mem) = FreeTextureCallback;
+	dboolean (*callback)(void *mem) = FreeTextureCallback;
 
 	if (!freeall)
 		callback = FreeColormapsCallback;
@@ -885,7 +885,7 @@ static void HWR_CacheFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
 			flat[steppy] = grMipmap->colormap->source[flat[steppy]];
 }
 
-static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum, boolean noencoremap)
+static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum, dboolean noencoremap)
 {
 	UINT8 *flat;
 	UINT8 *converted;
@@ -916,7 +916,7 @@ static void HWR_CacheTextureAsFlat(GLMipmap_t *grMipmap, INT32 texturenum, boole
 }
 
 // Download a Doom 'flat' to the hardware cache and make it ready for use
-void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
+void HWR_GetRawFlat(lumpnum_t flatlumpnum, dboolean noencoremap)
 {
 	GLMipmap_t *grmip;
 	patch_t *patch;
@@ -953,7 +953,7 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 	Z_ChangeTag(grmip->data, PU_HWRCACHE_UNLOCKED);
 }
 
-void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap)
+void HWR_GetLevelFlat(levelflat_t *levelflat, dboolean noencoremap)
 {
 	// Who knows?
 	if (levelflat == NULL)

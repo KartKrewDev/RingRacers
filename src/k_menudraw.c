@@ -139,7 +139,7 @@ static INT32 M_SliderX(INT32 range)
 }
 
 //  A smaller 'Thermo', with range given as percents (0-100)
-static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
+static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, dboolean ontop)
 {
 	x = BASEVIDWIDTH - x - SLIDER_WIDTH;
 	V_DrawFill(x - 5, y + 3, SLIDER_WIDTH + 3, 5, 31);
@@ -255,7 +255,7 @@ static char bgImageName[9];
 #define MENUBG_TEXTSCROLL 6
 #define MENUBG_IMAGESCROLL 36
 
-void M_UpdateMenuBGImage(boolean forceReset)
+void M_UpdateMenuBGImage(dboolean forceReset)
 {
 	char oldName[9];
 
@@ -617,7 +617,7 @@ static void M_DrawMenuTyping(void)
 					col = 25;
 				}
 
-				boolean canmodifycol = (menutyping.menutypingfade == 18);
+				dboolean canmodifycol = (menutyping.menutypingfade == 18);
 
 				if (c == KEY_BACKSPACE)
 				{
@@ -755,7 +755,7 @@ static void M_DrawMenuTyping(void)
 
 }
 
-static void M_DrawPauseRoundQueue(INT16 offset, boolean canqueue)
+static void M_DrawPauseRoundQueue(INT16 offset, dboolean canqueue)
 {
 	y_data_t standings;
 	memset(&standings, 0, sizeof (standings));
@@ -816,7 +816,7 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
-		boolean push;
+		dboolean push;
 
 		if (menumessage.closing)
 			push = (menumessage.answer != MA_YES);
@@ -941,8 +941,8 @@ void M_Drawer(void)
 	// background layer
 	if (menuactive)
 	{
-		boolean drawbgroutine = false;
-		boolean trulystarted = M_GameTrulyStarted();
+		dboolean drawbgroutine = false;
+		dboolean trulystarted = M_GameTrulyStarted();
 
 		if (gamestate == GS_MENU && trulystarted)
 		{
@@ -1019,7 +1019,7 @@ void M_Drawer(void)
 
 	if (netgame && Playing())
 	{
-		boolean mainpause_open = menuactive && currentMenu == &PAUSE_MainDef;
+		dboolean mainpause_open = menuactive && currentMenu == &PAUSE_MainDef;
 
 		ST_DrawServerSplash(!mainpause_open);
 	}
@@ -1306,7 +1306,7 @@ void M_DrawKartGamemodeMenu(void)
 		}
 
 		INT32 cx = x;
-		boolean selected = (i == itemOn && menutransition.tics == menutransition.dest);
+		dboolean selected = (i == itemOn && menutransition.tics == menutransition.dest);
 
 		if (selected)
 		{
@@ -1356,7 +1356,7 @@ void M_DrawKartGamemodeMenu(void)
 	}
 }
 
-void M_FlipKartGamemodeMenu(boolean slide)
+void M_FlipKartGamemodeMenu(dboolean slide)
 {
 	gm_flipStart = slide ? I_GetTime() : 0;
 }
@@ -1589,7 +1589,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 	for (i = 0; i < numoptions; i++)
 	{
 		fixed_t cx = x << FRACBITS, cy = y << FRACBITS;
-		boolean subtract = (i & 1) == subtractcheck;
+		dboolean subtract = (i & 1) == subtractcheck;
 		angle_t ang = ((i+1)/2) * angamt;
 		patch_t *patch = NULL;
 		UINT8 *colormap = NULL;
@@ -1812,7 +1812,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 }
 
 // returns false if the character couldn't be rendered
-boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap)
+dboolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap)
 {
 	UINT8 spr;
 	spritedef_t *sprdef;
@@ -1851,7 +1851,7 @@ boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 ro
 // Returns false is the follower shouldn't be rendered.
 // 'num' can be used to directly specify the follower number, but doing this will not animate it.
 // if a setup_player_t is specified instead, its data will be used to animate the follower sprite.
-static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charflip, INT32 addflags, UINT8 *colormap, setup_player_t *p)
+static dboolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, dboolean charflip, INT32 addflags, UINT8 *colormap, setup_player_t *p)
 {
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
@@ -1921,7 +1921,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 	return true;
 }
 
-static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip)
+static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, dboolean charflip)
 {
 	setup_player_t *p = &setup_player[num];
 	UINT16 color;
@@ -1957,7 +1957,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	INT16 x = 11, y = 5;
 	char letter = 'A' + num;
 	setup_player_t *p = &setup_player[num];
-	boolean charflip = !!(num & 1);
+	dboolean charflip = !!(num & 1);
 
 	if (num & 1)
 		x += 233;
@@ -2220,7 +2220,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	}
 }
 
-static void M_DrawCharSelectExplosions(boolean charsel, INT16 basex, INT16 basey)
+static void M_DrawCharSelectExplosions(dboolean charsel, INT16 basex, INT16 basey)
 {
 	UINT8 i;
 	INT16 quadx = 2, quady = 2, mul = 22;
@@ -2345,7 +2345,7 @@ static void M_DrawCharSelectCursor(UINT8 num)
 
 // Draw character profile card.
 // Moved here because in the case of profile edition this is drawn in the charsel menu.
-void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
+void M_DrawProfileCard(INT32 x, INT32 y, dboolean greyedout, profile_t *p)
 {
 	setup_player_t *sp = &setup_player[0];	// When editing profile character, we'll always be checking for what P1 is doing.
 	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
@@ -2483,7 +2483,7 @@ void M_DrawCharacterSelect(void)
 	INT16 quadx, quady;
 	INT16 skin;
 	INT32 basex = optionsmenu.profile ? (64 + M_EaseWithTransition(Easing_InSine, 5 * 48)) : 0;
-	boolean forceskin = M_CharacterSelectForceInAction();
+	dboolean forceskin = M_CharacterSelectForceInAction();
 
 	if (setup_numplayers > 0)
 	{
@@ -2759,8 +2759,8 @@ void M_DrawRaceDifficulty(void)
 			{
 				extern menu_anim_t g_drace_timer;
 				const menuitem_t *it = &currentMenu->menuitems[i];
-				boolean activated = g_drace_timer.dist == i;
-				boolean flicker = activated && (I_GetTime() - g_drace_timer.start) % 2 < 1;
+				dboolean activated = g_drace_timer.dist == i;
+				dboolean flicker = activated && (I_GetTime() - g_drace_timer.start) % 2 < 1;
 
 				INT32 cx = it->mvar1 + tx;
 				INT32 cy = 79;
@@ -2889,7 +2889,7 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 	}
 	else if (levelsearch->cup)
 	{
-		boolean unlocked = (M_GetFirstLevelInList(&temp, levelsearch) != NEXTMAP_INVALID);
+		dboolean unlocked = (M_GetFirstLevelInList(&temp, levelsearch) != NEXTMAP_INVALID);
 		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 		patch_t *icon = W_CachePatchName(levelsearch->cup->icon, PU_CACHE);
 		const char *str = (unlocked ? va("%s Cup", levelsearch->cup->realname) : "???");
@@ -2913,14 +2913,14 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 	}
 }
 
-fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, boolean flash, boolean statsmode)
+fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, dboolean flash, dboolean statsmode)
 {
 	INT32 rankw = 14 + 1 + 12 + 1 + 12;
 
 	if (!cup)
 		return 0;
 
-	boolean noemerald = (!gamedata->everseenspecial || difficulty == KARTSPEED_EASY);
+	dboolean noemerald = (!gamedata->everseenspecial || difficulty == KARTSPEED_EASY);
 
 	if (statsmode)
 	{
@@ -3135,7 +3135,7 @@ windataemeraldmaybe:
 	return rankw;
 }
 
-void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, boolean isTrophy, UINT8 placement)
+void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, dboolean isTrophy, UINT8 placement)
 {
 	patch_t *patch = NULL;
 	UINT8 *colormap = NULL;
@@ -3230,8 +3230,8 @@ void M_DrawCupSelect(void)
 	INT16 cy = M_EaseWithTransition(Easing_Linear, 5 * 30);
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
-	boolean isLocked;
-	const boolean isGP = (templevelsearch.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
+	dboolean isLocked;
+	const dboolean isGP = (templevelsearch.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
 	const UINT8 numrows = (cupgrid.cache_secondrowlocked ? 1 : CUPMENU_ROWS);
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
@@ -3376,7 +3376,7 @@ void M_DrawCupSelect(void)
 			UINT16 dotcol;
 		} work_array[CUPCACHE_MAX];
 
-		boolean incj = false;
+		dboolean incj = false;
 
 		i = j = 0;
 
@@ -3558,8 +3558,8 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 	if (!mapheaderinfo[map]->menuttl[0]
 		&& mapheaderinfo[map]->zonttl[0])
 	{
-		boolean one = true;
-		boolean two = true;
+		dboolean one = true;
+		dboolean two = true;
 
 		for (i = 0; i < 22; i++)
 		{
@@ -3640,9 +3640,9 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		V_DrawLSTitleLowString(x2, y+28, 0, word2);
 }
 
-static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb, boolean allowbonus, boolean draw);
+static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, dboolean allowtime, dboolean allowencore, dboolean allowspb, dboolean allowbonus, dboolean draw);
 
-static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblink, boolean greyscale)
+static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, dboolean redblink, dboolean greyscale)
 {
 	UINT8 *colormap = NULL;
 
@@ -3680,11 +3680,11 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, boolean redblin
 		x += 80+2;
 		y += 50-1;
 
-		const boolean allowencore = (
+		const dboolean allowencore = (
 			!levellist.levelsearch.timeattack
 			&& M_SecretUnlocked(SECRET_ENCORE, true)
 		);
-		const boolean allowspb = (
+		const dboolean allowspb = (
 			levellist.levelsearch.timeattack
 			&& M_SecretUnlocked(SECRET_SPBATTACK, true)
 		);
@@ -3732,7 +3732,7 @@ void M_DrawLevelSelect(void)
 			levellist.slide.dist,
 			0
 		);
-	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics != menutransition.dest);
+	dboolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics != menutransition.dest);
 
 	if (tatransition)
 	{
@@ -3768,7 +3768,7 @@ void M_DrawLevelSelect(void)
 	t = (abs(t)/2) + BASEVIDWIDTH - 4;
 	tay += 30;
 
-	const boolean queuewithinsize = (menuqueue.size + roundqueue.size < ROUNDQUEUE_MAX);
+	const dboolean queuewithinsize = (menuqueue.size + roundqueue.size < ROUNDQUEUE_MAX);
 
 	const char *worktext = "Go to Course";
 	if (levellist.levelsearch.timeattack)
@@ -3803,7 +3803,7 @@ void M_DrawLevelSelect(void)
 	}
 }
 
-static boolean M_LevelSelectHasBG(menu_t *check)
+static dboolean M_LevelSelectHasBG(menu_t *check)
 {
 	if (check == NULL)
 		check = currentMenu;
@@ -3812,7 +3812,7 @@ static boolean M_LevelSelectHasBG(menu_t *check)
 	|| check == &PLAY_CupSelectDef);
 }
 
-static boolean M_LevelSelectToTimeAttackTransitionHelper(void)
+static dboolean M_LevelSelectToTimeAttackTransitionHelper(void)
 {
 	return (M_LevelSelectHasBG(menutransition.startmenu))
 		!= M_LevelSelectHasBG(menutransition.endmenu);
@@ -4014,7 +4014,7 @@ void M_DrawTimeAttack(void)
 				{
 					const char *str = NULL;
 					INT32 optflags = f;
-					boolean drawarrows = (i == itemOn);
+					dboolean drawarrows = (i == itemOn);
 
 					if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_ARROWS)
 					{
@@ -4141,7 +4141,7 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 }
 
 // Draws the EGGA CHANNEL background.
-void M_DrawEggaChannelAlignable(boolean centered)
+void M_DrawEggaChannelAlignable(dboolean centered)
 {
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
 
@@ -4640,14 +4640,14 @@ void M_DrawMPServerBrowser(void)
 // Draws the cogs and also the options background!
 void M_DrawOptionsCogs(void)
 {
-	boolean eggahack = (
+	dboolean eggahack = (
 		currentMenu->prevMenu == &PLAY_MP_HostDef
 		|| (
 			currentMenu->prevMenu
 			&& currentMenu->prevMenu->prevMenu == &PLAY_MP_HostDef
 			)
 		);
-	boolean solidbg = M_GameTrulyStarted() && !eggahack;
+	dboolean solidbg = M_GameTrulyStarted() && !eggahack;
 	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
 
 	// the background isn't drawn outside of being in the main menu state.
@@ -4690,14 +4690,14 @@ void M_DrawOptionsCogs(void)
 // Hacking up M_DrawOptionsCogs to try and make something better suited for changing the color profile. - Freaky Mutant Man
 void M_DrawOptionsColorProfile(void)
 {
-	boolean eggahack = (
+	dboolean eggahack = (
 		currentMenu->prevMenu == &PLAY_MP_HostDef
 		|| (
 			currentMenu->prevMenu
 			&& currentMenu->prevMenu->prevMenu == &PLAY_MP_HostDef
 			)
 		);
-	boolean solidbg = M_GameTrulyStarted() && !eggahack;
+	dboolean solidbg = M_GameTrulyStarted() && !eggahack;
 	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
 
 	// the background isn't drawn outside of being in the main menu state.
@@ -4870,8 +4870,8 @@ void M_DrawGenericOptions(void)
 	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = -100;
 	INT32 expand = -1;
 	INT32 boxy = 0;
-	boolean collapse = false;
-	boolean opening = false;
+	dboolean collapse = false;
+	dboolean opening = false;
 	fixed_t boxt = 0;
 
 	M_DrawMenuTooltips();
@@ -4898,7 +4898,7 @@ box_found:
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		boolean term = false;
+		dboolean term = false;
 
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
@@ -4988,7 +4988,7 @@ box_found:
 #endif
 			case IT_STRING:
 			case IT_LINKTEXT: {
-				boolean textBox = (currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
+				dboolean textBox = (currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR &&
 					(currentMenu->menuitems[i].status & IT_CVARTYPE) == IT_CV_STRING;
 
 				if (textBox)
@@ -5052,7 +5052,7 @@ box_found:
 								}
 								break;
 							default: {
-								boolean isDefault = CV_IsSetToDefault(cv);
+								dboolean isDefault = CV_IsSetToDefault(cv);
 								w = V_MenuStringWidth(cv->string, 0);
 								V_DrawMenuString(BASEVIDWIDTH - x - w, y,
 									(!isDefault ? warningflags : highlightflags), cv->string);
@@ -5463,7 +5463,7 @@ void M_DrawProfileControls(void)
 
 			case IT_STRING2:
 			{
-				boolean drawnpatch = false;
+				dboolean drawnpatch = false;
 
 				if (currentMenu->menuitems[i].patch)
 				{
@@ -5778,7 +5778,7 @@ void M_DrawVideoModes(void)
 	for (i = 0; i < optionsmenu.vidm_nummodes; i++)
 	{
 		INT32 colorflag = 0;
-		boolean isdefault = !strcmp(optionsmenu.modedescs[i].desc, va("%dx%d", cv_scr_width.value, cv_scr_height.value));
+		dboolean isdefault = !strcmp(optionsmenu.modedescs[i].desc, va("%dx%d", cv_scr_width.value, cv_scr_height.value));
 
 		if (i == optionsmenu.vidm_selected)
 			colorflag = highlightflags;
@@ -6449,7 +6449,7 @@ void M_DrawPause(void)
 		INT16 word1len = 0;
 		char word2[MAXSTRINGLENGTH];
 		INT16 word2len = 0;
-		boolean sok = false;
+		dboolean sok = false;
 
 		while (maintext[j] && j < MAXSTRINGLENGTH)
 		{
@@ -6485,8 +6485,8 @@ void M_DrawPause(void)
 			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, mainflags, word2);
 	}
 
-	const boolean rulescheck = (K_CanChangeRules(false) && (server || IsPlayerAdmin(consoleplayer)));
-	boolean drawqueue = (rulescheck && (menuqueue.size > 0));
+	const dboolean rulescheck = (K_CanChangeRules(false) && (server || IsPlayerAdmin(consoleplayer)));
+	dboolean drawqueue = (rulescheck && (menuqueue.size > 0));
 
 	if (gamestate != GS_INTERMISSION && roundqueue.size > 0)
 	{
@@ -6539,7 +6539,7 @@ void M_DrawKickHandler(void)
 	INT32 pokeamount = playerkickmenu.poke ? ((playerkickmenu.poke & 1) ? -playerkickmenu.poke/2 : playerkickmenu.poke/2) : (I_GetTime() % 16 < 8);
 	INT32 x2 = x + pokeamount - 9 - 8 - 2;
 
-	boolean datarightofcolumn = false;
+	dboolean datarightofcolumn = false;
 
 	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_CACHE); // Results bars for players
 
@@ -6890,7 +6890,7 @@ void M_DrawAddons(void)
 
 // Challenges Menu
 
-static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flashmap, boolean hili)
+static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flashmap, dboolean hili)
 {
 #ifdef DEVELOP
 	extern consvar_t cv_debugchallenges;
@@ -6901,7 +6901,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	INT32 tileflags = 0;
 	fixed_t siz, accordion;
 	UINT16 id, num;
-	boolean unlockedyet;
+	dboolean unlockedyet;
 
 	id = (i * CHALLENGEGRIDHEIGHT) + j;
 	num = gamedata->challengegrid[id];
@@ -6932,7 +6932,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	if (!unlockedyet)
 	{
 		UINT32 flags = 0;
-		boolean hint = !!(challengesmenu.extradata[id].flags & CHE_HINT);
+		dboolean hint = !!(challengesmenu.extradata[id].flags & CHE_HINT);
 
 		pat = W_CachePatchName(
 			va("UN_OUTL%c",
@@ -6976,7 +6976,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 
 	accordion = FRACUNIT;
 
-	boolean categoryside = (challengesmenu.extradata[id].flip == 0);
+	dboolean categoryside = (challengesmenu.extradata[id].flip == 0);
 
 	if (!categoryside // optimised, this is not the true value with anything but instaflip
 		&& challengesmenu.extradata[id].flip != (TILEFLIP_MAX/2))
@@ -7288,7 +7288,7 @@ drawborder:
 
 	if (hili)
 	{
-		boolean maj = (ref != NULL && ref->majorunlock);
+		dboolean maj = (ref != NULL && ref->majorunlock);
 		char buffer[9];
 		snprintf(buffer, sizeof(buffer), "%s", "UN_RETA1");
 		buffer[6] = maj ? 'B' : 'A';
@@ -7676,7 +7676,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_MAP:
 		{
-			boolean validdraw = false;
+			dboolean validdraw = false;
 			const char *gtname = "Find your prize...";
 			UINT16 mapnum = M_UnlockableMapNum(ref);
 
@@ -7900,7 +7900,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 			const char *tune = "challenge_altmusic";
 
 			SINT8 pushed = 0;
-			const boolean epossible = (M_SecretUnlocked(SECRET_ENCORE, true)
+			const dboolean epossible = (M_SecretUnlocked(SECRET_ENCORE, true)
 				&& musicid < mapheaderinfo[map]->encoremusname_size);
 
 			if (challengesmenu.nowplayingtile == ((challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy)
@@ -8067,7 +8067,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	fixed_t keyx = (8+offs)*FRACUNIT, keyy = 0;
 
-	const boolean keybuttonpress = (menumessage.active == false && M_MenuExtraHeld(pid) == true);
+	const dboolean keybuttonpress = (menumessage.active == false && M_MenuExtraHeld(pid) == true);
 
 	// Button prompt
 	K_DrawGameControl(
@@ -8141,7 +8141,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	{
 		fixed_t baseradius = challengesgridstep;
 
-		boolean major = false, ending = false;
+		dboolean major = false, ending = false;
 		if (unlockables[challengesmenu.currentunlock].majorunlock == true)
 		{
 			major = true;
@@ -8651,14 +8651,14 @@ challengedesc:
 
 #define STATSSTEP 10
 
-static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, boolean allowtime, boolean allowencore, boolean allowspb, boolean allowbonus, boolean draw)
+static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, dboolean allowtime, dboolean allowencore, dboolean allowspb, dboolean allowbonus, dboolean draw)
 {
 	UINT8 lasttype = UINT8_MAX, curtype;
 
 	// M_GetLevelEmblems is ONE-indexed, urgh
 	emblem_t *emblem = M_GetLevelEmblems(mapnum+1);
 
-	boolean collected = false, hasmedals = false;
+	dboolean collected = false, hasmedals = false;
 
 	while (emblem)
 	{
@@ -8768,7 +8768,7 @@ static void M_DrawStatsMaps(void)
 {
 	INT32 y = 70, i;
 	INT16 mnum;
-	boolean dotopname = true, dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
+	dboolean dotopname = true, dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
 	INT32 location = statisticsmenu.location;
 
 	tic_t besttime = 0;
@@ -8805,7 +8805,7 @@ static void M_DrawStatsMaps(void)
 
 	medalspos = BASEVIDWIDTH - 20;
 
-	boolean timeattack[3];
+	dboolean timeattack[3];
 	timeattack[0] = M_SecretUnlocked(SECRET_TIMEATTACK, true);
 	timeattack[1] = M_SecretUnlocked(SECRET_PRISONBREAK, true);
 	timeattack[2] = M_SecretUnlocked(SECRET_SPECIALATTACK, true);
@@ -8852,10 +8852,10 @@ static void M_DrawStatsMaps(void)
 
 	i = -1;
 
-	const boolean allowsealed = M_SecretUnlocked(SECRET_SPECIALATTACK, true);
-	const boolean allowencore = M_SecretUnlocked(SECRET_ENCORE, true);
-	const boolean allowspb = M_SecretUnlocked(SECRET_SPBATTACK, true);
-	boolean allowtime = false;
+	const dboolean allowsealed = M_SecretUnlocked(SECRET_SPECIALATTACK, true);
+	const dboolean allowencore = M_SecretUnlocked(SECRET_ENCORE, true);
+	const dboolean allowspb = M_SecretUnlocked(SECRET_SPBATTACK, true);
+	dboolean allowtime = false;
 
 	while ((mnum = statisticsmenu.maplist[++i]) != NEXTMAP_INVALID)
 	{
@@ -9037,7 +9037,7 @@ static void M_DrawStatsChars(void)
 {
 	INT32 y = 80, i, j;
 	INT16 skin;
-	boolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
+	dboolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
 	INT32 location = statisticsmenu.location;
 
 	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
@@ -9124,7 +9124,7 @@ static void M_DrawStatsGP(void)
 {
 	INT32 y = 80, i, x, j, endj;
 	INT16 id;
-	boolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
+	dboolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
 	INT32 location = statisticsmenu.location;
 
 	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
@@ -9221,7 +9221,7 @@ static void M_GetStatsTime(char *beststr, UINT32 totaltime)
 {
 	beststr[0] = 0;
 
-	boolean showallsubsequent = false;
+	dboolean showallsubsequent = false;
 
 	UINT32 besttime = G_TicsToHours(totaltime);
 	if (besttime)

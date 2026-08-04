@@ -105,7 +105,7 @@ char *M_AddonsHeaderPath(void)
 #define CLEARNAME Z_Free(refreshdirname);\
 					refreshdirname = NULL
 
-static boolean prevmajormods = false;
+static dboolean prevmajormods = false;
 
 static void M_AddonsClearName(INT32 choice)
 {
@@ -205,7 +205,7 @@ void M_UpdateAddonsSearch(void)
 void M_HandleAddons(INT32 choice)
 {
 	const UINT8 pid = 0;
-	boolean exitmenu = false; // exit to previous menu
+	dboolean exitmenu = false; // exit to previous menu
 
 	(void) choice;
 
@@ -258,7 +258,7 @@ void M_HandleAddons(INT32 choice)
 
 	else if (M_MenuConfirmPressed(pid))
 	{
-		boolean refresh = true;
+		dboolean refresh = true;
 		M_SetMenuDelay(pid);
 
 		if (!dirmenu[dir_on[menudepthleft]])

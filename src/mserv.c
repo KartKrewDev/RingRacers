@@ -36,9 +36,9 @@
 static int     MSId;
 static int     MSRegisteredId = -1;
 
-static boolean MSRegistered;
-static boolean MSInProgress;
-static boolean MSUpdateAgain;
+static dboolean MSRegistered;
+static dboolean MSInProgress;
+static dboolean MSUpdateAgain;
 
 static time_t  MSLastPing;
 
@@ -161,16 +161,16 @@ static void Command_Listserv_f(void)
 	}
 }
 
-static boolean firstmsrules = false;
+static dboolean firstmsrules = false;
 
 static void
-Get_masterserver_rules (boolean checkfirst)
+Get_masterserver_rules (dboolean checkfirst)
 {
 	char rules[256];
 
 	if (checkfirst)
 	{
-		boolean MSRulesExist;
+		dboolean MSRulesExist;
 
 		Lock_state();
 		MSRulesExist = (MSRules != NULL);
@@ -476,7 +476,7 @@ char *GetMasterServerRules(void)
 	return rules;
 }
 
-static boolean
+static dboolean
 Online (void)
 {
 	return ( serverrunning && netgame && cv_advertise.value );

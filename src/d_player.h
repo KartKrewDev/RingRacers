@@ -375,16 +375,16 @@ struct respawnvars_t
 	fixed_t pointy;
 	fixed_t pointz;
 	angle_t pointangle; // Only used when wp is NULL
-	boolean flip; // Flip upside down or not
+	dboolean flip; // Flip upside down or not
 	tic_t timer; // Time left on respawn animation once you're there
 	tic_t airtimer; // Time spent in the air before respawning
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
-	boolean truedeath; // Your soul has left your body
-	boolean manual; // Respawn coords were manually set, please respawn exactly there
-	boolean fromRingShooter; // Respawn was from Ring Shooter, don't allow E-Brake drop
-	boolean init;
-	boolean fast; // Deaths after long airtime can leave you far away from your first waypoint, speed over there!
+	dboolean truedeath; // Your soul has left your body
+	dboolean manual; // Respawn coords were manually set, please respawn exactly there
+	dboolean fromRingShooter; // Respawn was from Ring Shooter, don't allow E-Brake drop
+	dboolean init;
+	dboolean fast; // Deaths after long airtime can leave you far away from your first waypoint, speed over there!
 	fixed_t returnspeed; // Used for consistent timing for deathpoint-to-first-waypoint travel.
 };
 
@@ -404,8 +404,8 @@ struct botvars_t
 
 	UINT8 difficulty; // Bot's difficulty setting
 	INT16 diffincrease; // In GP: bot difficulty will increase this much next round
-	boolean rival; // If true, they're the GP rival
-	boolean foe; // If true, in contention for top X
+	dboolean rival; // If true, they're the GP rival
+	dboolean foe; // If true, in contention for top X
 
 	// All entries above persist between rounds and must be recorded in demos
 
@@ -444,24 +444,24 @@ typedef INT32 targetdamaging_t;
 struct roundconditions_t
 {
 	// Reduce the number of checks by only updating when this is true
-	boolean checkthisframe;
+	dboolean checkthisframe;
 
 	// Trivial Yes/no events across multiple UCRP's
-	boolean fell_off;
-	boolean touched_offroad;
-	boolean touched_sneakerpanel;
-	boolean debt_rings;
-	boolean faulted;
+	dboolean fell_off;
+	dboolean touched_offroad;
+	dboolean touched_sneakerpanel;
+	dboolean debt_rings;
+	dboolean faulted;
 
 	// Basically the same, but it's a specific event where no is an easy default
-	boolean tripwire_hyuu;
-	boolean whip_hyuu;
-	boolean spb_neuter;
-	boolean landmine_dunk;
-	boolean hit_midair;
-	boolean hit_drafter_lookback;
-	boolean giant_foe_shrunken_orbi;
-	boolean returntosender_mark;
+	dboolean tripwire_hyuu;
+	dboolean whip_hyuu;
+	dboolean spb_neuter;
+	dboolean landmine_dunk;
+	dboolean hit_midair;
+	dboolean hit_drafter_lookback;
+	dboolean giant_foe_shrunken_orbi;
+	dboolean returntosender_mark;
 
 	UINT8 hittrackhazard[((MAX_LAPS+1)/8) + 1];
 
@@ -483,7 +483,7 @@ struct roundconditions_t
 	UINT32 unlocktriggers;
 
 	// Forbidding skin-based unlocks if you changed your skin
-	boolean switched_skin;
+	dboolean switched_skin;
 };
 
 // player_t struct for all skybox variables
@@ -510,7 +510,7 @@ typedef struct itemlist_t
 
 struct itemroulette_t
 {
-	boolean active;
+	dboolean active;
 	itemlist_t itemList;
 
 	UINT8 playing, exiting;
@@ -525,9 +525,9 @@ struct itemroulette_t
 	tic_t tics;
 	tic_t elapsed;
 
-	boolean eggman;
-	boolean ringbox;
-	boolean autoroulette;
+	dboolean eggman;
+	dboolean ringbox;
+	dboolean autoroulette;
 	UINT8 reserved;
 
 	UINT8 popcorn;
@@ -567,7 +567,7 @@ typedef struct {
 	vector3_t origin;
 	vector2_t origin_shift;
 	vector2_t shift;
-	boolean flip;
+	dboolean flip;
 	sonicloopcamvars_t camera;
 } sonicloopvars_t;
 
@@ -584,7 +584,7 @@ struct powerupvars_t {
 struct icecubevars_t {
 	tic_t hitat; // last tic player properly touched frost
 
-	boolean frozen; // frozen in an ice cube
+	dboolean frozen; // frozen in an ice cube
 	UINT8 wiggle; // number of times player wiggled so far
 	tic_t frozenat; // tic that player was frozen
 	UINT8 shaketimer; // while it counts down, ice cube shakes
@@ -674,7 +674,7 @@ struct player_t
 	UINT8 kartweight; // Kart weight stat between 1 and 9
 
 	INT32 followerskin;		// Kart: This player's follower "skin"
-	boolean followerready;	// Kart: Used to know when we can have a follower or not. (This is set on the first NameAndColor follower update)
+	dboolean followerready;	// Kart: Used to know when we can have a follower or not. (This is set on the first NameAndColor follower update)
 	UINT16 followercolor;	// Kart: Used to store the follower colour the player wishes to use
 	mobj_t *follower;		// Kart: This is the follower object we have. (If any)
 
@@ -740,7 +740,7 @@ struct player_t
 	UINT16 stunned;			// Number of tics during which rings cannot be picked up
 	mobj_t *flybot;			// One Flybot767 circling the player while stunned
 	UINT8 justDI;			// Turn-lockout timer to briefly prevent unintended turning after DI, resets when actionable or no input
-	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
+	dboolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 
 	UINT8 cangrabitems;
 
@@ -835,7 +835,7 @@ struct player_t
 
 	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
 	UINT8 ballhogburst;
-	boolean ballhogtap;		// Ballhog released during charge: used to allow semirapid tapfire
+	dboolean ballhogtap;		// Ballhog released during charge: used to allow semirapid tapfire
 	mobj_t *ballhogreticule;	// First ballhog reticule estimation object
 
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
@@ -878,9 +878,9 @@ struct player_t
 	UINT8 dashRingPullTics; // Timer during which the player is pulled towards a dash ring
 	UINT8 dashRingPushTics; // Timer during which the player displays effects and has no gravity after being thrust by a dash ring
 
-	boolean pullup; // True if the player is attached to a pullup hook
+	dboolean pullup; // True if the player is attached to a pullup hook
 
-	boolean finalized; // Did PWR finalize already, don't repeat it even if exit conditions are weird.
+	dboolean finalized; // Did PWR finalize already, don't repeat it even if exit conditions are weird.
 
 	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
@@ -899,8 +899,8 @@ struct player_t
 	//////////////
 	// rideroid //
 	//////////////
-	boolean rideroid;			// on rideroid y/n
-	boolean rdnodepull;			// being pulled by rideroid node. mo target is set to the node while this is true.
+	dboolean rideroid;			// on rideroid y/n
+	dboolean rdnodepull;			// being pulled by rideroid node. mo target is set to the node while this is true.
 	INT32 rideroidangle;		// angle the rideroid is going at. This doesn't change once we're on it. INT32 because the code was originally written in lua and fuckshit happens with angle_t.
 	fixed_t rideroidspeed;		// speed the rideroid is to be moving at.
 	INT32 rideroidrollangle;	// rollangle while turning
@@ -926,19 +926,19 @@ struct player_t
 	fixed_t dlzrocketspd;		// current rocket travel speed.
 
 	// seasaws (variables are shared with other seasaw-like objects)
-	boolean seasaw;				// true if using a seasaw
+	dboolean seasaw;				// true if using a seasaw
 	tic_t seasawcooldown;		// cooldown to avoid triggering the same seasaw over and over
 	fixed_t seasawdist;			// distance from the center of the seasaw when latched.
 	INT32 seasawangle;		// angle from the center of the seasaw when latched.
 	INT32 seasawangleadd;		// used to spin the seasaw
 	INT32 seasawmoreangle;		// used for reverse sesaws in DLZ.
-	boolean seasawdir;			// flips or not seasaw rotation
+	dboolean seasawdir;			// flips or not seasaw rotation
 
 	// water palace turbines (or cnz barrels, or whatever the hell people use it for nowadays)
 	tic_t turbine;			// ticker (while true, we set the tracer to the turbine)
 	INT32 turbineangle;		// angle around the turbine. ...Made in INT32 to make it easier to translate from lua
 	fixed_t turbineheight;	// height around the turbine
-	boolean turbinespd;		// if true, we used a sneaker and get the altpath.
+	dboolean turbinespd;		// if true, we used a sneaker and get the altpath.
 
 	// clouds (AGZ, AHZ, SSZ)
 	tic_t cloud;       // timer while on cloud before launch
@@ -1002,11 +1002,11 @@ struct player_t
 
 	altview_t awayview;
 
-	boolean spectator;
+	dboolean spectator;
 	tic_t spectatewait;		// reimplementable as UINT8 queue - How long have you been waiting as a spectator
-	boolean enteredGame;
+	dboolean enteredGame;
 
-	boolean bot;
+	dboolean bot;
 	botvars_t botvars;
 
 	UINT8 splitscreenindex;
@@ -1017,13 +1017,13 @@ struct player_t
 
 	UINT32 griefValue;
 	UINT8 griefStrikes;
-	boolean griefWarned;
+	dboolean griefWarned;
 
 	UINT8 typing_timer; // Counts down while keystrokes are not emitted
 	UINT8 typing_duration; // How long since resumed timer
 
 	UINT8 kickstartaccel;
-	boolean autoring;	// did we autoring this tic?
+	dboolean autoring;	// did we autoring this tic?
 
 	UINT8 stairjank;
 	UINT8 topdriftheld;
@@ -1055,7 +1055,7 @@ struct player_t
 	UINT8 lastsafecheatcheck;
 
 	UINT8 ignoreAirtimeLeniency; // We bubblebounced or otherwise did an airtime thing with control, powerup timers should still count down
-	boolean bubbledrag; // Just bubblebounced, slow down!
+	dboolean bubbledrag; // Just bubblebounced, slow down!
 
 	fixed_t topAccel; // Reduced on straight wall collisions to give players extra recovery time
 	fixed_t vortexBoost;
@@ -1074,7 +1074,7 @@ struct player_t
 	UINT8 instaWhipCharge;
 	UINT8 defenseLockout; // Committed to universal attack/defense, make 'em vulnerable! No whip/guard.
 	UINT8 instaWhipChargeLockout; // Input safety
-	boolean oldGuard;
+	dboolean oldGuard;
 	UINT8 powerupVFXTimer; // Battle powerup feedback
 
 	UINT8 preventfailsafe; // Set when taking damage to prevent cheesing eggboxes
@@ -1091,16 +1091,16 @@ struct player_t
 
 	UINT32 bailcharge;
 	UINT32 baildrop;
-	boolean bailhitlag;
+	dboolean bailhitlag;
 
-	boolean analoginput; // Has an input been recorded that requires analog usage? For input display.
+	dboolean analoginput; // Has an input been recorded that requires analog usage? For input display.
 
-	boolean markedfordeath;
-	boolean dotrickfx;
-	boolean stingfx;
+	dboolean markedfordeath;
+	dboolean dotrickfx;
+	dboolean stingfx;
 	UINT8 bumperinflate;
 
-	boolean mfdfinish; // Did you cross the finish line while just about to explode?
+	dboolean mfdfinish; // Did you cross the finish line while just about to explode?
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
@@ -1115,7 +1115,7 @@ struct player_t
 	UINT16 overshield;
 	fixed_t overdrivepower;
 	UINT8 overdriveready;
-	boolean overdrivelenient;
+	dboolean overdrivelenient;
 
 	UINT8 itemflags; 	// holds IF_ flags (see itemflags_t)
 

@@ -61,7 +61,7 @@ profile_t* PR_MakeProfile(
 	const char *sname, const UINT16 col,
 	const char *fname, const UINT16 fcol,
 	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
-	boolean guest)
+	dboolean guest)
 {
 	profile_t *newprofile = static_cast<profile_t*>(Z_Calloc(sizeof(profile_t), PU_STATIC, NULL));
 
@@ -120,7 +120,7 @@ profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const
 	return newprofile;
 }
 
-boolean PR_AddProfile(profile_t *p)
+dboolean PR_AddProfile(profile_t *p)
 {
 	if (numprofiles < MAXPROFILES+1)
 	{
@@ -143,7 +143,7 @@ profile_t* PR_GetProfile(INT32 num)
 		return NULL;
 }
 
-boolean PR_DeleteProfile(INT32 num)
+dboolean PR_DeleteProfile(INT32 num)
 {
 	UINT8 i;
 	profile_t* sacrifice;
@@ -218,7 +218,7 @@ void PR_InitNewProfile(void)
 	profile_t *dprofile;
 	UINT8 usenum = numprofiles-1;
 	UINT8 i;
-	boolean nameok = false;
+	dboolean nameok = false;
 
 	pname[4] = '\0';
 
@@ -743,14 +743,14 @@ profile_t *PR_GetLocalPlayerProfile(INT32 player)
 	return PR_GetProfile(cv_lastprofile[player].value);
 }
 
-boolean PR_IsLocalPlayerGuest(INT32 player)
+dboolean PR_IsLocalPlayerGuest(INT32 player)
 {
 	return !(cv_lastprofile[player].value);
 }
 
 static char rrid_buf[256];
 
-char *GetPrettyRRID(const unsigned char *bin, boolean brief)
+char *GetPrettyRRID(const unsigned char *bin, dboolean brief)
 {
 	size_t i;
 	size_t len = PUBKEYLENGTH;
@@ -797,7 +797,7 @@ unsigned char *FromPrettyRRID(unsigned char *bin, const char *text)
 
 static char allZero[PUBKEYLENGTH];
 
-boolean PR_IsKeyGuest(uint8_t *key)
+dboolean PR_IsKeyGuest(uint8_t *key)
 {
 	//memset(allZero, 0, PUBKEYLENGTH); -- not required, allZero is 0's
 	return (memcmp(key, allZero, PUBKEYLENGTH) == 0);

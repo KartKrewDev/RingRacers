@@ -251,7 +251,7 @@ static inline int lib_getenum(lua_State *L)
 {
 	const char *word, *p;
 	fixed_t i;
-	boolean mathlib = lua_toboolean(L, lua_upvalueindex(1));
+	dboolean mathlib = lua_toboolean(L, lua_upvalueindex(1));
 	if (lua_type(L,2) != LUA_TSTRING)
 		return 0;
 	word = lua_tostring(L,2);
@@ -664,7 +664,7 @@ int LUA_EnumLib(lua_State *L)
 
 	// Set the global metatable
 	lua_createtable(L, 0, 1);
-	lua_pushvalue(L, 1); // boolean passed to LUA_EnumLib as first argument.
+	lua_pushvalue(L, 1); // dboolean passed to LUA_EnumLib as first argument.
 	lua_pushcclosure(L, lib_getenum, 1);
 	lua_setfield(L, -2, "__index");
 	lua_setmetatable(L, LUA_GLOBALSINDEX);

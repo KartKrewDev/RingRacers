@@ -64,7 +64,7 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 // must have RF_SLOPESPLAT and mobj_t.floorspriteslope must be
 // NULL. (If RF_OBJECTSLOPESPLAT is set, then
 // mobj_t.standingslope must also be NULL.)
-boolean R_SplatSlope(mobj_t* mobj, vector3_t position, pslope_t* slope)
+dboolean R_SplatSlope(mobj_t* mobj, vector3_t position, pslope_t* slope)
 {
 	switch (mobj->type)
 	{
@@ -83,7 +83,7 @@ boolean R_SplatSlope(mobj_t* mobj, vector3_t position, pslope_t* slope)
 	return false;
 }
 
-boolean R_CustomShadowZ(mobj_t* thing, fixed_t *z, pslope_t** slope)
+dboolean R_CustomShadowZ(mobj_t* thing, fixed_t *z, pslope_t** slope)
 {
 	switch (thing->type)
 	{

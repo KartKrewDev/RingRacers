@@ -61,7 +61,7 @@ int menu_mode()
 	return PAUSE_AddonOptionsDef.extra1;
 }
 
-boolean admin_mode()
+dboolean admin_mode()
 {
 	return !!(menu_mode() == kAdmin);
 }
@@ -218,7 +218,7 @@ void menu_open()
 	PAUSE_AddonOptionsDef.numitems = g_menu.size();
 }
 
-boolean menu_close()
+dboolean menu_close()
 {
 	PAUSE_AddonOptionsDef.menuitems = nullptr;
 	PAUSE_AddonOptionsDef.numitems = 0;
@@ -229,7 +229,7 @@ boolean menu_close()
 	return true;
 }
 
-boolean menu_input(INT32)
+dboolean menu_input(INT32)
 {
 	// C button: cycle through modes
 	if (M_MenuButtonPressed(0, MBT_Y))

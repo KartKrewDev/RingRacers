@@ -237,9 +237,9 @@ struct polyfade_t
 	INT32 polyObjNum;
 	INT32 sourcevalue;
 	INT32 destvalue;
-	boolean docollision;
-	boolean doghostfade;
-	boolean ticbased;
+	dboolean docollision;
+	dboolean doghostfade;
+	dboolean ticbased;
 	INT32 duration;
 	INT32 timer;
 };
@@ -341,9 +341,9 @@ struct polyfadedata_t
 {
 	INT32 polyObjNum;
 	INT32 destvalue;
-	boolean docollision;
-	boolean doghostfade;
-	boolean ticbased;
+	dboolean docollision;
+	dboolean doghostfade;
+	dboolean ticbased;
 	INT32 speed;
 };
 
@@ -351,15 +351,15 @@ struct polyfadedata_t
 // Functions
 //
 
-boolean Polyobj_moveXY(polyobj_t *po, fixed_t x, fixed_t y, boolean checkmobjs);
-boolean Polyobj_rotate(polyobj_t *po, angle_t delta, boolean turnplayers, boolean turnothers, boolean checkmobjs);
+dboolean Polyobj_moveXY(polyobj_t *po, fixed_t x, fixed_t y, dboolean checkmobjs);
+dboolean Polyobj_rotate(polyobj_t *po, angle_t delta, dboolean turnplayers, dboolean turnothers, dboolean checkmobjs);
 polyobj_t *Polyobj_GetForNum(INT32 id);
 void Polyobj_InitLevel(void);
 void Polyobj_MoveOnLoad(polyobj_t *po, angle_t angle, fixed_t x, fixed_t y);
-boolean P_PointInsidePolyobj(polyobj_t *po, fixed_t x, fixed_t y);
-boolean P_MobjTouchingPolyobj(polyobj_t *po, mobj_t *mo);
-boolean P_MobjInsidePolyobj(polyobj_t *po, mobj_t *mo);
-boolean P_BBoxInsidePolyobj(polyobj_t *po, fixed_t *bbox);
+dboolean P_PointInsidePolyobj(polyobj_t *po, fixed_t x, fixed_t y);
+dboolean P_MobjTouchingPolyobj(polyobj_t *po, mobj_t *mo);
+dboolean P_MobjInsidePolyobj(polyobj_t *po, mobj_t *mo);
+dboolean P_BBoxInsidePolyobj(polyobj_t *po, fixed_t *bbox);
 
 // thinkers (needed in p_saveg.c)
 void T_PolyObjRotate(polyrotate_t *);
@@ -372,14 +372,14 @@ void T_PolyObjRotDisplace  (polyrotdisplace_t *);
 void T_PolyObjFlag  (polymove_t *);
 void T_PolyObjFade  (polyfade_t *);
 
-boolean EV_DoPolyDoor(polydoordata_t *);
-boolean EV_DoPolyObjMove(polymovedata_t *);
-boolean EV_DoPolyObjWaypoint(polywaypointdata_t *);
-boolean EV_DoPolyObjRotate(polyrotdata_t *);
-boolean EV_DoPolyObjDisplace(polydisplacedata_t *);
-boolean EV_DoPolyObjRotDisplace(polyrotdisplacedata_t *);
-boolean EV_DoPolyObjFlag(polyflagdata_t *);
-boolean EV_DoPolyObjFade(polyfadedata_t *);
+dboolean EV_DoPolyDoor(polydoordata_t *);
+dboolean EV_DoPolyObjMove(polymovedata_t *);
+dboolean EV_DoPolyObjWaypoint(polywaypointdata_t *);
+dboolean EV_DoPolyObjRotate(polyrotdata_t *);
+dboolean EV_DoPolyObjDisplace(polydisplacedata_t *);
+dboolean EV_DoPolyObjRotDisplace(polyrotdisplacedata_t *);
+dboolean EV_DoPolyObjFlag(polyflagdata_t *);
+dboolean EV_DoPolyObjFade(polyfadedata_t *);
 
 
 //

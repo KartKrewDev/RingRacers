@@ -58,7 +58,7 @@ INT32 finalecount;
 INT32 titlescrollxspeed = 16;
 INT32 titlescrollyspeed = 0;
 UINT32 titlemusicstart = 38749;
-boolean titlemapinaction = false;
+dboolean titlemapinaction = false;
 
 static INT32 timetonext; // Delay between screen changes
 
@@ -66,7 +66,7 @@ static tic_t animtimer; // Used for some animation timings
 
 static tic_t stoptimer;
 
-static boolean keypressed = false;
+static dboolean keypressed = false;
 
 #define SKIPHISTORYSIZE 32
 static UINT8 skipinputindex = 0;
@@ -74,8 +74,8 @@ static UINT8 skipinputhistory[SKIPHISTORYSIZE];
 static UINT8 skiptype = 0;
 
 static tic_t attractcountdown; // Countdown until attract demo ends
-static boolean attractcredit; // Show music credit once attract demo begins
-boolean g_attractnowipe; // Do not wipe on return to title screen
+static dboolean attractcredit; // Show music credit once attract demo begins
+dboolean g_attractnowipe; // Do not wipe on return to title screen
 
 static INT32 menuanimtimer; // Title screen: background animation timing
 altview_t titlemapcam = {0};
@@ -86,8 +86,8 @@ SINT8 curfadevalue;
 INT32 curbgcolor = -1;	// Please stop assaulting my eyes.
 INT32 curbgxspeed;
 INT32 curbgyspeed;
-boolean curbghide;
-boolean hidetitlemap;		// WARNING: set to false by M_SetupNextMenu and M_ClearMenus
+dboolean curbghide;
+dboolean hidetitlemap;		// WARNING: set to false by M_SetupNextMenu and M_ClearMenus
 
 #if 0
 static UINT8  laststaff = 0;
@@ -107,7 +107,7 @@ INT16 tty = 0;
 INT16 ttloop = -1;
 UINT16 tttics = 1;
 
-boolean curhidepics;
+dboolean curhidepics;
 ttmode_enum curttmode;
 UINT8 curttscale;
 // ttmode user vars
@@ -146,10 +146,10 @@ static INT32 ttuser_count = 0;
 //
 // PROMPT STATE
 //
-boolean promptactive = false;
+dboolean promptactive = false;
 static mobj_t *promptmo;
 static INT16 promptpostexectag;
-static boolean promptblockcontrols;
+static dboolean promptblockcontrols;
 static char *promptpagetext = NULL;
 static INT32 callpromptnum = INT32_MAX;
 static INT32 callpagenum = INT32_MAX;
@@ -314,9 +314,9 @@ static tic_t introscenetime[NUMINTROSCENES] =
 };
 
 // custom intros
-void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean resetplayer);
+void F_StartCustomCutscene(INT32 cutscenenum, dboolean precutscene, dboolean resetplayer);
 
-static boolean skippableallowed = true;
+static dboolean skippableallowed = true;
 
 void F_StartIntro(void)
 {
@@ -538,7 +538,7 @@ static UINT16 dc_tics = 0;
 static UINT8 dc_segaframe = 1;
 static UINT8 dc_bgcol = 0;
 static INT32 dc_lasttime = 0;
-static boolean dc_ticking = false;
+static dboolean dc_ticking = false;
 static UINT8 dc_bluesegafade = 0;
 static UINT8 dc_textfade = 9;
 static UINT8 dc_subtextfade = 9;
@@ -551,7 +551,7 @@ static void F_DisclaimerAdvanceState(void)
 
 static void F_DisclaimerDrawScene(void)
 {
-	boolean heretrulystarted = M_GameTrulyStarted();
+	dboolean heretrulystarted = M_GameTrulyStarted();
 
 	// ================================= SETUP
 
@@ -864,13 +864,13 @@ void F_IntroTicker(void)
 	}
 
 	// check for skipping
-	const boolean disclaimerskippable =
+	const dboolean disclaimerskippable =
 	(
 		intro_scenenum == INTROSCENE_DISCLAIMER
 		&& (dc_state < DISCLAIMER_SLIDE
 		|| (dc_state == DISCLAIMER_FINAL && dc_textfade == 0)) // bottom text needs to fade all the way in
 	);
-	const boolean doskip =
+	const dboolean doskip =
 	(
 		skippableallowed
 		&& keypressed
@@ -1046,7 +1046,7 @@ static void AdvanceSkipSequences(UINT8 input)
 	for (UINT8 i = 0; i < NUMCHEATSPLUSONE; i++) 	// for each cheat...
 	{
 		UINT8 cheatsize = cheatlengths[i];
-		boolean matched = true;
+		dboolean matched = true;
 
 		for (UINT8 j = 0; j < cheatsize; j++) // start at our input history index, and walk backwards until an input doesn't match
 		{
@@ -1069,7 +1069,7 @@ static void AdvanceSkipSequences(UINT8 input)
 //
 // F_IntroResponder
 //
-boolean F_IntroResponder(event_t *event)
+dboolean F_IntroResponder(event_t *event)
 {
 	INT32 key = event->data1;
 
@@ -1635,7 +1635,7 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 {
 	INT32 xscrolled, x, xneg = (scrollxspeed > 0) - (scrollxspeed < 0), tilex;
 	INT32 yscrolled, y, yneg = (scrollyspeed > 0) - (scrollyspeed < 0), tiley;
-	boolean xispos = (scrollxspeed >= 0), yispos = (scrollyspeed >= 0);
+	dboolean xispos = (scrollxspeed >= 0), yispos = (scrollyspeed >= 0);
 	INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 	INT16 patwidth, patheight;
 	INT32 pw, ph; // scaled by dupz
@@ -1756,7 +1756,7 @@ static void F_CacheTitleScreen(void)
 	}
 }
 
-static boolean cache_gametrulystarted = false;
+static dboolean cache_gametrulystarted = false;
 
 void F_StartTitleScreen(void)
 {
@@ -1910,7 +1910,7 @@ void F_VersionDrawer(void)
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenDrawer(void)
 {
-	boolean hidepics = false;
+	dboolean hidepics = false;
 
 	// Draw that sky!
 	if (cache_gametrulystarted == false)
@@ -2112,7 +2112,7 @@ void F_PlayTitleScreenMusic(void)
 }
 
 // (no longer) De-Demo'd Title Screen
-void F_TitleScreenTicker(boolean run)
+void F_TitleScreenTicker(dboolean run)
 {
 	menuanimtimer++; // title sky
 
@@ -2247,7 +2247,7 @@ void F_TitleScreenTicker(boolean run)
 		lumpnum_t dlump;
 		UINT16 mapnum;
 		UINT8 numstaff;
-		static boolean use_netreplay = false;
+		static dboolean use_netreplay = false;
 		staffbrief_t *brief = NULL;
 
 		if ((use_netreplay = !use_netreplay))
@@ -2437,8 +2437,8 @@ void F_WaitingPlayersDrawer(void)
 static INT32 scenenum, cutnum;
 static INT32 picxpos, picypos, picnum, pictime, picmode, numpics, pictoloop;
 static INT32 textxpos, textypos;
-static boolean dofadenow = false, cutsceneover = false;
-static boolean runningprecutscene = false, precutresetplayer = false;
+static dboolean dofadenow = false, cutsceneover = false;
+static dboolean runningprecutscene = false, precutresetplayer = false;
 
 
 static void F_AdvanceToNextScene(void)
@@ -2503,7 +2503,7 @@ void F_EndCutScene(void)
 	}
 }
 
-void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean resetplayer)
+void F_StartCustomCutscene(INT32 cutscenenum, dboolean precutscene, dboolean resetplayer)
 {
 	if (!cutscenes[cutscenenum])
 		return;
@@ -2646,7 +2646,7 @@ void F_CutsceneTicker(void)
 		timetonext = 5*TICRATE + 1;
 }
 
-boolean F_CutsceneResponder(event_t *event)
+dboolean F_CutsceneResponder(event_t *event)
 {
 	if (cutnum == introtoplay-1)
 		return F_IntroResponder(event);
@@ -2658,7 +2658,7 @@ boolean F_CutsceneResponder(event_t *event)
 //  TEXT PROMPTS
 // ==================
 
-static void F_GetPageTextGeometry(UINT8 *pagelines, boolean *rightside, INT32 *boxh, INT32 *texth, INT32 *texty, INT32 *namey, INT32 *chevrony, INT32 *textx, INT32 *textr)
+static void F_GetPageTextGeometry(UINT8 *pagelines, dboolean *rightside, INT32 *boxh, INT32 *texth, INT32 *texty, INT32 *namey, INT32 *chevrony, INT32 *textx, INT32 *textr)
 {
 	// reuse:
 	// cutnum -> promptnum
@@ -2685,7 +2685,7 @@ static void F_GetPageTextGeometry(UINT8 *pagelines, boolean *rightside, INT32 *b
 static fixed_t F_GetPromptHideHudBound(void)
 {
 	UINT8 pagelines;
-	boolean rightside;
+	dboolean rightside;
 	INT32 boxh, texth, texty, namey, chevrony;
 	INT32 textx, textr;
 
@@ -2708,7 +2708,7 @@ static fixed_t F_GetPromptHideHudBound(void)
 	return 0 - boxh; // \todo: if prompt at top of screen (someday), make this return positive
 }
 
-boolean F_GetPromptHideHudAll(void)
+dboolean F_GetPromptHideHudAll(void)
 {
 	if (cutnum == INT32_MAX || scenenum == INT32_MAX || !textprompts[cutnum] || scenenum >= textprompts[cutnum]->numpages ||
 		!textprompts[cutnum]->page[scenenum].hidehud ||
@@ -2720,10 +2720,10 @@ boolean F_GetPromptHideHudAll(void)
 		return false;
 }
 
-boolean F_GetPromptHideHud(fixed_t y)
+dboolean F_GetPromptHideHud(fixed_t y)
 {
 	INT32 ybound;
-	boolean fromtop;
+	dboolean fromtop;
 	fixed_t ytest;
 
 	if (!promptactive)
@@ -2739,7 +2739,7 @@ boolean F_GetPromptHideHud(fixed_t y)
 static void F_PreparePageText(char *pagetext)
 {
 	UINT8 pagelines;
-	boolean rightside;
+	dboolean rightside;
 	INT32 boxh, texth, texty, namey, chevrony;
 	INT32 textx, textr;
 
@@ -2842,9 +2842,9 @@ static void F_AdvanceToNextPage(void)
 	}
 }
 
-void F_EndTextPrompt(boolean forceexec, boolean noexec)
+void F_EndTextPrompt(dboolean forceexec, dboolean noexec)
 {
-	boolean promptwasactive = promptactive;
+	dboolean promptwasactive = promptactive;
 	promptactive = false;
 	callpromptnum = callpagenum = callplayer = INT32_MAX;
 
@@ -2869,7 +2869,7 @@ void F_EndTextPrompt(boolean forceexec, boolean noexec)
 	}
 }
 
-void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postexectag, boolean blockcontrols, boolean freezerealtime)
+void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postexectag, dboolean blockcontrols, dboolean freezerealtime)
 {
 	INT32 i;
 
@@ -2948,10 +2948,10 @@ void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postex
 		F_EndTextPrompt(true, false); // run the post-effects immediately
 }
 
-static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
+static dboolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 {
 	INT32 gcs = 0;
-	boolean suffixed = true;
+	dboolean suffixed = true;
 
 	if (!tag || !tag[0] || gametype == GT_TUTORIAL)
 		return false;
@@ -2987,7 +2987,7 @@ void F_GetPromptPageByNamedTag(const char *tag, INT32 *promptnum, INT32 *pagenum
 {
 	INT32 nosuffixpromptnum = INT32_MAX, nosuffixpagenum = INT32_MAX;
 	INT32 tutorialpromptnum = (gametype == GT_TUTORIAL) ? TUTORIAL_PROMPT-1 : 0;
-	boolean suffixed = false, found = false;
+	dboolean suffixed = false, found = false;
 	char suffixedtag[33];
 
 	*promptnum = *pagenum = INT32_MAX;
@@ -3052,7 +3052,7 @@ void F_TextPromptDrawer(void)
 	// scenenum -> pagenum
 	lumpnum_t iconlump;
 	UINT8 pagelines;
-	boolean rightside;
+	dboolean rightside;
 	INT32 boxh, texth, texty, namey, chevrony;
 	INT32 textx, textr;
 
@@ -3260,7 +3260,7 @@ void F_TextPromptTicker(void)
 	{
 		if (animtimer <= 0)
 		{
-			boolean persistanimtimer = false;
+			dboolean persistanimtimer = false;
 
 			if (picnum < numpics-1 && textprompts[cutnum]->page[scenenum].picname[picnum+1][0] != '\0')
 				picnum++;

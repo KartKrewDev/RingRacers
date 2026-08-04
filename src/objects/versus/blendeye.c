@@ -280,7 +280,7 @@ static void VS_BlendEye_MurderPuyos(mobj_t *mobj)
 
 void VS_BlendEye_Thinker(mobj_t *mobj)
 {
-	boolean deathwatch = false; // may be useful for later
+	dboolean deathwatch = false; // may be useful for later
 
 	// Init.
 	{
@@ -403,7 +403,7 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 				S_StartSound(NULL, sfx_shattr);
 				if (mobj->tracer)
 				{
-					boolean lastturned = false;
+					dboolean lastturned = false;
 					ref = mobj->tracer->hnext;
 					P_SetTarget(&mobj->tracer->hnext, NULL);
 					while (ref)
@@ -572,7 +572,7 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 					fixed_t mommag = FixedHypot(mobj->target->x - mobj->x, mobj->target->y - mobj->y);
 					fixed_t bestspeed = 5*mobj->scale;
 					fixed_t accel = (mobj->scale/2);
-					boolean forcegoaround = false;
+					dboolean forcegoaround = false;
 					angle_t test = R_PointToAngle2(mobj->tracer->tracer->x, mobj->tracer->tracer->y, mobj->x, mobj->y)
 						- R_PointToAngle2(mobj->tracer->tracer->x, mobj->tracer->tracer->y, mobj->target->x, mobj->target->y);
 					if (test >= ANGLE_180)
@@ -975,7 +975,7 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 	}
 }
 
-boolean VS_BlendEye_Touched(mobj_t *special, mobj_t *toucher)
+dboolean VS_BlendEye_Touched(mobj_t *special, mobj_t *toucher)
 {
 	if (toucher->hitlag > 0)
 		return false;
@@ -1085,7 +1085,7 @@ void VS_BlendEye_Death(mobj_t *mobj)
 
 /// - AUXILLIARY OBJECTS - ///
 
-boolean VS_BlendEye_Eye_Thinker(mobj_t *mobj)
+dboolean VS_BlendEye_Eye_Thinker(mobj_t *mobj)
 {
 	if (P_MobjWasRemoved(mobj->target))
 	{
@@ -1197,7 +1197,7 @@ void VS_BlendEye_Generator_DeadThinker(mobj_t *mobj)
 
 /// - PUYO HAZARDS - ///
 
-boolean VS_PuyoTouched(mobj_t *special, mobj_t *toucher)
+dboolean VS_PuyoTouched(mobj_t *special, mobj_t *toucher)
 {
 	if (!special->health || !toucher->health)
 		return false; // too dead
@@ -1389,7 +1389,7 @@ static mobj_t *VS_PredictedPuyoShot(mobj_t *arena, mobj_t *source, mobj_t *shot,
 	if (momx != 0 || momy != 0)
 	{
 		UINT8 attempt = 0;
-		boolean lastsuccess = true;
+		dboolean lastsuccess = true;
 		// tries to immediately jump to the final location.
 		// if that fails, tries to xeno's paradox it:
 		// halve the distance and try TWO steps at this magnitude

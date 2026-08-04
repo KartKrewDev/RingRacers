@@ -91,7 +91,7 @@ void P_ExitPlayerOrbit(player_t *player)
 	P_HaltPlayerOrbit(player);
 }
 
-boolean P_PlayerOrbit(player_t *player)
+dboolean P_PlayerOrbit(player_t *player)
 {
 	sonicloopvars_t *s = &player->loop;
 

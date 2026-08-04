@@ -193,7 +193,7 @@ void K_EndCameraGC(void)
 	endcam_cast().GC();
 }
 
-boolean K_EndCameraIsFreezing(void)
+dboolean K_EndCameraIsFreezing(void)
 {
 	return endcam_cast().Freezing();
 }

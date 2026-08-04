@@ -560,7 +560,7 @@ void A_HologramRandomTranslucency();
 void A_SSChainShatter();
 void A_GenericBumper();
 
-extern boolean actionsoverridden[NUMACTIONS];
+extern dboolean actionsoverridden[NUMACTIONS];
 
 // ratio of states to sprites to mobj types is roughly 6 : 1 : 1
 #define NUMMOBJFREESLOTS 1024

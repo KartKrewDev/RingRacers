@@ -44,7 +44,7 @@
 //========
 // protos.
 //========
-static boolean COM_Exists(const char *com_name);
+static dboolean COM_Exists(const char *com_name);
 static void COM_ExecuteString(char *com_text);
 
 static void COM_Alias_f(void);
@@ -61,9 +61,9 @@ static void COM_Choose_f(void);
 static void COM_ChooseWeighted_f(void);
 static void COM_Reset_f(void);
 
-static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
+static dboolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
 
-static boolean CV_Command(void);
+static dboolean CV_Command(void);
 consvar_t *CV_FindVar(const char *name);
 static const char *CV_StringValue(const char *var_name);
 
@@ -121,11 +121,11 @@ CV_PossibleValue_t descriptiveinput_cons_t[] = {
 // First implementation is 2 (1.0.2), so earlier configs default at 1 (1.0.0)
 // Also set CV_HIDDEN during runtime, after config is loaded
 
-static boolean execversion_enabled = false;
+static dboolean execversion_enabled = false;
 
 // for default joyaxis detection
 #if 0
-static boolean joyaxis_default[4] = {false,false,false,false};
+static dboolean joyaxis_default[4] = {false,false,false,false};
 static INT32 joyaxis_count[4] = {0,0,0,0};
 #endif
 
@@ -606,7 +606,7 @@ int COM_AddLuaCommand(const char *name)
   * \param com_name Name to test for.
   * \return True if a command by the given name exists.
   */
-static boolean COM_Exists(const char *com_name)
+static dboolean COM_Exists(const char *com_name)
 {
 	xcommand_t *cmd;
 
@@ -912,7 +912,7 @@ static void COM_Help_f(void)
 		cvar = CV_FindVar(help);
 		if (cvar)
 		{
-			boolean floatmode = false;
+			dboolean floatmode = false;
 			const char *cvalue = NULL;
 			CONS_Printf("\x82""Variable %s:\n", cvar->name);
 			CONS_Printf(M_GetText("  flags :"));
@@ -941,7 +941,7 @@ static void COM_Help_f(void)
 					CONS_Printf("  True or False (On or Off, Yes or No, 1 or 0)\n");
 				else if (cvar->PossibleValue == Color_cons_t || cvar->PossibleValue == Followercolor_cons_t)
 				{
-					boolean follower = (cvar->PossibleValue == Followercolor_cons_t);
+					dboolean follower = (cvar->PossibleValue == Followercolor_cons_t);
 					for (i = SKINCOLOR_NONE; i < numskincolors; ++i)
 					{
 						if (K_ColorUsable(i, follower, true) == true)
@@ -1449,7 +1449,7 @@ static consvar_t *CV_FindNetVar(UINT16 netid)
 	return NULL;
 }
 
-static void Setvalue(consvar_t *var, const char *valstr, boolean stealth);
+static void Setvalue(consvar_t *var, const char *valstr, dboolean stealth);
 
 /** Registers a variable for later use from the console.
   *
@@ -1557,7 +1557,7 @@ const char *CV_CompleteVar(char *partial, INT32 skips)
 	return NULL;
 }
 
-boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval)
+dboolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval)
 {
 	const char *valstr = *valstrp;
 
@@ -1680,9 +1680,9 @@ badinput:
   * \param var    Variable to set.
   * \param valstr String value for the variable.
   */
-static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
+static void Setvalue(consvar_t *var, const char *valstr, dboolean stealth)
 {
-	boolean override = false;
+	dboolean override = false;
 	INT32 overrideval = 0;
 	const char *overridestr = valstr;
 
@@ -1786,14 +1786,14 @@ badinput:
 //      then the value of the variable followed with a 0 byte (like str)
 //
 
-static boolean serverloading = false;
+static dboolean serverloading = false;
 
 static consvar_t *
-ReadNetVar (const UINT8 **p, const char **return_value, boolean *return_stealth)
+ReadNetVar (const UINT8 **p, const char **return_value, dboolean *return_stealth)
 {
 	UINT16  netid;
 	const char   *val;
-	boolean stealth;
+	dboolean stealth;
 
 	consvar_t *cvar;
 
@@ -1818,11 +1818,11 @@ ReadNetVar (const UINT8 **p, const char **return_value, boolean *return_stealth)
 }
 
 static consvar_t *
-ReadDemoVar (const UINT8 **p, const char **return_value, boolean *return_stealth)
+ReadDemoVar (const UINT8 **p, const char **return_value, dboolean *return_stealth)
 {
 	const char   *name;
 	const char   *val;
-	boolean stealth;
+	dboolean stealth;
 
 	consvar_t *cvar;
 
@@ -1849,7 +1849,7 @@ static void Got_NetVar(const UINT8 **p, INT32 playernum)
 {
 	consvar_t *cvar;
 	const char *svalue;
-	boolean stealth;
+	dboolean stealth;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum) && !serverloading)
 	{
@@ -1873,7 +1873,7 @@ static void Got_NetVar(const UINT8 **p, INT32 playernum)
 	}
 }
 
-void CV_SaveVars(UINT8 **p, boolean in_demo)
+void CV_SaveVars(UINT8 **p, dboolean in_demo)
 {
 	consvar_t *cvar;
 	UINT8 *count_p = *p;
@@ -1899,16 +1899,16 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 }
 
 static size_t CV_LoadVars(const UINT8 *bufstart,
-		consvar_t *(*got)(const UINT8 **p, const char **ret_value, boolean *ret_stealth))
+		consvar_t *(*got)(const UINT8 **p, const char **ret_value, dboolean *ret_stealth))
 {
 	const UINT8 *p = bufstart;
-	const boolean store = (client || demo.playback);
+	const dboolean store = (client || demo.playback);
 
 	consvar_t *cvar;
 	UINT16 count;
 
 	const char *val;
-	boolean stealth;
+	dboolean stealth;
 
 	// prevent "invalid command received"
 	serverloading = true;
@@ -1981,7 +1981,7 @@ size_t CV_LoadDemoVars(const UINT8 *p)
 	return CV_LoadVars(p, ReadDemoVar);
 }
 
-static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth);
+static void CV_SetCVar(consvar_t *var, const char *value, dboolean stealth);
 
 void CV_CheatsChanged(void)
 {
@@ -2006,16 +2006,16 @@ void CV_CheatsChanged(void)
 }
 
 // Returns true if the variable's current value is its default value
-boolean CV_IsSetToDefault(consvar_t *v)
+dboolean CV_IsSetToDefault(consvar_t *v)
 {
 	return (!(strcmp(v->defaultvalue, v->string)));
 }
 
 // If any cheats CVars are not at their default settings, return true.
 // Else return false.
-boolean CV_CheatsEnabled(void)
+dboolean CV_CheatsEnabled(void)
 {
-	return (boolean)cv_cheats.value;
+	return (dboolean)cv_cheats.value;
 }
 
 // Consistent print about cheaters in multiplayer.
@@ -2035,7 +2035,7 @@ void CV_CheaterWarning(UINT8 playerID, const char *command)
   * \param value The string value.
   * \sa CV_StealthSet, CV_SetValue
   */
-static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
+static void CV_SetCVar(consvar_t *var, const char *value, dboolean stealth)
 {
 #ifdef PARANOIA
 	if (!var)
@@ -2130,7 +2130,7 @@ void CV_StealthSet(consvar_t *var, const char *value)
   * \param value The numeric value, converted to a string before setting.
   * \param stealth Do we call the callback function or not?
   */
-static void CV_SetValueMaybeStealth(consvar_t *var, INT32 value, boolean stealth)
+static void CV_SetValueMaybeStealth(consvar_t *var, INT32 value, dboolean stealth)
 {
 	char val[SKINNAMESIZE+1];
 
@@ -2366,7 +2366,7 @@ void CV_InitFilterVar(void)
 #endif
 }
 
-void CV_ToggleExecVersion(boolean enable)
+void CV_ToggleExecVersion(dboolean enable)
 {
 	execversion_enabled = enable;
 }
@@ -2378,7 +2378,7 @@ void CV_EnforceExecVersion(void)
 		CV_StealthSetValue(&cv_execversion, EXECVERSION);
 }
 
-static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
+static dboolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
 {
 	(void)valstr;
 
@@ -2408,7 +2408,7 @@ static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
   *         variable, otherwise true.
   * \sa CV_ClearChangedFlags
   */
-static boolean CV_Command(void)
+static dboolean CV_Command(void)
 {
 	consvar_t *v;
 

@@ -64,8 +64,8 @@ typedef struct drawitem_s {
 	INT32 align;
 	INT32 timer;
 	INT32 threshold;
-	boolean bossmode;
-	boolean p4;
+	dboolean bossmode;
+	dboolean p4;
 	enum viewcontext_e splitnum; // save view number to account for splitscreen
 } drawitem_t;
 
@@ -142,7 +142,7 @@ void LUA_HUD_DestroyDrawList(huddrawlist_h list)
 	Z_Free(list);
 }
 
-boolean LUA_HUD_IsDrawListValid(huddrawlist_h list)
+dboolean LUA_HUD_IsDrawListValid(huddrawlist_h list)
 {
 	if (!list) return false;
 
@@ -371,10 +371,10 @@ void LUA_HUD_AddDrawTitleCardString(
 	INT32 y,
 	INT32 flags,
 	const char *str,
-	boolean bossmode,
+	dboolean bossmode,
 	INT32 timer,
 	INT32 threshold,
-	boolean p4
+	dboolean p4
 )
 {
 	size_t i = AllocateDrawItem(list);

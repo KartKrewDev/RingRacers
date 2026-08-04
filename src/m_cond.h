@@ -328,21 +328,21 @@ struct candata_t
 struct gamedata_t
 {
 	// WHENEVER OR NOT WE'RE READY TO SAVE
-	boolean loaded;
+	dboolean loaded;
 
 	// DEFERRED EVENTS RELATING TO CHALLENGE PROCESSING
-	boolean deferredsave;
-	boolean deferredconditioncheck;
+	dboolean deferredsave;
+	dboolean deferredconditioncheck;
 
 	// CONDITION SETS ACHIEVED
-	boolean achieved[MAXCONDITIONSETS];
+	dboolean achieved[MAXCONDITIONSETS];
 
 	// EMBLEMS COLLECTED
-	boolean collected[MAXEMBLEMS];
+	dboolean collected[MAXEMBLEMS];
 
 	// UNLOCKABLES UNLOCKED
-	boolean unlocked[MAXUNLOCKABLES];
-	boolean unlockpending[MAXUNLOCKABLES];
+	dboolean unlocked[MAXUNLOCKABLES];
+	dboolean unlockpending[MAXUNLOCKABLES];
 
 	// SPRAYCANS COLLECTED
 	UINT16 numspraycans;
@@ -353,7 +353,7 @@ struct gamedata_t
 	UINT16 numprisoneggpickups;
 	UINT16 thisprisoneggpickup;
 	condition_t *thisprisoneggpickup_cached;
-	boolean thisprisoneggpickupgrabbed;
+	dboolean thisprisoneggpickupgrabbed;
 	UINT16 prisoneggstothispickup;
 	UINT16* prisoneggpickups;
 
@@ -386,30 +386,30 @@ struct gamedata_t
 	cupheader_t *sealedswaps[GDMAX_SEALEDSWAPS];
 
 	// SPECIFIC SPECIAL EVENTS
-	boolean everloadedaddon;
-	boolean everfinishedcredits;
-	boolean eversavedreplay;
-	boolean everseenspecial;
-	boolean evercrashed;
-	boolean chaokeytutorial;
-	boolean majorkeyskipattempted;
-	boolean enteredtutorialchallenge;
-	boolean finishedtutorialchallenge;
-	boolean sealedswapalerted;
-	boolean tutorialdone;
-	boolean playgroundroute;
+	dboolean everloadedaddon;
+	dboolean everfinishedcredits;
+	dboolean eversavedreplay;
+	dboolean everseenspecial;
+	dboolean evercrashed;
+	dboolean chaokeytutorial;
+	dboolean majorkeyskipattempted;
+	dboolean enteredtutorialchallenge;
+	dboolean finishedtutorialchallenge;
+	dboolean sealedswapalerted;
+	dboolean tutorialdone;
+	dboolean playgroundroute;
 	gdmusic_t musicstate;
 
 	UINT8 gonerlevel;
 
 	// BACKWARDS COMPAT ASSIST
-	boolean importprofilewins;
+	dboolean importprofilewins;
 };
 
 extern gamedata_t *gamedata;
 
 // Netsynced functional alternative to gamedata->unlocked
-extern boolean netUnlocked[MAXUNLOCKABLES];
+extern dboolean netUnlocked[MAXUNLOCKABLES];
 
 extern conditionset_t conditionSets[MAXCONDITIONSETS];
 extern emblem_t emblemlocations[MAXEMBLEMS];
@@ -452,15 +452,15 @@ void M_ClearStats(void);
 void M_FinaliseGameData(void);
 void M_SetNetUnlocked(void);
 
-boolean M_NotFreePlay(void);
+dboolean M_NotFreePlay(void);
 UINT16 M_CheckCupEmeralds(UINT8 difficulty);
 
 // Updating conditions and unlockables
-boolean M_CheckCondition(condition_t *cn, player_t *player);
-boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
+dboolean M_CheckCondition(condition_t *cn, player_t *player);
+dboolean M_UpdateUnlockablesAndExtraEmblems(dboolean loud, dboolean doall);
 
 #define PENDING_CHAOKEYS (UINT16_MAX-1)
-UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys);
+UINT16 M_GetNextAchievedUnlock(dboolean canskipchaokeys);
 
 void M_UpdateNextPrisonEggPickup(void);
 
@@ -470,25 +470,25 @@ UINT16 M_CompletionEmblems(void);
 extern UINT16 gamestartchallenge;
 
 // Checking unlockable status
-boolean M_CheckNetUnlockByID(UINT16 unlockid);
-boolean M_SecretUnlocked(INT32 type, boolean local);
-boolean M_GameTrulyStarted(void);
-boolean M_GameAboutToStart(void);
-boolean M_CupLocked(cupheader_t *cup);
-boolean M_CupSecondRowLocked(void);
-boolean M_MapLocked(UINT16 mapnum);
-INT32 M_CountMedals(boolean all, boolean extraonly);
+dboolean M_CheckNetUnlockByID(UINT16 unlockid);
+dboolean M_SecretUnlocked(INT32 type, dboolean local);
+dboolean M_GameTrulyStarted(void);
+dboolean M_GameAboutToStart(void);
+dboolean M_CupLocked(cupheader_t *cup);
+dboolean M_CupSecondRowLocked(void);
+dboolean M_MapLocked(UINT16 mapnum);
+INT32 M_CountMedals(dboolean all, dboolean extraonly);
 
 // Emblem shit
 emblem_t *M_GetLevelEmblems(INT32 mapnum);
 skincolornum_t M_GetEmblemColor(emblem_t *em);
-const char *M_GetEmblemPatch(emblem_t *em, boolean big);
+const char *M_GetEmblemPatch(emblem_t *em, dboolean big);
 
 // If you're looking to compare stats for unlocks or what not, use these
 // They stop checking upon reaching the target number so they
 // should be (theoretically?) slightly faster.
-boolean M_GotEnoughMedals(INT32 number);
-boolean M_GotLowEnoughTime(INT32 tictime);
+dboolean M_GotEnoughMedals(INT32 number);
+dboolean M_GotLowEnoughTime(INT32 tictime);
 
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
@@ -501,8 +501,8 @@ UINT16 M_EmblemMapNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])
 
-boolean M_UseAlternateTitleScreen(void);
-INT32 M_GameDataGameType(INT32 gametype, boolean battleprisons);
+dboolean M_UseAlternateTitleScreen(void);
+INT32 M_GameDataGameType(INT32 gametype, dboolean battleprisons);
 
 #ifdef __cplusplus
 } // extern "C"

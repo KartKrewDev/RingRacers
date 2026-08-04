@@ -442,27 +442,27 @@ void Obj_InitToxomisterPole(mobj_t *pole)
 	static_cast<Pole*>(pole)->init();
 }
 
-boolean Obj_TickToxomisterPole(mobj_t *pole)
+dboolean Obj_TickToxomisterPole(mobj_t *pole)
 {
 	return static_cast<Pole*>(pole)->tick();
 }
 
-boolean Obj_TickToxomisterEye(mobj_t *eye)
+dboolean Obj_TickToxomisterEye(mobj_t *eye)
 {
 	return static_cast<Eye*>(eye)->tick();
 }
 
-boolean Obj_TickToxomisterCloud(mobj_t *cloud)
+dboolean Obj_TickToxomisterCloud(mobj_t *cloud)
 {
 	return static_cast<Cloud*>(cloud)->tick();
 }
 
-boolean Obj_ToxomisterPoleCollide(mobj_t *pole, mobj_t *toucher)
+dboolean Obj_ToxomisterPoleCollide(mobj_t *pole, mobj_t *toucher)
 {
 	return static_cast<Pole*>(pole)->touch(static_cast<Mobj*>(toucher));
 }
 
-boolean Obj_ToxomisterCloudCollide(mobj_t *cloud, mobj_t *toucher)
+dboolean Obj_ToxomisterCloudCollide(mobj_t *cloud, mobj_t *toucher)
 {
 	return static_cast<Cloud*>(cloud)->touch(static_cast<Mobj*>(toucher));
 }

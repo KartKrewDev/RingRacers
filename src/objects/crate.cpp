@@ -430,7 +430,7 @@ void Obj_TryCrateInit(mobj_t* mobj)
 	static_cast<AnyBox*>(mobj)->visit([&](auto box) { box->init(); });
 }
 
-boolean Obj_TryCrateThink(mobj_t* mobj)
+dboolean Obj_TryCrateThink(mobj_t* mobj)
 {
 	bool c = false;
 	static_cast<AnyBox*>(mobj)->visit([&](auto box) { c = box->think(); });
@@ -442,14 +442,14 @@ void Obj_TryCrateTouch(mobj_t* special, mobj_t* toucher)
 	static_cast<AnyBox*>(special)->visit([&](auto box) { box->touch(static_cast<Toucher*>(toucher)); });
 }
 
-boolean Obj_TryCrateDamage(mobj_t* target, mobj_t* inflictor)
+dboolean Obj_TryCrateDamage(mobj_t* target, mobj_t* inflictor)
 {
 	bool c = false;
 	static_cast<AnyBox*>(target)->visit([&](auto box) { c = box->damage(static_cast<Toucher*>(inflictor)); });
 	return c;
 }
 
-boolean Obj_SA2CrateIsMetal(mobj_t* mobj)
+dboolean Obj_SA2CrateIsMetal(mobj_t* mobj)
 {
 	return static_cast<Crate*>(mobj)->metal();
 }

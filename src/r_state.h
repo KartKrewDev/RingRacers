@@ -65,7 +65,7 @@ extern size_t numspritelumps, max_spritelumps;
 // Lookup tables for map data.
 //
 #define UDMF_CURRENT_VERSION (2)
-extern boolean udmf;
+extern dboolean udmf;
 extern INT32 udmf_version;
 
 extern size_t numsprites;
@@ -101,8 +101,8 @@ extern side_t *spawnsides;
 extern fixed_t viewx, viewy, viewz;
 extern angle_t viewangle, aimingangle, viewroll;
 extern UINT8 viewssnum; // splitscreen view number
-extern boolean viewsky, skyVisible;
-extern boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible of each splitscreen player
+extern dboolean viewsky, skyVisible;
+extern dboolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible of each splitscreen player
 extern sector_t *viewsector;
 extern player_t *viewplayer;
 extern mobj_t *r_viewmobj;

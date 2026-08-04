@@ -31,10 +31,10 @@ typedef UINT32*(*getnodeconnectioncostsfunc)(void*);
 typedef UINT32(*getnodeheuristicfunc)(void*, void*);
 
 // function pointer for getting if a node is traversable from its base data
-typedef boolean(*getnodetraversablefunc)(void*, void*);
+typedef dboolean(*getnodetraversablefunc)(void*, void*);
 
 // function pointer for getting if a node is our pathfinding end point
-typedef boolean(*getpathfindfinishedfunc)(void*, void*);
+typedef dboolean(*getpathfindfinishedfunc)(void*, void*);
 
 
 // A pathfindnode contains information about a node from the pathfinding
@@ -75,7 +75,7 @@ struct pathfindsetup_t {
 
 
 /*--------------------------------------------------
-	boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup);
+	dboolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup);
 
 		From a source waypoint and destination waypoint, find the best path between them using the A* algorithm.
 
@@ -86,7 +86,7 @@ struct pathfindsetup_t {
 	Return:-
 		True if a path was found between source and destination, false otherwise.
 --------------------------------------------------*/
-boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup);
+dboolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup);
 
 #ifdef __cplusplus
 } // extern "C"

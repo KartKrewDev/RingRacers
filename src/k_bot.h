@@ -62,7 +62,7 @@ struct botprediction_t
 
 
 /*--------------------------------------------------
-	boolean K_PlayerUsesBotMovement(const player_t *player);
+	dboolean K_PlayerUsesBotMovement(const player_t *player);
 
 		Tells if this player is being controlled via bot movement code (is a bot, or is exiting).
 
@@ -73,11 +73,11 @@ struct botprediction_t
 		true if using bot movement code, otherwise false.
 --------------------------------------------------*/
 
-boolean K_PlayerUsesBotMovement(const player_t *player);
+dboolean K_PlayerUsesBotMovement(const player_t *player);
 
 
 /*--------------------------------------------------
-	boolean K_BotCanTakeCut(const player_t *player);
+	dboolean K_BotCanTakeCut(const player_t *player);
 
 		Tells if this bot is able to take shortcuts (currently unaffected by offroad,
 		or has certain items ready).
@@ -89,7 +89,7 @@ boolean K_PlayerUsesBotMovement(const player_t *player);
 		true if able to take shortcuts, otherwise false.
 --------------------------------------------------*/
 
-boolean K_BotCanTakeCut(const player_t *player);
+dboolean K_BotCanTakeCut(const player_t *player);
 
 
 /*--------------------------------------------------
@@ -182,7 +182,7 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 
 
 /*--------------------------------------------------
-	boolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
+	dboolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
 		Adds a new bot, using code intended to run on all clients.
 
@@ -197,7 +197,7 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 		true if a bot was added, otherwise false.
 --------------------------------------------------*/
 
-boolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
+dboolean K_AddBot(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
 
 // NOT AVAILABLE FOR LUA
@@ -268,7 +268,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y);
 
 
 /*--------------------------------------------------
-	boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+	dboolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 
 		Tells us if a bot will play more careful around
 		this sector. Checks FOFs in the sector, as well.
@@ -283,7 +283,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y);
 		true if avoiding this sector, false otherwise.
 --------------------------------------------------*/
 
-boolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y);
+dboolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, fixed_t y);
 
 
 /*--------------------------------------------------
@@ -401,7 +401,7 @@ void K_BotItemUsage(const player_t *player, ticcmd_t *cmd, INT16 turnamt);
 
 void K_BotPickItemPriority(player_t *player);
 
-boolean K_BotUnderstandsItem(kartitems_t item);
+dboolean K_BotUnderstandsItem(kartitems_t item);
 
 #ifdef __cplusplus
 } // extern "C"

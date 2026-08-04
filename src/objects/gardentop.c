@@ -83,7 +83,7 @@ get_top_rider_player (mobj_t *top)
 	return get_rider_player(top_rider(top));
 }
 
-static inline boolean
+static inline dboolean
 is_top_grind_input (mobj_t *top)
 {
 	player_t *player = get_top_rider_player(top);
@@ -91,7 +91,7 @@ is_top_grind_input (mobj_t *top)
 	return player && K_IsHoldingDownTop(player);
 }
 
-static inline boolean
+static inline dboolean
 is_top_grinding (mobj_t *top)
 {
 	if (top_float(top) > 0)
@@ -704,7 +704,7 @@ Obj_GardenTopArrowThink (mobj_t *arrow)
 	}
 }
 
-boolean
+dboolean
 Obj_GardenTopPlayerIsGrinding (const player_t *player)
 {
 	mobj_t *top = K_GetGardenTop(player);
@@ -712,7 +712,7 @@ Obj_GardenTopPlayerIsGrinding (const player_t *player)
 	return top ? is_top_grinding(top) : false;
 }
 
-boolean
+dboolean
 Obj_GardenTopPlayerNeedsHelp (const mobj_t *top)
 {
 	if (top && top_mode(top) != TOP_ANCHORED)

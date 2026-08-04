@@ -194,7 +194,7 @@ static void M_SoundTestTrack(INT32 choice)
 	}
 }
 
-static boolean M_SoundTestInputs(INT32 ch)
+static dboolean M_SoundTestInputs(INT32 ch)
 {
 	(void)ch;
 	soundtest.justopened = false;

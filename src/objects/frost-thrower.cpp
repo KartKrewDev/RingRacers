@@ -350,7 +350,7 @@ void Obj_IceDustCollide(mobj_t* t1, mobj_t* t2)
 	static_cast<Frost*>(t1)->collide(static_cast<Mobj*>(t2));
 }
 
-boolean Obj_IceCubeThink(mobj_t* mo)
+dboolean Obj_IceCubeThink(mobj_t* mo)
 {
 	return static_cast<IceCube*>(mo)->think();
 }

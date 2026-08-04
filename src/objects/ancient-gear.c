@@ -35,7 +35,7 @@ static const tic_t TRANS_SHIFT_RATE = (DEATH_TIME / 10);
 static UINT8 numGears = 0;
 static UINT32 gearBank = 0;
 static UINT8 gearBankIndex = 0;
-static boolean allGearsCollected = false;
+static dboolean allGearsCollected = false;
 static player_t *collectingPlayer = NULL;
 static mobj_t *minimapGear = NULL;
 
@@ -237,7 +237,7 @@ void Obj_AncientGearDeadThink(mobj_t *gear)
 	gear->shadowscale = gear->spritexscale;
 }
 
-boolean Obj_AllowNextAncientGearSpawn(void)
+dboolean Obj_AllowNextAncientGearSpawn(void)
 {
 	// always allow gears spawned by objectplace
 	if (objectplacing)
@@ -295,7 +295,7 @@ player_t *Obj_GetAncientGearCollectingPlayer(void)
 	return collectingPlayer;
 }
 
-boolean Obj_AllAncientGearsCollected(void)
+dboolean Obj_AllAncientGearsCollected(void)
 {
 	return allGearsCollected;
 }

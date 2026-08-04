@@ -42,7 +42,7 @@ struct battleovertime battleovertime;
 struct battleufo g_battleufo;
 
 // Capsules mode enabled for this map?
-boolean battleprisons = false;
+dboolean battleprisons = false;
 
 // box respawning in battle mode
 INT32 nummapboxes = 0;
@@ -82,7 +82,7 @@ INT32 K_StartingBumperCount(void)
 	return cv_kartbumpers.value;
 }
 
-boolean K_IsPlayerWanted(player_t *player)
+dboolean K_IsPlayerWanted(player_t *player)
 {
 	UINT8 i = 0, nump = 0, numfirst = 0;
 	for (; i < MAXPLAYERS; i++)
@@ -147,7 +147,7 @@ void K_CheckBumpers(void)
 	if (gameaction == ga_completed)
 		return;
 
-	boolean team = G_GametypeHasTeams();
+	dboolean team = G_GametypeHasTeams();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -184,7 +184,7 @@ void K_CheckBumpers(void)
 		}
 	}
 
-	boolean teamwin = false;
+	dboolean teamwin = false;
 	if (team && (rednumingame - redeliminated == 0 || bluenumingame - blueeliminated == 0))
 	{
 		teamwin = true;
@@ -307,7 +307,7 @@ UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
 
 mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT32 emeraldType)
 {
-	boolean validEmerald = true;
+	dboolean validEmerald = true;
 	mobj_t *emerald = P_SpawnMobj(x, y, z, MT_EMERALD);
 	mobj_t *overlay;
 
@@ -419,7 +419,7 @@ UINT8 K_NumEmeralds(player_t *player)
 	return num;
 }
 
-static inline boolean IsOnInterval(tic_t interval)
+static inline dboolean IsOnInterval(tic_t interval)
 {
 	return ((leveltime - starttime) % interval) == 0;
 }
@@ -441,10 +441,10 @@ static UINT32 CountEmeraldsSpawned(const mobj_t *mo)
 
 void K_RunPaperItemSpawners(void)
 {
-	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
+	const dboolean overtime = (battleovertime.enabled >= 10*TICRATE);
 	const tic_t interval = BATTLE_SPAWN_INTERVAL;
 
-	const boolean canmakeemeralds = (gametyperules & GTR_POWERSTONES);
+	const dboolean canmakeemeralds = (gametyperules & GTR_POWERSTONES);
 
 	UINT32 emeraldsSpawned = 0;
 	UINT32 firstUnspawnedEmerald = 0;
@@ -882,8 +882,8 @@ void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 {
 	UINT8 sequence = mt->thing_args[0] - 1;
 	fixed_t speed = (FRACUNIT >> 3) * mt->thing_args[1];
-	boolean backandforth = (mt->thing_args[2] & TMBCF_BACKANDFORTH);
-	boolean reverse = (mt->thing_args[2] & TMBCF_REVERSE);
+	dboolean backandforth = (mt->thing_args[2] & TMBCF_BACKANDFORTH);
+	dboolean reverse = (mt->thing_args[2] & TMBCF_REVERSE);
 	mobj_t *target = NULL;
 
 	// Find the inital target
@@ -954,7 +954,7 @@ void K_SpawnPlayerBattleBumpers(player_t *p)
 	}
 }
 
-void K_BattleInit(boolean singleplayercontext)
+void K_BattleInit(dboolean singleplayercontext)
 {
 	size_t i;
 
@@ -1008,7 +1008,7 @@ INT32 K_BumpersToHealth(UINT8 bumpers)
 	return (bumpers + 1);
 }
 
-boolean K_BattleOvertimeKiller(mobj_t *mobj)
+dboolean K_BattleOvertimeKiller(mobj_t *mobj)
 {
 	if (battleovertime.enabled < 10*TICRATE)
 	{
@@ -1027,7 +1027,7 @@ boolean K_BattleOvertimeKiller(mobj_t *mobj)
 	return true;
 }
 
-boolean K_EndBattleRound(player_t *victor)
+dboolean K_EndBattleRound(player_t *victor)
 {
 	if (victor)
 	{

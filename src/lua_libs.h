@@ -120,7 +120,7 @@ extern lua_State *gL;
 #define META_GPRANKLEVELPERPLAYER "GPRANK_LEVEL_PERPLAYER_T*"
 #define META_ROUNDENTRY "ROUNDENTRY_T*"
 
-boolean luaL_checkboolean(lua_State *L, int narg);
+dboolean luaL_checkboolean(lua_State *L, int narg);
 
 int LUA_EnumLib(lua_State *L);
 int LUA_SOCLib(lua_State *L);

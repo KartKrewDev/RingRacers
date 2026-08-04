@@ -155,13 +155,13 @@ UINT32 P_GetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class);
 UINT32 P_GetInitSeedD(const char *rfile, INT32 rline, pr_class_t pr_class);
 void P_SetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 seed);
 void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 init, UINT32 seed);
-void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, boolean newframe);
+void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, dboolean newframe);
 #else
 UINT32 P_GetRandSeed(pr_class_t pr_class);
 UINT32 P_GetInitSeed(pr_class_t pr_class);
 void P_SetRandSeed(pr_class_t pr_class, UINT32 seed);
 void P_SetRandSeedNet(pr_class_t pr_class, UINT32 init, UINT32 seed);
-void P_ResetInterpHudRandSeed(boolean newframe);
+void P_ResetInterpHudRandSeed(dboolean newframe);
 #endif
 
 void P_ClearRandom(UINT32 seed);

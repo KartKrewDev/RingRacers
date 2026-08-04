@@ -232,7 +232,7 @@ static int lib_polyobj_moveXY(lua_State *L)
 	polyobj_t *po = *((polyobj_t **)luaL_checkudata(L, 1, META_POLYOBJ));
 	fixed_t x = luaL_checkfixed(L, 2);
 	fixed_t y = luaL_checkfixed(L, 3);
-	boolean checkmobjs = lua_opttrueboolean(L, 4);
+	dboolean checkmobjs = lua_opttrueboolean(L, 4);
 	NOHUD
 	INLEVEL
 	if (!po)
@@ -245,9 +245,9 @@ static int lib_polyobj_rotate(lua_State *L)
 {
 	polyobj_t *po = *((polyobj_t **)luaL_checkudata(L, 1, META_POLYOBJ));
 	angle_t delta = luaL_checkangle(L, 2);
-	boolean turnplayers = lua_opttrueboolean(L, 3);
-	boolean turnothers = lua_opttrueboolean(L, 4);
-	boolean checkmobjs = lua_opttrueboolean(L, 5);
+	dboolean turnplayers = lua_opttrueboolean(L, 3);
+	dboolean turnothers = lua_opttrueboolean(L, 4);
+	dboolean checkmobjs = lua_opttrueboolean(L, 5);
 	NOHUD
 	INLEVEL
 	if (!po)

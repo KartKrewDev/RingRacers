@@ -39,7 +39,7 @@
 #define jawz_owner(o) ((o)->target)
 #define jawz_chase(o) ((o)->tracer)
 
-static void JawzChase(mobj_t *th, boolean grounded)
+static void JawzChase(mobj_t *th, dboolean grounded)
 {
 	fixed_t thrustamount = 0;
 	fixed_t frictionsafety = (th->friction == 0) ? 1 : th->friction;
@@ -87,7 +87,7 @@ static void JawzChase(mobj_t *th, boolean grounded)
 			if (angledelta != 0)
 			{
 				angle_t turnSpeed = MAX_JAWZ_TURN;
-				boolean turnclockwise = true;
+				dboolean turnclockwise = true;
 
 				// MAX_JAWZ_TURN gets stronger the slower the top speed of jawz
 				if (topspeed < jawz_speed(th))
@@ -187,7 +187,7 @@ static void JawzChase(mobj_t *th, boolean grounded)
 	}
 }
 
-static boolean JawzSteersBetter(void)
+static dboolean JawzSteersBetter(void)
 {
 	return !!!(gametyperules & GTR_CIRCUIT);
 }
@@ -195,7 +195,7 @@ static boolean JawzSteersBetter(void)
 void Obj_JawzThink(mobj_t *th)
 {
 	mobj_t *ghost = P_SpawnGhostMobj(th);
-	boolean grounded = P_IsObjectOnGround(th);
+	dboolean grounded = P_IsObjectOnGround(th);
 
 	if (th->fuse > 0 && th->fuse <= TICRATE)
 	{

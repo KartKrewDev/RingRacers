@@ -206,17 +206,17 @@ void Obj_FuelCanisterEmitterInit(mobj_t *mo)
 	static_cast<FuelCanister::Emitter*>(mo)->init();
 }
 
-boolean Obj_FuelCanisterVisualThink(mobj_t *mo)
+dboolean Obj_FuelCanisterVisualThink(mobj_t *mo)
 {
 	return static_cast<FuelCanister::Vis*>(mo)->think();
 }
 
-boolean Obj_FuelCanisterEmitterThink(mobj_t *mo)
+dboolean Obj_FuelCanisterEmitterThink(mobj_t *mo)
 {
 	return static_cast<FuelCanister::Emitter*>(mo)->think();
 }
 
-boolean Obj_FuelCanisterThink(mobj_t *mo)
+dboolean Obj_FuelCanisterThink(mobj_t *mo)
 {
 	return static_cast<FuelCanister*>(mo)->think();
 }
@@ -231,7 +231,7 @@ void Obj_FuelCanisterExplosionTouch(mobj_t *special, mobj_t *toucher)
 	static_cast<FuelCanister::Explosion*>(special)->touch(static_cast<Mobj*>(toucher));
 }
 
-boolean Obj_FuelCanisterExplosionThink(mobj_t *mo)
+dboolean Obj_FuelCanisterExplosionThink(mobj_t *mo)
 {
 	return static_cast<FuelCanister::Explosion*>(mo)->think();
 }

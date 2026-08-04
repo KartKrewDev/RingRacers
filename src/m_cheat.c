@@ -534,7 +534,7 @@ void Command_GotoSkybox_f(void)
 // OBJECTPLACE (and related variables)
 //
 
-boolean objectplacing = false;
+dboolean objectplacing = false;
 mobjtype_t op_currentthing = 0; // For the object placement mode
 UINT16 op_currentdoomednum = 0; // For display, etc
 UINT32 op_displayflags = 0; // for display in ST_stuff
@@ -591,7 +591,7 @@ static void OP_CycleThings(INT32 amt)
 	op_currentdoomednum = mobjinfo[op_currentthing].doomednum;
 }
 
-static boolean OP_HeightOkay(player_t *player, UINT8 ceiling)
+static dboolean OP_HeightOkay(player_t *player, UINT8 ceiling)
 {
 	sector_t *sec = player->mo->subsector->sector;
 
@@ -621,7 +621,7 @@ static boolean OP_HeightOkay(player_t *player, UINT8 ceiling)
 	return true;
 }
 
-static mapthing_t *OP_CreateNewMapThing(player_t *player, UINT16 type, boolean ceiling)
+static mapthing_t *OP_CreateNewMapThing(player_t *player, UINT16 type, dboolean ceiling)
 {
 	mapthing_t *mt = mapthings;
 	sector_t *sec = player->mo->subsector->sector;
@@ -683,7 +683,7 @@ static mapthing_t *OP_CreateNewMapThing(player_t *player, UINT16 type, boolean c
 //
 // Helper functions
 //
-boolean OP_FreezeObjectplace(void)
+dboolean OP_FreezeObjectplace(void)
 {
 	if (!objectplacing)
 		return false;
@@ -789,7 +789,7 @@ void OP_ObjectplaceMovement(player_t *player)
 		mapthing_t *mt;
 		mobjtype_t spawnmid = op_currentthing;
 		mobjtype_t spawnthing = op_currentdoomednum;
-		boolean ceiling;
+		dboolean ceiling;
 
 		player->pflags |= PF_STASIS;
 

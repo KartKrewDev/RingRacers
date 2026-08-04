@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 // Load the Model
-model_t *MD2_LoadModel(const char *fileName, int ztag, boolean useFloat);
+model_t *MD2_LoadModel(const char *fileName, int ztag, dboolean useFloat);
 
 #ifdef __cplusplus
 } // extern "C"

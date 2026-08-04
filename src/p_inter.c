@@ -115,7 +115,7 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 //
 // Returns true if the player is in a state where they can pick up items.
 //
-boolean P_CanPickupItem(player_t *player, UINT8 weapon)
+dboolean P_CanPickupItem(player_t *player, UINT8 weapon)
 {
 	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved)
 		return false;
@@ -183,7 +183,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 // Anticheese pickup types are different than-P_CanPickupItem weapon, because that system is
 // already slightly scary without introducing special cases for different types of the same pickup.
 // See p_local.h for cheese types.
-boolean P_IsPickupCheesy(player_t *player, UINT8 type)
+dboolean P_IsPickupCheesy(player_t *player, UINT8 type)
 {
 	extern consvar_t cv_debugcheese;
 
@@ -212,7 +212,7 @@ void P_UpdateLastPickup(player_t *player, UINT8 type)
 	player->lastpickupdistance = player->distancetofinish;
 }
 
-boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
+dboolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
 {
 	if (emblemID < 0 || emblemID >= MAXEMBLEMS)
 	{
@@ -244,7 +244,7 @@ boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
 	return true;
 }
 
-boolean P_EmblemWasCollected(INT32 emblemID)
+dboolean P_EmblemWasCollected(INT32 emblemID)
 {
 	if (emblemID < 0 || emblemID >= numemblems
 	|| emblemlocations[emblemID].type == ET_NONE)
@@ -332,7 +332,7 @@ static void P_ItemPop(mobj_t *actor)
   * \param heightcheck Whether or not to make sure the player and the object
   *                    are actually touching.
   */
-void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
+void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, dboolean heightcheck)
 {
 	player_t *player;
 
@@ -1172,7 +1172,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
   * \param player The player that should receive the cheatcheck
   * \param snaptopost If true, the respawn point will use the cheatcheck's position, otherwise player x/y and star post z
   */
-void P_TouchCheatcheck(mobj_t *post, player_t *player, boolean snaptopost)
+void P_TouchCheatcheck(mobj_t *post, player_t *player, dboolean snaptopost)
 {
 	mobj_t *toucher = player->mo;
 
@@ -1492,7 +1492,7 @@ void P_CheckTimeLimit(void)
 	{
 #ifndef TESTOVERTIMEINFREEPLAY
 		UINT8 i;
-		boolean foundone = false; // Overtime is used for closing off down to a specific item.
+		dboolean foundone = false; // Overtime is used for closing off down to a specific item.
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (!playeringame[i] || players[i].spectator)
@@ -1630,14 +1630,14 @@ void P_CheckPointLimit(void)
 }
 
 // Checks whether or not to end a race netgame.
-boolean P_CheckRacers(void)
+dboolean P_CheckRacers(void)
 {
-	const boolean griefed = (spectateGriefed > 0);
+	const dboolean griefed = (spectateGriefed > 0);
 
-	boolean eliminateLast = (!K_CanChangeRules(true) || (cv_karteliminatelast.value != 0));
+	dboolean eliminateLast = (!K_CanChangeRules(true) || (cv_karteliminatelast.value != 0));
 
-	boolean allHumansDone = true;
-	//boolean allBotsDone = true;
+	dboolean allHumansDone = true;
+	//dboolean allBotsDone = true;
 
 	UINT8 numPlaying = 0;
 	UINT8 numExiting = 0;
@@ -2069,7 +2069,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					}
 				}
 
-				boolean battle = (gametyperules & (GTR_BUMPERS | GTR_BOSS)) == GTR_BUMPERS;
+				dboolean battle = (gametyperules & (GTR_BUMPERS | GTR_BOSS)) == GTR_BUMPERS;
 				P_InstaThrust(target, flingAngle, max(flingSpeed, 6 * target->scale) / (battle ? 1 : 3));
 				P_SetObjectMomZ(target, battle ? 20*FRACUNIT : 18*FRACUNIT, false);
 			}
@@ -2545,7 +2545,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		const fixed_t xoffs = P_ReturnThrustX(target, ang, 8*scale), yoffs = P_ReturnThrustY(target, ang, 8*scale), forwardxoffs = P_ReturnThrustX(target, target->angle, 7*scale), forwardyoffs = P_ReturnThrustY(target, target->angle, 7*scale);
 		const UINT16 flip = (target->eflags & MFE_VERTICALFLIP);
 		mobj_t *chunk;
-		boolean sprflip;
+		dboolean sprflip;
 
 		S_StartSound(target, target->info->deathsound);
 		if (!P_MobjWasRemoved(target->tracer))
@@ -2649,7 +2649,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	   Graue 12-22-2003 */
 }
 
-static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+static dboolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
 	(void)inflictor;
 	(void)damage;
@@ -2671,12 +2671,12 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 	return true;
 }
 
-static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
+static dboolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
 	(void)inflictor;
 	(void)source;
 
-	const boolean beforeexit = !(player->exiting || (player->pflags & PF_NOCONTEST));
+	const dboolean beforeexit = !(player->exiting || (player->pflags & PF_NOCONTEST));
 
 	if (type == DMG_SPECTATOR && (G_GametypeHasTeams() || G_GametypeHasSpectators()))
 	{
@@ -2820,7 +2820,7 @@ static void AddNullHitlag(player_t *player, tic_t oldHitlag)
 	}
 }
 
-static boolean P_FlashingException(const player_t *player, const mobj_t *inflictor)
+static dboolean P_FlashingException(const player_t *player, const mobj_t *inflictor)
 {
 	if (!inflictor)
 	{
@@ -2867,13 +2867,13 @@ static boolean P_FlashingException(const player_t *player, const mobj_t *inflict
 
 // P_DamageMobj for 0x0010 compat.
 // I know this sucks ass, but this function is legitimately too complicated to add more behavior switches.
-static boolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
 	player_t *player;
 	player_t *playerInflictor;
-	boolean force = false;
-	boolean spbpop = false;
-	boolean downgraded = false;
+	dboolean force = false;
+	dboolean spbpop = false;
+	dboolean downgraded = false;
 
 	INT32 laglength = 6;
 
@@ -3086,15 +3086,15 @@ static boolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 		else
 		{
 			UINT8 type = (damagetype & DMG_TYPEMASK);
-			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
+			const dboolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
 
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
 			if (!force)
 			{
-				boolean invincible = true;
-				boolean clash = false;
+				dboolean invincible = true;
+				dboolean clash = false;
 				sfxenum_t sfx = sfx_None;
 
 				if (!(gametyperules & GTR_BUMPERS))
@@ -3211,7 +3211,7 @@ static boolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 				}
 				{
 					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
-					boolean allowcombo = ((hardhit || (type == DMG_STUMBLE || type == DMG_WHUMBLE)) == !(damagetype & DMG_WOMBO));
+					dboolean allowcombo = ((hardhit || (type == DMG_STUMBLE || type == DMG_WHUMBLE)) == !(damagetype & DMG_WOMBO));
 
 					// Tumble/stumble is a special case.
 					if (type == DMG_TUMBLE)
@@ -3277,7 +3277,7 @@ static boolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 				damage = 0;
 			}
 
-			boolean softenTumble = false;
+			dboolean softenTumble = false;
 
 			// Sting and stumble shouldn't be rewarding Battle hits.
 			if (type == DMG_STING || type == DMG_STUMBLE)
@@ -3683,17 +3683,17 @@ static boolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *sou
   * \todo Clean up this mess, split into multiple functions.
   * \sa P_KillMobj
   */
-boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
 	if (G_CompatLevel(0x0010))
 		return P_DamageMobjCompat(target, inflictor, source, damage, damagetype);
 
 	player_t *player;
 	player_t *playerInflictor;
-	boolean force = false;
-	boolean spbpop = false;
-	ATTRUNUSED boolean downgraded = false;
-	boolean truewhumble = false; // Invincibility-ignoring DMG_WHUMBLE from the Insta-Whip itself.
+	dboolean force = false;
+	dboolean spbpop = false;
+	ATTRUNUSED dboolean downgraded = false;
+	dboolean truewhumble = false; // Invincibility-ignoring DMG_WHUMBLE from the Insta-Whip itself.
 
 	INT32 laglength = 6;
 
@@ -3906,7 +3906,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		else
 		{
 			UINT8 type = (damagetype & DMG_TYPEMASK);
-			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
+			const dboolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
 
 			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_INSTAWHIP && type == DMG_WHUMBLE)
@@ -3916,8 +3916,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// If not, then spawn the instashield effect instead.
 			if (!force)
 			{
-				boolean invincible = true;
-				boolean clash = true; // This effect is cool and reads well, why not
+				dboolean invincible = true;
+				dboolean clash = true; // This effect is cool and reads well, why not
 				sfxenum_t sfx = sfx_None;
 
 				if (!(gametyperules & GTR_BUMPERS))
@@ -4055,7 +4055,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				}
 				{
 					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
-					boolean allowcombo = ((hardhit || (type == DMG_STUMBLE || type == DMG_WHUMBLE)) == !(damagetype & DMG_WOMBO));
+					dboolean allowcombo = ((hardhit || (type == DMG_STUMBLE || type == DMG_WHUMBLE)) == !(damagetype & DMG_WOMBO));
 
 					// Tumble/stumble is a special case.
 					if (type == DMG_TUMBLE)
@@ -4121,7 +4121,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				damage = 0;
 			}
 
-			boolean softenTumble = false;
+			dboolean softenTumble = false;
 
 			// Sting and stumble shouldn't be rewarding Battle hits.
 			if (type == DMG_STING || type == DMG_STUMBLE)

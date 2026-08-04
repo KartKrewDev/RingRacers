@@ -34,7 +34,7 @@ void M_TimeAttackTick(void)
 	}
 }
 
-boolean M_EncoreAttackTogglePermitted(void)
+dboolean M_EncoreAttackTogglePermitted(void)
 {
 	if ((gametypes[levellist.newgametype]->rules & GTR_ENCORE) == 0) //levellist.newgametype != GT_RACE
 		return false;
@@ -42,10 +42,10 @@ boolean M_EncoreAttackTogglePermitted(void)
 	return M_SecretUnlocked(SECRET_SPBATTACK, true);
 }
 
-boolean M_TimeAttackInputs(INT32 ch)
+dboolean M_TimeAttackInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
-	const boolean buttonR = M_MenuButtonPressed(pid, MBT_R);
+	const dboolean buttonR = M_MenuButtonPressed(pid, MBT_R);
 	(void) ch;
 
 	if (buttonR && M_EncoreAttackTogglePermitted())
@@ -411,7 +411,7 @@ void CV_SPBAttackChanged(void)
 }
 
 /// time attack stuff...
-void M_PrepareTimeAttack(boolean menuupdate)
+void M_PrepareTimeAttack(dboolean menuupdate)
 {
 	if (menuupdate)
 	{

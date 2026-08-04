@@ -65,7 +65,7 @@ void K_UserPropertyPush(mapUserProperties_t *user, const char *key, mapUserPrope
 	{
 		case USER_PROP_BOOL:
 		{
-			prop->valueBool = *(boolean *)value;
+			prop->valueBool = *(dboolean *)value;
 			break;
 		}
 		case USER_PROP_INT:

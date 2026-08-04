@@ -94,7 +94,7 @@ void Obj_FakeShadowThink(mobj_t* shadow)
 	x->move();
 }
 
-boolean Obj_FakeShadowZ(const mobj_t* shadow, fixed_t* return_z, pslope_t** return_slope)
+dboolean Obj_FakeShadowZ(const mobj_t* shadow, fixed_t* return_z, pslope_t** return_slope)
 {
 	auto x = static_cast<const Shadow*>(shadow);
 

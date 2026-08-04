@@ -208,7 +208,7 @@ void T_StrobeFlash(strobe_t *flash)
   *                   the strobe flash is random.
   * \sa T_StrobeFlash
   */
-strobe_t *P_SpawnAdjustableStrobeFlash(sector_t *sector, INT16 lighta, INT16 lightb, INT32 darktime, INT32 brighttime, boolean inSync)
+strobe_t *P_SpawnAdjustableStrobeFlash(sector_t *sector, INT16 lighta, INT16 lightb, INT32 darktime, INT32 brighttime, dboolean inSync)
 {
 	strobe_t *flash;
 
@@ -329,7 +329,7 @@ glow_t *P_SpawnAdjustableGlowingLight(sector_t *sector, INT16 lighta, INT16 ligh
   * \param ticbased  Use a specific duration for the fade, defined by speed
   * \sa T_LightFade
   */
-void P_FadeLightBySector(sector_t *sector, INT32 destvalue, INT32 speed, boolean ticbased)
+void P_FadeLightBySector(sector_t *sector, INT32 destvalue, INT32 speed, dboolean ticbased)
 {
 	lightlevel_t *ll;
 
@@ -369,7 +369,7 @@ void P_FadeLightBySector(sector_t *sector, INT32 destvalue, INT32 speed, boolean
 	}
 }
 
-void P_FadeLight(INT16 tag, INT32 destvalue, INT32 speed, boolean ticbased, boolean force, boolean relative)
+void P_FadeLight(INT16 tag, INT32 destvalue, INT32 speed, dboolean ticbased, dboolean force, dboolean relative)
 {
 	INT32 i;
 	INT32 realdestvalue;

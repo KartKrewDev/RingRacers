@@ -36,7 +36,7 @@ extern UINT8 graphics_started;
 extern UINT8 keyboard_started;
 
 /** \brief Set to true when inside a signal handler that will exit the program. */
-extern boolean g_in_exiting_signal_handler;
+extern dboolean g_in_exiting_signal_handler;
 
 /**	\brief	The I_GetFreeMem function
 
@@ -73,7 +73,7 @@ double I_GetFrameTime(void);
 */
 void I_Sleep(UINT32 ms);
 
-boolean I_CheckFrameCap(precise_t start, precise_t end);
+dboolean I_CheckFrameCap(precise_t start, precise_t end);
 
 /**	\brief Get events
 
@@ -324,7 +324,7 @@ void I_RegisterSysCommands(void);
 
 void I_CursedWindowMovement(int xd, int yd);
 
-boolean I_HasOpenURL(void);
+dboolean I_HasOpenURL(void);
 
 void I_OpenURL(const char *data);
 

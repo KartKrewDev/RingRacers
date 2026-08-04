@@ -40,7 +40,7 @@ void K_ClearFinishBeamLine(void);
 
 
 /*--------------------------------------------------
-	boolean K_GenerateFinishBeamLine(void);
+	dboolean K_GenerateFinishBeamLine(void);
 
 		Finds pre-placed "beam points" to create a finish line out of,
 		or tries to automatically create it from a finish linedef in the map.
@@ -53,7 +53,7 @@ void K_ClearFinishBeamLine(void);
 		True if successful, otherwise false.
 --------------------------------------------------*/
 
-boolean K_GenerateFinishBeamLine(void);
+dboolean K_GenerateFinishBeamLine(void);
 
 
 /*--------------------------------------------------

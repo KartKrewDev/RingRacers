@@ -43,7 +43,7 @@
 
 extern consvar_t cv_mastervolume;
 
-static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
+static dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
 
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
@@ -248,7 +248,7 @@ lumpnum_t S_GetSfxLumpNum(sfxinfo_t *sfx)
 // Sound Status
 //
 
-boolean S_SoundDisabled(void)
+dboolean S_SoundDisabled(void)
 {
 	return (
 			sound_disabled ||
@@ -258,7 +258,7 @@ boolean S_SoundDisabled(void)
 	);
 }
 
-boolean S_VoiceDisabled(void)
+dboolean S_VoiceDisabled(void)
 {
 	return (
 			g_voice_disabled ||
@@ -316,7 +316,7 @@ void S_StopSoundByNum(sfxenum_t sfxnum)
 void S_StartCaption(sfxenum_t sfx_id, INT32 cnum, UINT16 lifespan)
 {
 	UINT8 i, set, moveup, start;
-	boolean same = false;
+	dboolean same = false;
 	sfxinfo_t *sfx;
 
 	if (!cv_closedcaptioning.value) // no captions at all
@@ -420,13 +420,13 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 {
 	const mobj_t *origin = (const mobj_t *)origin_p;
 	const sfxenum_t actual_id = sfx_id;
-	const boolean reverse = (stereoreverse.value ^ encoremode);
+	const dboolean reverse = (stereoreverse.value ^ encoremode);
 	const INT32 initial_volume = (origin ? S_ScaleVolumeWithSplitscreen(volume) : volume);
 
 	sfxinfo_t *sfx;
 	INT32 sep, pitch, priority, cnum;
-	boolean anyListeners = false;
-	boolean itsUs = false;
+	dboolean anyListeners = false;
+	dboolean itsUs = false;
 	INT32 i;
 
 	listener_t listener[MAXSPLITSCREENPLAYERS];
@@ -442,7 +442,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		player_t *player = &players[displayplayers[i]];
-		boolean camaway = false;
+		dboolean camaway = false;
 
 		memset(&listener[i], 0, sizeof (listener[i]));
 		listenmobj[i] = NULL;
@@ -529,7 +529,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		// Check to see if it is audible, and if not, modify the params
 		if (origin && !itsUs)
 		{
-			boolean audible = false;
+			dboolean audible = false;
 
 			if (r_splitscreen > 0)
 			{
@@ -678,7 +678,7 @@ static INT32 actualdigmusicvolume;
 static INT32 actualmastervolume;
 static INT32 actualvoicevolume;
 
-static boolean PointIsLeft(float ax, float ay, float bx, float by)
+static dboolean PointIsLeft(float ax, float ay, float bx, float by)
 {
 	// return (b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x) > 0;
 	return ax * by - ay * bx > 0;
@@ -687,7 +687,7 @@ static boolean PointIsLeft(float ax, float ay, float bx, float by)
 void S_UpdateSounds(void)
 {
 	INT32 cnum, volume, sep, pitch;
-	boolean audible = false;
+	dboolean audible = false;
 	channel_t *c;
 	INT32 i;
 
@@ -786,7 +786,7 @@ void S_UpdateSounds(void)
 				//  or modify their params
 				if (c->origin)
 				{
-					boolean itsUs = false;
+					dboolean itsUs = false;
 
 					for (i = r_splitscreen; i >= 0; i--)
 					{
@@ -923,7 +923,7 @@ void S_UpdateVoicePositionalProperties(void)
 	}
 
 	// Positional voice audio
-	boolean voice_proximity_enabled = cv_voice_proximity.value == 1;
+	dboolean voice_proximity_enabled = cv_voice_proximity.value == 1;
 	float voice_distanceattenuation_distance = FixedToFloat(cv_voice_distanceattenuation_distance.value) * FixedToFloat(mapheaderinfo[gamemap-1]->mobj_scale);
 	float voice_distanceattenuation_teamdistance = FixedToFloat(cv_voice_distanceattenuation_teamdistance.value) * FixedToFloat(mapheaderinfo[gamemap-1]->mobj_scale);
 	float voice_distanceattenuation_factor = FixedToFloat(cv_voice_distanceattenuation_factor.value);
@@ -1031,7 +1031,7 @@ void S_UpdateVoicePositionalProperties(void)
 void S_UpdateClosedCaptions(void)
 {
 	UINT8 i;
-	boolean gamestopped = (paused || P_AutoPause());
+	dboolean gamestopped = (paused || P_AutoPause());
 	for (i = 0; i < NUMCAPTIONS; i++) // update captions
 	{
 		if (!closedcaptions[i].s)
@@ -1143,10 +1143,10 @@ INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume)
 // If the sound is not audible, returns a 0.
 // Otherwise, modifies parameters and returns 1.
 //
-boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch,
+dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch,
 	sfxinfo_t *sfxinfo)
 {
-	const boolean reverse = (stereoreverse.value ^ encoremode);
+	const dboolean reverse = (stereoreverse.value ^ encoremode);
 
 	fixed_t approx_dist;
 
@@ -1620,7 +1620,7 @@ void S_PopulateSoundTestSequence(void)
 	}
 }
 
-static boolean S_SoundTestDefLocked(musicdef_t *def)
+static dboolean S_SoundTestDefLocked(musicdef_t *def)
 {
 	// temporary - i'd like to find a way to conditionally hide
 	// specific musicdefs that don't have any map associated.
@@ -1667,7 +1667,7 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 	return M_MapLocked(def->sequence.map+1);
 }
 
-void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull)
+void S_UpdateSoundTestDef(dboolean reverse, dboolean dotracks, dboolean skipnull)
 {
 	musicdef_t *newdef = NULL;
 
@@ -1903,7 +1903,7 @@ const char *S_SoundTestTune(UINT8 invert)
 	return soundtest.tune ^ invert ? "stereo_fade" : "stereo";
 }
 
-boolean S_SoundTestCanSequenceFade(void)
+dboolean S_SoundTestCanSequenceFade(void)
 {
 	return soundtest.current->basenoloop[soundtest.currenttrack] == false;
 }
@@ -2081,7 +2081,7 @@ musicdef_t *S_FindMusicDef(const char *name, UINT8 *i)
 	return NULL;
 }
 
-static boolean
+static dboolean
 MusicDefError
 (
 		alerttype_t  level,
@@ -2104,7 +2104,7 @@ MusicDefError
 	return false;
 }
 
-static boolean
+static dboolean
 ReadMusicDefFields
 (
 		lumpnum_t     lumpnum,
@@ -2456,12 +2456,12 @@ void S_StopMusicCredit(void)
 /// Music Status
 /// ------------------------
 
-boolean S_MusicDisabled(void)
+dboolean S_MusicDisabled(void)
 {
 	return digital_disabled;
 }
 
-boolean S_MusicNotInFocus(void)
+dboolean S_MusicNotInFocus(void)
 {
 	return (
 			( window_notinfocus && ! (cv_bgaudio.value & 1) )
@@ -2856,12 +2856,12 @@ void BGAudio_OnChange(void)
 }
 
 
-boolean S_SoundInputIsEnabled(void)
+dboolean S_SoundInputIsEnabled(void)
 {
 	return I_SoundInputIsEnabled();
 }
 
-boolean S_SoundInputSetEnabled(boolean enabled)
+dboolean S_SoundInputSetEnabled(dboolean enabled)
 {
 	return I_SoundInputSetEnabled(enabled);
 }
@@ -2878,7 +2878,7 @@ UINT32 S_SoundInputRemainingSamples(void)
 
 static INT32 g_playerlastvoiceactive[MAXPLAYERS];
 
-void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, boolean terminal)
+void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, dboolean terminal)
 {
 	if (dedicated)
 	{
@@ -2895,7 +2895,7 @@ void S_SetPlayerVoiceActive(INT32 playernum)
 	g_playerlastvoiceactive[playernum] = I_GetTime();
 }
 
-boolean S_IsPlayerVoiceActive(INT32 playernum)
+dboolean S_IsPlayerVoiceActive(INT32 playernum)
 {
 	return I_GetTime() - g_playerlastvoiceactive[playernum] < 5;
 }

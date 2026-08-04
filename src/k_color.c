@@ -282,11 +282,11 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t 
 }
 
 /*--------------------------------------------------
-	boolean K_ColorUsable(skincolornum_t color, boolean follower, boolean locked)
+	dboolean K_ColorUsable(skincolornum_t color, dboolean follower, dboolean locked)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_ColorUsable(skincolornum_t color, boolean follower, boolean locked)
+dboolean K_ColorUsable(skincolornum_t color, dboolean follower, dboolean locked)
 {
 	INT32 i = MAXUNLOCKABLES;
 
@@ -337,7 +337,7 @@ boolean K_ColorUsable(skincolornum_t color, boolean follower, boolean locked)
 
 	// Use the unlockables table directly
 	// DEFINITELY not M_CheckNetUnlockByID
-	return (boolean)(gamedata->unlocked[i]);
+	return (dboolean)(gamedata->unlocked[i]);
 }
 
 //}

@@ -233,14 +233,14 @@ struct serverconfig_pak
 
 	UINT8 gametype;
 	UINT8 modifiedgame;
-	boolean dedicated;
+	dboolean dedicated;
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
 	// Discord info (always defined for net compatibility)
 	UINT8 maxplayer;
-	boolean allownewplayer;
-	boolean discordinvites;
+	dboolean allownewplayer;
+	dboolean discordinvites;
 
 	char server_name[MAXSERVERNAME];
 	char server_contact[MAXSERVERCONTACT];
@@ -511,7 +511,7 @@ struct serverelem_t
 
 extern serverelem_t serverlist[MAXSERVERLIST];
 extern UINT32 serverlistcount, serverlistultimatecount;
-extern boolean serverlistmode;
+extern dboolean serverlistmode;
 extern INT32 mapchangepending;
 
 // Points inside doomcom
@@ -557,13 +557,13 @@ typedef enum
 #define MAXNAMECHANGES (5)
 #define NAMECHANGERATE (60*TICRATE)
 
-extern boolean server;
-extern boolean serverrunning;
+extern dboolean server;
+extern dboolean serverrunning;
 #define client (!server)
-extern boolean dedicated; // For dedicated server
-extern boolean connectedtodedicated; // Client that is connected to a dedicated server.
+extern dboolean dedicated; // For dedicated server
+extern dboolean connectedtodedicated; // Client that is connected to a dedicated server.
 extern UINT16 software_MAXPACKETLENGTH;
-extern boolean acceptnewnode;
+extern dboolean acceptnewnode;
 extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
 extern char connectedservercontact[MAXSERVERCONTACT];
@@ -573,7 +573,7 @@ extern uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH];
 extern uint8_t lastChallengeAll[CHALLENGELENGTH];
 extern uint8_t lastReceivedSignature[MAXPLAYERS][SIGNATURELENGTH];
 extern uint8_t knownWhenChallenged[MAXPLAYERS][PUBKEYLENGTH];
-extern boolean expectChallenge;
+extern dboolean expectChallenge;
 
 // We give clients a chance to verify each other once per race.
 // When is that challenge sent, and when should clients bail if they don't receive the responses?
@@ -592,7 +592,7 @@ extern UINT32 playerpacketlosstable[MAXPLAYERS];
 extern UINT32 playerdelaytable[MAXPLAYERS];
 extern tic_t servermaxping;
 
-extern boolean server_lagless;
+extern dboolean server_lagless;
 extern consvar_t cv_mindelay;
 
 extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxconnections, cv_joindelay;
@@ -639,13 +639,13 @@ void NetKeepAlive(void);
 void NetUpdate(void);
 void NetVoiceUpdate(void);
 
-void SV_StartSinglePlayerServer(INT32 dogametype, boolean donetgame);
-boolean SV_SpawnServer(void);
+void SV_StartSinglePlayerServer(INT32 dogametype, dboolean donetgame);
+dboolean SV_SpawnServer(void);
 void SV_StopServer(void);
 void SV_ResetServer(void);
 
 /*--------------------------------------------------
-	boolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *newplayernum);
+	dboolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *newplayernum);
 
 		Adds a new bot, using a server-sided packet sent to all clients.
 		Using regular K_AddBot wherever possible is better, but this is kept
@@ -662,7 +662,7 @@ void SV_ResetServer(void);
 		true if a bot can be added via a packet later, otherwise false.
 --------------------------------------------------*/
 
-boolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
+dboolean K_AddBotFromServer(UINT16 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
 void CL_AddSplitscreenPlayer(void);
 void CL_RemoveSplitscreenPlayer(UINT8 p);
@@ -673,8 +673,8 @@ void CL_QueryServerList(msg_server_t *list);
 void CL_UpdateServerList(void);
 void CL_TimeoutServerList(void);
 // Is there a game running
-boolean Playing(void);
-boolean InADedicatedServer(void);
+dboolean Playing(void);
+dboolean InADedicatedServer(void);
 
 // Advance client-to-client pubkey verification flow
 void UpdateChallenges(void);
@@ -684,11 +684,11 @@ void UpdateChallenges(void);
 void D_QuitNetGame(void);
 
 //? How many ticks to run?
-boolean TryRunTics(tic_t realtic);
+dboolean TryRunTics(tic_t realtic);
 
 // extra data for lmps
 // these functions scare me. they contain magic.
-/*boolean AddLmpExtradata(UINT8 **demo_p, INT32 playernum);
+/*dboolean AddLmpExtradata(UINT8 **demo_p, INT32 playernum);
 void ReadLmpExtraData(UINT8 **demo_pointer, INT32 playernum);*/
 
 // translate a playername in a player number return -1 if not found and
@@ -702,7 +702,7 @@ extern UINT8 playerconsole[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
 INT32 D_NumPlayersInRace(void);
-boolean D_IsPlayerHumanAndGaming(INT32 player_number);
+dboolean D_IsPlayerHumanAndGaming(INT32 player_number);
 
 void D_ResetTiccmds(void);
 void D_ResetTiccmdAngle(UINT8 ss, angle_t angle);
@@ -716,9 +716,9 @@ void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *
 extern UINT8 hu_redownloadinggamestate;
 
 extern UINT8 adminpassmd5[16];
-extern boolean adminpasswordset;
+extern dboolean adminpasswordset;
 
-extern boolean hu_stopped;
+extern dboolean hu_stopped;
 
 //
 // SRB2Kart

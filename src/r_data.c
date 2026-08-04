@@ -354,7 +354,7 @@ void R_ClearColormaps(void)
 // R_CreateDefaultColormap()
 // NOTE: The result colormap is not added to the extra_colormaps chain. You must do that yourself!
 //
-extracolormap_t *R_CreateDefaultColormap(boolean lighttable)
+extracolormap_t *R_CreateDefaultColormap(dboolean lighttable)
 {
 	extracolormap_t *exc = Z_Calloc(sizeof (*exc), PU_LEVEL, NULL);
 	exc->fadestart = 0;
@@ -395,7 +395,7 @@ extracolormap_t *R_GetDefaultColormap(void)
 // R_CopyColormap()
 // NOTE: The result colormap is not added to the extra_colormaps chain. You must do that yourself!
 //
-extracolormap_t *R_CopyColormap(extracolormap_t *extra_colormap, boolean lighttable)
+extracolormap_t *R_CopyColormap(extracolormap_t *extra_colormap, dboolean lighttable)
 {
 	extracolormap_t *exc = Z_Calloc(sizeof (*exc), PU_LEVEL, NULL);
 
@@ -462,10 +462,10 @@ void R_AddColormapToList(extracolormap_t *extra_colormap)
 // R_CheckDefaultColormapByValues()
 //
 #ifdef EXTRACOLORMAPLUMPS
-boolean R_CheckDefaultColormapByValues(boolean checkrgba, boolean checkfadergba, boolean checkparams,
+dboolean R_CheckDefaultColormapByValues(dboolean checkrgba, dboolean checkfadergba, dboolean checkparams,
 	INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags, lumpnum_t lump)
 #else
-boolean R_CheckDefaultColormapByValues(boolean checkrgba, boolean checkfadergba, boolean checkparams,
+dboolean R_CheckDefaultColormapByValues(dboolean checkrgba, dboolean checkfadergba, dboolean checkparams,
 	INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags)
 #endif
 {
@@ -484,7 +484,7 @@ boolean R_CheckDefaultColormapByValues(boolean checkrgba, boolean checkfadergba,
 		);
 }
 
-boolean R_CheckDefaultColormap(extracolormap_t *extra_colormap, boolean checkrgba, boolean checkfadergba, boolean checkparams)
+dboolean R_CheckDefaultColormap(extracolormap_t *extra_colormap, dboolean checkrgba, dboolean checkfadergba, dboolean checkparams)
 {
 	if (!extra_colormap)
 		return true;
@@ -496,7 +496,7 @@ boolean R_CheckDefaultColormap(extracolormap_t *extra_colormap, boolean checkrgb
 #endif
 }
 
-boolean R_CheckEqualColormaps(extracolormap_t *exc_a, extracolormap_t *exc_b, boolean checkrgba, boolean checkfadergba, boolean checkparams)
+dboolean R_CheckEqualColormaps(extracolormap_t *exc_a, extracolormap_t *exc_b, dboolean checkrgba, dboolean checkfadergba, dboolean checkparams)
 {
 	// Treat NULL as default colormap
 	// We need this because what if one exc is a default colormap, and the other is NULL? They're really both equal.
@@ -968,10 +968,10 @@ extracolormap_t *R_CreateColormap(INT32 rgba, INT32 fadergba, UINT8 fadestart, U
 // NOTE: The result colormap is not added to the extra_colormaps chain. You must do that yourself!
 //
 extracolormap_t *R_AddColormaps(extracolormap_t *exc_augend, extracolormap_t *exc_addend,
-	boolean subR, boolean subG, boolean subB, boolean subA,
-	boolean subFadeR, boolean subFadeG, boolean subFadeB, boolean subFadeA,
-	boolean subFadeStart, boolean subFadeEnd, boolean ignoreFlags,
-	boolean lighttable)
+	dboolean subR, dboolean subG, dboolean subB, dboolean subA,
+	dboolean subFadeR, dboolean subFadeG, dboolean subFadeB, dboolean subFadeA,
+	dboolean subFadeStart, dboolean subFadeEnd, dboolean ignoreFlags,
+	dboolean lighttable)
 {
 	INT16 red, green, blue, alpha;
 
