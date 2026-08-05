@@ -238,7 +238,7 @@ void P_InitPicAnims(void)
 				animdefs[i].startname, animdefs[i].endname);
 		}
 
-		lastanim->speed = LONG(animdefs[i].speed);
+		lastanim->speed = LSBF_LONG(animdefs[i].speed);
 		lastanim++;
 	}
 	lastanim->istexture = -1;

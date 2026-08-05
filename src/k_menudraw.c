@@ -286,8 +286,8 @@ void M_DrawMenuBackground(void)
 	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
 	patch_t *text2 = W_CachePatchName("MENUBGT2", PU_CACHE);
 
-	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
-	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
+	fixed_t text1loop = LSBF_SHORT(text1->height)*FRACUNIT;
+	fixed_t text2loop = LSBF_SHORT(text2->width)*FRACUNIT;
 
 	if (bgMapID >= nummapheaders)
 	{
@@ -1090,7 +1090,7 @@ void M_DrawGenericMenu(void)
 					{
 						patch_t *p;
 						p = W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE);
-						V_DrawScaledPatch((BASEVIDWIDTH - SHORT(p->width))/2, y, 0, p);
+						V_DrawScaledPatch((BASEVIDWIDTH - LSBF_SHORT(p->width))/2, y, 0, p);
 					}
 					else
 					{
@@ -1509,7 +1509,7 @@ void M_DrawMessageMenu(void)
 		}
 
 		V_DrawMenuString((BASEVIDWIDTH - V_MenuStringWidth(string, 0))/2,y,0,string);
-		y += 8; //SHORT(hu_font[0]->height);
+		y += 8; //LSBF_SHORT(hu_font[0]->height);
 	}
 }
 
@@ -1614,8 +1614,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 				colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 				radius = 24<<FRACBITS;
 
-				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
-				cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+				cx -= (LSBF_SHORT(patch->width) << FRACBITS) >> 1;
+				cy -= (LSBF_SHORT(patch->height) << FRACBITS) >> 1;
 				break;
 			}
 
@@ -1647,7 +1647,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 				else
 					patch = W_CachePatchName("COLORSP0", PU_CACHE);
 
-				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+				cx -= (LSBF_SHORT(patch->width) << FRACBITS) >> 1;
 				break;
 			}
 
@@ -1674,8 +1674,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				radius = 24<<FRACBITS;
 
-				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
-				cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+				cx -= (LSBF_SHORT(patch->width) << FRACBITS) >> 1;
+				cy -= (LSBF_SHORT(patch->height) << FRACBITS) >> 1;
 				break;
 			}
 
@@ -1742,8 +1742,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				radius = 24<<FRACBITS;
 
-				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
-				cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+				cx -= (LSBF_SHORT(patch->width) << FRACBITS) >> 1;
+				cy -= (LSBF_SHORT(patch->height) << FRACBITS) >> 1;
 				break;
 			}
 
@@ -1778,7 +1778,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 				else
 					patch = W_CachePatchName("COLORSP0", PU_CACHE);
 
-				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+				cx -= (LSBF_SHORT(patch->width) << FRACBITS) >> 1;
 				break;
 			}
 
@@ -3927,8 +3927,8 @@ void M_DrawTimeAttack(void)
 		else if ((minimap = mapheaderinfo[map]->minimapPic))
 		{
 			V_DrawScaledPatch(
-				minimapx - (SHORT(minimap->width)/2),
-				minimapy - (SHORT(minimap->height)/2),
+				minimapx - (LSBF_SHORT(minimap->width)/2),
+				minimapy - (LSBF_SHORT(minimap->height)/2),
 				0, minimap
 			);
 		}
@@ -4510,8 +4510,8 @@ void M_DrawMPServerBrowser(void)
 	patch_t *voicepat;
 	voicepat = W_CachePatchName("VOCRMU", PU_CACHE);
 
-	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
-	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
+	fixed_t text1loop = LSBF_SHORT(text1->height)*FRACUNIT;
+	fixed_t text2loop = LSBF_SHORT(text2->width)*FRACUNIT;
 
 	const UINT8 startx = 18;
 	const UINT8 basey = 56;
@@ -4964,7 +4964,7 @@ box_found:
 					{
 						patch_t *p;
 						p = W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE);
-						V_DrawScaledPatch((BASEVIDWIDTH - SHORT(p->width))/2, y, 0, p);
+						V_DrawScaledPatch((BASEVIDWIDTH - LSBF_SHORT(p->width))/2, y, 0, p);
 					}
 					else
 					{
@@ -5430,7 +5430,7 @@ void M_DrawProfileControls(void)
 		0,
 		0,
 		BASEVIDWIDTH * FRACUNIT,
-		(BASEVIDHEIGHT - SHORT(hint->height) + hintofs) * FRACUNIT,
+		(BASEVIDHEIGHT - LSBF_SHORT(hint->height) + hintofs) * FRACUNIT,
 		0
 	);
 
@@ -7060,7 +7060,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	}
 
 	V_DrawStretchyFixedPatch(
-		(x*FRACUNIT) + (SHORT(pat->width)*(FRACUNIT-accordion)/2), y*FRACUNIT,
+		(x*FRACUNIT) + (LSBF_SHORT(pat->width)*(FRACUNIT-accordion)/2), y*FRACUNIT,
 		accordion,
 		FRACUNIT,
 		tileflags, pat,
@@ -7244,7 +7244,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 
 	if (pat)
 	{
-		siz = (SHORT(pat->width) << FRACBITS);
+		siz = (LSBF_SHORT(pat->width) << FRACBITS);
 
 		if (!siz)
 			; // prevent div/0
@@ -7870,7 +7870,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 
 			K_DrawGameControl(x, y, 0, "<a_animated> Toggle", 0, TINY_FONT, 0);
 			// K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
-			// x += SHORT(kp_button_a[1][0]->width);
+			// x += LSBF_SHORT(kp_button_a[1][0]->width);
 			// V_DrawThinString(x, y + 1, highlightflags, "Toggle");
 
 
@@ -9482,7 +9482,7 @@ void M_DrawWrongWarp(void)
 	}
 
 	patch_t *bumper = W_CachePatchName((M_UseAlternateTitleScreen() ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE);
-	V_DrawScaledPatch(x-(SHORT(bumper->width)), (BASEVIDHEIGHT-8)-(SHORT(bumper->height)), 0, bumper);
+	V_DrawScaledPatch(x-(LSBF_SHORT(bumper->width)), (BASEVIDHEIGHT-8)-(LSBF_SHORT(bumper->height)), 0, bumper);
 }
 
 void M_DrawSoundTest(void)

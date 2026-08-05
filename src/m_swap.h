@@ -55,16 +55,16 @@ extern "C" {
 // Endianess handling.
 // WAD files are stored little endian.
 #ifdef SRB2_BIG_ENDIAN
-#define SHORT SWAP_SHORT
-#define LONG SWAP_LONG
-#define LONGLON SWAP_LONGLONG
+#define LSBF_SHORT SWAP_SHORT
+#define LSBF_LONG SWAP_LONG
+#define LSBF_LONGLONG SWAP_LONGLONG
 #define MSBF_SHORT(x) ((INT16)(x))
 #define MSBF_LONG(x) ((INT32)(x))
 #define MSBF_LONGLONG(x) ((INT64)(x))
 #else
-#define SHORT(x) ((INT16)(x))
-#define LONG(x)	((INT32)(x))
-#define LONGLONG(x) ((INT64)(x))
+#define LSBF_SHORT(x) ((INT16)(x))
+#define LSBF_LONG(x)	((INT32)(x))
+#define LSBF_LONGLONG(x) ((INT64)(x))
 #define MSBF_SHORT SWAP_SHORT
 #define MSBF_LONG SWAP_LONG
 #define MSBF_LONGLONG SWAP_LONGLONG

@@ -1225,10 +1225,10 @@ void FileSendTicker(void)
 				I_Error("FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(fragmentsize), f->id.filename, transfer[i].position, M_FileError(transfer[i].currentfile));
 		}
 		p->iteration = transfer[i].iteration;
-		p->position = LONG(transfer[i].position);
+		p->position = LSBF_LONG(transfer[i].position);
 		p->fileid = f->fileid;
-		p->filesize = LONG(f->size);
-		p->size = SHORT((UINT16)FILEFRAGMENTSIZE);
+		p->filesize = LSBF_LONG(f->size);
+		p->size = LSBF_SHORT((UINT16)FILEFRAGMENTSIZE);
 
 		// Send the packet
 		if (HSendPacket(i, false, 0, FILETXHEADER + fragmentsize)) // Don't use the default acknowledgement system
@@ -1280,17 +1280,17 @@ void PT_FileAck(void)
 		fileacksegment_t *segment = &packet->segments[i];
 
 		for (j = 0; j < 32; j++)
-			if (LONG(segment->acks) & (1 << j))
+			if (LSBF_LONG(segment->acks) & (1 << j))
 			{
-				if (LONG(segment->start) * FILEFRAGMENTSIZE >= trans->txlist->size)
+				if (LSBF_LONG(segment->start) * FILEFRAGMENTSIZE >= trans->txlist->size)
 				{
 					Net_CloseConnection(node);
 					return;
 				}
 
-				if (!trans->ackedfragments[LONG(segment->start) + j])
+				if (!trans->ackedfragments[LSBF_LONG(segment->start) + j])
 				{
-					trans->ackedfragments[LONG(segment->start) + j] = true;
+					trans->ackedfragments[LSBF_LONG(segment->start) + j] = true;
 					trans->ackedsize += FILEFRAGMENTSIZE;
 
 					// If the last missing fragment was acked, finish!
@@ -1339,8 +1339,8 @@ static void SendAckPacket(fileack_pak *packet, UINT8 fileid)
 	packet->fileid = fileid;
 	for (i = 0; i < packet->numsegments; i++)
 	{
-		packet->segments[i].start = LONG(packet->segments[i].start);
-		packet->segments[i].acks = LONG(packet->segments[i].acks);
+		packet->segments[i].start = LSBF_LONG(packet->segments[i].start);
+		packet->segments[i].acks = LSBF_LONG(packet->segments[i].acks);
 	}
 
 	// Send the packet
@@ -1416,8 +1416,8 @@ void PT_FileFragment(void)
 	filetx_pak *pak = (void*)&netbuffer->u.filetxpak;
 	INT32 filenum = pak->fileid;
 	fileneeded_t *file = &fileneeded[filenum];
-	UINT32 fragmentpos = LONG(pak->position);
-	UINT16 fragmentsize = SHORT(pak->size);
+	UINT32 fragmentpos = LSBF_LONG(pak->position);
+	UINT16 fragmentsize = LSBF_SHORT(pak->size);
 	UINT16 boundedfragmentsize = doomcom->datalength - BASEPACKETSIZE - sizeof(netbuffer->u.filetxpak);
 	char *filename;
 
@@ -1490,7 +1490,7 @@ void PT_FileFragment(void)
 			CONS_Printf("\r%s...\n",filename);
 
 			file->currentsize = 0;
-			file->totalsize = LONG(pak->filesize);
+			file->totalsize = LSBF_LONG(pak->filesize);
 			file->ackresendposition = UINT32_MAX; // Only used for resumed downloads
 
 			file->receivedfragments = calloc(file->totalsize / fragmentsize + 1, sizeof(*file->receivedfragments));

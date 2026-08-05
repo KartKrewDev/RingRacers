@@ -883,7 +883,7 @@ void HWR_WallLighting(FOutVector *wlVerts)
 
 		HWR_SetLight();
 
-		Surf.PolyColor.rgba = LONG(dynlights->p_lspr[j]->dynamic_color);
+		Surf.PolyColor.rgba = LSBF_LONG(dynlights->p_lspr[j]->dynamic_color);
 #ifdef DL_HIGH_QUALITY
 		Surf.PolyColor.s.alpha = (UINT8)((1-dist_p2d/DL_SQRRADIUS(j))*Surf.PolyColor.s.alpha);
 #endif
@@ -952,7 +952,7 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 
 		HWR_SetLight();
 
-		Surf.PolyColor.rgba = LONG(dynlights->p_lspr[j]->dynamic_color);
+		Surf.PolyColor.rgba = LSBF_LONG(dynlights->p_lspr[j]->dynamic_color);
 #ifdef DL_HIGH_QUALITY
 		Surf.PolyColor.s.alpha = (unsigned char)((1 - dist_p2d/DL_SQRRADIUS(j))*Surf.PolyColor.s.alpha);
 #endif

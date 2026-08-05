@@ -490,7 +490,7 @@ void Chain::sticker(patch_t* end_graphic, UINT8 color) const
 	INT32 width = width_;
 	INT32 flags = flags_ | V_FLIP;
 
-	auto fill = [&](int x, int width) { V_DrawFill(x, y, width, SHORT(end_graphic->height), color | (flags_ & ~0xFF)); };
+	auto fill = [&](int x, int width) { V_DrawFill(x, y, width, LSBF_SHORT(end_graphic->height), color | (flags_ & ~0xFF)); };
 
 	if (align_ == Align::kRight)
 	{

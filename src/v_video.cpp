@@ -2962,8 +2962,8 @@ void V_DrawStringScaled(
 					if (V_CharacterValid(font, c) == true)
 					{
 						// Remove offsets from patch
-						fixed_t patchxofs = SHORT (font->font[c]->leftoffset) * dupx * scale;
-						cw = SHORT (font->font[c]->width) * dupx;
+						fixed_t patchxofs = LSBF_SHORT (font->font[c]->leftoffset) * dupx * scale;
+						cw = LSBF_SHORT (font->font[c]->width) * dupx;
 						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 
 						if (cv_debugfonts.value)
@@ -3123,7 +3123,7 @@ fixed_t V_StringScaledWidth(
 				c -= font->start;
 				if (V_CharacterValid(font, c) == true)
 				{
-					cw = SHORT (font->font[c]->width) * dupx;
+					cw = LSBF_SHORT (font->font[c]->width) * dupx;
 
 					// How bunched dims work is by incrementing cx slightly less than a full character width.
 					// This causes the next character to be drawn overlapping the previous.
@@ -3288,7 +3288,7 @@ char * V_ScaledWordWrap(
 					c -= font->start;
 					if (V_CharacterValid(font, c) == true)
 					{
-						cw = SHORT (font->font[c]->width) * dupx;
+						cw = LSBF_SHORT (font->font[c]->width) * dupx;
 
 						// How bunched dims work is by incrementing cx slightly less than a full character width.
 						// This causes the next character to be drawn overlapping the previous.
@@ -3498,7 +3498,7 @@ void V_DrawRightAlignedLSTitleLowString(INT32 x, INT32 y, INT32 option, const ch
 // Draws a tallnum.  Replaces two functions in y_inter and st_stuff
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 {
-	INT32 w = SHORT(fontv[TALLNUM_FONT].font[0]->width);
+	INT32 w = LSBF_SHORT(fontv[TALLNUM_FONT].font[0]->width);
 	dboolean neg;
 
 	if (flags & V_NOSCALESTART)

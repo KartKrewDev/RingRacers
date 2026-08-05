@@ -339,10 +339,10 @@ dboolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT1
 			if (!isPNG)
 #endif
 			{
-				width = (INT32)(SHORT(patch.width));
-				height = (INT32)(SHORT(patch.height));
-				topoffset = (INT16)(SHORT(patch.topoffset));
-				leftoffset = (INT16)(SHORT(patch.leftoffset));
+				width = (INT32)(LSBF_SHORT(patch.width));
+				height = (INT32)(LSBF_SHORT(patch.height));
+				topoffset = (INT16)(LSBF_SHORT(patch.topoffset));
+				leftoffset = (INT16)(LSBF_SHORT(patch.leftoffset));
 			}
 
 			spritecachedinfo[numspritelumps].width = width<<FRACBITS;

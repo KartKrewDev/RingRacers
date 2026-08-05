@@ -721,7 +721,7 @@ static UINT32 NetbufferChecksum(void)
 	for (i = 0; i < l; i++, buf++)
 		c += (*buf) * (i+1);
 
-	return LONG(c);
+	return LSBF_LONG(c);
 }
 
 #ifdef DEBUGFILE
@@ -837,7 +837,7 @@ static void DebugPrintpacket(const char *header)
 	{
 		case PT_ASKINFO:
 		case PT_ASKINFOVIAMS:
-			fprintf(debugfile, "    time %u\n", (tic_t)LONG(netbuffer->u.askinfo.time));
+			fprintf(debugfile, "    time %u\n", (tic_t)LSBF_LONG(netbuffer->u.askinfo.time));
 			break;
 		case PT_CLIENTJOIN:
 			fprintf(debugfile, "    number %d mode %d\n", netbuffer->u.clientcfg.localplayers,
@@ -903,7 +903,7 @@ static void DebugPrintpacket(const char *header)
 			fprintf(debugfile, "    playerslots %d clientnode %d serverplayer %d "
 				"gametic %u gamestate %d gametype %d modifiedgame %d\n",
 				netbuffer->u.servercfg.totalslotnum, netbuffer->u.servercfg.clientnode,
-				netbuffer->u.servercfg.serverplayer, (UINT32)LONG(netbuffer->u.servercfg.gametic),
+				netbuffer->u.servercfg.serverplayer, (UINT32)LSBF_LONG(netbuffer->u.servercfg.gametic),
 				netbuffer->u.servercfg.gamestate, netbuffer->u.servercfg.gametype,
 				netbuffer->u.servercfg.modifiedgame);
 			break;
@@ -912,7 +912,7 @@ static void DebugPrintpacket(const char *header)
 				netbuffer->u.serverinfo.servername, netbuffer->u.serverinfo.numberofplayer,
 				netbuffer->u.serverinfo.maxplayer,
 				netbuffer->u.serverinfo.fileneedednum,
-				(UINT32)LONG(netbuffer->u.serverinfo.time));
+				(UINT32)LSBF_LONG(netbuffer->u.serverinfo.time));
 			fprintfstringnewline((char *)netbuffer->u.serverinfo.fileneeded,
 				(UINT8)((UINT8 *)netbuffer + doomcom->datalength
 				- (UINT8 *)netbuffer->u.serverinfo.fileneeded));
@@ -923,8 +923,8 @@ static void DebugPrintpacket(const char *header)
 		case PT_FILEFRAGMENT: {
 			filetx_pak *pak = (filetx_pak*)&netbuffer->u.filetxpak;
 			fprintf(debugfile, "    fileid %d datasize %d position %u\n",
-				pak->fileid, (UINT16)SHORT(pak->size),
-				(UINT32)LONG(pak->position));
+				pak->fileid, (UINT16)LSBF_SHORT(pak->size),
+				(UINT32)LSBF_LONG(pak->position));
 			break;
 		}
 		case PT_REQUESTFILE:

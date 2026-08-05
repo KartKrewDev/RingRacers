@@ -263,8 +263,8 @@ static void F_TitleBGScroll(INT32 scrollspeed)
 
 	w = vid.width / vid.dupx;
 
-	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width);
-	anim2 = SHORT(pat2->width) - (((finalecount*scrollspeed)/16) % SHORT(pat2->width));
+	animtimer = ((finalecount*scrollspeed)/16) % LSBF_SHORT(pat->width);
+	anim2 = LSBF_SHORT(pat2->width) - (((finalecount*scrollspeed)/16) % LSBF_SHORT(pat2->width));
 
 	// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
 	if (rendermode != render_none)
@@ -276,15 +276,15 @@ static void F_TitleBGScroll(INT32 scrollspeed)
 		while (x < w)
 		{
 			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT, pat, NULL);
-			x += SHORT(pat->width);
+			x += LSBF_SHORT(pat->width);
 		}
 
 		x = -anim2;
-		y = BASEVIDHEIGHT - SHORT(pat2->height);
+		y = BASEVIDHEIGHT - LSBF_SHORT(pat2->height);
 		while (x < w)
 		{
 			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, pat2, NULL);
-			x += SHORT(pat2->width);
+			x += LSBF_SHORT(pat2->width);
 		}
 	}
 

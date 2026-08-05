@@ -33,20 +33,20 @@ patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest)
 	if (source)
 	{
 		INT32 col, colsize;
-		size_t size = sizeof(INT32) * SHORT(source->width);
+		size_t size = sizeof(INT32) * LSBF_SHORT(source->width);
 		size_t offs = (sizeof(INT16) * 4) + size;
 
-		patch->width      = SHORT(source->width);
-		patch->height     = SHORT(source->height);
-		patch->leftoffset = SHORT(source->leftoffset);
-		patch->topoffset  = SHORT(source->topoffset);
+		patch->width      = LSBF_SHORT(source->width);
+		patch->height     = LSBF_SHORT(source->height);
+		patch->leftoffset = LSBF_SHORT(source->leftoffset);
+		patch->topoffset  = LSBF_SHORT(source->topoffset);
 		patch->columnofs  = static_cast<INT32*>(Z_Calloc(size, PU_PATCH_DATA, NULL));
 
 		for (col = 0; col < patch->width; col++)
 		{
 			// This makes the column offsets relative to the column data itself,
 			// instead of the entire patch data
-			patch->columnofs[col] = LONG(source->columnofs[col]) - offs;
+			patch->columnofs[col] = LSBF_LONG(source->columnofs[col]) - offs;
 		}
 
 		if (!srcsize)
@@ -57,7 +57,7 @@ patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest)
 			I_Error("Patch_Create: no column data!");
 
 		patch->columns = static_cast<UINT8*>(Z_Calloc(colsize, PU_PATCH_DATA, NULL));
-		M_Memcpy(patch->columns, ((UINT8 *)source + LONG(source->columnofs[0])), colsize);
+		M_Memcpy(patch->columns, ((UINT8 *)source + LSBF_LONG(source->columnofs[0])), colsize);
 	}
 
 	return patch;

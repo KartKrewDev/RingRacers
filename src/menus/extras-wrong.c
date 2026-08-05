@@ -182,8 +182,8 @@ static void M_DrawWrongWarpBack(void)
 		pat = W_CachePatchName("TITLEBG1", PU_CACHE);
 		pat2 = W_CachePatchName("TITLEBG2", PU_CACHE);
 
-		animtimer = ((wrongwarp.ticker*5)/16) % SHORT(pat->width);
-		anim2 = SHORT(pat2->width) - (((wrongwarp.ticker*5)/16) % SHORT(pat2->width));
+		animtimer = ((wrongwarp.ticker*5)/16) % LSBF_SHORT(pat->width);
+		anim2 = LSBF_SHORT(pat2->width) - (((wrongwarp.ticker*5)/16) % LSBF_SHORT(pat2->width));
 
 		// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
@@ -193,15 +193,15 @@ static void M_DrawWrongWarpBack(void)
 		while (x < BASEVIDWIDTH)
 		{
 			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat, NULL);
-			x += SHORT(pat->width);
+			x += LSBF_SHORT(pat->width);
 		}
 
 		x = -anim2;
-		y = BASEVIDHEIGHT - SHORT(pat2->height);
+		y = BASEVIDHEIGHT - LSBF_SHORT(pat2->height);
 		while (x < BASEVIDWIDTH)
 		{
 			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat2, NULL);
-			x += SHORT(pat2->width);
+			x += LSBF_SHORT(pat2->width);
 		}
 	}
 

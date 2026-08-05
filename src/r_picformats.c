@@ -146,10 +146,10 @@ void *Picture_PatchConvert(
 		if (Picture_IsDoomPatchFormat(informat))
 		{
 			softwarepatch_t *doompatch = (softwarepatch_t *)picture;
-			inwidth = SHORT(doompatch->width);
-			inheight = SHORT(doompatch->height);
-			inleftoffset = SHORT(doompatch->leftoffset);
-			intopoffset = SHORT(doompatch->topoffset);
+			inwidth = LSBF_SHORT(doompatch->width);
+			inheight = LSBF_SHORT(doompatch->height);
+			inleftoffset = LSBF_SHORT(doompatch->leftoffset);
+			intopoffset = LSBF_SHORT(doompatch->topoffset);
 		}
 		else
 		{
@@ -437,8 +437,8 @@ void *Picture_FlatConvert(
 		if (Picture_IsDoomPatchFormat(informat))
 		{
 			softwarepatch_t *doompatch = ((softwarepatch_t *)picture);
-			inwidth = SHORT(doompatch->width);
-			inheight = SHORT(doompatch->height);
+			inwidth = LSBF_SHORT(doompatch->width);
+			inheight = LSBF_SHORT(doompatch->height);
 		}
 		else
 		{
@@ -560,13 +560,13 @@ void *Picture_GetPatchPixel(
 	if (patch == NULL)
 		I_Error("Picture_GetPatchPixel: patch == NULL");
 
-	width = (isdoompatch ? SHORT(doompatch->width) : patch->width);
+	width = (isdoompatch ? LSBF_SHORT(doompatch->width) : patch->width);
 
 	if (x >= 0 && x < width)
 	{
 		INT32 colx = (flags & PICFLAGS_XFLIP) ? (width-1)-x : x;
 		INT32 topdelta, prevdelta = -1;
-		INT32 colofs = (isdoompatch ? LONG(doompatch->columnofs[colx]) : patch->columnofs[colx]);
+		INT32 colofs = (isdoompatch ? LSBF_LONG(doompatch->columnofs[colx]) : patch->columnofs[colx]);
 
 		// Column offsets are pointers, so no casting is required.
 		if (isdoompatch)
@@ -720,8 +720,8 @@ dboolean Picture_CheckIfDoomPatch(softwarepatch_t *patch, size_t size)
 	if (size < 13)
 		return false;
 
-	width = SHORT(patch->width);
-	height = SHORT(patch->height);
+	width = LSBF_SHORT(patch->width);
+	height = LSBF_SHORT(patch->height);
 	result = (height > 0 && height <= 16384 && width > 0 && width <= 16384);
 
 	if (result)
@@ -734,7 +734,7 @@ dboolean Picture_CheckIfDoomPatch(softwarepatch_t *patch, size_t size)
 
 		for (x = 0; x < width; x++)
 		{
-			UINT32 ofs = LONG(patch->columnofs[x]);
+			UINT32 ofs = LSBF_LONG(patch->columnofs[x]);
 
 			// Need one byte for an empty column (but there's patches that don't know that!)
 			if (ofs < (UINT32)width * 4 + 8 || ofs >= (UINT32)size)

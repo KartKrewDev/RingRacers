@@ -622,23 +622,23 @@ static int libd_drawOnMinimap(lua_State *L)
 
 	// Handle offsets and stuff.
 	mm_x = MINI_X;
-	mm_y = MINI_Y - SHORT(AutomapPic->topoffset);
+	mm_y = MINI_Y - LSBF_SHORT(AutomapPic->topoffset);
 
 	if (encoremode)
 	{
-		mm_x += SHORT(AutomapPic->leftoffset);
+		mm_x += LSBF_SHORT(AutomapPic->leftoffset);
 	}
 	else
 	{
-		mm_x -= SHORT(AutomapPic->leftoffset);
+		mm_x -= LSBF_SHORT(AutomapPic->leftoffset);
 	}
 
 	// Minimap flags:
 	minimapflags = K_GetMinimapSplitFlags(false)|K_GetMinimapTransFlags(false);
 
 	// scale patch coords
-	patchw = (SHORT(patch->width) / 2) * scale;
-	patchh = (SHORT(patch->height) / 2) * scale;
+	patchw = (LSBF_SHORT(patch->width) / 2) * scale;
+	patchh = (LSBF_SHORT(patch->height) / 2) * scale;
 
 	if (centered)
 		patchw = patchh = 0;	// patch is supposedly already centered, don't butt in.

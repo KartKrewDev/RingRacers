@@ -347,8 +347,8 @@ static void HWR_DrawTexturePatchInCache(GLMipmap_t *mipmap,
 	ColumnDrawerPointer = (patch->flip & 2) ? HWR_DrawFlippedColumnInCache : HWR_DrawColumnInCache;
 
 	x1 = patch->originx;
-	width = SHORT(realpatch->width);
-	height = SHORT(realpatch->height);
+	width = LSBF_SHORT(realpatch->width);
+	height = LSBF_SHORT(realpatch->height);
 	x2 = x1 + width;
 
 	if (x1 > texture->width || x2 < 0)
@@ -403,9 +403,9 @@ static void HWR_DrawTexturePatchInCache(GLMipmap_t *mipmap,
 	for (block += col*bpp; ncols--; block += bpp, xfrac += xfracstep)
 	{
 		if (patch->flip & 1)
-			patchcol = (const column_t *)((const UINT8 *)realpatch + LONG(realpatch->columnofs[(width-1)-(xfrac>>FRACBITS)]));
+			patchcol = (const column_t *)((const UINT8 *)realpatch + LSBF_LONG(realpatch->columnofs[(width-1)-(xfrac>>FRACBITS)]));
 		else
-			patchcol = (const column_t *)((const UINT8 *)realpatch + LONG(realpatch->columnofs[xfrac>>FRACBITS]));
+			patchcol = (const column_t *)((const UINT8 *)realpatch + LSBF_LONG(realpatch->columnofs[xfrac>>FRACBITS]));
 
 		ColumnDrawerPointer(patchcol, block, mipmap,
 								pblockheight, blockmodulo,
@@ -1200,15 +1200,15 @@ static void HWR_DrawPicInCache(UINT8 *block, INT32 pblockwidth, INT32 pblockheig
 	INT32 picbpp;
 	RGBA_t col;
 
-	stepy = ((INT32)SHORT(pic->height)<<FRACBITS)/pblockheight;
-	stepx = ((INT32)SHORT(pic->width)<<FRACBITS)/pblockwidth;
+	stepy = ((INT32)LSBF_SHORT(pic->height)<<FRACBITS)/pblockheight;
+	stepx = ((INT32)LSBF_SHORT(pic->width)<<FRACBITS)/pblockwidth;
 	picbpp = format2bpp((GLTextureFormat_t)picmode2GR[pic->mode]);
 	posy = 0;
 	for (j = 0; j < pblockheight; j++)
 	{
 		posx = 0;
 		dest = &block[j*blockmodulo];
-		src = &pic->data[(posy>>FRACBITS)*SHORT(pic->width)*picbpp];
+		src = &pic->data[(posy>>FRACBITS)*LSBF_SHORT(pic->width)*picbpp];
 		for (i = 0; i < pblockwidth;i++)
 		{
 			switch (pic->mode)
@@ -1271,8 +1271,8 @@ patch_t *HWR_GetPic(lumpnum_t lumpnum)
 		size_t len;
 
 		pic = (pic_t*)W_CacheLumpNum(lumpnum, PU_CACHE);
-		patch->width = SHORT(pic->width);
-		patch->height = SHORT(pic->height);
+		patch->width = LSBF_SHORT(pic->width);
+		patch->height = LSBF_SHORT(pic->height);
 		len = W_LumpLength(lumpnum) - sizeof (pic_t);
 
 		grPatch->mipmap->width = (UINT16)patch->width;
@@ -1288,16 +1288,16 @@ patch_t *HWR_GetPic(lumpnum_t lumpnum)
 		// allocate block
 		block = MakeBlock(grPatch->mipmap);
 
-		if (patch->width  == SHORT(pic->width) &&
-			patch->height == SHORT(pic->height) &&
+		if (patch->width  == LSBF_SHORT(pic->width) &&
+			patch->height == LSBF_SHORT(pic->height) &&
 			format2bpp(grPatch->mipmap->format) == format2bpp((GLTextureFormat_t)picmode2GR[pic->mode]))
 		{
 			// no conversion needed
 			M_Memcpy(grPatch->mipmap->data, pic->data,len);
 		}
 		else
-			HWR_DrawPicInCache(block, SHORT(pic->width), SHORT(pic->height),
-			                   SHORT(pic->width)*format2bpp(grPatch->mipmap->format),
+			HWR_DrawPicInCache(block, LSBF_SHORT(pic->width), LSBF_SHORT(pic->height),
+			                   LSBF_SHORT(pic->width)*format2bpp(grPatch->mipmap->format),
 			                   pic,
 			                   format2bpp(grPatch->mipmap->format));
 
@@ -1352,7 +1352,7 @@ static void HWR_DrawFadeMaskInCache(GLMipmap_t *mipmap, INT32 pblockwidth, INT32
 	{
 		posx = 0;
 		dest = &block[j*(mipmap->width)]; // 1bpp
-		src = &flat[(posy>>FRACBITS)*SHORT(fmwidth)];
+		src = &flat[(posy>>FRACBITS)*LSBF_SHORT(fmwidth)];
 		for (i = 0; i < pblockwidth;i++)
 		{
 			// fademask bpp is always 1, and is used just for alpha

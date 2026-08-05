@@ -419,8 +419,8 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 		return NULL;
 	}
 
-	header.numlumps = LONG(header.numlumps);
-	header.infotableofs = LONG(header.infotableofs);
+	header.numlumps = LSBF_LONG(header.numlumps);
+	header.infotableofs = LSBF_LONG(header.infotableofs);
 
 	// read wad file directory
 	i = header.numlumps * sizeof (*fileinfo);
@@ -439,8 +439,8 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 	lump_p = lumpinfo = static_cast<lumpinfo_t*>(Z_Malloc(numlumps * sizeof (*lumpinfo), PU_STATIC, NULL));
 	for (i = 0; i < numlumps; i++, lump_p++, fileinfo++)
 	{
-		lump_p->position = LONG(fileinfo->filepos);
-		lump_p->size = lump_p->disksize = LONG(fileinfo->size);
+		lump_p->position = LSBF_LONG(fileinfo->filepos);
+		lump_p->size = lump_p->disksize = LSBF_LONG(fileinfo->size);
 		if (compressed) // wad is compressed, lump might be
 		{
 			UINT32 realsize = 0;
@@ -451,7 +451,7 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 				I_Error("corrupt compressed file: %s; maybe %s", /// \todo Avoid the bailout?
 					filename, M_FileError(handle));
 			}
-			realsize = LONG(realsize);
+			realsize = LSBF_LONG(realsize);
 			if (realsize != 0)
 			{
 				lump_p->size = realsize;
@@ -678,16 +678,16 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 		CONS_Alert(CONS_ERROR, "Corrupt central directory (%s)\n", M_FileError(handle));
 		return NULL;
 	}
-	numlumps = SHORT(zend.entries);
+	numlumps = LSBF_SHORT(zend.entries);
 
 	lump_p = lumpinfo = static_cast<lumpinfo_t*>(Z_Malloc(numlumps * sizeof (*lumpinfo), PU_STATIC, NULL));
 
-	fseek(handle, LONG(zend.cdiroffset), SEEK_SET);
+	fseek(handle, LSBF_LONG(zend.cdiroffset), SEEK_SET);
 
-	char *cdir = static_cast<char*>(Z_MallocAlign(LONG(zend.cdirsize), PU_STATIC, &cdir, 7));
+	char *cdir = static_cast<char*>(Z_MallocAlign(LSBF_LONG(zend.cdirsize), PU_STATIC, &cdir, 7));
 	auto cdir_finally = srb2::finally([cdir] { Z_Free(cdir); });
 
-	if (fread(cdir, 1, LONG(zend.cdirsize), handle) < static_cast<UINT32>(LONG(zend.cdirsize)))
+	if (fread(cdir, 1, LSBF_LONG(zend.cdirsize), handle) < static_cast<UINT32>(LSBF_LONG(zend.cdirsize)))
 	{
 		CONS_Alert(CONS_ERROR, "Failed to read central directory (%s)\n", M_FileError(handle));
 		Z_Free(lumpinfo);
@@ -710,12 +710,12 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 			return NULL;
 		}
 
-		lump_p->position = LONG(zentry->offset); // NOT ACCURATE YET: we still need to read the local entry to find our true position
-		lump_p->disksize = LONG(zentry->compsize);
-		lump_p->size = LONG(zentry->size);
+		lump_p->position = LSBF_LONG(zentry->offset); // NOT ACCURATE YET: we still need to read the local entry to find our true position
+		lump_p->disksize = LSBF_LONG(zentry->compsize);
+		lump_p->size = LSBF_LONG(zentry->size);
 
-		fullname = static_cast<char*>(malloc(SHORT(zentry->namelen) + 1));
-		strlcpy(fullname, (char*)(zentry + 1), SHORT(zentry->namelen) + 1);
+		fullname = static_cast<char*>(malloc(LSBF_SHORT(zentry->namelen) + 1));
+		strlcpy(fullname, (char*)(zentry + 1), LSBF_SHORT(zentry->namelen) + 1);
 
 		// Strip away file address and extension for the 8char name.
 		if ((trimname = strrchr(fullname, '/')) != 0)
@@ -733,10 +733,10 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 		lump_p->longname = static_cast<char*>(Z_Calloc(dotpos - trimname + 1, PU_STATIC, NULL));
 		strlcpy(lump_p->longname, trimname, dotpos - trimname + 1);
 
-		lump_p->fullname = static_cast<char*>(Z_Calloc(SHORT(zentry->namelen) + 1, PU_STATIC, NULL));
-		strncpy(lump_p->fullname, fullname, SHORT(zentry->namelen));
+		lump_p->fullname = static_cast<char*>(Z_Calloc(LSBF_SHORT(zentry->namelen) + 1, PU_STATIC, NULL));
+		strncpy(lump_p->fullname, fullname, LSBF_SHORT(zentry->namelen));
 
-		switch(SHORT(zentry->compression))
+		switch(LSBF_SHORT(zentry->compression))
 		{
 		case 0:
 			lump_p->compression = CM_NOCOMPRESSION;
@@ -758,7 +758,7 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 		free(fullname);
 
 		// skip and ignore comments/extra fields
-		offset += sizeof *zentry + SHORT(zentry->namelen) + SHORT(zentry->xtralen) + SHORT(zentry->commlen);
+		offset += sizeof *zentry + LSBF_SHORT(zentry->namelen) + LSBF_SHORT(zentry->xtralen) + LSBF_SHORT(zentry->commlen);
 	}
 
 	// Adjust lump position values properly
@@ -772,7 +772,7 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 			return NULL;
 		}
 
-		lump_p->position += sizeof(zlentry_t) + SHORT(zlentry.namelen) + SHORT(zlentry.xtralen);
+		lump_p->position += sizeof(zlentry_t) + LSBF_SHORT(zlentry.namelen) + LSBF_SHORT(zlentry.xtralen);
 	}
 
 	*nlmp = numlumps;
@@ -2293,8 +2293,8 @@ W_VerifyWAD (FILE *fp, lumpchecklist_t *checklist, dboolean status)
 		return true;
 	}
 
-	header.numlumps = LONG(header.numlumps);
-	header.infotableofs = LONG(header.infotableofs);
+	header.numlumps = LSBF_LONG(header.numlumps);
+	header.infotableofs = LSBF_LONG(header.infotableofs);
 
 	// let seek to the lumpinfo list
 	if (fseek(fp, header.infotableofs, SEEK_SET) == -1)
@@ -2306,8 +2306,8 @@ W_VerifyWAD (FILE *fp, lumpchecklist_t *checklist, dboolean status)
 		if (fread(&lumpinfo, sizeof (lumpinfo), 1 , fp) != 1)
 			return true;
 
-		lumpinfo.filepos = LONG(lumpinfo.filepos);
-		lumpinfo.size = LONG(lumpinfo.size);
+		lumpinfo.filepos = LSBF_LONG(lumpinfo.filepos);
+		lumpinfo.size = LSBF_LONG(lumpinfo.size);
 
 		if (lumpinfo.size == 0)
 			continue;
@@ -2368,14 +2368,14 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, dboolean status)
 
 	data_size = sizeof zend;
 
-	numlumps = SHORT(zend.entries);
+	numlumps = LSBF_SHORT(zend.entries);
 
-	fseek(fp, LONG(zend.cdiroffset), SEEK_SET);
+	fseek(fp, LSBF_LONG(zend.cdiroffset), SEEK_SET);
 
-	char *cdir = static_cast<char*>(malloc(LONG(zend.cdirsize)));
+	char *cdir = static_cast<char*>(malloc(LSBF_LONG(zend.cdirsize)));
 	auto cdir_finally = srb2::finally([cdir] { free(cdir); });
 
-	if (fread(cdir, 1, LONG(zend.cdirsize), fp) < static_cast<UINT32>(LONG(zend.cdirsize)))
+	if (fread(cdir, 1, LSBF_LONG(zend.cdirsize), fp) < static_cast<UINT32>(LSBF_LONG(zend.cdirsize)))
 		return true;
 
 	size_t offset = 0;
@@ -2392,8 +2392,8 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, dboolean status)
 
 		if (verified == true)
 		{
-			fullname = static_cast<char*>(malloc(SHORT(zentry->namelen) + 1));
-			strlcpy(fullname, (char*)(zentry + 1), SHORT(zentry->namelen) + 1);
+			fullname = static_cast<char*>(malloc(LSBF_SHORT(zentry->namelen) + 1));
+			strlcpy(fullname, (char*)(zentry + 1), LSBF_SHORT(zentry->namelen) + 1);
 
 			// Strip away file address and extension for the 8char name.
 			if ((trimname = strrchr(fullname, '/')) != 0)
@@ -2420,19 +2420,19 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, dboolean status)
 			free(fullname);
 		}
 
-		offset += sizeof *zentry + SHORT(zentry->namelen) + SHORT(zentry->xtralen) + SHORT(zentry->commlen);
+		offset += sizeof *zentry + LSBF_SHORT(zentry->namelen) + LSBF_SHORT(zentry->xtralen) + LSBF_SHORT(zentry->commlen);
 
 		data_size +=
-			sizeof *zentry + SHORT(zentry->namelen) + SHORT(zentry->xtralen) + SHORT(zentry->commlen);
+			sizeof *zentry + LSBF_SHORT(zentry->namelen) + LSBF_SHORT(zentry->xtralen) + LSBF_SHORT(zentry->commlen);
 
-		if (fseek(fp, LONG(zentry->offset), SEEK_SET) != 0)
+		if (fseek(fp, LSBF_LONG(zentry->offset), SEEK_SET) != 0)
 			return true;
 
 		if (fread(&zlentry, 1, sizeof(zlentry_t), fp) < sizeof (zlentry_t))
 			return true;
 
 		data_size +=
-			sizeof zlentry + SHORT(zlentry.namelen) + SHORT(zlentry.xtralen) + LONG(zlentry.compsize);
+			sizeof zlentry + LSBF_SHORT(zlentry.namelen) + LSBF_SHORT(zlentry.xtralen) + LSBF_LONG(zlentry.compsize);
 	}
 
 	if (data_size < file_size)
@@ -2745,14 +2745,14 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 
 		// Remember that we're assuming that the WAD will have a specific set of lumps in a specific order.
 		UINT8 *wadData = static_cast<UINT8*>(W_CacheLumpNum(lumpnum, PU_LEVEL));
-		filelump_t *fileinfo = (filelump_t *)(wadData + LONG(((wadinfo_t *)wadData)->infotableofs));
+		filelump_t *fileinfo = (filelump_t *)(wadData + LSBF_LONG(((wadinfo_t *)wadData)->infotableofs));
 
-		i = LONG(((wadinfo_t *)wadData)->numlumps);
+		i = LSBF_LONG(((wadinfo_t *)wadData)->numlumps);
 		vsizecache = static_cast<size_t*>(Z_Malloc(sizeof(size_t)*i, PU_LEVEL, NULL));
 
 		for (realentry = 0; realentry < i; realentry++)
 		{
-			vsizecache[realentry] = (size_t)(LONG(((filelump_t *)(fileinfo + realentry))->size));
+			vsizecache[realentry] = (size_t)(LSBF_LONG(((filelump_t *)(fileinfo + realentry))->size));
 
 			if (!vsizecache[realentry])
 				continue;
@@ -2774,7 +2774,7 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 			vlumps[i].data = static_cast<UINT8*>(
 				Z_Malloc(vlumps[i].size, PU_LEVEL, NULL) // This is memory inefficient, sorry about that.
 			);
-			memcpy(vlumps[i].data, wadData + LONG((fileinfo + realentry)->filepos), vlumps[i].size);
+			memcpy(vlumps[i].data, wadData + LSBF_LONG((fileinfo + realentry)->filepos), vlumps[i].size);
 			i++;
 		}
 

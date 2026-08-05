@@ -962,8 +962,8 @@ static void P_LoadVertices(UINT8 *data)
 	// Copy and convert vertex coordinates, internal representation as fixed.
 	for (i = 0; i < numvertexes; i++, v++, mv++)
 	{
-		v->x = SHORT(mv->x)<<FRACBITS;
-		v->y = SHORT(mv->y)<<FRACBITS;
+		v->x = LSBF_SHORT(mv->x)<<FRACBITS;
+		v->y = LSBF_SHORT(mv->y)<<FRACBITS;
 		v->floorzset = v->ceilingzset = false;
 		v->floorz = v->ceilingz = 0;
 	}
@@ -1032,15 +1032,15 @@ static void P_LoadSectors(UINT8 *data)
 	// For each counted sector, copy the sector raw data from our cache pointer ms, to the global table pointer ss.
 	for (i = 0; i < numsectors; i++, ss++, ms++)
 	{
-		ss->floorheight = SHORT(ms->floorheight)<<FRACBITS;
-		ss->ceilingheight = SHORT(ms->ceilingheight)<<FRACBITS;
+		ss->floorheight = LSBF_SHORT(ms->floorheight)<<FRACBITS;
+		ss->ceilingheight = LSBF_SHORT(ms->ceilingheight)<<FRACBITS;
 
 		ss->floorpic = P_AddLevelFlat(ms->floorpic, foundflats);
 		ss->ceilingpic = P_AddLevelFlat(ms->ceilingpic, foundflats);
 
-		ss->lightlevel = SHORT(ms->lightlevel);
-		ss->special = SHORT(ms->special);
-		Tag_FSet(&ss->tags, SHORT(ms->tag));
+		ss->lightlevel = LSBF_SHORT(ms->lightlevel);
+		ss->special = LSBF_SHORT(ms->special);
+		Tag_FSet(&ss->tags, LSBF_SHORT(ms->tag));
 
 		ss->floor_xoffs = ss->floor_yoffs = 0;
 		ss->ceiling_xoffs = ss->ceiling_yoffs = 0;
@@ -1169,19 +1169,19 @@ static void P_LoadLinedefs(UINT8 *data)
 
 	for (i = 0; i < numlines; i++, mld++, ld++)
 	{
-		ld->flags = (UINT32)(SHORT(mld->flags));
-		ld->special = SHORT(mld->special);
-		Tag_FSet(&ld->tags, SHORT(mld->tag));
+		ld->flags = (UINT32)(LSBF_SHORT(mld->flags));
+		ld->special = LSBF_SHORT(mld->special);
+		Tag_FSet(&ld->tags, LSBF_SHORT(mld->tag));
 		memset(ld->args, 0, NUM_SCRIPT_ARGS*sizeof(*ld->args));
 		memset(ld->stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*ld->stringargs));
 		ld->alpha = FRACUNIT;
 		ld->executordelay = 0;
 		ld->activation = 0;
-		P_SetLinedefV1(i, SHORT(mld->v1));
-		P_SetLinedefV2(i, SHORT(mld->v2));
+		P_SetLinedefV1(i, LSBF_SHORT(mld->v1));
+		P_SetLinedefV2(i, LSBF_SHORT(mld->v2));
 
-		ld->sidenum[0] = SHORT(mld->sidenum[0]);
-		ld->sidenum[1] = SHORT(mld->sidenum[1]);
+		ld->sidenum[0] = LSBF_SHORT(mld->sidenum[0]);
+		ld->sidenum[1] = LSBF_SHORT(mld->sidenum[1]);
 
 		P_InitializeLinedef(ld);
 	}
@@ -1264,7 +1264,7 @@ static void P_LoadSidedefs(UINT8 *data)
 
 	for (i = 0; i < numsides; i++, sd++, msd++)
 	{
-		INT16 textureoffset = SHORT(msd->textureoffset);
+		INT16 textureoffset = LSBF_SHORT(msd->textureoffset);
 		dboolean isfrontside;
 
 		P_InitializeSidedef(sd);
@@ -1283,9 +1283,9 @@ static void P_LoadSidedefs(UINT8 *data)
 			sd->repeatcnt = 0;
 			sd->textureoffset = textureoffset << FRACBITS;
 		}
-		sd->rowoffset = SHORT(msd->rowoffset)<<FRACBITS;
+		sd->rowoffset = LSBF_SHORT(msd->rowoffset)<<FRACBITS;
 
-		P_SetSidedefSector(i, SHORT(msd->sector));
+		P_SetSidedefSector(i, LSBF_SHORT(msd->sector));
 
 		// Special info stored in texture fields!
 		switch (sd->special)
@@ -3622,8 +3622,8 @@ static inline void P_LoadSubsectors(UINT8 *data)
 
 	for (i = 0; i < numsubsectors; i++, ss++, ms++)
 	{
-		ss->numlines = SHORT(ms->numsegs);
-		ss->firstline = SHORT(ms->firstseg);
+		ss->numlines = LSBF_SHORT(ms->numsegs);
+		ss->firstline = LSBF_SHORT(ms->firstseg);
 		P_InitializeSubsector(ss);
 	}
 }
@@ -3637,15 +3637,15 @@ static void P_LoadNodes(UINT8 *data)
 
 	for (i = 0; i < numnodes; i++, no++, mn++)
 	{
-		no->x = SHORT(mn->x)<<FRACBITS;
-		no->y = SHORT(mn->y)<<FRACBITS;
-		no->dx = SHORT(mn->dx)<<FRACBITS;
-		no->dy = SHORT(mn->dy)<<FRACBITS;
+		no->x = LSBF_SHORT(mn->x)<<FRACBITS;
+		no->y = LSBF_SHORT(mn->y)<<FRACBITS;
+		no->dx = LSBF_SHORT(mn->dx)<<FRACBITS;
+		no->dy = LSBF_SHORT(mn->dy)<<FRACBITS;
 		for (j = 0; j < 2; j++)
 		{
-			no->children[j] = SHORT(mn->children[j]);
+			no->children[j] = LSBF_SHORT(mn->children[j]);
 			for (k = 0; k < 4; k++)
-				no->bbox[j][k] = SHORT(mn->bbox[j][k])<<FRACBITS;
+				no->bbox[j][k] = LSBF_SHORT(mn->bbox[j][k])<<FRACBITS;
 		}
 	}
 }
@@ -3802,16 +3802,16 @@ static void P_LoadSegs(UINT8 *data)
 
 	for (i = 0; i < numsegs; i++, seg++, ms++)
 	{
-		seg->v1 = &vertexes[SHORT(ms->v1)];
-		seg->v2 = &vertexes[SHORT(ms->v2)];
+		seg->v1 = &vertexes[LSBF_SHORT(ms->v1)];
+		seg->v2 = &vertexes[LSBF_SHORT(ms->v2)];
 
-		seg->side = SHORT(ms->side);
+		seg->side = LSBF_SHORT(ms->side);
 
-		seg->offset = (SHORT(ms->offset)) << FRACBITS;
+		seg->offset = (LSBF_SHORT(ms->offset)) << FRACBITS;
 
-		seg->angle = (SHORT(ms->angle)) << FRACBITS;
+		seg->angle = (LSBF_SHORT(ms->angle)) << FRACBITS;
 
-		seg->linedef = &lines[SHORT(ms->linedef)];
+		seg->linedef = &lines[LSBF_SHORT(ms->linedef)];
 
 		seg->length = P_SegLength(seg);
 		seg->flength = P_SegLengthFloat(seg);
@@ -4153,14 +4153,14 @@ static void P_ReadBlockMapLump(INT16 *wadblockmaplump, size_t count)
 	// them. This potentially doubles the size of blockmaps allowed,
 	// because Doom originally considered the offsets as always signed.
 
-	blockmaplump[0] = SHORT(wadblockmaplump[0]);
-	blockmaplump[1] = SHORT(wadblockmaplump[1]);
-	blockmaplump[2] = (INT32)(SHORT(wadblockmaplump[2])) & 0xffff;
-	blockmaplump[3] = (INT32)(SHORT(wadblockmaplump[3])) & 0xffff;
+	blockmaplump[0] = LSBF_SHORT(wadblockmaplump[0]);
+	blockmaplump[1] = LSBF_SHORT(wadblockmaplump[1]);
+	blockmaplump[2] = (INT32)(LSBF_SHORT(wadblockmaplump[2])) & 0xffff;
+	blockmaplump[3] = (INT32)(LSBF_SHORT(wadblockmaplump[3])) & 0xffff;
 
 	for (i = 4; i < count; i++)
 	{
-		INT16 t = SHORT(wadblockmaplump[i]);          // killough 3/1/98
+		INT16 t = LSBF_SHORT(wadblockmaplump[i]);          // killough 3/1/98
 		blockmaplump[i] = t == -1 ? (INT32)-1 : (INT32) t & 0xffff;
 	}
 }

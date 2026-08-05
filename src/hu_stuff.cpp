@@ -2407,7 +2407,7 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, UINT32 mindelay, INT32 flags)
 		patch = mping[Ping_gfx_num(ping)];
 
 	if (( flags & V_SNAPTORIGHT ))
-		x += ( w - SHORT (patch->width) );
+		x += ( w - LSBF_SHORT (patch->width) );
 
 	V_DrawScaledPatch(x, y, flags, patch);
 }

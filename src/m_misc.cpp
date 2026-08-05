@@ -1555,15 +1555,15 @@ static dboolean WritePCXfile(const char *filename, const UINT8 *data, int width,
 	pcx->encoding = 1; // uncompressed
 	pcx->bits_per_pixel = 8; // 256 color
 	pcx->xmin = pcx->ymin = 0;
-	pcx->xmax = SHORT(width - 1);
-	pcx->ymax = SHORT(height - 1);
-	pcx->hres = SHORT(width);
-	pcx->vres = SHORT(height);
+	pcx->xmax = LSBF_SHORT(width - 1);
+	pcx->ymax = LSBF_SHORT(height - 1);
+	pcx->hres = LSBF_SHORT(width);
+	pcx->vres = LSBF_SHORT(height);
 	memset(pcx->palette, 0, sizeof (pcx->palette));
 	pcx->reserved = 0;
 	pcx->color_planes = 1; // chunky image
-	pcx->bytes_per_line = SHORT(width);
-	pcx->palette_type = SHORT(1); // not a grey scale
+	pcx->bytes_per_line = LSBF_SHORT(width);
+	pcx->palette_type = LSBF_SHORT(1); // not a grey scale
 	memset(pcx->filler, 0, sizeof (pcx->filler));
 
 	// pack the image

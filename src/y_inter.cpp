@@ -824,7 +824,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					V_DrawScaledPatch(x + 36, y2, 0, alagles);
 				}
 
-				y2 += SHORT (alagles->height) + 1;
+				y2 += LSBF_SHORT (alagles->height) + 1;
 			}*/
 
 			V_DrawThinString(
@@ -1999,8 +1999,8 @@ void Y_IntermissionDrawer(void)
 	// Scrolling marquee
 	patch_t *rrmq = static_cast<patch_t*>(W_CachePatchName("R_RRMQ", PU_PATCH));
 
-	fixed_t mqloop = SHORT(rrmq->width)*FRACUNIT;
-	fixed_t chkloop = SHORT(rbgchk->width)*FRACUNIT;
+	fixed_t mqloop = LSBF_SHORT(rrmq->width)*FRACUNIT;
+	fixed_t chkloop = LSBF_SHORT(rbgchk->width)*FRACUNIT;
 
 	UINT8 *bgcolor = R_GetTranslationColormap(TC_INTERMISSION, static_cast<skincolornum_t>(0), GTC_CACHE);
 

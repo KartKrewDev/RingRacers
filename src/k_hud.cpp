@@ -2496,8 +2496,8 @@ static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 splitIndex, UINT8 *co
 		overlayFlags[1] = V_SUBTRACT;
 	}
 
-	w = SHORT(kp_positionnum[num][0][splitIndex]->width) * scale;
-	h = SHORT(kp_positionnum[num][0][splitIndex]->height) * scale;
+	w = LSBF_SHORT(kp_positionnum[num][0][splitIndex]->width) * scale;
+	h = LSBF_SHORT(kp_positionnum[num][0][splitIndex]->height) * scale;
 
 	x -= w;
 
@@ -2571,7 +2571,7 @@ void K_DrawKartPositionNumXY(
 		UINT8 adjustNum = num;
 		do
 		{
-			fixed_t w = SHORT(kp_positionnum[adjustNum % 10][0][splitIndex]->width) * scale;
+			fixed_t w = LSBF_SHORT(kp_positionnum[adjustNum % 10][0][splitIndex]->width) * scale;
 			fx += w;
 			adjustNum /= 10;
 		} while (adjustNum);
@@ -4360,7 +4360,7 @@ static void K_drawRingCounter(dboolean gametypeinfoshown)
 	{
 		ringflip = V_FLIP;
 		ringanim_realframe = RINGANIM_NUMFRAMES-stplyr->karthud[khud_ringframe];
-		ringx += SHORT((r_splitscreen > 1) ? kp_smallring[ringanim_realframe]->width : kp_ring[ringanim_realframe]->width);
+		ringx += LSBF_SHORT((r_splitscreen > 1) ? kp_smallring[ringanim_realframe]->width : kp_ring[ringanim_realframe]->width);
 	}
 
 	if (r_splitscreen > 1)
@@ -4401,12 +4401,12 @@ static void K_drawRingCounter(dboolean gametypeinfoshown)
 		// Rings
 		if (!uselives)
 		{
-			V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[1]);
+			V_DrawScaledPatch(fx-2 + (flipflag ? (LSBF_SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[1]);
 			if (flipflag)
 				fr += 15;
 		}
 		else
-			V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[0]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
+			V_DrawScaledPatch(fx-2 + (flipflag ? (LSBF_SHORT(kp_ringstickersplit[0]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
 
 
 		UINT8 ampx = 2 + 8;
@@ -4865,7 +4865,7 @@ static void K_drawBlueSphereMeter(dboolean gametypeinfoshown)
 		}
 		else // else, that means we're P2 or P4.
 		{
-			fx = LAPS2_X+(SHORT(kp_splitspheresticker->width) - 10);
+			fx = LAPS2_X+(LSBF_SHORT(kp_splitspheresticker->width) - 10);
 			fy = LAPS2_Y;
 			splitflags ^= V_SNAPTOLEFT|V_SNAPTORIGHT;
 			flipflag = V_FLIP; // make the string right aligned and other shit
@@ -5106,7 +5106,7 @@ static void K_drawKartWanted(void)
 	}
 	else if (r_splitscreen == 3) // 4P splitscreen...
 	{
-		basex = BASEVIDWIDTH/2 - (SHORT(kp_wantedsplit->width)/2);	// center on screen
+		basex = BASEVIDWIDTH/2 - (LSBF_SHORT(kp_wantedsplit->width)/2);	// center on screen
 		basey = BASEVIDHEIGHT - 55;
 		//basey2 = 4;
 	}
@@ -5840,8 +5840,8 @@ static void K_drawKartProgressionMinimapIcon(UINT32 distancetofinish, INT32 hudx
 
 	hudx += K_getKartProgressionMinimapDistance(distancetofinish);
 
-	hudx = ((hudx - (SHORT(icon->width)/2))<<FRACBITS);
-	hudy = ((hudy - (SHORT(icon->height)/2))<<FRACBITS);
+	hudx = ((hudx - (LSBF_SHORT(icon->width)/2))<<FRACBITS);
+	hudy = ((hudy - (LSBF_SHORT(icon->height)/2))<<FRACBITS);
 
 	V_DrawFixedPatch(hudx, hudy, FRACUNIT, flags, icon, colormap);
 }
@@ -5873,8 +5873,8 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 	amnumpos = K_GetKartObjectPosToMinimapPos(objx, objy);
 
-	amxpos = amnumpos.x + ((hudx - (SHORT(icon->width))/2)<<FRACBITS);
-	amypos = amnumpos.y + ((hudy - (SHORT(icon->height))/2)<<FRACBITS);
+	amxpos = amnumpos.x + ((hudx - (LSBF_SHORT(icon->width))/2)<<FRACBITS);
+	amypos = amnumpos.y + ((hudy - (LSBF_SHORT(icon->height))/2)<<FRACBITS);
 
 	V_DrawFixedPatch(amxpos, amypos, FRACUNIT, flags, icon, colormap);
 }
@@ -6033,8 +6033,8 @@ static void K_DrawKartUFOTimer(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hud
 	// magic number
 	int16_t text_height = (kp_battleufominimap->height/2) + 2;
 
-	amxpos = amnumxpos + ((hudx - (SHORT(final_width))/2)<<FRACBITS);
-	amypos = amnumypos + ((hudy - (SHORT(text_height))/2)<<FRACBITS);
+	amxpos = amnumxpos + ((hudx - (LSBF_SHORT(final_width))/2)<<FRACBITS);
+	amypos = amnumypos + ((hudy - (LSBF_SHORT(text_height))/2)<<FRACBITS);
 
 	V_DrawCenteredThinString(amxpos/FRACUNIT, amypos/FRACUNIT, flags, va("%d", countdown));
 }
@@ -6139,8 +6139,8 @@ static void K_drawKartMinimap(void)
 	if (doencore)
 	{
 		V_DrawFixedPatch(
-			(x + (SHORT(workingPic->width)/2))*FRACUNIT,
-			(y - (SHORT(workingPic->height)/2))*FRACUNIT,
+			(x + (LSBF_SHORT(workingPic->width)/2))*FRACUNIT,
+			(y - (LSBF_SHORT(workingPic->height)/2))*FRACUNIT,
 			FRACUNIT,
 			splitflags|minimaptrans|V_FLIP,
 			workingPic,
@@ -6150,8 +6150,8 @@ static void K_drawKartMinimap(void)
 	else
 	{
 		V_DrawFixedPatch(
-			(x - (SHORT(workingPic->width)/2))*FRACUNIT,
-			(y - (SHORT(workingPic->height)/2))*FRACUNIT,
+			(x - (LSBF_SHORT(workingPic->width)/2))*FRACUNIT,
+			(y - (LSBF_SHORT(workingPic->height)/2))*FRACUNIT,
 			FRACUNIT,
 			splitflags|minimaptrans,
 			workingPic,
@@ -6164,10 +6164,10 @@ static void K_drawKartMinimap(void)
 
 	// let offsets transfer to the heads, too!
 	if (doencore)
-		x += SHORT(workingPic->leftoffset);
+		x += LSBF_SHORT(workingPic->leftoffset);
 	else
-		x -= SHORT(workingPic->leftoffset);
-	y -= SHORT(workingPic->topoffset);
+		x -= LSBF_SHORT(workingPic->leftoffset);
+	y -= LSBF_SHORT(workingPic->topoffset);
 
 	if (doprogressionbar == true)
 	{
@@ -6620,7 +6620,7 @@ static void K_drawKartFinish(dboolean finish)
 
 	if (r_splitscreen >= minsplitstationary) // 3/4p, stationary FIN
 	{
-		V_DrawScaledPatch(STCD_X - (SHORT(kptodraw[pnum]->width)/2), STCD_Y - (SHORT(kptodraw[pnum]->height)/2), splitflags, kptodraw[pnum]);
+		V_DrawScaledPatch(STCD_X - (LSBF_SHORT(kptodraw[pnum]->width)/2), STCD_Y - (LSBF_SHORT(kptodraw[pnum]->height)/2), splitflags, kptodraw[pnum]);
 		return;
 	}
 
@@ -6629,7 +6629,7 @@ static void K_drawKartFinish(dboolean finish)
 		INT32 x, xval, ox, interpx, pwidth;
 
 		x = ((vid.width<<FRACBITS)/vid.dupx);
-		xval = (SHORT(kptodraw[pnum]->width)<<FRACBITS);
+		xval = (LSBF_SHORT(kptodraw[pnum]->width)<<FRACBITS);
 
 		pwidth = std::max(xval, x);
 
@@ -6642,7 +6642,7 @@ static void K_drawKartFinish(dboolean finish)
 			interpx = -interpx;
 
 		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (pwidth / 2),
-			(STCD_Y<<FRACBITS) - (SHORT(kptodraw[pnum]->height)<<(FRACBITS-1)),
+			(STCD_Y<<FRACBITS) - (LSBF_SHORT(kptodraw[pnum]->height)<<(FRACBITS-1)),
 			FRACUNIT,
 			splitflags, kptodraw[pnum], NULL);
 	}
@@ -6813,11 +6813,11 @@ static void K_drawKartStartBulbs(void)
 
 		if (i < 9)
 		{
-			x += (SHORT(patch->width)) * FRACUNIT/2;
+			x += (LSBF_SHORT(patch->width)) * FRACUNIT/2;
 
 			patchnum = letters_order[i+1];
 			patch = (r_splitscreen ? kp_prestartletters_split[patchnum] : kp_prestartletters[patchnum]);
-			x += (SHORT(patch->width)) * FRACUNIT/2;
+			x += (LSBF_SHORT(patch->width)) * FRACUNIT/2;
 
 			if (r_splitscreen)
 				x -= FRACUNIT;
@@ -6876,7 +6876,7 @@ static void K_drawKartStartCountdown(void)
 		if (r_splitscreen) // splitscreen
 			pnum += 10;
 
-		V_DrawScaledPatch(STCD_X - (SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (SHORT(kp_startcountdown[pnum]->height)/2), V_SPLITSCREEN|hudtransflags, kp_startcountdown[pnum]);
+		V_DrawScaledPatch(STCD_X - (LSBF_SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (LSBF_SHORT(kp_startcountdown[pnum]->height)/2), V_SPLITSCREEN|hudtransflags, kp_startcountdown[pnum]);
 	}
 }
 
@@ -8168,7 +8168,7 @@ void K_drawKartHUD(void)
 					snapflags = 0;
 				}
 
-				V_DrawMappedPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat, colormap);
+				V_DrawMappedPatch(x-(LSBF_SHORT(pat->width)), y-(LSBF_SHORT(pat->height)), snapflags, pat, colormap);
 			}
 		}
 		else
@@ -8361,7 +8361,7 @@ void K_drawKartHUD(void)
 	}
 
 	if ((gametyperules & GTR_KARMA) && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
-		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
+		V_DrawScaledPatch(BASEVIDWIDTH/2 - (LSBF_SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
 	K_drawKartFreePlay();

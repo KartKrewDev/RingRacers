@@ -248,8 +248,8 @@ static dboolean IsPlayerGuest(UINT8 player);
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
 {
-	uint64_t now = LONGLONG(time(NULL));
-	uint32_t our_ip_le = LONG(ourIP);
+	uint64_t now = LSBF_LONGLONG(time(NULL));
+	uint32_t our_ip_le = LSBF_LONG(ourIP);
 	csprng(buf, CHALLENGELENGTH); // Random noise as a baseline, but...
 	memcpy(buf, &now, sizeof(now)); // Timestamp limits the reuse window.
 	memcpy(buf + sizeof(now), &our_ip_le, sizeof(our_ip_le)); // IP prevents captured signatures from being used elsewhere.
@@ -280,9 +280,9 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 
 	now = time(NULL);
 	memcpy(&then, message, sizeof(then));
-	then = LONGLONG(then); // LE 64
+	then = LSBF_LONGLONG(then); // LE 64
 	memcpy(&claimedIP, message + sizeof(then), sizeof(claimedIP));
-	claimedIP = LONG(claimedIP); // LE 32 - TODO needs to be BE 128 bit for ipv6
+	claimedIP = LSBF_LONG(claimedIP); // LE 32 - TODO needs to be BE 128 bit for ipv6
 	realIP = I_GetNodeAddressInt(servernode);
 
 	if ((max(now, then) - min(now, then)) > 60*15)
@@ -1092,8 +1092,8 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	strncpy(netbuffer->u.serverinfo.application, SRB2APPLICATION,
 			sizeof netbuffer->u.serverinfo.application);
 	// return back the time value so client can compute their ping
-	netbuffer->u.serverinfo.time = (tic_t)LONG(servertime);
-	netbuffer->u.serverinfo.leveltime = (tic_t)LONG(leveltime);
+	netbuffer->u.serverinfo.time = (tic_t)LSBF_LONG(servertime);
+	netbuffer->u.serverinfo.leveltime = (tic_t)LSBF_LONG(leveltime);
 
 	netbuffer->u.serverinfo.numberofplayer = (UINT8)D_NumPlayers();
 	netbuffer->u.serverinfo.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value));
@@ -1233,8 +1233,8 @@ static void SV_SendPlayerInfo(INT32 node)
 			}
 		}
 
-		netbuffer->u.playerinfo[i].score = LONG(players[i].score);
-		netbuffer->u.playerinfo[i].timeinserver = SHORT((UINT16)(players[i].jointime / TICRATE));
+		netbuffer->u.playerinfo[i].score = LSBF_LONG(players[i].score);
+		netbuffer->u.playerinfo[i].timeinserver = LSBF_SHORT((UINT16)(players[i].jointime / TICRATE));
 		netbuffer->u.playerinfo[i].deprecated_skin = 0xFF;
 
 		// Extra data
@@ -1263,7 +1263,7 @@ static dboolean SV_SendServerConfig(INT32 node)
 
 	netbuffer->u.servercfg.serverplayer = (UINT8)serverplayer;
 	netbuffer->u.servercfg.totalslotnum = (UINT8)(doomcom->numslots);
-	netbuffer->u.servercfg.gametic = (tic_t)LONG(gametic);
+	netbuffer->u.servercfg.gametic = (tic_t)LSBF_LONG(gametic);
 	netbuffer->u.servercfg.clientnode = (UINT8)node;
 	netbuffer->u.servercfg.gamestate = (UINT8)gamestate;
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
@@ -1577,7 +1577,7 @@ static void SendAskInfo(INT32 node)
 
 	netbuffer->packettype = PT_ASKINFO;
 	netbuffer->u.askinfo.version = VERSION;
-	netbuffer->u.askinfo.time = (tic_t)LONG(asktime);
+	netbuffer->u.askinfo.time = (tic_t)LSBF_LONG(asktime);
 
 	// Even if this never arrives due to the host being firewalled, we've
 	// now allowed traffic from the host to us in, so once the MS relays
@@ -4761,9 +4761,9 @@ static void HandleServerInfo(SINT8 node)
 {
 	// compute ping in ms
 	const tic_t ticnow = I_GetTime();
-	const tic_t ticthen = (tic_t)LONG(netbuffer->u.serverinfo.time);
+	const tic_t ticthen = (tic_t)LSBF_LONG(netbuffer->u.serverinfo.time);
 	const tic_t ticdiff = (ticnow - ticthen)*1000/NEWTICRATE;
-	netbuffer->u.serverinfo.time = (tic_t)LONG(ticdiff);
+	netbuffer->u.serverinfo.time = (tic_t)LSBF_LONG(ticdiff);
 	netbuffer->u.serverinfo.servername[MAXSERVERNAME-1] = 0;
 	netbuffer->u.serverinfo.application
 		[sizeof netbuffer->u.serverinfo.application - 1] = '\0';
@@ -4876,7 +4876,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				clientnode = I_NetMakeNode(netbuffer->u.msaskinfo.clientaddr);
 				if (clientnode != -1)
 				{
-					SV_SendServerInfo(clientnode, (tic_t)LONG(netbuffer->u.msaskinfo.time));
+					SV_SendServerInfo(clientnode, (tic_t)LSBF_LONG(netbuffer->u.msaskinfo.time));
 					SV_SendPlayerInfo(clientnode); // Send extra info
 					Net_CloseConnection(clientnode);
 					// Don't close connection to MS...
@@ -4927,7 +4927,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 		case PT_ASKINFO:
 			if (server && serverrunning)
 			{
-				SV_SendServerInfo(node, (tic_t)LONG(netbuffer->u.askinfo.time));
+				SV_SendServerInfo(node, (tic_t)LSBF_LONG(netbuffer->u.askinfo.time));
 				SV_SendPlayerInfo(node); // Send extra info
 			}
 			Net_CloseConnection(node);
@@ -4995,7 +4995,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 			if (client)
 			{
-				maketic = gametic = neededtic = (tic_t)LONG(netbuffer->u.servercfg.gametic);
+				maketic = gametic = neededtic = (tic_t)LSBF_LONG(netbuffer->u.servercfg.gametic);
 
 				G_SetGametype(netbuffer->u.servercfg.gametype);
 
@@ -5016,7 +5016,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;
-			doomcom->numslots = SHORT(netbuffer->u.servercfg.totalslotnum);
+			doomcom->numslots = LSBF_SHORT(netbuffer->u.servercfg.totalslotnum);
 			mynode = netbuffer->u.servercfg.clientnode;
 			if (serverplayer >= 0)
 				playernode[(UINT8)serverplayer] = servernode;
@@ -5369,7 +5369,7 @@ static void PT_HandleVoiceClient(SINT8 node, dboolean isserver)
 	doomdata_t *pak = (doomdata_t*)(doomcom->data);
 	voice_pak *pl = &pak->u.voice;
 
-	UINT64 framenum = (UINT64)LONGLONG(pl->frame);
+	UINT64 framenum = (UINT64)LSBF_LONGLONG(pl->frame);
 	INT32 playernum = pl->flags & VOICE_PAK_FLAGS_PLAYERNUM_BITS;
 	if (playernum >= MAXPLAYERS || playernum < 0)
 	{
@@ -5744,7 +5744,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 
 			// Check player consistancy during the level
 			if (realstart <= gametic && realstart + BACKUPTICS - 1 > gametic && gamestate == GS_LEVEL
-				&& consistancy[realstart%BACKUPTICS] != SHORT(netbuffer->u.clientpak.consistancy)
+				&& consistancy[realstart%BACKUPTICS] != LSBF_SHORT(netbuffer->u.clientpak.consistancy)
 				&& !resendingsavegame[node] && savegameresendcooldown[node] <= I_GetTime()
 				&& !SV_ResendingSavegameToAnyone())
 			{
@@ -5758,10 +5758,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 					CONS_Printf(M_GetText("Synch failure for player %d (%s); expected %hd, got %hd\n"),
 						netconsole+1, player_names[netconsole],
 						consistancy[realstart%BACKUPTICS],
-						SHORT(netbuffer->u.clientpak.consistancy));
+						LSBF_SHORT(netbuffer->u.clientpak.consistancy));
 				DEBFILE(va("Restoring player %d (synch failure) [%update] %d!=%d\n",
 					netconsole, realstart, consistancy[realstart%BACKUPTICS],
-					SHORT(netbuffer->u.clientpak.consistancy)));
+					LSBF_SHORT(netbuffer->u.clientpak.consistancy)));
 				break;
 			}
 			break;
@@ -6546,7 +6546,7 @@ static void CL_SendClientCmd(void)
 
 		packetsize = sizeof (clientcmd_pak);
 		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds[0][0], 1);
-		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic % BACKUPTICS]);
+		netbuffer->u.clientpak.consistancy = LSBF_SHORT(consistancy[gametic % BACKUPTICS]);
 
 		if (splitscreen) // Send a special packet with 2 cmd for splitscreen
 		{
@@ -6685,7 +6685,7 @@ static void SV_SendTics(void)
 			netbuffer->packettype = PT_SERVERTICS;
 			netbuffer->u.serverpak.starttic = (UINT8)realfirsttic;
 			netbuffer->u.serverpak.numtics = (UINT8)(lasttictosend - realfirsttic);
-			netbuffer->u.serverpak.numslots = (UINT8)SHORT(doomcom->numslots);
+			netbuffer->u.serverpak.numslots = (UINT8)LSBF_SHORT(doomcom->numslots);
 			bufpos = (UINT8 *)&netbuffer->u.serverpak.cmds;
 
 			for (i = realfirsttic; i < lasttictosend; i++)
@@ -7870,7 +7870,7 @@ void DoVoicePacket(SINT8 target, UINT64 frame, const UINT8* opusdata, size_t len
 {
 	voice_pak *pl = &netbuffer->u.voice;
 	netbuffer->packettype = PT_VOICE;
-	pl->frame = (UINT64)LONGLONG(frame);
+	pl->frame = (UINT64)LSBF_LONGLONG(frame);
 	pl->flags = 0;
 	I_Assert(MAXPACKETLENGTH - sizeof(voice_pak) - BASEPACKETSIZE >= len);
 	memcpy((UINT8*)netbuffer + BASEPACKETSIZE + sizeof(voice_pak), opusdata, len);
