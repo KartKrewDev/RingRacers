@@ -195,6 +195,10 @@ check_symbol_exists(strlcpy "string.h" HAVE_STRLCPY)
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/src/config.h")
 
+if(MSVC OR CMAKE_CXX_LINK_EXECUTABLE MATCHES "lld-link\\.exe")
+	target_link_options(SRB2SDL2 PRIVATE /MANIFEST:NO)
+endif()
+
 # Strip debug sections
 find_program(CMAKE_OBJCOPY objcopy)
 if(CMAKE_OBJCOPY AND NOT SRB2_CONFIG_DISABLE_DEBUGLINK)
