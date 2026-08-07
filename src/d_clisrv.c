@@ -248,14 +248,11 @@ static boolean IsPlayerGuest(UINT8 player);
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
 {
-	#ifndef SRB2_LITTLE_ENDIAN
-		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
-	#endif
-
-	UINT64 now = time(NULL);
+	uint64_t now = LONGLONG(time(NULL));
+	uint32_t our_ip_le = LONG(ourIP);
 	csprng(buf, CHALLENGELENGTH); // Random noise as a baseline, but...
 	memcpy(buf, &now, sizeof(now)); // Timestamp limits the reuse window.
-	memcpy(buf + sizeof(now), &ourIP, sizeof(ourIP)); // IP prevents captured signatures from being used elsewhere.
+	memcpy(buf + sizeof(now), &our_ip_le, sizeof(our_ip_le)); // IP prevents captured signatures from being used elsewhere.
 
 	#ifdef DEVELOP
 		if (cv_badtime.value)
@@ -278,16 +275,14 @@ void GenerateChallenge(uint8_t *buf)
 // Don't sign anything that wasn't generated just for us!
 shouldsign_t ShouldSignChallenge(uint8_t *message)
 {
-	#ifndef SRB2_LITTLE_ENDIAN
-		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
-	#endif
-
 	UINT64 then, now;
 	UINT32 claimedIP, realIP;
 
 	now = time(NULL);
 	memcpy(&then, message, sizeof(then));
+	then = LONGLONG(then); // LE 64
 	memcpy(&claimedIP, message + sizeof(then), sizeof(claimedIP));
+	claimedIP = LONG(claimedIP); // LE 32 - TODO needs to be BE 128 bit for ipv6
 	realIP = I_GetNodeAddressInt(servernode);
 
 	if ((max(now, then) - min(now, then)) > 60*15)
