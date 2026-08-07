@@ -71,10 +71,6 @@ find_package(PNG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Opus REQUIRED)
-if(WIN32)
-	find_package(cpptrace CONFIG REQUIRED)
-endif()
-
 if (SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	find_package(YUV REQUIRED)
 

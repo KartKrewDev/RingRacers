@@ -149,10 +149,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define UNIXBACKTRACE
 #endif
 
-#ifdef HAVE_CPPTRACE
-#include <cpptrace/cpptrace.hpp>
-#endif
-
 // Locations for searching for bios.pk3
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define DEFAULTWADLOCATION1 "/usr/local/share/games/RingRacers"
@@ -383,7 +379,7 @@ static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dump
 	// in case the fullscreen window blocks it for some absurd reason.
 }
 
-static void I_ReportSignal(int num, int coredumped, void* tracefromcpptrace)
+static void I_ReportSignal(int num, int coredumped, const char* tracestr)
 {
 	//static char msg[] = "oh no! back to reality!\r\n";
 	const char *      sigmsg;
@@ -503,48 +499,13 @@ static void I_ReportSignal(int num, int coredumped, void* tracefromcpptrace)
 			msg_len += snprintf(msg + msg_len, sizeof(msg) - msg_len, "%s", " (core dumped)");
 	}
 
-#ifdef HAVE_CPPTRACE
-	if (msg_len < sizeof(msg))
-		msg_len += snprintf(msg + msg_len, sizeof(msg) - msg_len, "%s", "\n");
-
-	cpptrace::stacktrace const& trace = *(cpptrace::stacktrace*)tracefromcpptrace;
-	bool firstfound = false;
-#ifndef _WIN32
-	firstfound = true;
-#endif
-	for (const auto& frame : trace)
+	if (tracestr && tracestr[0])
 	{
-#ifdef _WIN32
-		// dumb hack, unsure if it works on anything other than windows 10-11
-		if (!firstfound && frame.symbol == "KiUserExceptionDispatcher")
-		{
-			firstfound = true;
-			continue;
-		}
-		if (!firstfound)
-		{
-			continue;
-		}
-#endif
-
-		srb2::String frame_str;
-		if (!frame.filename.empty() && frame.line.has_value())
-		{
-			frame_str = srb2::format("{} at {}:{}\n", frame.symbol, frame.filename, frame.line.value_or(0));
-		}
-		else if (!frame.filename.empty() && !frame.line.has_value())
-		{
-			frame_str = srb2::format("{} at {}\n", frame.symbol, frame.filename);
-		}
-		else
-		{
-			frame_str = srb2::format("{}\n", frame.symbol);
-		}
-
 		if (msg_len < sizeof(msg))
-			msg_len += snprintf(msg + msg_len, sizeof(msg) - msg_len, "%s", frame_str.c_str());
+			msg_len += snprintf(msg + msg_len, sizeof(msg) - msg_len, "%s", "\n");
+		if (msg_len < sizeof(msg))
+			msg_len += snprintf(msg + msg_len, sizeof(msg) - msg_len, "%s", tracestr);
 	}
-#endif
 
 	sigmsg = msg;
 
@@ -575,15 +536,95 @@ static void CommonSignalHandleCleanup(void)
 #ifdef USE_DBGHELP
 LPTOP_LEVEL_EXCEPTION_FILTER g_previous_toplevelexceptionfilter;
 
+static srb2::String GenerateDbgHelpStackTrace(CONTEXT* context)
+{
+	srb2::String result;
+	HANDLE process = GetCurrentProcess();
+	HANDLE thread = GetCurrentThread();
+
+	SymInitialize(process, NULL, TRUE);
+	SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
+
+	STACKFRAME64 stackFrame = {};
+	CONTEXT ctx = *context;
+
+	DWORD machineType;
+#ifdef _X86_
+	machineType = IMAGE_FILE_MACHINE_I386;
+	stackFrame.AddrPC.Offset = ctx.Eip;
+	stackFrame.AddrPC.Mode = AddrModeFlat;
+	stackFrame.AddrFrame.Offset = ctx.Ebp;
+	stackFrame.AddrFrame.Mode = AddrModeFlat;
+	stackFrame.AddrStack.Offset = ctx.Esp;
+	stackFrame.AddrStack.Mode = AddrModeFlat;
+#elif defined(_AMD64_)
+	machineType = IMAGE_FILE_MACHINE_AMD64;
+	stackFrame.AddrPC.Offset = ctx.Rip;
+	stackFrame.AddrPC.Mode = AddrModeFlat;
+	stackFrame.AddrFrame.Offset = ctx.Rbp;
+	stackFrame.AddrFrame.Mode = AddrModeFlat;
+	stackFrame.AddrStack.Offset = ctx.Rsp;
+	stackFrame.AddrStack.Mode = AddrModeFlat;
+#else
+	SymCleanup(process);
+	return result;
+#endif
+
+	bool firstfound = false;
+	int frameCount = 0;
+
+	while (StackWalk64(machineType, process, thread, &stackFrame, &ctx, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
+	{
+		if (stackFrame.AddrPC.Offset == 0)
+			break;
+		if (frameCount++ > 30)
+			break;
+
+		// Resolve symbol
+		char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+		SYMBOL_INFO* symbol = reinterpret_cast<SYMBOL_INFO*>(symbolBuffer);
+		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+		symbol->MaxNameLen = MAX_SYM_NAME;
+
+		const char* symbolName = nullptr;
+		if (SymFromAddr(process, stackFrame.AddrPC.Offset, nullptr, symbol))
+			symbolName = symbol->Name;
+
+		if (symbolName)
+		{
+			IMAGEHLP_LINE64 lineInfo = {};
+			lineInfo.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+			DWORD lineDisplacement = 0;
+
+			if (SymGetLineFromAddr64(process, stackFrame.AddrPC.Offset, &lineDisplacement, &lineInfo))
+			{
+				const char* file = lineInfo.FileName;
+				const char* lastSlash = strrchr(file, '\\');
+				const char* lastFwdSlash = strrchr(file, '/');
+				if (lastSlash && lastSlash > lastFwdSlash)
+					file = lastSlash + 1;
+				else if (lastFwdSlash)
+					file = lastFwdSlash + 1;
+				result = result + srb2::format("{} at {}:{}\n", symbolName, file, lineInfo.LineNumber);
+			}
+			else
+			{
+				result = result + srb2::format("{}\n", symbolName);
+			}
+		}
+		else
+		{
+			result = result + srb2::format("0x{:016x}\n", stackFrame.AddrPC.Offset);
+		}
+	}
+
+	SymCleanup(process);
+	return result;
+}
+
 static LONG WriteMinidumpExceptionFilter(PEXCEPTION_POINTERS ExceptionInfo)
 {
-#ifdef HAVE_CPPTRACE
-	// Fully aware this is completely signal unsafe. We don't ever try to recover from signals, so who cares.
-	// If it breaks it breaks. We're not mission critical software.
-	cpptrace::stacktrace trace = cpptrace::generate_trace(0, 30);
-#else
-	int trace = 0;
-#endif
+	srb2::String tracestr = GenerateDbgHelpStackTrace(ExceptionInfo->ContextRecord);
 
 	MINIDUMP_EXCEPTION_INFORMATION mei {};
 	mei.ExceptionPointers = ExceptionInfo;
@@ -615,7 +656,7 @@ static LONG WriteMinidumpExceptionFilter(PEXCEPTION_POINTERS ExceptionInfo)
 
 exit:
 	CommonSignalHandleCleanup();
-	I_ReportSignal(ExceptionInfo->ExceptionRecord->ExceptionCode, 0, (void*)&trace);
+	I_ReportSignal(ExceptionInfo->ExceptionRecord->ExceptionCode, 0, tracestr.c_str());
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
