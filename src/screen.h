@@ -16,14 +16,6 @@
 
 #include "command.h"
 
-#if defined (_WIN32) && !defined (__CYGWIN__)
-#define RPC_NO_WINDOWS_H
-#include <windows.h>
-#define DNWH HWND
-#else
-#define DNWH void * // unused in DOS version
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -73,7 +65,6 @@ struct viddef_t
 	INT32 baseratio; // Used to get the correct value for lighting walls
 
 	// for Win32 version
-	DNWH WndParent; // handle of the application's window
 	UINT8 smalldupx, smalldupy; // factor for a little bit of scaling
 	UINT8 meddupx, meddupy; // factor for moderate, but not full, scaling
 #ifdef HWRENDER
@@ -89,35 +80,6 @@ enum
 	VID_GL_LIBRARY_LOADED     = 1,
 	VID_GL_LIBRARY_ERROR      = -1,
 };
-
-// internal additional info for vesa modes only
-struct vesa_extra_t
-{
-	INT32 vesamode; // vesa mode number plus LINEAR_MODE bit
-	void *plinearmem; // linear address of start of frame buffer
-};
-// a video modes from the video modes list,
-// note: video mode 0 is always standard VGA320x200.
-struct vmode_t
-{
-	vmode_t *pnext;
-	char *name;
-	UINT32 width, height;
-	UINT32 rowbytes; // bytes per scanline
-	UINT32 bytesperpixel; // 1 for 256c, 2 for highcolor
-	INT32 windowed; // if true this is a windowed mode
-	INT32 numpages;
-	vesa_extra_t *pextradata; // vesa mode extra data
-#ifdef _WIN32
-	INT32 (WINAPI *setmode)(viddef_t *lvid, vmode_t *pcurrentmode);
-#else
-	INT32 (*setmode)(viddef_t *lvid, vmode_t *pcurrentmode);
-#endif
-	INT32 misc; // misc for display driver (r_opengl.dll etc)
-};
-
-#define NUMSPECIALMODES  4
-extern vmode_t specialmodes[NUMSPECIALMODES];
 
 // ----------------
 // screen variables

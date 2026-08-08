@@ -18,20 +18,6 @@
 
 #include <tracy/tracy/Tracy.hpp>
 
-#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
-#include <sys/stat.h>
-#include <sys/types.h>
-#endif
-
-#ifdef __GNUC__
-#include <unistd.h> // for getcwd
-#endif
-
-#ifdef _WIN32
-#include <direct.h>
-#include <malloc.h>
-#endif
-
 #include <time.h>
 
 #include "doomdef.h"
@@ -1379,12 +1365,8 @@ static void ChangeDirForUrlHandler(void)
 
 		CONS_Printf("%s\n", srb2path);
 
-#if defined (_WIN32)
-		SetCurrentDirectoryA(srb2path);
-#else
-		if (chdir(srb2path) == -1)
+		if (I_ChDir(srb2path) == -1)
 			I_OutputMsg("Couldn't change working directory\n");
-#endif
 	}
 }
 
@@ -1417,7 +1399,7 @@ static void IdentifyVersion(void)
 #endif
 
 	char tempsrb2path[256] = ".";
-	getcwd(tempsrb2path, 256);
+	I_GetCwd(tempsrb2path, 256);
 
 	// get the current directory (possible problem on NT with "." as current dir)
 	if (!srb2waddir)

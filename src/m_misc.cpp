@@ -69,6 +69,7 @@
 #include "sdl/hwsym_sdl.h"
 #ifdef __linux__
 #ifndef _LARGEFILE64_SOURCE
+#include <sys/types.h> // off_t
 typedef off_t off64_t;
 #endif
 #endif
@@ -101,7 +102,7 @@ typedef off_t off64_t;
  #endif
  #ifdef PNG_WRITE_SUPPORTED
   #define USE_PNG // Only actually use PNG if write is supported.
-  #if defined (PNG_WRITE_APNG_SUPPORTED) //|| !defined(PNG_STATIC)
+  #if defined (PNG_WRITE_APNG_SUPPORTED)
     #include "apng.h"
     #define USE_APNG
   #endif
@@ -1011,99 +1012,13 @@ static png_infop   apng_info_ptr = NULL;
 static apng_infop  apng_ainfo_ptr = NULL;
 static png_FILE_p  apng_FILE = NULL;
 static png_uint_32 apng_frames = 0;
-#ifdef PNG_STATIC // Win32 build have static libpng
 #define aPNG_set_acTL png_set_acTL
 #define aPNG_write_frame_head png_write_frame_head
 #define aPNG_write_frame_tail png_write_frame_tail
-#else // outside libpng may not have apng support
-
-#ifndef PNG_WRITE_APNG_SUPPORTED // libpng header may not have apng patch
-
-#ifndef PNG_INFO_acTL
-#define PNG_INFO_acTL 0x10000L
-#endif
-#ifndef PNG_INFO_fcTL
-#define PNG_INFO_fcTL 0x20000L
-#endif
-#ifndef PNG_FIRST_FRAME_HIDDEN
-#define PNG_FIRST_FRAME_HIDDEN       0x0001
-#endif
-#ifndef PNG_DISPOSE_OP_NONE
-#define PNG_DISPOSE_OP_NONE        0x00
-#endif
-#ifndef PNG_DISPOSE_OP_BACKGROUND
-#define PNG_DISPOSE_OP_BACKGROUND  0x01
-#endif
-#ifndef PNG_DISPOSE_OP_PREVIOUS
-#define PNG_DISPOSE_OP_PREVIOUS    0x02
-#endif
-#ifndef PNG_BLEND_OP_SOURCE
-#define PNG_BLEND_OP_SOURCE        0x00
-#endif
-#ifndef PNG_BLEND_OP_OVER
-#define PNG_BLEND_OP_OVER          0x01
-#endif
-#ifndef PNG_HAVE_acTL
-#define PNG_HAVE_acTL             0x4000
-#endif
-#ifndef PNG_HAVE_fcTL
-#define PNG_HAVE_fcTL             0x8000L
-#endif
-
-#endif
-typedef png_uint_32 (*P_png_set_acTL) (png_structp png_ptr,
-   png_infop info_ptr, png_uint_32 num_frames, png_uint_32 num_plays);
-typedef void (*P_png_write_frame_head) (png_structp png_ptr,
-   png_infop info_ptr, png_bytepp row_pointers,
-   png_uint_32 width, png_uint_32 height,
-   png_uint_32 x_offset, png_uint_32 y_offset,
-   png_uint_16 delay_num, png_uint_16 delay_den, png_byte dispose_op,
-   png_byte blend_op);
-
-typedef void (*P_png_write_frame_tail) (png_structp png_ptr,
-   png_infop info_ptr);
-static P_png_set_acTL aPNG_set_acTL = NULL;
-static P_png_write_frame_head aPNG_write_frame_head = NULL;
-static P_png_write_frame_tail aPNG_write_frame_tail = NULL;
-#endif
 
 static inline boolean M_PNGLib(void)
 {
-#ifdef PNG_STATIC // Win32 build have static libpng
 	return true;
-#else
-	static void *pnglib = NULL;
-	if (aPNG_set_acTL && aPNG_write_frame_head && aPNG_write_frame_tail)
-		return true;
-	if (pnglib)
-		return false;
-#ifdef _WIN32
-	pnglib = GetModuleHandleA("libpng.dll");
-	if (!pnglib)
-		pnglib = GetModuleHandleA("libpng12.dll");
-	if (!pnglib)
-		pnglib = GetModuleHandleA("libpng13.dll");
-#elif defined (HAVE_SDL)
-#ifdef __APPLE__
-	pnglib = hwOpen("libpng.dylib");
-#else
-	pnglib = hwOpen("libpng.so");
-#endif
-#endif
-	if (!pnglib)
-		return false;
-#ifdef HAVE_SDL
-	aPNG_set_acTL = (P_png_set_acTL) hwSym("png_set_acTL", pnglib);
-	aPNG_write_frame_head = (P_png_write_frame_head) hwSym("png_write_frame_head", pnglib);
-	aPNG_write_frame_tail = (P_png_write_frame_tail) hwSym("png_write_frame_tail", pnglib);
-#endif
-#ifdef _WIN32
-	aPNG_set_acTL = (P_png_set_acTL) GetProcAddress("png_set_acTL", pnglib);
-	aPNG_write_frame_head = (P_png_write_frame_head) GetProcAddress("png_write_frame_head", pnglib);
-	aPNG_write_frame_tail = (P_png_write_frame_tail) GetProcAddress("png_write_frame_tail", pnglib);
-#endif
-	return (aPNG_set_acTL && aPNG_write_frame_head && aPNG_write_frame_tail);
-#endif
 }
 
 static void M_PNGFrame(png_structp png_ptr, png_infop png_info_ptr, png_bytep png_buf)
@@ -1135,10 +1050,7 @@ static void M_PNGFrame(png_structp png_ptr, png_infop png_info_ptr, png_bytep pn
 		png_buf += pitch * 2;
 	}*/
 
-#ifndef PNG_STATIC
-	if (aPNG_write_frame_head)
-#endif
-		aPNG_write_frame_head(apng_ptr, apng_info_ptr, row_pointers,
+	aPNG_write_frame_head(apng_ptr, apng_info_ptr, row_pointers,
 			width,     /* width */
 			height,    /* height */
 			0,         /* x offset */
@@ -1150,10 +1062,7 @@ static void M_PNGFrame(png_structp png_ptr, png_infop png_info_ptr, png_bytep pn
 
 	png_write_image(png_ptr, row_pointers);
 
-#ifndef PNG_STATIC
-	if (aPNG_write_frame_tail)
-#endif
-		aPNG_write_frame_tail(apng_ptr, apng_info_ptr);
+	aPNG_write_frame_tail(apng_ptr, apng_info_ptr);
 
 	png_free(png_ptr, (png_voidp)row_pointers);
 }

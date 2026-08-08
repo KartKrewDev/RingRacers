@@ -16,6 +16,8 @@
 #ifndef BANS_H
 #define BANS_H
 
+#include <time.h>
+
 #include "doomdef.h"
 
 #ifdef __cplusplus

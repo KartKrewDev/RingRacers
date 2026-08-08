@@ -280,6 +280,21 @@ char *I_GetUserName(void);
 */
 INT32 I_mkdir(const char *dirname, INT32 unixright);
 
+/**	\brief Change current working directory
+
+	\param path directory path
+	\return 0 on success, -1 on error
+*/
+INT32 I_ChDir(const char *path);
+
+/**	\brief Get current working directory
+
+	\param buf buffer to store path
+	\param size size of buffer
+	\return buf on success, NULL on error
+*/
+char *I_GetCwd(char *buf, size_t size);
+
 /**	\brief Find main WAD
 		\return path to main WAD
 */

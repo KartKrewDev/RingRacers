@@ -17,6 +17,23 @@
 extern "C" {
 #endif
 
+// Calling convention macros; defined here to avoid pulling in <windows.h>.
+#ifndef WINAPI
+	#ifdef _WIN32
+		#define WINAPI __stdcall
+	#else
+		#define WINAPI
+	#endif
+#endif
+
+#ifndef APIENTRY
+	#ifdef _WIN32
+		#define APIENTRY __stdcall
+	#else
+		#define APIENTRY
+	#endif
+#endif
+
 // Function declaration for exports from the DLL :
 // EXPORT <return-type> HWRAPI(<function-name>) (<arguments>);
 // If _CREATE_DLL_ is defined the above declaration translates to :

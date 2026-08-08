@@ -14,6 +14,9 @@
 #include <cerrno>
 #include <cstring>
 #include <stdexcept>
+#ifdef _MSC_VER
+#include <io.h>
+#endif
 
 template class srb2::io::ZlibInputStream<srb2::io::SpanStream>;
 template class srb2::io::ZlibInputStream<srb2::io::VecStream>;

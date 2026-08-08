@@ -1584,7 +1584,6 @@ void I_StartupGraphics(void)
 	vid.recalc = true; // Set up the console stufff
 	vid.direct = NULL; // Maybe direct access?
 	vid.bpp = 1; // This is the game engine's Bpp
-	vid.WndParent = NULL; //For the window?
 
 	VID_SetMode(VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT));
 

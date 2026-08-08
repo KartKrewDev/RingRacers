@@ -12,25 +12,8 @@
 /// \brief Transfer a file using HSendPacket.
 
 #include <stdio.h>
-#include <sys/stat.h>
 
 #include <time.h>
-
-#ifdef _WIN32
-#include <io.h>
-#include <direct.h>
-#else
-#include <sys/types.h>
-#include <dirent.h>
-#include <utime.h>
-#endif
-
-#ifdef __GNUC__
-#include <unistd.h>
-#include <limits.h>
-#elif defined (_WIN32)
-#include <sys/utime.h>
-#endif
 
 #ifdef HAVE_CURL
 #include "curl/curl.h"

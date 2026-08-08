@@ -14,6 +14,8 @@
 #ifndef D_NETFIL_H
 #define D_NETFIL_H
 
+#include <time.h>
+
 #include "d_net.h"
 #include "d_clisrv.h"
 #include "w_wad.h"

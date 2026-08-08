@@ -55,6 +55,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <direct.h>
 #endif
 #if defined (__unix__) || defined (UNIXCOMMON)
+#include <sys/stat.h>
 #include <fcntl.h>
 #endif
 
@@ -2245,6 +2246,24 @@ INT32 I_mkdir(const char *dirname, INT32 unixright)
 	(void)dirname;
 	(void)unixright;
 	return false;
+#endif
+}
+
+INT32 I_ChDir(const char *path)
+{
+#ifdef _WIN32
+	return (SetCurrentDirectoryA(path) ? 0 : -1);
+#else
+	return chdir(path);
+#endif
+}
+
+char *I_GetCwd(char *buf, size_t size)
+{
+#ifdef _WIN32
+	return (GetCurrentDirectoryA((DWORD)size, buf) ? buf : NULL);
+#else
+	return getcwd(buf, size);
 #endif
 }
 

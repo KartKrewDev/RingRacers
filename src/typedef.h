@@ -449,8 +449,6 @@ TYPEDEF (musicstack_t);
 
 // screen.h
 TYPEDEF (viddef_t);
-TYPEDEF (vesa_extra_t);
-TYPEDEF (vmode_t);
 
 // sounds.h
 TYPEDEF (sfxinfo_t);

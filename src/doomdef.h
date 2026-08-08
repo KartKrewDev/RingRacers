@@ -37,6 +37,10 @@
 #include "version.h"
 #include "doomtype.h"
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS // sprintf, strcpy, fopen, etc.
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,13 +54,7 @@
 #endif
 #include <locale.h> // locale should not be dependent on GETTEXT -- 11/01/20 Monster Iestyn
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <ctype.h>
-
-#ifdef _WIN32
-#include <io.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {

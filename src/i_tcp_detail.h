@@ -29,40 +29,36 @@ extern "C" {
 
 #ifdef _WIN32
 	#define USE_WINSOCK
-	#if defined (_WIN64) || defined (HAVE_IPV6)
-		#define USE_WINSOCK2
-	#else //_WIN64/HAVE_IPV6
-		#define USE_WINSOCK1
-	#endif
+	#define USE_WINSOCK2
 #endif //WIN32 OS
+
+#ifdef _MSC_VER
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#endif
 
 #ifdef USE_WINSOCK2
 	#include <ws2tcpip.h>
 #endif
 
-#ifdef USE_WINSOCK1
-	#include <winsock.h>
-#else
-	#ifndef USE_WINSOCK
-		#include <arpa/inet.h>
-		#ifdef __APPLE_CC__
-			#ifndef _BSD_SOCKLEN_T_
-				#define _BSD_SOCKLEN_T_
-			#endif //_BSD_SOCKLEN_T_
-		#endif //__APPLE_CC__
-		#include <sys/socket.h>
-		#include <netinet/in.h>
-		#include <netdb.h>
-		#include <sys/ioctl.h>
-	#endif //normal BSD API
+#ifndef USE_WINSOCK
+	#include <arpa/inet.h>
+	#ifdef __APPLE_CC__
+		#ifndef _BSD_SOCKLEN_T_
+			#define _BSD_SOCKLEN_T_
+		#endif //_BSD_SOCKLEN_T_
+	#endif //__APPLE_CC__
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <netdb.h>
+	#include <sys/ioctl.h>
+#endif //normal BSD API
 
-	#include <errno.h>
-	#include <time.h>
+#include <errno.h>
+#include <time.h>
 
-	#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
-		#include <sys/time.h>
-	#endif // UNIXCOMMON
-#endif
+#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
+	#include <sys/time.h>
+#endif // UNIXCOMMON
 
 #ifdef USE_WINSOCK
 	// some undefined under win32

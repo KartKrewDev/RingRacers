@@ -16,11 +16,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #ifdef _WIN32
-#ifdef USE_WINSOCK2
 #include <ws2tcpip.h>
-#else
-#include <winsock.h>
-#endif
 #endif
 
 #include "i_addrinfo.h"
@@ -31,11 +27,8 @@
  * gcc -g -DTESTCASE -Dtest_stub -Wall -W i_addrinfo.c -o stub
  * To test the real getaddrinfo API, use this command to get real one:
  * gcc -g -DTESTCASE -Utest_stub -Wall -W i_addrinfo.c -o real
- * For Win32,you need the WinSock library, version 1.1 or 2.2
- * for 1.1, add -lwsock32
- * i686-w64-mingw32-gcc -g -DTESTCASE -Dtest_stub -UUSE_WINSOCK2 -Wall -W i_addrinfo.c -o stub.exe -lwsock32
- * for 2.2, add -DUSE_WINSOCK2 -lws2_32
- * i686-w64-mingw32-gcc -g -DTESTCASE -Utest_stub -DUSE_WINSOCK2 -Wall -W i_addrinfo.c -o real.exe -lws2_32
+ * For Win32, you need the WinSock 2.2 library (ws2_32):
+ * i686-w64-mingw32-gcc -g -DTESTCASE -Utest_stub -Wall -W i_addrinfo.c -o real.exe -lws2_32
  */
 
 #ifndef I_getaddrinfo
@@ -63,7 +56,7 @@ static int inet_aton(const char *cp, struct in_addr *addr)
 }
 #endif
 
-#ifdef USE_WINSOCK2
+#ifdef _WIN32
 static HMODULE ipv6dll = NULL;
 typedef int (WSAAPI *p_getaddrinfo) (const char *, const char *,
                                      const struct my_addrinfo *,
@@ -126,7 +119,7 @@ int I_getaddrinfo(const char *node, const char *service,
 	size_t addrlen = 1;
 	size_t ailen = 1, i = 0, j;
 	size_t famsize = sizeof(struct sockaddr_in);
-#ifdef USE_WINSOCK2
+#ifdef _WIN32
 	WS_addrinfosetup();
 	if (WS_getaddrinfo)
 		return WS_getaddrinfo(node, service, hints, res);
@@ -293,7 +286,7 @@ int I_getaddrinfo(const char *node, const char *service,
 #ifndef I_freeaddrinfo
 void I_freeaddrinfo(struct my_addrinfo *res)
 {
-#ifdef USE_WINSOCK2
+#ifdef _WIN32
 	if (WS_freeaddrinfo)
 	{
 		WS_freeaddrinfo(res);
@@ -310,7 +303,7 @@ void I_freeaddrinfo(struct my_addrinfo *res)
 #ifdef TESTCASE
 #include <stdio.h>
 
-#ifdef USE_WINSOCK2
+#ifdef _WIN32
 #define inet_ntop inet_ntopA
 #define HAVE_NTOP
 static const char* inet_ntopA(int af, const void *cp, char *buf, socklen_t len)
@@ -355,18 +348,6 @@ static const char* inet_ntopA(int af, const void *cp, char *buf, socklen_t len)
 	if (WSAAddressToStringA(anyp, AFlen, NULL, buf, &Dlen) == SOCKET_ERROR)
 		return NULL;
 	return buf;
-}
-#elif defined (_WIN32)
-// w32api, ws2tcpip.h, r1.12
-static inline char* gai_strerror(int ecode)
-{
-        static char message[1024+1];
-        DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM
-                      | FORMAT_MESSAGE_IGNORE_INSERTS
-                      | FORMAT_MESSAGE_MAX_WIDTH_MASK;
-        DWORD dwLanguageId = MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT);
-        FormatMessageA(dwFlags, NULL, ecode, dwLanguageId, message, 1024, NULL);
-        return message;
 }
 #else
 #define HAVE_NTOP
@@ -552,11 +533,7 @@ int main(int argc, char **argv)
 
 #ifdef _WIN32
 	{
-#ifdef USE_WINSOCK2
 		const WORD VerNeed = MAKEWORD(2,2);
-#else
-		const WORD VerNeed = MAKEWORD(1,1);
-#endif
 		WSADATA WSAData;
 		WSAStartup(VerNeed, &WSAData);
 	}

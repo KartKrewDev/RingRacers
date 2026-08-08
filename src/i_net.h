@@ -15,6 +15,8 @@
 #ifndef I_NET_H
 #define I_NET_H
 
+#include <time.h>
+
 #include "doomdef.h"
 #include "command.h"
 

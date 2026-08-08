@@ -349,15 +349,6 @@ else()
 	target_compile_definitions(SRB2SDL2 PRIVATE -DNONX86 -DNORUSEASM)
 endif()
 
-# Yes we know we use insecure CRT functions...
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_definitions(SRB2SDL2 PRIVATE
-		-D_CRT_SECURE_NO_WARNINGS
-		-D_CRT_NONSTDC_NO_WARNINGS
-		-D_WINSOCK_DEPRECATED_NO_WARNINGS
-	)
-endif()
-
 # Compiler warnings configuration
 target_compile_options(SRB2SDL2 PRIVATE
 	# Using generator expressions to handle per-language compile options

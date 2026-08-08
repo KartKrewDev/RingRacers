@@ -150,6 +150,19 @@ INT32 I_mkdir(const char *dirname, INT32 unixright)
 	return -1;
 }
 
+INT32 I_ChDir(const char *path)
+{
+	(void)path;
+	return -1;
+}
+
+char *I_GetCwd(char *buf, size_t size)
+{
+	if (size > 0)
+		buf[0] = '\0';
+	return NULL;
+}
+
 const char *I_LocateWad(void)
 {
 	return NULL;

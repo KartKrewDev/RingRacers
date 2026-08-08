@@ -46,10 +46,6 @@
 #endif
 #endif
 
-#ifdef HW3SOUND
-#include "../hardware/hw3dsdrv.h"
-#endif
-
 #define GETFUNC(func) \
 	else if (0 == strcmp(#func, funcName)) \
 		funcPointer = FUNCPTRCAST(&func) \
@@ -113,26 +109,6 @@ void *hwSym(const char *funcName,void *handle)
 	if (0 == strcmp("FinishUpdate", funcName))
 		return funcPointer; //&FinishUpdate;
 #endif //!HWRENDER
-#ifdef STATIC3DS
-	GETFUNC(Startup);
-	GETFUNC(AddSfx);
-	GETFUNC(AddSource);
-	GETFUNC(StartSource);
-	GETFUNC(StopSource);
-	GETFUNC(GetHW3DSVersion);
-	GETFUNC(BeginFrameUpdate);
-	GETFUNC(EndFrameUpdate);
-	GETFUNC(IsPlaying);
-	GETFUNC(UpdateListener);
-	GETFUNC(UpdateSourceParms);
-	GETFUNC(SetGlobalSfxVolume);
-	GETFUNC(SetCone);
-	GETFUNC(Update3DSource);
-	GETFUNC(ReloadSource);
-	GETFUNC(KillSource);
-	GETFUNC(Shutdown);
-	GETFUNC(GetHW3DSTitle);
-#endif
 #ifdef NOLOADSO
 	else
 		funcPointer = handle;
