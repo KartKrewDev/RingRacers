@@ -744,7 +744,7 @@ static int lib_numCupheaders(lua_State *L)
 #define GETCUPERR UINT16_MAX
 
 // copied and edited from G_MapNumber
-static UINT16 LUA_GetCupByNum(UINT16 cupnum)
+static uint16_t LUA_GetCupByNum(uint16_t cupnum)
 {
 	cupheader_t *checkcup;
 	// find by cup id
@@ -767,11 +767,11 @@ static UINT16 LUA_GetCupByNum(UINT16 cupnum)
 }
 
 // copied and edited from G_MapNumber
-static UINT16 LUA_GetCupByName(const char * name)
+static uint16_t LUA_GetCupByName(const char * name)
 {
 	cupheader_t *checkcup;
 	
-	UINT32 hash = quickncasehash(name, MAXCUPNAME);
+	uint32_t hash = quickncasehash(name, MAXCUPNAME);
 
 	// find by cup name/realname
 	for (checkcup = kartcupheaders; checkcup != NULL; checkcup = checkcup->next)
@@ -790,7 +790,7 @@ static UINT16 LUA_GetCupByName(const char * name)
 
 static int lib_iterateCups(lua_State *L)
 {
-	INT32 i = -1;
+	int32_t i = -1;
 	cupheader_t *tempcup = kartcupheaders;
 
 	if (lua_gettop(L) < 2)
@@ -834,7 +834,7 @@ static int lib_getCupheader(lua_State *L)
 	const char *field;
 	size_t i;
 	cupheader_t *checkcup;
-	UINT16 getResult = GETCUPERR;
+	uint16_t getResult = GETCUPERR;
 	
 	// find cup by id number
 	if (lua_type(L, 2) == LUA_TNUMBER)

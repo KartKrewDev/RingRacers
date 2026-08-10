@@ -76,7 +76,7 @@ struct challengesmenu_s challengesmenu;
 
 static void M_UpdateChallengeGridVisuals(void)
 {
-	UINT16 i;
+	uint16_t i;
 
 	challengesmenu.cache_secondrowlocked = M_CupSecondRowLocked();
 
@@ -164,10 +164,10 @@ static void M_UpdateChallengeGridVisuals(void)
 		medalheight - challengesmenu.unlockcount[CMC_MEDALFILLED];
 }
 
-static void M_ChallengesAutoFocus(UINT16 unlockid, dboolean fresh)
+static void M_ChallengesAutoFocus(uint16_t unlockid, dboolean fresh)
 {
-	UINT16 i;
-	INT16 work;
+	uint16_t i;
+	int16_t work;
 	dboolean posisvalid = false;
 
 	if (unlockid >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
@@ -184,8 +184,8 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, dboolean fresh)
 		}
 		else
 		{
-			UINT16 selection[MAXUNLOCKABLES];
-			UINT16 numunlocks = 0;
+			uint16_t selection[MAXUNLOCKABLES];
+			uint16_t numunlocks = 0;
 
 			dboolean triedrandomlevel = 0;
 
@@ -362,7 +362,7 @@ static void M_CacheChallengeTiles(void)
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
-	UINT16 newunlock;
+	uint16_t newunlock;
 
 	if (Playing() == true
 	|| M_GameTrulyStarted() == false)
@@ -435,7 +435,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 	return desiredmenu;
 }
 
-void M_Challenges(INT32 choice)
+void M_Challenges(int32_t choice)
 {
 	(void)choice;
 
@@ -481,7 +481,7 @@ dboolean M_CanKeyHiliTile(void)
 	if (gamedata->chaokeys == 0)
 		return false;
 
-	UINT16 i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+	uint16_t i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	// Not a hinted tile.
 	if (!(challengesmenu.extradata[i].flags & CHE_HINT))
@@ -511,7 +511,7 @@ enum {
 	CCTUTORIAL_TUTORIAL, // I heard you like tutorials, so I...
 } cctutorial_e;
 
-static void M_ChallengesTutorial(UINT8 option)
+static void M_ChallengesTutorial(uint8_t option)
 {
 	switch (option)
 	{
@@ -573,9 +573,9 @@ static void M_ChallengesTutorial(UINT8 option)
 
 void M_ChallengesTick(void)
 {
-	const UINT8 pid = 0;
-	UINT16 i;
-	UINT16 newunlock = MAXUNLOCKABLES;
+	const uint8_t pid = 0;
+	uint16_t i;
+	uint16_t newunlock = MAXUNLOCKABLES;
 
 	// Ticking
 	challengesmenu.ticker++;
@@ -595,11 +595,11 @@ void M_ChallengesTick(void)
 	// Update tile flip state.
 	if (challengesmenu.extradata != NULL)
 	{
-		UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+		uint16_t id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 		dboolean seeeveryone = challengesmenu.requestflip;
 		dboolean allthewaythrough = allthewaythrough = (!seeeveryone && !challengesmenu.pending);
 
-		UINT8 maxflip;
+		uint8_t maxflip;
 
 		if (id == challengesmenu.nowplayingtile)
 		{
@@ -631,7 +631,7 @@ void M_ChallengesTick(void)
 			{
 				challengesmenu.chaokeyhold++;
 
-				UINT32 chaohold_duration =
+				uint32_t chaohold_duration =
 					CHAOHOLD_PADDING
 					+ ((unlockables[challengesmenu.currentunlock].majorunlock == true)
 						? CHAOHOLD_MAJOR
@@ -696,7 +696,7 @@ void M_ChallengesTick(void)
 		}
 		else
 		{
-			UINT32 keyexchange = gamedata->keyspending;
+			uint32_t keyexchange = gamedata->keyspending;
 
 			if (keyexchange > gamedata->pendingkeyrounds)
 			{
@@ -785,11 +785,11 @@ void M_ChallengesTick(void)
 			&& ref->type == SECRET_MAP)
 			{
 				// Map exists...
-				UINT16 mapnum = M_UnlockableMapNum(ref);
+				uint16_t mapnum = M_UnlockableMapNum(ref);
 				if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 				{
 					// is tutorial...
-					INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
+					int32_t guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
 					if (guessgt == GT_TUTORIAL)
 					{
 						// and isn't the playground?
@@ -813,7 +813,7 @@ void M_ChallengesTick(void)
 
 			if (challengesmenu.extradata)
 			{
-				UINT16 bombcolor;
+				uint16_t bombcolor;
 
 				M_UpdateChallengeGridExtraData(challengesmenu.extradata);
 
@@ -827,7 +827,7 @@ void M_ChallengesTick(void)
 				{
 					case SECRET_SKIN:
 					{
-						INT32 skin = M_UnlockableSkinNum(ref);
+						int32_t skin = M_UnlockableSkinNum(ref);
 						if (skin != -1)
 						{
 							bombcolor = skins[skin]->prefcolor;
@@ -836,10 +836,10 @@ void M_ChallengesTick(void)
 					}
 					case SECRET_FOLLOWER:
 					{
-						INT32 fskin = M_UnlockableFollowerNum(ref);
+						int32_t fskin = M_UnlockableFollowerNum(ref);
 						if (fskin != -1)
 						{
-							INT32 psk = R_SkinAvailableEx(cv_skin[0].string, false);
+							int32_t psk = R_SkinAvailableEx(cv_skin[0].string, false);
 							if (psk == -1)
 								psk = 0;
 							bombcolor = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, skins[psk]);
@@ -898,7 +898,7 @@ void M_ChallengesTick(void)
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES
 		&& gamedata->unlockpending[challengesmenu.currentunlock] == true)
 		{
-			UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+			uint16_t id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 			if (challengesmenu.extradata
 			&& challengesmenu.extradata[id].flip != (TILEFLIP_MAX/2))
 			{
@@ -912,10 +912,10 @@ void M_ChallengesTick(void)
 	}
 }
 
-dboolean M_ChallengesInputs(INT32 ch)
+dboolean M_ChallengesInputs(int32_t ch)
 {
-	const UINT8 pid = 0;
-	UINT16 i;
+	const uint8_t pid = 0;
+	uint16_t i;
 	const dboolean start = M_MenuButtonPressed(pid, MBT_START);
 	const dboolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
 	(void) ch;
@@ -947,7 +947,7 @@ dboolean M_ChallengesInputs(INT32 ch)
 			if (cv_debugchallenges.value && challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.unlockanim >= UNLOCKTIME && gamedata->unlocked[challengesmenu.currentunlock] == true)
 			{
 				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
-				UINT16 set = unlockables[challengesmenu.currentunlock].conditionset;
+				uint16_t set = unlockables[challengesmenu.currentunlock].conditionset;
 				if (set > 0 && set <= MAXCONDITIONSETS)
 				{
 					gamedata->achieved[set - 1] = false;
@@ -1177,11 +1177,11 @@ dboolean M_ChallengesInputs(INT32 ch)
 					if (setup_numplayers <= 1 && M_MenuConfirmPressed(pid))
 					{
 						// Map exists...
-						UINT16 mapnum = M_UnlockableMapNum(ref);
+						uint16_t mapnum = M_UnlockableMapNum(ref);
 						if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 						{
 							// is tutorial...
-							INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
+							int32_t guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
 							if (guessgt == GT_TUTORIAL)
 							{
 								M_SetMenuDelay(pid);
@@ -1234,7 +1234,7 @@ dboolean M_ChallengesInputs(INT32 ch)
 				{
 					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
 					{
-						INT32 skin = M_UnlockableSkinNum(ref);
+						int32_t skin = M_UnlockableSkinNum(ref);
 						if (skin != -1)
 						{
 							profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
@@ -1258,7 +1258,7 @@ dboolean M_ChallengesInputs(INT32 ch)
 				{
 					if (!horngoner && M_MenuConfirmPressed(pid))
 					{
-						INT32 fskin = M_UnlockableFollowerNum(ref);
+						int32_t fskin = M_UnlockableFollowerNum(ref);
 						if (fskin != -1)
 						{
 							if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST)
@@ -1302,7 +1302,7 @@ dboolean M_ChallengesInputs(INT32 ch)
 				{
 					if (setup_numplayers <= 1 && cv_lastprofile[0].value != PROFILE_GUEST && M_MenuConfirmPressed(pid))
 					{
-						INT32 colorid = M_UnlockableColorNum(ref);
+						int32_t colorid = M_UnlockableColorNum(ref);
 						if (colorid != SKINCOLOR_NONE)
 						{
 							profile_t *pr = PR_GetProfile(cv_lastprofile[0].value);
@@ -1327,7 +1327,7 @@ dboolean M_ChallengesInputs(INT32 ch)
 				}
 				case SECRET_ALTMUSIC:
 				{
-					UINT8 trymus = 0, musicid = MAXMUSNAMES;
+					uint8_t trymus = 0, musicid = MAXMUSNAMES;
 
 					if (M_MenuConfirmPressed(pid))
 					{
@@ -1342,7 +1342,7 @@ dboolean M_ChallengesInputs(INT32 ch)
 					{
 						const char *trymusname = NULL;
 
-						UINT16 map = M_UnlockableMapNum(ref);
+						uint16_t map = M_UnlockableMapNum(ref);
 						if (map >= nummapheaders
 							|| !mapheaderinfo[map])
 						{
@@ -1397,7 +1397,7 @@ dboolean M_ChallengesInputs(INT32 ch)
 
 			if (forceflip)
 			{
-				UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+				uint16_t id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 				// This construction helps pressing too early
 				if (challengesmenu.extradata[id].flip <= TILEFLIP_MAX/2)
 				{

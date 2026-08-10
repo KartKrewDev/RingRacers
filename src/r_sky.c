@@ -32,19 +32,19 @@
 /**	\brief Needed to store the number of the dummy sky flat.
 	Used for rendering, as well as tracking projectiles etc.
 */
-INT32 skyflatnum;
+int32_t skyflatnum;
 
 /**	\brief the lump number of the sky texture
 */
-INT32 skytexture;
+int32_t skytexture;
 
 /**	\brief the horizon line of the sky texture
 */
-INT32 skytexturemid;
+int32_t skytexturemid;
 
 /**	\brief the x offset of the sky texture
 */
-INT32 skytextureoffset;
+int32_t skytextureoffset;
 
 /**	\brief the scale of the sky
 */

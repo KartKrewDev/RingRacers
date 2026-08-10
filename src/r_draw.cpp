@@ -66,36 +66,36 @@ drawspandata_t g_ds;
 
 /**	\brief view info
 */
-INT32 viewwidth, scaledviewwidth, viewheight, viewwindowx, viewwindowy;
+int32_t viewwidth, scaledviewwidth, viewheight, viewwindowx, viewwindowy;
 
 /**	\brief pointer to the start of each line of the screen,
 */
-UINT8 *ylookup[MAXVIDHEIGHT*4];
+uint8_t *ylookup[MAXVIDHEIGHT*4];
 
 /**	\brief pointer to the start of each line of the screen, for view1 (splitscreen)
 */
-UINT8 *ylookup1[MAXVIDHEIGHT*4];
+uint8_t *ylookup1[MAXVIDHEIGHT*4];
 
 /**	\brief pointer to the start of each line of the screen, for view2 (splitscreen)
 */
-UINT8 *ylookup2[MAXVIDHEIGHT*4];
+uint8_t *ylookup2[MAXVIDHEIGHT*4];
 
 /**	\brief pointer to the start of each line of the screen, for view3 (splitscreen)
 */
-UINT8 *ylookup3[MAXVIDHEIGHT*4];
+uint8_t *ylookup3[MAXVIDHEIGHT*4];
 
 /**	\brief pointer to the start of each line of the screen, for view4 (splitscreen)
 */
-UINT8 *ylookup4[MAXVIDHEIGHT*4];
+uint8_t *ylookup4[MAXVIDHEIGHT*4];
 
 /**	\brief  x byte offset for columns inside the viewwindow,
 	so the first column starts at (SCRWIDTH - VIEWWIDTH)/2
 */
-INT32 columnofs[MAXVIDWIDTH*4];
+int32_t columnofs[MAXVIDWIDTH*4];
 
-UINT8 *topleft;
+uint8_t *topleft;
 
-UINT8 r8_flatcolor;
+uint8_t r8_flatcolor;
 
 // =========================================================================
 //                      COLUMN DRAWING CODE STUFF
@@ -106,12 +106,12 @@ UINT8 r8_flatcolor;
 // -----------------------
 #define NUMTRANSTABLES 11 // how many translucency tables are used
 
-UINT8 *transtables; // translucency tables
-UINT8 *blendtables[NUMBLENDMAPS];
+uint8_t *transtables; // translucency tables
+uint8_t *blendtables[NUMBLENDMAPS];
 
 /**	\brief R_DrawTransColumn uses this
 */
-UINT8 *dc_transmap; // one of the translucency tables
+uint8_t *dc_transmap; // one of the translucency tables
 
 // ----------------------
 // translation stuff here
@@ -120,10 +120,10 @@ UINT8 *dc_transmap; // one of the translucency tables
 
 /**	\brief R_DrawTranslatedColumn uses this
 */
-UINT8 *dc_translation;
+uint8_t *dc_translation;
 
 struct r_lightlist_t *dc_lightlist = NULL;
-INT32 dc_numlights = 0, dc_maxlights;
+int32_t dc_numlights = 0, dc_maxlights;
 
 // =========================================================================
 //                      SPAN DRAWING CODE STUFF
@@ -153,10 +153,10 @@ float zeroheight;
 #define DEFAULT_STARTTRANSCOLOR 96
 #define NUM_PALETTE_ENTRIES 256
 
-static UINT8 **translationtablecache[TT_CACHE_SIZE] = {NULL};
-UINT8 skincolor_modified[MAXSKINCOLORS];
+static uint8_t **translationtablecache[TT_CACHE_SIZE] = {NULL};
+uint8_t skincolor_modified[MAXSKINCOLORS];
 
-static INT32 SkinToCacheIndex(INT32 skinnum)
+static int32_t SkinToCacheIndex(int32_t skinnum)
 {
 	switch (skinnum)
 	{
@@ -175,7 +175,7 @@ static INT32 SkinToCacheIndex(INT32 skinnum)
 	return skinnum;
 }
 
-static INT32 CacheIndexToSkin(INT32 ttc)
+static int32_t CacheIndexToSkin(int32_t ttc)
 {
 	switch (ttc)
 	{
@@ -205,21 +205,21 @@ struct GenerateBlendTables_State
 };
 
 static void R_GenerateBlendTables_Core(struct GenerateBlendTables_State *state);
-static void R_GenerateTranslucencyTable(UINT8 *table, RGBA_t* sourcepal, int style, UINT8 blendamt);
+static void R_GenerateTranslucencyTable(uint8_t *table, RGBA_t* sourcepal, int style, uint8_t blendamt);
 
 static void R_AllocateBlendTables(void)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 0; i < NUMBLENDMAPS; i++)
 	{
 		if (i == blendtab_modulate)
 			continue;
-		blendtables[i] = static_cast<UINT8 *>(Z_MallocAlign((NUMTRANSTABLES + 1) * 0x10000, PU_STATIC, NULL, 16));
+		blendtables[i] = static_cast<uint8_t *>(Z_MallocAlign((NUMTRANSTABLES + 1) * 0x10000, PU_STATIC, NULL, 16));
 	}
 
 	// Modulation blending only requires a single table
-	blendtables[blendtab_modulate] = static_cast<UINT8 *>(Z_MallocAlign(0x10000, PU_STATIC, NULL, 16));
+	blendtables[blendtab_modulate] = static_cast<uint8_t *>(Z_MallocAlign(0x10000, PU_STATIC, NULL, 16));
 }
 
 #ifdef HAVE_THREADS
@@ -242,7 +242,7 @@ void R_InitTranslucencyTables(void)
 	// Load here the transparency lookup tables 'TINTTAB'
 	// NOTE: the TINTTAB resource MUST BE aligned on 64k for the asm
 	// optimised code (in other words, transtables pointer low word is 0)
-	transtables = static_cast<UINT8 *>(Z_MallocAlign(NUMTRANSTABLES*0x10000, PU_STATIC, NULL, 16));
+	transtables = static_cast<uint8_t *>(Z_MallocAlign(NUMTRANSTABLES*0x10000, PU_STATIC, NULL, 16));
 
 	W_ReadLump(W_GetNumForName("TRANS10"), transtables);
 	W_ReadLump(W_GetNumForName("TRANS20"), transtables+0x10000);
@@ -279,12 +279,12 @@ void R_GenerateBlendTables(void)
 
 static void R_GenerateBlendTables_Core(struct GenerateBlendTables_State *state)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 0; i <= 9; i++)
 	{
 		const size_t offs = (0x10000 * i);
-		const UINT8 alpha = (TRANSTAB_AMTMUL10 * ((float)(10-i)));
+		const uint8_t alpha = (TRANSTAB_AMTMUL10 * ((float)(10-i)));
 
 		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, state->gammaCorrectedPalette, AST_ADD, alpha);
 		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, state->masterPalette, AST_SUBTRACT, alpha); // intentionally uses pMasterPalette
@@ -294,9 +294,9 @@ static void R_GenerateBlendTables_Core(struct GenerateBlendTables_State *state)
 	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], state->gammaCorrectedPalette, AST_MODULATE, 0);
 }
 
-void R_GenerateTranslucencyTable(UINT8 *table, RGBA_t* sourcepal, int style, UINT8 blendamt)
+void R_GenerateTranslucencyTable(uint8_t *table, RGBA_t* sourcepal, int style, uint8_t blendamt)
 {
-	INT16 bg, fg;
+	int16_t bg, fg;
 	RGBA_t backrgba, frontrgba, result;
 
 	if (table == NULL)
@@ -315,14 +315,14 @@ void R_GenerateTranslucencyTable(UINT8 *table, RGBA_t* sourcepal, int style, UIN
 	}
 }
 
-#define ClipTransLevel(trans) std::clamp<INT32>(trans, 0, NUMTRANSMAPS-2)
+#define ClipTransLevel(trans) std::clamp<int32_t>(trans, 0, NUMTRANSMAPS-2)
 
-UINT8 *R_GetTranslucencyTable(INT32 alphalevel)
+uint8_t *R_GetTranslucencyTable(int32_t alphalevel)
 {
 	return transtables + (ClipTransLevel(alphalevel-1) << FF_TRANSSHIFT);
 }
 
-UINT8 *R_GetBlendTable(int style, INT32 alphalevel)
+uint8_t *R_GetBlendTable(int style, int32_t alphalevel)
 {
 	size_t offs = (ClipTransLevel(alphalevel) << FF_TRANSSHIFT);
 
@@ -356,17 +356,17 @@ UINT8 *R_GetBlendTable(int style, INT32 alphalevel)
 
 	\return	Colormap. If not cached, caller should Z_Free.
 */
-UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags)
+uint8_t* R_GetTranslationColormap(int32_t skinnum, skincolornum_t color, uint8_t flags)
 {
-	UINT8* ret;
-	INT32 skintableindex = SkinToCacheIndex(skinnum); // Adjust if we want the default colormap
-	INT32 i;
+	uint8_t* ret;
+	int32_t skintableindex = SkinToCacheIndex(skinnum); // Adjust if we want the default colormap
+	int32_t i;
 
 	if (flags & GTC_CACHE)
 	{
 		// Allocate table for skin if necessary
 		if (!translationtablecache[skintableindex])
-			translationtablecache[skintableindex] = static_cast<UINT8 **>(Z_Calloc(MAXSKINCOLORS * sizeof(UINT8**), PU_STATIC, NULL));
+			translationtablecache[skintableindex] = static_cast<uint8_t **>(Z_Calloc(MAXSKINCOLORS * sizeof(uint8_t**), PU_STATIC, NULL));
 
 		// Get colormap
 		ret = translationtablecache[skintableindex][color];
@@ -374,7 +374,7 @@ UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags
 		// Rebuild the cache if necessary
 		if (skincolor_modified[color])
 		{
-			for (i = 0; i < (INT32)(sizeof(translationtablecache) / sizeof(translationtablecache[0])); i++)
+			for (i = 0; i < (int32_t)(sizeof(translationtablecache) / sizeof(translationtablecache[0])); i++)
 				if (translationtablecache[i] && translationtablecache[i][color])
 					K_GenerateKartColormap(translationtablecache[i][color], CacheIndexToSkin(i), color);
 			skincolor_modified[color] = false;
@@ -385,7 +385,7 @@ UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags
 	// Generate the colormap if necessary
 	if (!ret)
 	{
-		ret = static_cast<UINT8 *>(Z_MallocAlign(NUM_PALETTE_ENTRIES, (flags & GTC_CACHE) ? PU_LEVEL : PU_STATIC, NULL, 8));
+		ret = static_cast<uint8_t *>(Z_MallocAlign(NUM_PALETTE_ENTRIES, (flags & GTC_CACHE) ? PU_LEVEL : PU_STATIC, NULL, 8));
 		K_GenerateKartColormap(ret, skinnum, color); //R_GenerateTranslationColormap(ret, skinnum, color); // SRB2kart
 
 		// Cache the colormap if desired
@@ -406,16 +406,16 @@ UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags
 */
 void R_FlushTranslationColormapCache(void)
 {
-	INT32 i;
+	int32_t i;
 
-	for (i = 0; i < (INT32)(sizeof(translationtablecache) / sizeof(translationtablecache[0])); i++)
+	for (i = 0; i < (int32_t)(sizeof(translationtablecache) / sizeof(translationtablecache[0])); i++)
 		if (translationtablecache[i])
-			memset(translationtablecache[i], 0, MAXSKINCOLORS * sizeof(UINT8**));
+			memset(translationtablecache[i], 0, MAXSKINCOLORS * sizeof(uint8_t**));
 }
 
-UINT16 R_GetColorByName(const char *name)
+uint16_t R_GetColorByName(const char *name)
 {
-	UINT16 color = (UINT16)atoi(name);
+	uint16_t color = (uint16_t)atoi(name);
 	if (color > 0 && color < numskincolors)
 		return color;
 	for (color = 1; color < numskincolors; color++)
@@ -424,9 +424,9 @@ UINT16 R_GetColorByName(const char *name)
 	return SKINCOLOR_NONE;
 }
 
-UINT16 R_GetSuperColorByName(const char *name)
+uint16_t R_GetSuperColorByName(const char *name)
 {
-	UINT16 i, color = SKINCOLOR_NONE;
+	uint16_t i, color = SKINCOLOR_NONE;
 	char *realname = static_cast<char *>(Z_Malloc(MAXCOLORNAME+1, PU_STATIC, NULL));
 	snprintf(realname, MAXCOLORNAME+1, "Super %s 1", name);
 	for (i = 1; i < numskincolors; i++)
@@ -461,9 +461,9 @@ UINT16 R_GetSuperColorByName(const char *name)
 
 */
 
-void R_InitViewBuffer(INT32 width, INT32 height)
+void R_InitViewBuffer(int32_t width, int32_t height)
 {
-	INT32 i, bytesperpixel = vid.bpp;
+	int32_t i, bytesperpixel = vid.bpp;
 
 	if (width > MAXVIDWIDTH)
 		width = MAXVIDWIDTH;
@@ -519,9 +519,9 @@ void R_InitViewBorder(void)
 */
 void R_FillBackScreen(void)
 {
-	UINT8 *src, *dest;
+	uint8_t *src, *dest;
 	patch_t *patch;
-	INT32 x, y, step, boff;
+	int32_t x, y, step, boff;
 
 	// quickfix, don't cache lumps in both modes
 	if (rendermode == render_opengl)
@@ -597,7 +597,7 @@ void R_FillBackScreen(void)
 
 
 */
-void R_VideoErase(size_t ofs, INT32 count)
+void R_VideoErase(size_t ofs, int32_t count)
 {
 	// LFB copy.
 	// This might not be a good idea if memcpy
@@ -615,7 +615,7 @@ void R_VideoErase(size_t ofs, INT32 count)
 */
 void R_DrawViewBorder(void)
 {
-	INT32 top, side, ofs;
+	int32_t top, side, ofs;
 
 	if (rendermode == render_none)
 		return;

@@ -46,8 +46,8 @@ extern "C" {
 //
 struct cliprange_t
 {
-	INT32 first;
-	INT32 last;
+	int32_t first;
+	int32_t last;
 };
 
 // Silhouette, needed for clipping segs (mainly) and sprites representing things.
@@ -60,7 +60,7 @@ struct cliprange_t
 // Indeed, true color support is possible precalculating 24bpp lightmap/colormap LUT
 // from darkening PLAYPAL to all black.
 // Could even use more than 32 levels.
-typedef UINT8 lighttable_t;
+typedef uint8_t lighttable_t;
 
 #define CMF_FADEFULLBRIGHTSPRITES  1
 #define CMF_FOG 4
@@ -68,13 +68,13 @@ typedef UINT8 lighttable_t;
 // ExtraColormap type. Use for extra_colormaps from now on.
 struct extracolormap_t
 {
-	UINT8 fadestart, fadeend;
-	UINT8 flags;
+	uint8_t fadestart, fadeend;
+	uint8_t flags;
 
 	// store rgba values in combined bitwise
 	// also used in OpenGL instead lighttables
-	INT32 rgba; // similar to maskcolor in sw mode
-	INT32 fadergba; // The colour the colourmaps fade to
+	int32_t rgba; // similar to maskcolor in sw mode
+	int32_t fadergba; // The colour the colourmaps fade to
 
 	lighttable_t *colormap;
 
@@ -201,7 +201,7 @@ typedef int oldffloortype_e;
 #define FF_OLD_SPINBUST          (0x10000000)
 #define FF_OLD_STRONGBUST        (0x20000000)
 #define FF_OLD_RIPPLE            (0x40000000)
-#define FF_OLD_COLORMAPONLY      ((INT32)0x80000000)
+#define FF_OLD_COLORMAPONLY      ((int32_t)0x80000000)
 
 typedef enum
 {
@@ -214,14 +214,14 @@ typedef enum
 struct ffloor_t
 {
 	fixed_t *topheight;
-	INT32 *toppic;
-	INT16 *toplightlevel;
+	int32_t *toppic;
+	int16_t *toplightlevel;
 	fixed_t *topxoffs;
 	fixed_t *topyoffs;
 	angle_t *topangle;
 
 	fixed_t *bottomheight;
-	INT32 *bottompic;
+	int32_t *bottompic;
 	fixed_t *bottomxoffs;
 	fixed_t *bottomyoffs;
 	angle_t *bottomangle;
@@ -239,15 +239,15 @@ struct ffloor_t
 	ffloor_t *next;
 	ffloor_t *prev;
 
-	INT32 lastlight;
-	INT32 alpha;
-	UINT8 blend;
+	int32_t lastlight;
+	int32_t alpha;
+	uint8_t blend;
 	tic_t norender; // for culling
 
 	// Only relevant for FOF_BUSTUP
 	ffloorbustflags_e bustflags;
-	UINT8 busttype;
-	INT16 busttag;
+	uint8_t busttype;
+	int16_t busttag;
 
 	// Only relevant for FOF_QUICKSAND
 	fixed_t sinkspeed;
@@ -258,7 +258,7 @@ struct ffloor_t
 
 	// these are saved for netgames, so do not let Lua touch these!
 	ffloortype_e spawnflags; // flags the 3D floor spawned with
-	INT32 spawnalpha; // alpha the 3D floor spawned with
+	int32_t spawnalpha; // alpha the 3D floor spawned with
 
 	void *fadingdata; // fading FOF thinker
 };
@@ -270,9 +270,9 @@ struct ffloor_t
 struct lightlist_t
 {
 	fixed_t height;
-	INT16 *lightlevel;
+	int16_t *lightlevel;
 	extracolormap_t **extra_colormap; // pointer-to-a-pointer, so we can react to colormap changes
-	INT32 flags;
+	int32_t flags;
 	ffloor_t *caster;
 	pslope_t *slope; // FOF_DOUBLESHADOW makes me have to store this pointer here. Bluh bluh.
 };
@@ -286,11 +286,11 @@ struct r_lightlist_t
 	fixed_t botheight;
 	fixed_t botheightstep;
 	fixed_t startheight; // for repeating midtextures
-	INT16 lightlevel;
+	int16_t lightlevel;
 	extracolormap_t *extra_colormap;
 	lighttable_t *rcolormap;
 	ffloortype_e flags;
-	INT32 lightnum;
+	int32_t lightnum;
 };
 
 // Slopes
@@ -301,7 +301,7 @@ typedef int slopeflags_t;
 
 struct pslope_t
 {
-	UINT16 id; // The number of the slope, mostly used for netgame syncing purposes
+	uint16_t id; // The number of the slope, mostly used for netgame syncing purposes
 	pslope_t *next; // Make a linked list of dynamic slopes, for easy reference later
 
 	// The plane's definition.
@@ -315,7 +315,7 @@ struct pslope_t
 	angle_t zangle;		/// Precomputed angle of the plane going up from the ground (not measured in degrees).
 	angle_t xydirection;/// Precomputed angle of the normal's projection on the XY plane.
 
-	UINT8 flags; // Slope options
+	uint8_t flags; // Slope options
 
 	// SRB2Kart: For P_VeryTopOfFOF & P_VeryBottomOfFOF
 	fixed_t lowz;
@@ -325,15 +325,15 @@ struct pslope_t
 	fixed_t constants[4];
 
 	// Light offsets (see seg_t)
-	SINT8 lightOffset;
-	INT16 hwLightOffset;
+	int8_t lightOffset;
+	int16_t hwLightOffset;
 };
 
 // Per-sector bot controller override
 struct botcontroller_t
 {
-	UINT8 trick;
-	UINT32 flags;
+	uint8_t trick;
+	uint32_t flags;
 	angle_t forceAngle;
 };
 
@@ -457,10 +457,10 @@ struct sector_t
 {
 	fixed_t floorheight;
 	fixed_t ceilingheight;
-	INT32 floorpic;
-	INT32 ceilingpic;
-	INT16 lightlevel;
-	INT16 special;
+	int32_t floorpic;
+	int32_t ceilingpic;
+	int16_t lightlevel;
+	int16_t special;
 	taglist_t tags;
 
 	// origin for any sounds played by the sector
@@ -487,15 +487,15 @@ struct sector_t
 	angle_t floorpic_angle;
 	angle_t ceilingpic_angle;
 
-	INT32 heightsec; // other sector, or -1 if no other sector
-	INT32 camsec; // used for camera clipping
+	int32_t heightsec; // other sector, or -1 if no other sector
+	int32_t camsec; // used for camera clipping
 
 	// floor and ceiling lighting
-	INT16 floorlightlevel, ceilinglightlevel;
+	int16_t floorlightlevel, ceilinglightlevel;
 	dboolean floorlightabsolute, ceilinglightabsolute; // absolute or relative to sector's light level?
-	INT32 floorlightsec, ceilinglightsec; // take floor/ceiling light level from another sector
+	int32_t floorlightsec, ceilinglightsec; // take floor/ceiling light level from another sector
 
-	INT32 crumblestate; // used for crumbling and bobbing
+	int32_t crumblestate; // used for crumbling and bobbing
 
 	// list of mobjs that are at least partially in the sector
 	// thinglist is a subset of touching_thinglist
@@ -511,7 +511,7 @@ struct sector_t
 	size_t numattached;
 	size_t maxattached;
 	lightlist_t *lightlist;
-	INT32 numlights;
+	int32_t numlights;
 	dboolean moved;
 
 	// per-sector colormaps!
@@ -523,13 +523,13 @@ struct sector_t
 
 	sectorflags_t flags;
 	sectorspecialflags_t specialflags;
-	UINT8 damagetype;
+	uint8_t damagetype;
 
 	fixed_t offroad; // Ring Racers
 
 	// Linedef executor triggering
 	mtag_t triggertag; // tag to call upon triggering
-	UINT8 triggerer; // who can trigger?
+	uint8_t triggerer; // who can trigger?
 
 	fixed_t friction;
 
@@ -548,7 +548,7 @@ struct sector_t
 	dboolean hasslope; // The sector, or one of its visible FOFs, contains a slope
 
 	// for fade thinker
-	INT16 spawn_lightlevel;
+	int16_t spawn_lightlevel;
 
 	// colormap structure
 	extracolormap_t *spawn_extra_colormap;
@@ -557,8 +557,8 @@ struct sector_t
 	botcontroller_t botController;
 
 	// Action specials
-	INT16 action;
-	INT32 args[NUM_SCRIPT_ARGS];
+	int16_t action;
+	int32_t args[NUM_SCRIPT_ARGS];
 	char *stringargs[NUM_SCRIPT_STRINGARGS];
 	sectoractionflags_t activation;
 
@@ -589,18 +589,18 @@ struct line_t
 	angle_t angle; // Precalculated angle between dx and dy
 
 	// Animation related.
-	UINT32 flags;
-	UINT32 activation;
-	INT16 special;
+	uint32_t flags;
+	uint32_t activation;
+	int16_t special;
 	taglist_t tags;
-	INT32 args[NUM_SCRIPT_ARGS];
+	int32_t args[NUM_SCRIPT_ARGS];
 	char *stringargs[NUM_SCRIPT_STRINGARGS];
 
 	// Visual appearance: sidedefs.
-	UINT16 sidenum[2]; // sidenum[1] will be 0xffff if one-sided
+	uint16_t sidenum[2]; // sidenum[1] will be 0xffff if one-sided
 	fixed_t alpha; // translucency
-	UINT8 blendmode; // blendmode
-	INT32 executordelay;
+	uint8_t blendmode; // blendmode
+	int32_t executordelay;
 
 	fixed_t bbox[4]; // bounding box for the extent of the linedef
 
@@ -617,7 +617,7 @@ struct line_t
 
 	dboolean tripwire;
 
-	INT16 callcount; // no. of calls left before triggering, for the "X calls" linedef specials, defaults to 0
+	int16_t callcount; // no. of calls left before triggering, for the "X calls" linedef specials, defaults to 0
 
 	// UDMF user-defined custom properties.
 	mapUserProperties_t user;
@@ -633,7 +633,7 @@ struct side_t
 
 	// Texture indices.
 	// We do not maintain names here.
-	INT32 toptexture, bottomtexture, midtexture;
+	int32_t toptexture, bottomtexture, midtexture;
 
 	// Interpolator installed? (R_CreateInterpolator_SideScroll)
 	dboolean acs_interpolated;
@@ -644,8 +644,8 @@ struct side_t
 	// Sector the sidedef is facing.
 	sector_t *sector;
 
-	INT16 special; // the special of the linedef this side belongs to
-	INT16 repeatcnt; // # of times to repeat midtexture
+	int16_t special; // the special of the linedef this side belongs to
+	int16_t repeatcnt; // # of times to repeat midtexture
 
 	extracolormap_t *colormap_data; // storage for colormaps; not applied to sectors.
 
@@ -662,8 +662,8 @@ struct side_t
 struct subsector_t
 {
 	sector_t *sector;
-	INT16 numlines;
-	UINT16 firstline;
+	int16_t numlines;
+	uint16_t firstline;
 	polyobj_t *polyList; // haleyjd 02/19/06: list of polyobjects
 	size_t validcount;
 };
@@ -709,15 +709,15 @@ struct mprecipsecnode_t
 // that's why it's moved here
 struct light_t
 {
-	UINT16 type;          // light,... (cfr #define in hwr_light.c)
+	uint16_t type;          // light,... (cfr #define in hwr_light.c)
 
 	float light_xoffset;
 	float light_yoffset;  // y offset to adjust corona's height
 
-	UINT32 corona_color;   // color of the light for static lighting
+	uint32_t corona_color;   // color of the light for static lighting
 	float corona_radius;  // radius of the coronas
 
-	UINT32 dynamic_color;  // color of the light for dynamic lighting
+	uint32_t dynamic_color;  // color of the light for dynamic lighting
 	float dynamic_radius; // radius of the light ball
 	float dynamic_sqrradius; // radius^2 of the light ball
 };
@@ -737,7 +737,7 @@ struct seg_t
 	vertex_t *v1;
 	vertex_t *v2;
 
-	INT32 side;
+	int32_t side;
 
 	fixed_t offset;
 
@@ -767,8 +767,8 @@ struct seg_t
 	dboolean glseg;
 
 	// Fake contrast calculated on level load
-	SINT8 lightOffset;
-	INT16 hwLightOffset;
+	int8_t lightOffset;
+	int16_t hwLightOffset;
 };
 
 //
@@ -784,7 +784,7 @@ struct node_t
 	fixed_t bbox[2][4];
 
 	// If NF_SUBSECTOR its a subsector.
-	UINT16 children[2];
+	uint16_t children[2];
 };
 
 #if defined(_MSC_VER)
@@ -794,15 +794,15 @@ struct node_t
 // posts are runs of non masked source pixels
 struct post_t
 {
-	UINT8 topdelta; // -1 is the last post in a column
-	UINT8 length;   // length data bytes follows
+	uint8_t topdelta; // -1 is the last post in a column
+	uint8_t length;   // length data bytes follows
 } ATTRPACK;
 
 #if defined(_MSC_VER)
 #pragma pack()
 #endif
 
-// column_t is a list of 0 or more post_t, (UINT8)-1 terminated
+// column_t is a list of 0 or more post_t, (uint8_t)-1 terminated
 typedef post_t column_t;
 
 //
@@ -819,31 +819,31 @@ typedef post_t column_t;
 struct drawseg_t
 {
 	seg_t *curline;
-	INT32 x1;
-	INT32 x2;
+	int32_t x1;
+	int32_t x2;
 
 	fixed_t scale1;
 	fixed_t scale2;
 	fixed_t scalestep;
 
-	INT32 silhouette; // 0 = none, 1 = bottom, 2 = top, 3 = both
+	int32_t silhouette; // 0 = none, 1 = bottom, 2 = top, 3 = both
 
 	fixed_t bsilheight; // do not clip sprites above this
 	fixed_t tsilheight; // do not clip sprites below this
 
 	// Pointers to lists for sprite clipping, all three adjusted so [x1] is first value.
-	INT16 *sprtopclip;
-	INT16 *sprbottomclip;
-	INT16 *maskedtexturecol;
+	int16_t *sprtopclip;
+	int16_t *sprbottomclip;
+	int16_t *maskedtexturecol;
 
 	visplane_t *ffloorplanes[MAXFFLOORS];
-	INT32 numffloorplanes;
+	int32_t numffloorplanes;
 	ffloor_t *thicksides[MAXFFLOORS];
-	INT16 *thicksidecol;
-	INT32 numthicksides;
+	int16_t *thicksidecol;
+	int32_t numthicksides;
 	fixed_t frontscale[MAXVIDWIDTH];
 
-	UINT8 portalpass; // if > 0 and <= portalrender, do not affect sprite clipping
+	uint8_t portalpass; // if > 0 and <= portalrender, do not affect sprite clipping
 
 	fixed_t maskedtextureheight[MAXVIDWIDTH]; // For handling sloped midtextures
 
@@ -862,7 +862,7 @@ typedef enum
 #ifdef ROTSPRITE
 struct rotsprite_t
 {
-	INT32 angles;
+	int32_t angles;
 	void **patches;
 };
 #endif
@@ -874,11 +874,11 @@ struct rotsprite_t
 //
 struct patch_t
 {
-	INT16 width, height;
-	INT16 leftoffset, topoffset;
+	int16_t width, height;
+	int16_t leftoffset, topoffset;
 
-	INT32 *columnofs; // Column offsets. This is relative to patch->columns
-	UINT8 *columns; // Software column data
+	int32_t *columnofs; // Column offsets. This is relative to patch->columns
+	uint8_t *columns; // Software column data
 
 	void *hardware; // OpenGL patch, allocated whenever necessary
 	void *flats[4]; // The patch as flats
@@ -898,11 +898,11 @@ extern patch_t *unvisitedlvl[4];
 
 struct softwarepatch_t
 {
-	INT16 width;          // bounding box size
-	INT16 height;
-	INT16 leftoffset;     // pixels to the left of origin
-	INT16 topoffset;      // pixels below the origin
-	INT32 columnofs[8];     // only [width] used
+	int16_t width;          // bounding box size
+	int16_t height;
+	int16_t leftoffset;     // pixels to the left of origin
+	int16_t topoffset;      // pixels below the origin
+	int32_t columnofs[8];     // only [width] used
 	// the [0] is &columnofs[width]
 } ATTRPACK;
 
@@ -913,13 +913,13 @@ struct softwarepatch_t
 // a pic is an unmasked block of pixels, stored in horizontal way
 struct pic_t
 {
-	INT16 width;
-	UINT8 zero;       // set to 0 allow autodetection of pic_t
+	int16_t width;
+	uint8_t zero;       // set to 0 allow autodetection of pic_t
 	                 // mode instead of patch or raw
-	UINT8 mode;       // see pic_mode_t above
-	INT16 height;
-	INT16 reserved1; // set to 0
-	UINT8 data[];
+	uint8_t mode;       // see pic_mode_t above
+	int16_t height;
+	int16_t reserved1; // set to 0
+	uint8_t data[];
 } ATTRPACK;
 
 #ifdef _MSC_VER
@@ -982,7 +982,7 @@ typedef int renderflags_t;
 #define RF_MODULATE			((AST_MODULATE-1)<<RF_BLENDSHIFT)
 #define RF_OVERLAY			((AST_OVERLAY-1)<<RF_BLENDSHIFT)
 
-#define RF_TRANSMASK       	((INT32)0xF0000000)   // --Transparency override
+#define RF_TRANSMASK       	((int32_t)0xF0000000)   // --Transparency override
 #define RF_TRANSSHIFT		(7*4)
 #define RF_TRANS10       	(1<<RF_TRANSSHIFT)   // 10%
 #define RF_TRANS20       	(2<<RF_TRANSSHIFT)   // 20%
@@ -991,8 +991,8 @@ typedef int renderflags_t;
 #define RF_TRANS50       	(5<<RF_TRANSSHIFT)   // 50%
 #define RF_TRANS60       	(6<<RF_TRANSSHIFT)   // 60%
 #define RF_TRANS70       	(7<<RF_TRANSSHIFT)   // 70%
-#define RF_TRANS80       	((INT32)(8U<<RF_TRANSSHIFT))   // 80%
-#define RF_TRANS90       	((INT32)(9U<<RF_TRANSSHIFT))   // 90%
+#define RF_TRANS80       	((int32_t)(8U<<RF_TRANSSHIFT))   // 80%
+#define RF_TRANS90       	((int32_t)(9U<<RF_TRANSSHIFT))   // 90%
 #define RF_GHOSTLY			(RF_TRANS80 | RF_FULLBRIGHT)
 #define RF_GHOSTLYMASK		(RF_TRANSMASK | RF_FULLBRIGHT)
 
@@ -1027,14 +1027,14 @@ struct spriteframe_t
 	// If false use 0 for any position.
 	// Note: as eight entries are available, we might as well insert the same
 	//  name eight times.
-	UINT8 rotate; // see spriterotateflags_t above
+	uint8_t rotate; // see spriterotateflags_t above
 
 	// Lump to use for view angles 0-7/15.
 	lumpnum_t lumppat[16]; // lump number 16 : 16 wad : lump
 	size_t lumpid[16]; // id in the spriteoffset, spritewidth, etc. tables
 
 	// Flip bits (1 = flip) to use for view angles 0-7/15.
-	UINT16 flip;
+	uint16_t flip;
 
 #ifdef ROTSPRITE
 	rotsprite_t *rotated[2][16]; // Rotated patches
@@ -1056,34 +1056,34 @@ typedef struct
 {
 	lighttable_t* colormap;
 	lighttable_t* fullbright;
-	INT32 x;
-	INT32 yl;
-	INT32 yh;
+	int32_t x;
+	int32_t yl;
+	int32_t yh;
 	fixed_t iscale;
 	fixed_t texturemid;
-	UINT8 hires;
-	UINT8 shadowcolor;
+	uint8_t hires;
+	uint8_t shadowcolor;
 
-	UINT8* source; // first pixel in a column
-	UINT8* brightmap; // brightmap texture column, can be NULL
-	UINT8* lightmap; // lighting only
+	uint8_t* source; // first pixel in a column
+	uint8_t* brightmap; // brightmap texture column, can be NULL
+	uint8_t* lightmap; // lighting only
 
 	// translucency stuff here
-	UINT8* transmap;
+	uint8_t* transmap;
 
 	// translation stuff here
-	UINT8* translation;
+	uint8_t* translation;
 
 	struct r_lightlist_t* lightlist;
 
-	INT32 numlights;
-	INT32 maxlights;
+	int32_t numlights;
+	int32_t maxlights;
 
 	//Fix TUTIFRUTI
-	INT32 texheight;
-	INT32 sourcelength;
+	int32_t texheight;
+	int32_t sourcelength;
 
-	UINT8 r8_flatcolor;
+	uint8_t r8_flatcolor;
 } drawcolumndata_t;
 
 extern drawcolumndata_t g_dc;
@@ -1094,9 +1094,9 @@ typedef struct {
 
 typedef struct
 {
-	INT32 y;
-	INT32 x1;
-	INT32 x2;
+	int32_t y;
+	int32_t x1;
+	int32_t x2;
 	lighttable_t* colormap;
 	lighttable_t* fullbright;
 	lighttable_t* translation;
@@ -1106,22 +1106,22 @@ typedef struct
 	fixed_t yfrac;
 	fixed_t xstep;
 	fixed_t ystep;
-	INT32 waterofs;
-	INT32 bgofs;
+	int32_t waterofs;
+	int32_t bgofs;
 
 	fixed_t xoffs;
 	fixed_t yoffs;
 
-	UINT16 flatwidth;
-	UINT16 flatheight;
+	uint16_t flatwidth;
+	uint16_t flatheight;
 	dboolean powersoftwo;
 
 	visplane_t *currentplane;
-	UINT8 *source;
-	UINT8 *brightmap;
-	UINT8 *transmap;
+	uint8_t *source;
+	uint8_t *brightmap;
+	uint8_t *transmap;
 
-	UINT8 flatcolor;
+	uint8_t flatcolor;
 
 	float zeroheight;
 
@@ -1134,10 +1134,10 @@ typedef struct
 	floatv3_t slope_v;
 
 	// Variable flat sizes
-	UINT32 nflatxshift;
-	UINT32 nflatyshift;
-	UINT32 nflatshiftup;
-	UINT32 nflatmask;
+	uint32_t nflatxshift;
+	uint32_t nflatyshift;
+	uint32_t nflatshiftup;
+	uint32_t nflatmask;
 
 	fixed_t planeheight;
 	lighttable_t **planezlight;
@@ -1149,12 +1149,12 @@ typedef struct
 	//
 	struct
 	{
-		INT32 offset;
+		int32_t offset;
 		fixed_t xfrac, yfrac;
 		dboolean active;
 	} planeripple;
 
-	UINT8 r8_flatcolor;
+	uint8_t r8_flatcolor;
 } drawspandata_t;
 
 extern drawspandata_t g_ds;

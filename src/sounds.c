@@ -1582,7 +1582,7 @@ char freeslotnames[sfx_freeslot0 + NUMSFXFREESLOTS + NUMSKINSFXSLOTS][7];
 void S_InitRuntimeSounds (void)
 {
 	sfxenum_t i;
-	INT32 value;
+	int32_t value;
 	char soundname[10];
 
 	for (i = sfx_freeslot0; i <= sfx_lastskinsoundslot; i++)
@@ -1619,7 +1619,7 @@ sfxenum_t sfxfree = sfx_freeslot0;
 
 // Add a new sound fx into a free sfx slot.
 //
-sfxenum_t S_AddSoundFx(const char *name, dboolean singular, INT32 flags, dboolean skinsound)
+sfxenum_t S_AddSoundFx(const char *name, dboolean singular, int32_t flags, dboolean skinsound)
 {
 	sfxenum_t i;
 

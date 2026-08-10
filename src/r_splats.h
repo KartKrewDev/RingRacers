@@ -35,8 +35,8 @@ extern struct rastery_s *prastertab; // for ASM code
 
 struct floorsplat_t
 {
-	UINT16 *pic;
-	INT32 width, height;
+	uint16_t *pic;
+	int32_t width, height;
 	fixed_t scale, xscale, yscale;
 	angle_t angle;
 	pslope_t *slope;

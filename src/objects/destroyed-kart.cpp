@@ -46,12 +46,12 @@ angle_t degr_to_angle(int degr)
 struct Particle : Mobj
 {
 	void extravalue1() = delete;
-	UINT8 bounces() const { return mobj_t::extravalue1; }
-	void bounces(UINT8 n) { mobj_t::extravalue1 = n; }
+	uint8_t bounces() const { return mobj_t::extravalue1; }
+	void bounces(uint8_t n) { mobj_t::extravalue1 = n; }
 
 	void extravalue2() = delete;
-	UINT8 counter() const { return mobj_t::extravalue2; }
-	void counter(UINT8 n) { mobj_t::extravalue2 = n; }
+	uint8_t counter() const { return mobj_t::extravalue2; }
+	void counter(uint8_t n) { mobj_t::extravalue2 = n; }
 
 	bool is_shrapnel() const { return sprite == SPR_KRBM; }
 
@@ -247,13 +247,13 @@ struct Particle : Mobj
 struct Kart : Mobj
 {
 	static constexpr tic_t kVibrateTimer = 70;
-	static constexpr UINT32 kNoClipFlags = MF_NOCLIP | MF_NOCLIPTHING;
+	static constexpr uint32_t kNoClipFlags = MF_NOCLIP | MF_NOCLIPTHING;
 
 	static tic_t burn_duration() { return (gametyperules & GTR_CLOSERPLAYERS ? 10 : 20) * TICRATE; }
 
 	void extravalue1() = delete;
-	UINT8 weight() const { return mobj_t::extravalue1; }
-	void weight(UINT8 n) { mobj_t::extravalue1 = n; }
+	uint8_t weight() const { return mobj_t::extravalue1; }
+	void weight(uint8_t n) { mobj_t::extravalue1 = n; }
 
 	void extravalue2() = delete;
 	tic_t timer() const { return mobj_t::extravalue2; }
@@ -419,7 +419,7 @@ private:
 			}
 		};
 
-		UINT32 rf = RF_SEMIBRIGHT;
+		uint32_t rf = RF_SEMIBRIGHT;
 
 		if (burning() && P_IsObjectOnGround(this))
 		{
@@ -493,11 +493,11 @@ private:
 
 	static void P_SpawnBadnikExplosion(mobj_t *target)
 	{
-		UINT8 count = 24;
+		uint8_t count = 24;
 		angle_t ang = 0;
 		angle_t step = ANGLE_MAX / count;
 		fixed_t spd = 8 * mapobjectscale;
-		for (UINT8 i = 0; i < count; ++i)
+		for (uint8_t i = 0; i < count; ++i)
 		{
 			fixed_t rand_x;
 			fixed_t rand_y;
@@ -523,7 +523,7 @@ private:
 		}
 		// burst effects (copied from MT_ITEMCAPSULE)
 		ang = FixedAngle(360*P_RandomFixed(PR_ITEM_DEBRIS));
-		for (UINT8 i = 0; i < 2; i++)
+		for (uint8_t i = 0; i < 2; i++)
 		{
 			mobj_t *blast = P_SpawnMobjFromMobj(target, 0, 0, target->info->height >> 1, MT_BATTLEBUMPER_BLAST);
 			blast->hitlag = 0;

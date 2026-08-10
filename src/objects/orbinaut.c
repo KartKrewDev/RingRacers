@@ -116,7 +116,7 @@ void Obj_OrbinautThink(mobj_t *th)
 
 		if (th->health <= 5)
 		{
-			INT32 i;
+			int32_t i;
 			for (i = 5; i >= th->health; i--)
 			{
 				finalspeed = FixedMul(finalspeed, FRACUNIT-FRACUNIT/4);

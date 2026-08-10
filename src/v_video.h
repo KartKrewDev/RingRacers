@@ -41,7 +41,7 @@ extern "C" {
 // Screen 0 is the screen updated by I_Update screen.
 // Screen 1 is an extra buffer.
 
-extern UINT8 *screens[5];
+extern uint8_t *screens[5];
 
 extern consvar_t cv_ticrate, cv_constextsize,
 cv_globalgamma, cv_globalsaturation,
@@ -65,29 +65,29 @@ struct colorlookup_t
 {
 	dboolean init;
 	RGBA_t palette[256];
-	UINT16 table[0xFFFF];
+	uint16_t table[0xFFFF];
 };
 
 void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, dboolean makecolors);
-UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
-UINT8 GetColorLUTDirect(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
+uint8_t GetColorLUT(colorlookup_t *lut, uint8_t r, uint8_t g, uint8_t b);
+uint8_t GetColorLUTDirect(colorlookup_t *lut, uint8_t r, uint8_t g, uint8_t b);
 
 // Loads the correct palette into memory
 void V_ReloadPalette(void);
 
 // Set the current RGB palette lookup to use for palettized graphics
-void V_SetPalette(INT32 palettenum);
+void V_SetPalette(int32_t palettenum);
 
 void V_SetPaletteLump(const char *pal);
 
-const char *R_GetPalname(UINT16 num);
+const char *R_GetPalname(uint16_t num);
 const char *GetPalette(void);
 
 extern RGBA_t *pLocalPalette;
 extern RGBA_t *pMasterPalette;
 extern RGBA_t *pGammaCorrectedPalette;
 
-UINT32 V_GammaCorrect(UINT32 input, double power);
+uint32_t V_GammaCorrect(uint32_t input, double power);
 #define V_GammaDecode(input) V_GammaCorrect(input, 2.2f)
 #define V_GammaEncode(input) V_GammaCorrect(input, (1/2.2f))
 
@@ -179,19 +179,19 @@ void V_CubeApply(RGBA_t *input);
 #define V_NOSCALESTART       0x40000000 // don't scale x, y, start coords
 #define V_SPLITSCREEN        0x80000000 // Add half of screen width or height automatically depending on player number
 
-UINT32 V_GetHUDTranslucency(INT32 scrn);
+uint32_t V_GetHUDTranslucency(int32_t scrn);
 
-void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy);
+void V_AdjustXYWithSnap(int32_t *x, int32_t *y, uint32_t options, int32_t dupx, int32_t dupy);
 
 struct cliprect_t
 {
 	fixed_t left, right, top, bottom;
-	INT32 flags;
+	int32_t flags;
 	dboolean enabled;
 };
 
 const cliprect_t *V_GetClipRect(void);
-void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, INT32 flags);
+void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, int32_t flags);
 void V_ClearClipRect(void);
 void V_SaveClipRect(cliprect_t *copy);
 void V_RestoreClipRect(const cliprect_t *copy);
@@ -212,39 +212,39 @@ void V_RestoreClipRect(const cliprect_t *copy);
 #define V_DrawTinyTranslucentPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT/4, s, p, NULL)
 #define V_DrawSciencePatch(x,y,s,p,sc) V_DrawFixedPatch(x,y,sc,s,p,NULL)
 #define V_DrawFixedPatch(x,y,sc,s,p,c) V_DrawStretchyFixedPatch(x,y,sc,sc,s,p,c)
-void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap);
-void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
+void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, int32_t scrn, patch_t *patch, const uint8_t *colormap);
+void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, int32_t scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 
-void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor);
+void V_DrawContinueIcon(int32_t x, int32_t y, int32_t flags, int32_t skinnum, uint16_t skincolor);
 
 // Draw a linear block of pixels into the view buffer.
-void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const UINT8 *src);
+void V_DrawBlock(int32_t x, int32_t y, int32_t scrn, int32_t width, int32_t height, const uint8_t *src);
 
 // fill a box with a single color
-void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c);
-void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c);
+void V_DrawFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t c);
+void V_DrawFillConsoleMap(int32_t x, int32_t y, int32_t w, int32_t h, int32_t c);
 // fill a triangle with a single color
-void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c);
+void V_DrawDiag(int32_t x, int32_t y, int32_t wh, int32_t c);
 // fill a box with a flat as a pattern
-void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum);
+void V_DrawFlatFill(int32_t x, int32_t y, int32_t w, int32_t h, lumpnum_t flatnum);
 
 
 // draw wobbly VHS pause stuff
 void V_DrawVhsEffect(dboolean rewind);
 
 // fade down the screen buffer before drawing the menu over
-void V_DrawFadeScreen(UINT16 color, UINT8 strength);
+void V_DrawFadeScreen(uint16_t color, uint8_t strength);
 // available to lua over my dead body, which will probably happen in this heat
-void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, UINT8 strength);
+void V_DrawFadeFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t c, uint16_t color, uint8_t strength);
 
 lighttable_t *V_LoadCustomFadeMap(const char *lump);
-const UINT8 *V_OffsetIntoFadeMap(const lighttable_t *clm, UINT8 strength);
-void V_DrawCustomFadeScreen(const char *lump, UINT8 strength);
-void V_DrawFadeConsBack(INT32 plines);
+const uint8_t *V_OffsetIntoFadeMap(const lighttable_t *clm, uint8_t strength);
+void V_DrawCustomFadeScreen(const char *lump, uint8_t strength);
+void V_DrawFadeConsBack(int32_t plines);
 
 void V_EncoreInvertScreen(void);
 
-void V_DrawPromptBack(INT32 boxheight, INT32 color);
+void V_DrawPromptBack(int32_t boxheight, int32_t color);
 
 /* Convenience macros for leagacy string function macros. */
 #define V__DrawOneScaleString( x,y,scale,option,cm,font,string ) \
@@ -257,15 +257,15 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color);
 #define V__IntegerStringWidth( scale,option,font,string ) \
 	(V_StringScaledWidth(scale,FRACUNIT,FRACUNIT,option,font,string) / FRACUNIT)
 
-INT32 V_DanceYOffset(INT32 counter);
+int32_t V_DanceYOffset(int32_t counter);
 
 // draw a single character
-void V_DrawCharacterScaled(fixed_t x, fixed_t y, fixed_t scale, INT32 flags, int font, int c, UINT8 *colormap);
-void V_DrawCharacter(INT32 x, INT32 y, INT32 option, dboolean lowercase);
+void V_DrawCharacterScaled(fixed_t x, fixed_t y, fixed_t scale, int32_t flags, int font, int c, uint8_t *colormap);
+void V_DrawCharacter(int32_t x, int32_t y, int32_t option, dboolean lowercase);
 
-void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, dboolean lowercaseallowed, UINT8 *colormap);
+void V_DrawChatCharacter(int32_t x, int32_t y, int32_t c, dboolean lowercaseallowed, uint8_t *colormap);
 
-UINT8 *V_GetStringColormap(INT32 colorflags);
+uint8_t *V_GetStringColormap(int32_t colorflags);
 
 #define V_DrawLevelTitle( x,y,option,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,NULL,LT_FONT,string)
@@ -274,7 +274,7 @@ UINT8 *V_GetStringColormap(INT32 colorflags);
 #define V_LevelNameWidth( string ) \
 	V__IntegerStringWidth ( FRACUNIT,0,LT_FONT,string )
 
-INT32 V_LevelNameHeight(const char *string);
+int32_t V_LevelNameHeight(const char *string);
 
 // draw a string using a font
 void V_DrawStringScaled(
@@ -283,8 +283,8 @@ void V_DrawStringScaled(
 		fixed_t           scale,
 		fixed_t     space_scale,
 		fixed_t  linefeed_scale,
-		INT32       flags,
-		const UINT8 *colormap,
+		int32_t       flags,
+		const uint8_t *colormap,
 		int         font,
 		const char *text);
 
@@ -292,7 +292,7 @@ fixed_t V_StringScaledWidth(
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
-		INT32      flags,
+		int32_t      flags,
 		int        fontno,
 		const char *s);
 
@@ -301,7 +301,7 @@ char * V_ScaledWordWrap(
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
-		INT32      flags,
+		int32_t      flags,
 		int        fontno,
 		const char *s);
 
@@ -312,8 +312,8 @@ char * V_ScaledWordWrap(
 #define V_StringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT,option,HU_FONT,string )
 
-void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredString(int32_t x, int32_t y, int32_t option, const char *string);
+void V_DrawRightAlignedString(int32_t x, int32_t y, int32_t option, const char *string);
 
 // draw a string using the hu_font, 0.5x scale
 #define V_DrawSmallString( x,y,option,string ) \
@@ -322,8 +322,8 @@ void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string
 #define V_SmallStringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT>>1,option,HU_FONT,string )
 
-void V_DrawCenteredSmallString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredSmallString(int32_t x, int32_t y, int32_t option, const char *string);
+void V_DrawRightAlignedSmallString(int32_t x, int32_t y, int32_t option, const char *string);
 
 // draw a string using the tny_font
 #define V_DrawThinString( x,y,option,string ) \
@@ -332,43 +332,43 @@ void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *s
 #define V_ThinStringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT,option,TINY_FONT,string )
 
-void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredThinString(int32_t x, int32_t y, int32_t option, const char *string);
+void V_DrawRightAlignedThinString(int32_t x, int32_t y, int32_t option, const char *string);
 
 #define V_DrawStringAtFixed( x,y,option,string ) \
 	V__DrawOneScaleString (x,y,FRACUNIT,option,NULL,HU_FONT,string)
-void V_DrawCenteredStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawRightAlignedStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawCenteredStringAtFixed(fixed_t x, fixed_t y, int32_t option, const char *string);
+void V_DrawRightAlignedStringAtFixed(fixed_t x, fixed_t y, int32_t option, const char *string);
 
 #define V_DrawThinStringAtFixed( x,y,option,string ) \
 	V__DrawOneScaleString (x,y,FRACUNIT,option,NULL,TINY_FONT,string)
-void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, int32_t option, const char *string);
+void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, int32_t option, const char *string);
 
 // Draws a titlecard font string.
 // timer: when the letters start appearing (leave to 0 to disable)
-// threshold: when the letters start disappearing (leave to 0 to disable) (both are INT32 in case you supply negative values...)
+// threshold: when the letters start disappearing (leave to 0 to disable) (both are int32_t in case you supply negative values...)
 // NOTE: This function ignores most conventional string flags (V_RETURN8, V_FORCEUPPERCASE ...)
 // NOTE: This font only works with uppercase letters.
-void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, INT32 flags, dboolean bossmode, INT32 timer, INT32 threshold, dboolean p4);
+void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, int32_t flags, dboolean bossmode, int32_t timer, int32_t threshold, dboolean p4);
 #define V_DrawTitleCardString( x,y,str,flags,bossmode,timer,threshold,p4 ) \
 	V_DrawTitleCardStringFixed ((x)<<FRACBITS,(y)<<FRACBITS,FRACUNIT,str,flags,bossmode,timer,threshold,p4)
 	
 // returns thr width of a string drawn using the above function.
-INT32 V_TitleCardStringWidth(const char *str, dboolean p4);
+int32_t V_TitleCardStringWidth(const char *str, dboolean p4);
 
 // offset that can be subtracted to center align.
-INT32 V_CenteredTitleCardStringOffset(const char *str, dboolean p4);
+int32_t V_CenteredTitleCardStringOffset(const char *str, dboolean p4);
 
 // Draw tall nums, used for menu, HUD, intermission
-void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
-void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits);
+void V_DrawTallNum(int32_t x, int32_t y, int32_t flags, int32_t num);
+void V_DrawPaddedTallNum(int32_t x, int32_t y, int32_t flags, int32_t num, int32_t digits);
 
 // Draw ping numbers. Used by the scoreboard and that one ping option. :P
 // This is a separate function because IMO lua should have access to it as well.
-fixed_t V_DrawPingNum(fixed_t x, fixed_t y, INT32 flags, INT32 num, const UINT8 *colormap);
+fixed_t V_DrawPingNum(fixed_t x, fixed_t y, int32_t flags, int32_t num, const uint8_t *colormap);
 
-void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
+void V_DrawProfileNum(int32_t x, int32_t y, int32_t flags, uint8_t num);
 
 #define V_DrawCreditString( x,y,option,string ) \
 	V__DrawOneScaleString (x,y,FRACUNIT,option,NULL,CRED_FONT,string)
@@ -383,8 +383,8 @@ void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
 #define V_TimerStringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT,option,TIMER_FONT,string )
 
-void V_DrawCenteredTimerString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredTimerString(int32_t x, int32_t y, int32_t option, const char *string);
+void V_DrawRightAlignedTimerString(int32_t x, int32_t y, int32_t option, const char *string);
 
 #define V_DrawMenuString( x,y,option,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,NULL,MENU_FONT,string)
@@ -392,8 +392,8 @@ void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *s
 #define V_MenuStringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT,option,MENU_FONT,string )
 
-void V_DrawCenteredMenuString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedMenuString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredMenuString(int32_t x, int32_t y, int32_t option, const char *string);
+void V_DrawRightAlignedMenuString(int32_t x, int32_t y, int32_t option, const char *string);
 
 #define V_DrawGamemodeString( x,y,option,cm,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,cm,GM_FONT,string)
@@ -401,8 +401,8 @@ void V_DrawRightAlignedMenuString(INT32 x, INT32 y, INT32 option, const char *st
 #define V_GamemodeStringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT,option,GM_FONT,string )
 
-void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string);
-void V_DrawRightAlignedGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string);
+void V_DrawCenteredGamemodeString(int32_t x, int32_t y, int32_t option, const uint8_t *colormap, const char *string);
+void V_DrawRightAlignedGamemodeString(int32_t x, int32_t y, int32_t option, const uint8_t *colormap, const char *string);
 
 #define V_DrawFileString( x,y,option,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,NULL,FILE_FONT,string)
@@ -410,8 +410,8 @@ void V_DrawRightAlignedGamemodeString(INT32 x, INT32 y, INT32 option, const UINT
 #define V_FileStringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT,option,FILE_FONT,string )
 
-void V_DrawCenteredFileString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedFileString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredFileString(int32_t x, int32_t y, int32_t option, const char *string);
+void V_DrawRightAlignedFileString(int32_t x, int32_t y, int32_t option, const char *string);
 
 #define V_DrawLSTitleHighString( x,y,option,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,NULL,LSHI_FONT,string)
@@ -419,8 +419,8 @@ void V_DrawRightAlignedFileString(INT32 x, INT32 y, INT32 option, const char *st
 #define V_LSTitleHighStringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT,option,LSHI_FONT,string )
 
-void V_DrawCenteredLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredLSTitleHighString(int32_t x, int32_t y, int32_t option, const char *string);
+void V_DrawRightAlignedLSTitleHighString(int32_t x, int32_t y, int32_t option, const char *string);
 
 #define V_DrawLSTitleLowString( x,y,option,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,NULL,LSLOW_FONT,string)
@@ -428,12 +428,12 @@ void V_DrawRightAlignedLSTitleHighString(INT32 x, INT32 y, INT32 option, const c
 #define V_LSTitleLowStringWidth( string,option ) \
 	V__IntegerStringWidth ( FRACUNIT,option,LSLOW_FONT,string )
 
-void V_DrawCenteredLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredLSTitleLowString(int32_t x, int32_t y, int32_t option, const char *string);
+void V_DrawRightAlignedLSTitleLowString(int32_t x, int32_t y, int32_t option, const char *string);
 
 void V_DrawPatchFill(patch_t *pat);
 
-void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT32 height, size_t srcrowbytes,
+void VID_BlitLinearScreen(const uint8_t *srcptr, uint8_t *destptr, int32_t width, int32_t height, size_t srcrowbytes,
 	size_t destrowbytes);
 
 /**

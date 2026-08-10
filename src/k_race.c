@@ -44,7 +44,7 @@
 line_t *finishBeamLine = NULL;
 
 static mobj_t *beamPoints[2];
-static UINT8 numBeamPoints = 0;
+static uint8_t numBeamPoints = 0;
 
 /*--------------------------------------------------
 	void K_ClearFinishBeamLine(void)
@@ -126,7 +126,7 @@ dboolean K_GenerateFinishBeamLine(void)
 {
 	mapthing_t *mt;
 
-	INT64 bounds[4];
+	int64_t bounds[4];
 	angle_t angle = 0;
 
 	dboolean valid = false;
@@ -247,7 +247,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 	fixed_t liney = line->v1->y;
 	angle_t lineangle = line->angle + ANGLE_90;
 
-	UINT8 i;
+	uint8_t i;
 
 	fixed_t dist[4] = {INT32_MAX, INT32_MAX, INT32_MAX, INT32_MAX};
 
@@ -263,7 +263,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 	while (offset < linelength)
 	{
 #define COLORCYCLELEN 10
-		const UINT8 colorcycle[COLORCYCLELEN] = {
+		const uint8_t colorcycle[COLORCYCLELEN] = {
 			SKINCOLOR_PERIWINKLE,
 			SKINCOLOR_SLATE,
 			SKINCOLOR_BLOSSOM,
@@ -276,12 +276,12 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 			SKINCOLOR_JAWZ
 		};
 
-		const UINT8 numframes = 5;
+		const uint8_t numframes = 5;
 		const angle_t framethreshold = ANGLE_180 / (numframes-1);
 		const angle_t frameaim = aiming + (framethreshold / 2);
 
 		fixed_t x, y, z;
-		UINT8 spriteframe = 0;
+		uint8_t spriteframe = 0;
 
 		x = linex + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINECOSINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
 		y = liney + FixedMul(FixedMul(FINISHLINEBEAM_SPACING, FINESINE(lineangle >> ANGLETOFINESHIFT)), FINECOSINE(aiming >> ANGLETOFINESHIFT));
@@ -351,7 +351,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 	{
 		if (playeringame[displayplayers[i]] && players[displayplayers[i]].mo && !P_MobjWasRemoved(players[displayplayers[i]].mo))
 		{
-			UINT8 j;
+			uint8_t j;
 			for (j = 0; j < 2; j++)
 			{
 				vertex_t *v = line->v1;
@@ -447,12 +447,12 @@ void K_RunFinishLineBeam(void)
 }
 
 /*--------------------------------------------------
-	UINT8 K_RaceLapCount(INT16 mapNum);
+	uint8_t K_RaceLapCount(int16_t mapNum);
 
 		See header file for description.
 --------------------------------------------------*/
 
-UINT8 K_RaceLapCount(INT16 mapNum)
+uint8_t K_RaceLapCount(int16_t mapNum)
 {
 	if (!(gametyperules & GTR_CIRCUIT))
 	{
@@ -464,7 +464,7 @@ UINT8 K_RaceLapCount(INT16 mapNum)
 	{
 		// Use map default, except on Relaxed
 
-		UINT8 laps = mapheaderinfo[mapNum]->numlaps;
+		uint8_t laps = mapheaderinfo[mapNum]->numlaps;
 
 		if (gamespeed == KARTSPEED_EASY && laps > 2)
 			laps = (3*laps + 4 - 1) / 4; // 3/4th laps, rounded
@@ -475,7 +475,7 @@ UINT8 K_RaceLapCount(INT16 mapNum)
 	return cv_numlaps.value;
 }
 
-void K_SpawnFinishEXP(player_t *player, UINT16 exp)
+void K_SpawnFinishEXP(player_t *player, uint16_t exp)
 {
 	if (finishBeamLine != NULL)
 	{

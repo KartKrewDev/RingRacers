@@ -133,8 +133,8 @@ struct Checkpoint : mobj_t
 
 	struct Arm : mobj_t {};
 
-	INT32 id() const { return checkpoint_id(this); }
-	INT32 linetag() const { return checkpoint_linetag(this); }
+	int32_t id() const { return checkpoint_id(this); }
+	int32_t linetag() const { return checkpoint_linetag(this); }
 
 	Checkpoint* other() const { return static_cast<Checkpoint*>(checkpoint_other(this)); }
 	void other(Checkpoint* n) { P_SetTarget(&checkpoint_other(this), n); }
@@ -191,10 +191,10 @@ struct Checkpoint : mobj_t
 	}
 
 	// will not work properly after a player enters intoa  new lap
-	INT32 players_passed()
+	int32_t players_passed()
 	{
-		INT32 pcount = 0;
-		for (INT32 i = 0; i < MAXPLAYERS; i++)
+		int32_t pcount = 0;
+		for (int32_t i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i] && !players[i].spectator && players[i].checkpointId >= id())
 				pcount++;
@@ -204,9 +204,9 @@ struct Checkpoint : mobj_t
 
 	dboolean top_half_has_passed()
 	{
-		INT32 winningpos = 1;
+		int32_t winningpos = 1;
 
-		INT32 nump = D_NumPlayersInRace();
+		int32_t nump = D_NumPlayersInRace();
 		winningpos = nump / 2;
 		winningpos += nump % 2;
 
@@ -475,7 +475,7 @@ struct CheckpointManager
 	auto begin() { return list_.begin(); }
 	auto end() { return list_.end(); }
 
-	auto find_checkpoint(INT32 id)
+	auto find_checkpoint(int32_t id)
 	{
 		auto it = std::find_if(begin(), end(), [id](Checkpoint* chk) { return chk->id() == id; });
 		return it != end() ? *it : nullptr;
@@ -558,14 +558,14 @@ struct CheckpointManager
 	}
 
 private:
-	INT32 count_;
+	int32_t count_;
 	srb2::MobjList<Checkpoint, svg_checkpoints> list_;
-	srb2::HashMap<INT32, srb2::Vector<line_t*>> lines_;
+	srb2::HashMap<int32_t, srb2::Vector<line_t*>> lines_;
 
-	static srb2::Vector<line_t*> tagged_lines(INT32 tag)
+	static srb2::Vector<line_t*> tagged_lines(int32_t tag)
 	{
 		srb2::Vector<line_t*> checklines;
-		INT32 li;
+		int32_t li;
 		TAG_ITER_LINES(tag, li)
 		{
 			line_t* line = lines + li;
@@ -628,8 +628,8 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 			}
 
 			const srb2::Vector<line_t*>* lines = g_checkpoints.lines_for(chk);
-			INT32 side;
-			INT32 oldside;
+			int32_t side;
+			int32_t oldside;
 
 			if (!lines || lines->empty())
 			{
@@ -714,13 +714,13 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 
 	player->checkpointId = chk->id();
 
-	UINT16 oldexp = player->exp;
+	uint16_t oldexp = player->exp;
 
 	K_CheckpointCrossAward(player);
 
 	if (player->exp > oldexp)
 	{
-		UINT16 expdiff = (player->exp - oldexp);
+		uint16_t expdiff = (player->exp - oldexp);
 		K_SpawnEXP(player, expdiff, chk);
 		K_SpawnEXP(player, expdiff, chk->other());
 	}
@@ -728,7 +728,7 @@ void Obj_CrossCheckpoints(player_t* player, fixed_t old_x, fixed_t old_y)
 	K_UpdatePowerLevels(player, player->gradingpointnum, false);
 }
 
-mobj_t* Obj_FindCheckpoint(INT32 id)
+mobj_t* Obj_FindCheckpoint(int32_t id)
 {
 	return g_checkpoints.find_checkpoint(id);
 }
@@ -767,7 +767,7 @@ void Obj_ActivateCheckpointInstantly(mobj_t* mobj)
 }
 
 // Returns a count of checkpoint gates, not objects
-UINT32 Obj_GetCheckpointCount()
+uint32_t Obj_GetCheckpointCount()
 {
 	return g_checkpoints.count();
 }

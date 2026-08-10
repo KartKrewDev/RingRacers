@@ -27,10 +27,10 @@ extern "C" {
 #endif
 
 #ifdef HAVE_ANIGIF
-INT32 GIF_open(const char *filename);
+int32_t GIF_open(const char *filename);
 void GIF_frame(void);
-void GIF_frame_rgb24(INT32 width, INT32 height, const UINT8 *buffer);
-INT32 GIF_close(void);
+void GIF_frame_rgb24(int32_t width, int32_t height, const uint8_t *buffer);
+int32_t GIF_close(void);
 #endif
 
 extern consvar_t cv_gif_optimize, cv_gif_downscale, cv_gif_dynamicdelay, cv_gif_localcolortable;

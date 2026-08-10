@@ -14,7 +14,7 @@
 #include "doomdef.h"
 #include "m_pw_hash.h"
 
-UINT8 *M_HashPassword(UINT8 hash[M_PW_HASH_SIZE], const char *key, const UINT8 salt[M_PW_SALT_SIZE])
+uint8_t *M_HashPassword(uint8_t hash[M_PW_HASH_SIZE], const char *key, const uint8_t salt[M_PW_SALT_SIZE])
 {
 	size_t memory = 8*1024*1024;
 	void *int_buf = malloc(memory);
@@ -30,7 +30,7 @@ UINT8 *M_HashPassword(UINT8 hash[M_PW_HASH_SIZE], const char *key, const UINT8 s
 	};
 
 	crypto_argon2_inputs inputs = {
-		(const UINT8*)key, // pass
+		(const uint8_t*)key, // pass
 		salt, // salt
 		strlen(key), // pass_size
 		M_PW_SALT_SIZE, // salt_size

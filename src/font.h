@@ -24,8 +24,8 @@ struct font_t
 {
 	patch_t **font;
 
-	UINT8     start;
-	UINT8     size;
+	uint8_t     start;
+	uint8_t     size;
 
 	char      prefix[8];/* 7 used at most */
 	unsigned  digits : 2;

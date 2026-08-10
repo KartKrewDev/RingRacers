@@ -120,15 +120,15 @@ fixed_t M_DueFrac(tic_t start, tic_t duration)
 
 
 // horizontally centered text
-static void M_CentreText(INT32 xoffs, INT32 y, const char *string)
+static void M_CentreText(int32_t xoffs, int32_t y, const char *string)
 {
-	INT32 x;
+	int32_t x;
 	//added : 02-02-98 : centre on 320, because V_DrawString centers on vid.width...
 	x = ((BASEVIDWIDTH - V_MenuStringWidth(string, 0))>>1) + xoffs;
 	V_DrawMenuString(x,y,0,string);
 }
 
-static INT32 M_SliderX(INT32 range)
+static int32_t M_SliderX(int32_t range)
 {
 	if (range < 0)
 		range = 0;
@@ -139,7 +139,7 @@ static INT32 M_SliderX(INT32 range)
 }
 
 //  A smaller 'Thermo', with range given as percents (0-100)
-static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, dboolean ontop)
+static void M_DrawSlider(int32_t x, int32_t y, const consvar_t *cv, dboolean ontop)
 {
 	x = BASEVIDWIDTH - x - SLIDER_WIDTH;
 	V_DrawFill(x - 5, y + 3, SLIDER_WIDTH + 3, 5, 31);
@@ -153,27 +153,27 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, dboolean ontop)
 			highlightflags, "\x1D"); // right arrow
 	}
 
-	INT32 range = cv->PossibleValue[1].value - cv->PossibleValue[0].value;
-	INT32 val = atoi(cv->defaultvalue);
+	int32_t range = cv->PossibleValue[1].value - cv->PossibleValue[0].value;
+	int32_t val = atoi(cv->defaultvalue);
 
 	val = (val - cv->PossibleValue[0].value) * 100 / range;
 	// draw the default tick
 	V_DrawFill(x + M_SliderX(val), y + 2, 3, 4, 31);
 
 	val = (cv->value - cv->PossibleValue[0].value) * 100 / range;
-	INT32 px = x + M_SliderX(val);
+	int32_t px = x + M_SliderX(val);
 
 	// draw the slider cursor
 	V_DrawFill(px - 1, y - 1, 5, 11, 31);
 	V_DrawFill(px, y, 2, 8, aquamap[0]);
 }
 
-void M_DrawCursorHand(INT32 x, INT32 y)
+void M_DrawCursorHand(int32_t x, int32_t y)
 {
 	V_DrawScaledPatch(x - 24 - (I_GetTime() % 16 < 8), y, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 }
 
-void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
+void M_DrawUnderline(int32_t left, int32_t right, int32_t y)
 {
 	if (menutransition.tics == menutransition.dest)
 		V_DrawFill(left - 1, y + 5, (right - left) + 11, 2, 31);
@@ -181,15 +181,15 @@ void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
 
 static patch_t *addonsp[NUM_EXT+5];
 
-static INT16 bgMapID = NEXTMAP_INVALID;
+static int16_t bgMapID = NEXTMAP_INVALID;
 void M_PickMenuBGMap(void)
 {
-	UINT16 *allowedMaps;
+	uint16_t *allowedMaps;
 	size_t allowedMapsCount = 0;
-	UINT16 ret = 0;
-	INT32 i;
+	uint16_t ret = 0;
+	int32_t i;
 
-	allowedMaps = Z_Malloc(nummapheaders * sizeof(UINT16), PU_STATIC, NULL);
+	allowedMaps = Z_Malloc(nummapheaders * sizeof(uint16_t), PU_STATIC, NULL);
 
 	for (i = 0; i < nummapheaders; i++)
 	{
@@ -346,16 +346,16 @@ void M_DrawExtrasBack(void)
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 }
 
-UINT16 M_GetCvPlayerColor(UINT8 pnum)
+uint16_t M_GetCvPlayerColor(uint8_t pnum)
 {
 	if (pnum >= MAXSPLITSCREENPLAYERS)
 		return SKINCOLOR_NONE;
 
-	UINT16 color = cv_playercolor[pnum].value;
+	uint16_t color = cv_playercolor[pnum].value;
 	if (color != SKINCOLOR_NONE)
 		return color;
 
-	INT32 skin = R_SkinAvailableEx(cv_skin[pnum].string, false);
+	int32_t skin = R_SkinAvailableEx(cv_skin[pnum].string, false);
 	if (skin == -1)
 		return SKINCOLOR_NONE;
 
@@ -364,17 +364,17 @@ UINT16 M_GetCvPlayerColor(UINT8 pnum)
 
 static void M_DrawMenuParty(void)
 {
-	const INT32 PLATTER_WIDTH = 19;
-	const INT32 PLATTER_STAGGER = 6;
-	const INT32 PLATTER_OFFSET = (PLATTER_WIDTH - PLATTER_STAGGER);
+	const int32_t PLATTER_WIDTH = 19;
+	const int32_t PLATTER_STAGGER = 6;
+	const int32_t PLATTER_OFFSET = (PLATTER_WIDTH - PLATTER_STAGGER);
 
 	patch_t *small = W_CachePatchName("MENUPLRA", PU_CACHE);
 	patch_t *large = W_CachePatchName("MENUPLRB", PU_CACHE);
 
-	INT32 x, y;
-	INT32 skin;
-	UINT16 color;
-	UINT8 *colormap;
+	int32_t x, y;
+	int32_t skin;
+	uint16_t color;
+	uint8_t *colormap;
 
 	if (setup_numplayers == 0 || currentMenu == &PLAY_CharSelectDef || currentMenu == &OPTIONS_GameplayItemsDef || currentMenu == &MISC_ChallengesDef)
 	{
@@ -523,11 +523,11 @@ static const char *M_MenuTypingCroppedString(void)
 // Draws the typing submenu
 static void M_DrawMenuTyping(void)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
-	INT32 i, j;
+	int32_t i, j;
 
-	INT32 x, y;
+	int32_t x, y;
 
 	char buf[8];	// We write there to use drawstring for convenience.
 
@@ -535,7 +535,7 @@ static void M_DrawMenuTyping(void)
 
 	// Draw the string we're editing at the top.
 
-	const INT32 boxwidth = (8*(MAXSTRINGLENGTH + 1)) + 7;
+	const int32_t boxwidth = (8*(MAXSTRINGLENGTH + 1)) + 7;
 	x = (BASEVIDWIDTH - boxwidth)/2;
 	y = 80;
 	if (menutyping.menutypingfade < 9)
@@ -559,7 +559,7 @@ static void M_DrawMenuTyping(void)
 	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
-	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, M_MenuTypingCroppedString(), true);
+	int32_t textwidth = M_DrawCaretString(x + 8, y + 12, M_MenuTypingCroppedString(), true);
 	if (skullAnimCounter < 4
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
@@ -567,12 +567,12 @@ static void M_DrawMenuTyping(void)
 		V_DrawCharacter(x + 8 + textwidth, y + 12 + 1, '_', false);
 	}
 
-	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
+	const int32_t buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
 #define BUTTONHEIGHT (11)
 
 	// Now the keyboard itself
 	x += 5;
-	INT32 returnx = x;
+	int32_t returnx = x;
 
 	if (menutyping.menutypingfade > 9)
 	{
@@ -583,7 +583,7 @@ static void M_DrawMenuTyping(void)
 			y += floor(pow(2, (double)(18 - menutyping.menutypingfade))); // double yoffs for animation
 		}
 
-		INT32 tempkeyboardx = menutyping.keyboardx;
+		int32_t tempkeyboardx = menutyping.keyboardx;
 
 		while (virtualKeyboard[menutyping.keyboardy][tempkeyboardx] == 1
 		&& tempkeyboardx > 0)
@@ -594,14 +594,14 @@ static void M_DrawMenuTyping(void)
 			j = 0;
 			while (j < NUMVIRTUALKEYSINROW)
 			{
-				INT32 mflag = 0;
-				INT16 c = virtualKeyboard[i][j];
+				int32_t mflag = 0;
+				int16_t c = virtualKeyboard[i][j];
 
-				INT32 buttonspacing = 1;
+				int32_t buttonspacing = 1;
 
-				UINT8 col = 27;
+				uint8_t col = 27;
 
-				INT32 arrowoffset = 0;
+				int32_t arrowoffset = 0;
 
 				while (j + buttonspacing < NUMVIRTUALKEYSINROW
 				&& virtualKeyboard[i][j + buttonspacing] == 1)
@@ -668,7 +668,7 @@ static void M_DrawMenuTyping(void)
 					buf[1] = '\0';
 				}
 
-				INT32 width = (buttonwidth * buttonspacing) - 1;
+				int32_t width = (buttonwidth * buttonspacing) - 1;
 
 				// highlight:
 				/*if (menutyping.keyboardtyping)
@@ -755,7 +755,7 @@ static void M_DrawMenuTyping(void)
 
 }
 
-static void M_DrawPauseRoundQueue(INT16 offset, dboolean canqueue)
+static void M_DrawPauseRoundQueue(int16_t offset, dboolean canqueue)
 {
 	y_data_t standings;
 	memset(&standings, 0, sizeof (standings));
@@ -796,8 +796,8 @@ void M_DrawMenuMessage(void)
 	if (!menumessage.active)
 		return;
 
-	INT32 x = (BASEVIDWIDTH - menumessage.x)/2;
-	INT32 y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
+	int32_t x = (BASEVIDWIDTH - menumessage.x)/2;
+	int32_t y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
 	size_t i, start = 0;
 	char string[MAXMENUMESSAGE];
 	const char *msg = menumessage.message;
@@ -813,8 +813,8 @@ void M_DrawMenuMessage(void)
 
 	if (menumessage.defaultstr)
 	{
-		INT32 workx = x + menumessage.x;
-		INT32 worky = y + menumessage.y;
+		int32_t workx = x + menumessage.x;
+		int32_t worky = y + menumessage.y;
 
 		dboolean push;
 
@@ -822,7 +822,7 @@ void M_DrawMenuMessage(void)
 			push = (menumessage.answer != MA_YES);
 		else
 		{
-			const UINT8 anim_duration = 16;
+			const uint8_t anim_duration = 16;
 			push = ((menumessage.timer % (anim_duration * 2)) < anim_duration);
 		}
 
@@ -916,12 +916,12 @@ void M_DrawMenuMessage(void)
 }
 
 // PAUSE
-static void M_DrawPausedText(INT32 x)
+static void M_DrawPausedText(int32_t x)
 {
 	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
 	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
 
-	INT32 snapFlags = menuactive ? 0 : (V_SNAPTOLEFT|V_SNAPTOTOP);
+	int32_t snapFlags = menuactive ? 0 : (V_SNAPTOLEFT|V_SNAPTOTOP);
 
 	V_DrawFixedPatch(x, -5*FRACUNIT, FRACUNIT, snapFlags|V_ADD, pausebg,   NULL);
 	V_DrawFixedPatch(x, -5*FRACUNIT, FRACUNIT, snapFlags,       pausetext, NULL);
@@ -1072,7 +1072,7 @@ static const char *M_CreateSecretMenuOption(const char *str)
 //
 void M_DrawGenericMenu(void)
 {
-	INT32 x = currentMenu->x, y = currentMenu->y, w, i, cursory = 0;
+	int32_t x = currentMenu->x, y = currentMenu->y, w, i, cursory = 0;
 
 	M_DrawMenuTooltips();
 
@@ -1138,7 +1138,7 @@ void M_DrawGenericMenu(void)
 								{
 									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
 
-									INT32 xoffs = 0;
+									int32_t xoffs = 0;
 									if (itemOn == i)
 									{
 										xoffs += 8;
@@ -1230,17 +1230,17 @@ void M_DrawGenericMenu(void)
 
 static tic_t gm_flipStart;
 
-static INT32 M_DrawRejoinIP(INT32 x, INT32 y, INT32 tx)
+static int32_t M_DrawRejoinIP(int32_t x, int32_t y, int32_t tx)
 {
 	extern consvar_t cv_dummyipselect;
 	char (*ip)[MAX_LOGIP] = joinedIPlist[cv_dummyipselect.value];
 	if (!*ip[0])
 		return 0;
 
-	INT16 shift = 20;
+	int16_t shift = 20;
 	x -= shift;
 
-	INT16 j = 0;
+	int16_t j = 0;
 	for (j=0; j <= (GM_YOFFSET + 10) / 2; j++)
 	{
 		// Draw rectangles that look like the current selected item starting from the top of the actual selection graphic and going up to where it's supposed to go.
@@ -1252,8 +1252,8 @@ static INT32 M_DrawRejoinIP(INT32 x, INT32 y, INT32 tx)
 	y += GM_YOFFSET;
 
 	const char *text = ip[0];
-	INT32 w = V_ThinStringWidth(text, 0);
-	INT32 f = highlightflags;
+	int32_t w = V_ThinStringWidth(text, 0);
+	int32_t f = highlightflags;
 	V_DrawMenuString(x - 10 - (skullAnimCounter/5), y, f, "\x1C"); // left arrow
 	V_DrawMenuString(x + w + 2+ (skullAnimCounter/5), y, f, "\x1D"); // right arrow
 	V_DrawThinString(x, y, f, text);
@@ -1269,9 +1269,9 @@ static INT32 M_DrawRejoinIP(INT32 x, INT32 y, INT32 tx)
 //
 void M_DrawKartGamemodeMenu(void)
 {
-	UINT8 n = 0;
-	INT32 i, x, y;
-	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
+	uint8_t n = 0;
+	int32_t i, x, y;
+	int32_t tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
@@ -1291,7 +1291,7 @@ void M_DrawKartGamemodeMenu(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		INT32 type;
+		int32_t type;
 
 		if (currentMenu->menuitems[i].status == IT_DISABLED)
 		{
@@ -1305,7 +1305,7 @@ void M_DrawKartGamemodeMenu(void)
 
 		}
 
-		INT32 cx = x;
+		int32_t cx = x;
 		dboolean selected = (i == itemOn && menutransition.tics == menutransition.dest);
 
 		if (selected)
@@ -1316,7 +1316,7 @@ void M_DrawKartGamemodeMenu(void)
 			// Direct Join
 			if (currentMenu == &PLAY_MP_OptSelectDef && i == mp_directjoin)
 			{
-				INT32 shift = M_DrawRejoinIP(cx, y, cx - x);
+				int32_t shift = M_DrawRejoinIP(cx, y, cx - x);
 				cx -= Easing_OutSine(f, 0, shift);
 			}
 		}
@@ -1328,7 +1328,7 @@ void M_DrawKartGamemodeMenu(void)
 			case IT_STRING:
 			case IT_TRANSTEXT2:
 				{
-					UINT8 *colormap = NULL;
+					uint8_t *colormap = NULL;
 
 					if (selected)
 					{
@@ -1363,9 +1363,9 @@ void M_FlipKartGamemodeMenu(dboolean slide)
 
 void M_DrawHorizontalMenu(void)
 {
-	INT32 x, y, i, final = currentMenu->extra2-1, showflags;
+	int32_t x, y, i, final = currentMenu->extra2-1, showflags;
 
-	const INT32 width = 80;
+	const int32_t width = 80;
 
 	y = currentMenu->y;
 
@@ -1442,7 +1442,7 @@ void M_DrawHorizontalMenu(void)
 //  Draw a textbox, like Quake does, because sometimes it's difficult
 //  to read the text with all the stuff in the background...
 //
-void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
+void M_DrawTextBox(int32_t x, int32_t y, int32_t width, int32_t boxlines)
 {
 	// Solid color textbox.
 	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 159);
@@ -1456,15 +1456,15 @@ void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 //
 void M_DrawMessageMenu(void)
 {
-	INT32 y = currentMenu->y;
+	int32_t y = currentMenu->y;
 	size_t i, start = 0;
-	INT16 max;
+	int16_t max;
 	char string[MAXMENUMESSAGE];
-	INT32 mlines;
+	int32_t mlines;
 	const char *msg = currentMenu->menuitems[0].text;
 
 	mlines = currentMenu->lastOn>>8;
-	max = (INT16)((UINT8)(currentMenu->lastOn & 0xFF)*8);
+	max = (int16_t)((uint8_t)(currentMenu->lastOn & 0xFF)*8);
 
 	M_DrawTextBox(currentMenu->x, y - 8, (max+7)>>3, mlines);
 
@@ -1536,7 +1536,7 @@ void M_DrawImageDef(void)
 	}
 	else
 	{
-		INT32 x = BASEVIDWIDTH>>1, y = (BASEVIDHEIGHT>>1) - 4;
+		int32_t x = BASEVIDWIDTH>>1, y = (BASEVIDHEIGHT>>1) - 4;
 		x += (itemOn ? 1 : -1)*((BASEVIDWIDTH>>2) + 10);
 		V_DrawCenteredString(x, y-10, highlightflags, "USE ARROW KEYS");
 		V_DrawCharacter(x - 10 - (skullAnimCounter/5), y,
@@ -1551,12 +1551,12 @@ void M_DrawImageDef(void)
 // PLAY MENUS
 //
 
-static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
+static void M_DrawCharSelectCircle(setup_player_t *p, int16_t x, int16_t y)
 {
 	angle_t angamt = ANGLE_MAX;
-	UINT16 i, numoptions = 0;
-	INT16 l = 0, r = 0;
-	INT16 subtractcheck;
+	uint16_t i, numoptions = 0;
+	int16_t l = 0, r = 0;
+	int16_t subtractcheck;
 
 	switch (p->mdepth)
 	{
@@ -1592,15 +1592,15 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 		dboolean subtract = (i & 1) == subtractcheck;
 		angle_t ang = ((i+1)/2) * angamt;
 		patch_t *patch = NULL;
-		UINT8 *colormap = NULL;
+		uint8_t *colormap = NULL;
 		fixed_t radius = 28<<FRACBITS;
-		INT16 n = 0;
+		int16_t n = 0;
 
 		switch (p->mdepth)
 		{
 			case CSSTEP_ALTS:
 			{
-				INT16 skin;
+				int16_t skin;
 
 				n = (p->clonenum) + numoptions/2;
 				if (subtract)
@@ -1621,7 +1621,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 			case CSSTEP_COLORS:
 			{
-				INT16 diff;
+				int16_t diff;
 
 				if (i == 0)
 				{
@@ -1682,7 +1682,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 			case CSSTEP_FOLLOWER:
 			{
 				follower_t *fl = NULL;
-				INT16 startfollowern = p->followern;
+				int16_t startfollowern = p->followern;
 
 				if (i == 0)
 				{
@@ -1749,8 +1749,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 			case CSSTEP_FOLLOWERCOLORS:
 			{
-				INT16 diff;
-				UINT16 col;
+				int16_t diff;
+				uint16_t col;
 
 				if (i == 0)
 				{
@@ -1796,7 +1796,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 		if (p->rotate)
 		{
-			SINT8 rotate = p->rotate;
+			int8_t rotate = p->rotate;
 			if ((p->hitlag == true) && (setup_animcounter & 1))
 				rotate = -rotate;
 			ang = (signed)(ang + ((angamt / CSROTATETICS) * rotate));
@@ -1812,9 +1812,9 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 }
 
 // returns false if the character couldn't be rendered
-dboolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap)
+dboolean M_DrawCharacterSprite(int16_t x, int16_t y, int16_t skin, uint8_t spr2, uint8_t rotation, uint32_t frame, int32_t addflags, uint8_t *colormap)
 {
-	UINT8 spr;
+	uint8_t spr;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 	patch_t *sprpatch;
@@ -1851,16 +1851,16 @@ dboolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 r
 // Returns false is the follower shouldn't be rendered.
 // 'num' can be used to directly specify the follower number, but doing this will not animate it.
 // if a setup_player_t is specified instead, its data will be used to animate the follower sprite.
-static dboolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, dboolean charflip, INT32 addflags, UINT8 *colormap, setup_player_t *p)
+static dboolean M_DrawFollowerSprite(int16_t x, int16_t y, int32_t num, dboolean charflip, int32_t addflags, uint8_t *colormap, setup_player_t *p)
 {
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 	patch_t *patch;
-	INT32 followernum;
+	int32_t followernum;
 	state_t *usestate;
-	UINT32 useframe;
+	uint32_t useframe;
 	follower_t *fl;
-	UINT8 rotation = (charflip ? 1 : 7);
+	uint8_t rotation = (charflip ? 1 : 7);
 
 	if (horngoner)
 		return false;
@@ -1906,7 +1906,7 @@ static dboolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, dboolean charf
 
 	if (p != NULL)
 	{
-		UINT16 color = K_GetEffectiveFollowerColor(
+		uint16_t color = K_GetEffectiveFollowerColor(
 			(p->mdepth < CSSTEP_FOLLOWERCOLORS && p->mdepth != CSSTEP_ASKCHANGES) ? fl->defaultcolor : p->followercolor,
 			fl,
 			p->color,
@@ -1921,11 +1921,11 @@ static dboolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, dboolean charf
 	return true;
 }
 
-static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, dboolean charflip)
+static void M_DrawCharSelectSprite(uint8_t num, int16_t x, int16_t y, dboolean charflip)
 {
 	setup_player_t *p = &setup_player[num];
-	UINT16 color;
-	UINT8 *colormap;
+	uint16_t color;
+	uint8_t *colormap;
 
 	if (p->skin < 0)
 	{
@@ -1952,9 +1952,9 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, dboolean charfli
 		p->mdepth == CSSTEP_ASKCHANGES ? V_TRANSLUCENT : 0, colormap);
 }
 
-static void M_DrawCharSelectPreview(UINT8 num)
+static void M_DrawCharSelectPreview(uint8_t num)
 {
-	INT16 x = 11, y = 5;
+	int16_t x = 11, y = 5;
 	char letter = 'A' + num;
 	setup_player_t *p = &setup_player[num];
 	dboolean charflip = !!(num & 1);
@@ -1975,7 +1975,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	if (p->showextra == false)
 	{
-		INT32 backx = x + ((num & 1) ? -1 : 11);
+		int32_t backx = x + ((num & 1) ? -1 : 11);
 		V_DrawScaledPatch(backx, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
 
 		V_DrawScaledPatch(x + ((num & 1) ? 44 : 0), y+2, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
@@ -2008,17 +2008,17 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	// Profile selection
 	if (p->mdepth == CSSTEP_PROFILE)
 	{
-		INT16 px = x+12;
-		INT16 py = y+48 - p->profilen*12 +
+		int16_t px = x+12;
+		int16_t py = y+48 - p->profilen*12 +
 			Easing_OutSine(
 				M_DueFrac(p->profilen_slide.start, 5),
 				p->profilen_slide.dist*12,
 				0
 			);
-		UINT8 maxp = PR_GetNumProfiles();
+		uint8_t maxp = PR_GetNumProfiles();
 
-		UINT8 i = 0;
-		UINT8 j;
+		uint8_t i = 0;
+		uint8_t j;
 
 		V_SetClipRect(0, (y+25)*FRACUNIT, BASEVIDWIDTH*FRACUNIT, (5*12)*FRACUNIT, 0);
 
@@ -2026,9 +2026,9 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		for (i = 0; i < maxp; i++)
 		{
 			profile_t *pr = PR_GetProfile(i);
-			INT16 dist = abs(p->profilen - i);
-			INT32 notSelectable = 0;
-			SINT8 belongsTo = -1;
+			int16_t dist = abs(p->profilen - i);
+			int32_t notSelectable = 0;
+			int8_t belongsTo = -1;
 
 			if (i != PROFILE_GUEST)
 			{
@@ -2097,16 +2097,16 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	// "Changes?"
 	else if (p->mdepth == CSSTEP_ASKCHANGES)
 	{
-		UINT8 i;
+		uint8_t i;
 		char choices[2][9] = {"ALL GOOD", "CHANGE"};
-		INT32 xpos = x+8;
-		INT32 ypos = y+38;
+		int32_t xpos = x+8;
+		int32_t ypos = y+38;
 
 		V_DrawFileString(xpos, ypos, 0, "READY?");
 
 		for (i = 0; i < 2; i++)
 		{
-			UINT8 cy = ypos+16 + (i*10);
+			uint8_t cy = ypos+16 + (i*10);
 
 			if (p->changeselect == i)
 				M_DrawCursorHand(xpos + 20, cy);
@@ -2117,10 +2117,10 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	if (p->showextra == true)
 	{
-		INT32 randomskin = 0;
-		INT32 doping = 0;
+		int32_t randomskin = 0;
+		int32_t doping = 0;
 		char variadicInfoBuffer[(MAXCOLORNAME*2) + 1 + 2 + 1];//+1 for spacing, +2 for brackets, +1 for null terminator
-		UINT16 folcol;
+		uint16_t folcol;
 
 		switch (p->mdepth)
 		{
@@ -2220,15 +2220,15 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	}
 }
 
-static void M_DrawCharSelectExplosions(dboolean charsel, INT16 basex, INT16 basey)
+static void M_DrawCharSelectExplosions(dboolean charsel, int16_t basex, int16_t basey)
 {
-	UINT8 i;
-	INT16 quadx = 2, quady = 2, mul = 22;
+	uint8_t i;
+	int16_t quadx = 2, quady = 2, mul = 22;
 
 	for (i = 0; i < CSEXPLOSIONS; i++)
 	{
-		UINT8 *colormap;
-		UINT8 frame;
+		uint8_t *colormap;
+		uint8_t frame;
 
 		if (setup_explosions[i].tics == 0 || setup_explosions[i].tics > 5)
 			continue;
@@ -2256,7 +2256,7 @@ static void M_DrawCharSelectExplosions(dboolean charsel, INT16 basex, INT16 base
 #define IDLELEN 8
 #define SELECTLEN (8 + IDLELEN + 7 + IDLELEN)
 
-static void M_DrawCharSelectCursor(UINT8 num)
+static void M_DrawCharSelectCursor(uint8_t num)
 {
 	static const char *idleframes[IDLELEN] = {
 		"CHHOV1", "CHHOV1", "CHHOV1", "CHHOV2", "CHHOV1", "CHHOV3", "CHHOV1", "CHHOV2"
@@ -2276,10 +2276,10 @@ static void M_DrawCharSelectCursor(UINT8 num)
 
 	setup_player_t *p = &setup_player[num];
 	char letter = 'A' + num;
-	UINT16 color = SKINCOLOR_NONE;
-	UINT8 *colormap;
-	INT16 x, y;
-	INT16 quadx, quady;
+	uint16_t color = SKINCOLOR_NONE;
+	uint8_t *colormap;
+	int16_t x, y;
+	int16_t quadx, quady;
 
 	if (p->mdepth < CSSTEP_ASKCHANGES)
 		return;
@@ -2345,15 +2345,15 @@ static void M_DrawCharSelectCursor(UINT8 num)
 
 // Draw character profile card.
 // Moved here because in the case of profile edition this is drawn in the charsel menu.
-void M_DrawProfileCard(INT32 x, INT32 y, dboolean greyedout, profile_t *p)
+void M_DrawProfileCard(int32_t x, int32_t y, dboolean greyedout, profile_t *p)
 {
 	setup_player_t *sp = &setup_player[0];	// When editing profile character, we'll always be checking for what P1 is doing.
 	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
 	patch_t *cardbot = W_CachePatchName("PR_CARDB", PU_CACHE);
 	patch_t *pwrlv = W_CachePatchName("PR_PWR", PU_CACHE);
-	UINT16 truecol = SKINCOLOR_BLACK;
-	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLACK, GTC_CACHE);
-	INT32 skinnum = -1;
+	uint16_t truecol = SKINCOLOR_BLACK;
+	uint8_t *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLACK, GTC_CACHE);
+	int32_t skinnum = -1;
 
 	char pname[PROFILENAMELEN+1] = "NEW";
 
@@ -2405,7 +2405,7 @@ void M_DrawProfileCard(INT32 x, INT32 y, dboolean greyedout, profile_t *p)
 	{
 		if (skinnum >= 0)
 		{
-			UINT8 *ccolormap = R_GetTranslationColormap(skinnum, truecol, GTC_MENUCACHE);
+			uint8_t *ccolormap = R_GetTranslationColormap(skinnum, truecol, GTC_MENUCACHE);
 
 			if (M_DrawCharacterSprite(x-22, y+119, skinnum, SPR2_STIN, 7, 0, 0, ccolormap))
 				V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
@@ -2417,17 +2417,17 @@ void M_DrawProfileCard(INT32 x, INT32 y, dboolean greyedout, profile_t *p)
 		{
 			if (M_DrawFollowerSprite(x-22 - 16, y+119, 0, false, 0, 0, sp))
 			{
-				UINT16 col = K_GetEffectiveFollowerColor(sp->followercolor, &followers[sp->followern], sp->color, skins[sp->skin]);
+				uint16_t col = K_GetEffectiveFollowerColor(sp->followercolor, &followers[sp->followern], sp->color, skins[sp->skin]);
 				patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
-				UINT8 *fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+				uint8_t *fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
 			}
 		}
 	}
 	else if (skinnum > -1)	// otherwise, read from profile.
 	{
-		UINT8 *ccolormap;
-		INT32 fln = K_FollowerAvailable(p->follower);
+		uint8_t *ccolormap;
+		int32_t fln = K_FollowerAvailable(p->follower);
 
 		if (R_SkinUsable(g_localplayers[0], skinnum, false))
 			ccolormap = R_GetTranslationColormap(skinnum, truecol, GTC_MENUCACHE);
@@ -2441,13 +2441,13 @@ void M_DrawProfileCard(INT32 x, INT32 y, dboolean greyedout, profile_t *p)
 
 		if (!horngoner && fln >= 0)
 		{
-			UINT16 fcol = K_GetEffectiveFollowerColor(
+			uint16_t fcol = K_GetEffectiveFollowerColor(
 				p->followercolor,
 				&followers[fln],
 				p->color,
 				skins[skinnum]
 			);
-			UINT8 *fcolormap = R_GetTranslationColormap(
+			uint8_t *fcolormap = R_GetTranslationColormap(
 			(K_FollowerUsable(fln) ? TC_DEFAULT : TC_BLINK),
 				fcol, GTC_MENUCACHE);
 
@@ -2476,13 +2476,13 @@ void M_DrawProfileCard(INT32 x, INT32 y, dboolean greyedout, profile_t *p)
 
 void M_DrawCharacterSelect(void)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
-	UINT8 i, j, k;
-	UINT8 priority = 0;
-	INT16 quadx, quady;
-	INT16 skin;
-	INT32 basex = optionsmenu.profile ? (64 + M_EaseWithTransition(Easing_InSine, 5 * 48)) : 0;
+	uint8_t i, j, k;
+	uint8_t priority = 0;
+	int16_t quadx, quady;
+	int16_t skin;
+	int32_t basex = optionsmenu.profile ? (64 + M_EaseWithTransition(Easing_InSine, 5 * 48)) : 0;
 	dboolean forceskin = M_CharacterSelectForceInAction();
 
 	if (setup_numplayers > 0)
@@ -2566,7 +2566,7 @@ void M_DrawCharacterSelect(void)
 
 			if (skin != -1)
 			{
-				UINT8 *colormap;
+				uint8_t *colormap;
 
 				if (k == setup_numplayers)
 					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
@@ -2625,10 +2625,10 @@ void M_DrawRaceDifficulty(void)
 {
 	patch_t *box = W_CachePatchName("M_DBOX", PU_CACHE);
 
-	INT32 i;
-	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
-	INT32 x = 120 + tx;
-	INT32 y = 48;
+	int32_t i;
+	int32_t tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
+	int32_t x = 120 + tx;
+	int32_t y = 48;
 
 	M_DrawMenuTooltips();
 
@@ -2658,18 +2658,18 @@ void M_DrawRaceDifficulty(void)
 			case IT_STRING2:
 			{
 
-				INT32 f = (i == itemOn) ? highlightflags : 0;
+				int32_t f = (i == itemOn) ? highlightflags : 0;
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 					// implicitely we'll only take care of normal cvars
-					INT32 cx = 190 + tx;
+					int32_t cx = 190 + tx;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					if (i == itemOn)
 					{
 
-						INT32 w = V_MenuStringWidth(cv->string, 0)/2;
+						int32_t w = V_MenuStringWidth(cv->string, 0)/2;
 
 						M_DrawUnderline(124, 190 + w, y);
 
@@ -2695,8 +2695,8 @@ void M_DrawRaceDifficulty(void)
 			case IT_STRING:
 			{
 
-				INT32 cx = x;
-				UINT8 *colormap = NULL;
+				int32_t cx = x;
+				uint8_t *colormap = NULL;
 
 				if (i == itemOn)
 				{
@@ -2716,8 +2716,8 @@ void M_DrawRaceDifficulty(void)
 				if (currentMenu->menuitems[i].status & (IT_CVAR | IT_ARROWS))
 				{
 
-					INT32 fx = (cx - tx);
-					INT32 centx = fx + (320-fx)/2 + (tx);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
+					int32_t fx = (cx - tx);
+					int32_t centx = fx + (320-fx)/2 + (tx);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
 
 					const char *val = currentMenu->menuitems[i].text;
 					if (currentMenu->menuitems[i].status & IT_CVAR)
@@ -2762,8 +2762,8 @@ void M_DrawRaceDifficulty(void)
 				dboolean activated = g_drace_timer.dist == i;
 				dboolean flicker = activated && (I_GetTime() - g_drace_timer.start) % 2 < 1;
 
-				INT32 cx = it->mvar1 + tx;
-				INT32 cy = 79;
+				int32_t cx = it->mvar1 + tx;
+				int32_t cy = 79;
 
 				const char *pat = i == drace_mritems && cv_thunderdome.value ? "RBOXTOGG" : it->patch;
 
@@ -2793,21 +2793,21 @@ void M_DrawRaceDifficulty(void)
 
 // LEVEL SELECT
 
-static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
+static void M_DrawCupPreview(int16_t y, levelsearch_t *baselevelsearch)
 {
 	levelsearch_t locklesslevelsearch = *baselevelsearch; // full copy
 	locklesslevelsearch.checklocked = false;
 
-	UINT8 i = 0;
-	INT16 maxlevels = M_CountLevelsToShowInList(&locklesslevelsearch);
-	const UINT32 ustep = 82;
+	uint8_t i = 0;
+	int16_t maxlevels = M_CountLevelsToShowInList(&locklesslevelsearch);
+	const uint32_t ustep = 82;
 	const fixed_t fracstep = (ustep * FRACUNIT);
 
-	UINT32 unsignedportion = 0;
+	uint32_t unsignedportion = 0;
 	fixed_t x = 0;
 
-	INT16 map, start = M_GetFirstLevelInList(&i, &locklesslevelsearch);
-	UINT8 starti = i;
+	int16_t map, start = M_GetFirstLevelInList(&i, &locklesslevelsearch);
+	uint8_t starti = i;
 
 	patch_t *staticpat = unvisitedlvl[cupgrid.previewanim % 4];
 
@@ -2816,7 +2816,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 		unsignedportion = (cupgrid.previewanim % (maxlevels * ustep));
 		x = (unsignedportion * FRACUNIT) + rendertimefrac_unpaused;
 
-		INT16 add = (x / fracstep) % maxlevels;
+		int16_t add = (x / fracstep) % maxlevels;
 		map = start;
 		while (add > 0)
 		{
@@ -2877,9 +2877,9 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *baselevelsearch)
 	}
 }
 
-static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
+static void M_DrawCupTitle(int16_t y, levelsearch_t *levelsearch)
 {
-	UINT8 temp = 0;
+	uint8_t temp = 0;
 
 	V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
 
@@ -2890,10 +2890,10 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 	else if (levelsearch->cup)
 	{
 		dboolean unlocked = (M_GetFirstLevelInList(&temp, levelsearch) != NEXTMAP_INVALID);
-		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
+		uint8_t *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 		patch_t *icon = W_CachePatchName(levelsearch->cup->icon, PU_CACHE);
 		const char *str = (unlocked ? va("%s Cup", levelsearch->cup->realname) : "???");
-		INT16 offset = V_LSTitleLowStringWidth(str, 0) / 2;
+		int16_t offset = V_LSTitleLowStringWidth(str, 0) / 2;
 
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
 
@@ -2907,15 +2907,15 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 	{
 		if (currentMenu == &PLAY_LevelSelectDef)
 		{
-			UINT8 namedgt = (levellist.guessgt != MAXGAMETYPES) ? levellist.guessgt : levellist.newgametype;
+			uint8_t namedgt = (levellist.guessgt != MAXGAMETYPES) ? levellist.guessgt : levellist.newgametype;
 			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", gametypes[namedgt]->name));
 		}
 	}
 }
 
-fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, dboolean flash, dboolean statsmode)
+fixed_t M_DrawCupWinData(int32_t rankx, int32_t ranky, cupheader_t *cup, uint8_t difficulty, dboolean flash, dboolean statsmode)
 {
-	INT32 rankw = 14 + 1 + 12 + 1 + 12;
+	int32_t rankw = 14 + 1 + 12 + 1 + 12;
 
 	if (!cup)
 		return 0;
@@ -2936,7 +2936,7 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 	rankx += 19 - (rankw / 2);
 
 	cupwindata_t *windata = &(cup->windata[difficulty]);
-	UINT8 emeraldnum = UINT8_MAX;
+	uint8_t emeraldnum = UINT8_MAX;
 
 	if (!noemerald)
 	{
@@ -2953,7 +2953,7 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 		else
 		{
 			// Determine order from sealedswaps.
-			UINT8 i;
+			uint8_t i;
 			for (i = 0; (i < GDMAX_SEALEDSWAPS && gamedata->sealedswaps[i]); i++)
 			{
 				if (gamedata->sealedswaps[i] != cup)
@@ -3005,13 +3005,13 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 		goto windataemeraldmaybe;
 	}
 
-	UINT8 *colormap = NULL;
+	uint8_t *colormap = NULL;
 
 	if (statsmode)
 	{
 		const char monitorletter = (cup->monitor < 10) ? ('0' + cup->monitor) : ('A' + (cup->monitor - 10));
 		patch_t *monPat = W_CachePatchName(va("CUPMON%c%c", monitorletter, 'C'), PU_CACHE);
-		UINT16 moncolor = SKINCOLOR_NONE;
+		uint16_t moncolor = SKINCOLOR_NONE;
 
 		switch (windata->best_placement)
 		{
@@ -3042,7 +3042,7 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 
 	const gp_rank_e grade = windata->best_grade; // (cupgrid.previewanim/TICRATE) % (GRADE_S + 1); -- testing
 	patch_t *gradePat = NULL;
-	UINT16 gradecolor = K_GetGradeColor(grade);
+	uint16_t gradecolor = K_GetGradeColor(grade);
 
 	if (gradecolor != SKINCOLOR_NONE)
 		colormap = R_GetTranslationColormap(TC_DEFAULT, gradecolor, GTC_MENUCACHE);
@@ -3087,7 +3087,7 @@ fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 diffi
 	}
 	else
 	{
-		UINT16 skin = windata->best_skin.id;
+		uint16_t skin = windata->best_skin.id;
 
 		colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 
@@ -3113,7 +3113,7 @@ windataemeraldmaybe:
 
 			if (!flash)
 			{
-				UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (emeraldnum-1) % 7;
+				uint16_t col = SKINCOLOR_CHAOSEMERALD1 + (emeraldnum-1) % 7;
 
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 			}
@@ -3135,17 +3135,17 @@ windataemeraldmaybe:
 	return rankw;
 }
 
-void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, dboolean isTrophy, UINT8 placement)
+void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, int32_t lockedTic, dboolean isTrophy, uint8_t placement)
 {
 	patch_t *patch = NULL;
-	UINT8 *colormap = NULL;
-	INT16 icony = 7;
+	uint8_t *colormap = NULL;
+	int16_t icony = 7;
 	char status = 'A';
 	char monitor = '0';
 
 	if (isTrophy)
 	{
-		UINT16 col = SKINCOLOR_NONE;
+		uint16_t col = SKINCOLOR_NONE;
 
 		switch (placement)
 		{
@@ -3225,14 +3225,14 @@ void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, dboolean
 
 void M_DrawCupSelect(void)
 {
-	UINT8 i, j, temp = 0;
-	INT16 x, y;
-	INT16 cy = M_EaseWithTransition(Easing_Linear, 5 * 30);
+	uint8_t i, j, temp = 0;
+	int16_t x, y;
+	int16_t cy = M_EaseWithTransition(Easing_Linear, 5 * 30);
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 	dboolean isLocked;
 	const dboolean isGP = (templevelsearch.grandprix && (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX));
-	const UINT8 numrows = (cupgrid.cache_secondrowlocked ? 1 : CUPMENU_ROWS);
+	const uint8_t numrows = (cupgrid.cache_secondrowlocked ? 1 : CUPMENU_ROWS);
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
@@ -3334,7 +3334,7 @@ void M_DrawCupSelect(void)
 		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
 	}
 
-	INT16 ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
+	int16_t ty = M_EaseWithTransition(Easing_Linear, 5 * 24);
 	y = 146 + ty;
 	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
 	M_DrawCupPreview(y, &templevelsearch);
@@ -3372,15 +3372,15 @@ void M_DrawCupSelect(void)
 
 		struct work_array_t {
 			emblem_t *medal;
-			UINT16 col;
-			UINT16 dotcol;
+			uint16_t col;
+			uint16_t dotcol;
 		} work_array[CUPCACHE_MAX];
 
 		dboolean incj = false;
 
 		i = j = 0;
 
-		INT16 map = M_GetFirstLevelInList(&i, &templevelsearch);
+		int16_t map = M_GetFirstLevelInList(&i, &templevelsearch);
 		emblem_t *emblem = NULL;
 
 		while (map < nummapheaders && j < CUPCACHE_MAX)
@@ -3538,14 +3538,14 @@ void M_DrawCupSelect(void)
 	}
 }
 
-static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
+static void M_DrawHighLowLevelTitle(int16_t x, int16_t y, int16_t map)
 {
 	char word1[22];
 	char word2[22 + 2]; // actnum
-	UINT8 word1len = 0;
-	UINT8 word2len = 0;
-	INT16 x2 = x;
-	UINT8 i;
+	uint8_t word1len = 0;
+	uint8_t word2len = 0;
+	int16_t x2 = x;
+	uint8_t i;
 
 	if (!mapheaderinfo[map]
 		|| (
@@ -3640,11 +3640,11 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 		V_DrawLSTitleLowString(x2, y+28, 0, word2);
 }
 
-static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, dboolean allowtime, dboolean allowencore, dboolean allowspb, dboolean allowbonus, dboolean draw);
+static int32_t M_DrawMapMedals(int32_t mapnum, int32_t x, int32_t y, dboolean allowtime, dboolean allowencore, dboolean allowspb, dboolean allowbonus, dboolean draw);
 
-static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, dboolean redblink, dboolean greyscale)
+static void M_DrawLevelSelectBlock(int16_t x, int16_t y, uint16_t map, dboolean redblink, dboolean greyscale)
 {
-	UINT8 *colormap = NULL;
+	uint8_t *colormap = NULL;
 
 	if (greyscale)
 		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
@@ -3689,7 +3689,7 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, dboolean redbli
 			&& M_SecretUnlocked(SECRET_SPBATTACK, true)
 		);
 
-		INT32 width = x - M_DrawMapMedals(map, x, y,
+		int32_t width = x - M_DrawMapMedals(map, x, y,
 			levellist.levelsearch.timeattack,
 			allowencore,
 			allowspb,
@@ -3703,7 +3703,7 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, dboolean redbli
 
 			V_DrawFill(x + 7 - width, y - 2, width, 9, 31);
 
-			UINT8 i;
+			uint8_t i;
 			for (i = 1; i < 7; i++)
 			{
 				V_DrawFill(x + 7 - width - i, y + i - 2, 1, 9 - i, 31);
@@ -3722,11 +3722,11 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, UINT16 map, dboolean redbli
 
 void M_DrawLevelSelect(void)
 {
-	INT16 i = 0;
-	UINT8 j = 0;
-	INT16 map = M_GetFirstLevelInList(&j, &levellist.levelsearch);
-	INT16 t = M_EaseWithTransition(Easing_Linear, 5 * 64), tay = 0;
-	INT16 y = 80 - levellist.y +
+	int16_t i = 0;
+	uint8_t j = 0;
+	int16_t map = M_GetFirstLevelInList(&j, &levellist.levelsearch);
+	int16_t t = M_EaseWithTransition(Easing_Linear, 5 * 64), tay = 0;
+	int16_t y = 80 - levellist.y +
 		Easing_OutSine(
 			M_DueFrac(levellist.slide.start, 4),
 			levellist.slide.dist,
@@ -3742,7 +3742,7 @@ void M_DrawLevelSelect(void)
 
 	while (true)
 	{
-		INT16 lvlx = t, lvly = y;
+		int16_t lvlx = t, lvly = y;
 
 		if (map >= nummapheaders)
 			break;
@@ -3825,7 +3825,7 @@ void M_DrawSealedBack(void)
 	if (M_LevelSelectHasBG(currentMenu) == false)
 		return;
 
-	INT32 translucencylevel = 7;
+	int32_t translucencylevel = 7;
 	if (M_LevelSelectToTimeAttackTransitionHelper())
 	{
 		translucencylevel += menutransition.tics/3;
@@ -3845,13 +3845,13 @@ void M_DrawSealedBack(void)
 
 void M_DrawTimeAttack(void)
 {
-	UINT16 map = levellist.choosemap;
-	INT16 t = M_EaseWithTransition(Easing_Linear, 5 * 48);
-	INT16 leftedge = 149+t+16;
-	INT16 rightedge = 149+t+155;
-	INT16 opty = 140;
-	INT32 w;
-	UINT8 i;
+	uint16_t map = levellist.choosemap;
+	int16_t t = M_EaseWithTransition(Easing_Linear, 5 * 48);
+	int16_t leftedge = 149+t+16;
+	int16_t rightedge = 149+t+155;
+	int16_t opty = 140;
+	int32_t w;
+	uint8_t i;
 
 	V_DrawScaledPatch(149+t, 70, 0, W_CachePatchName("BESTTIME", PU_CACHE));
 
@@ -3863,7 +3863,7 @@ void M_DrawTimeAttack(void)
 
 	{
 		patch_t *minimap = NULL;
-		INT32 minimapx = 76, minimapy = 130;
+		int32_t minimapx = 76, minimapy = 130;
 
 		if (M_LevelSelectToTimeAttackTransitionHelper())
 			minimapx -= t;
@@ -3873,7 +3873,7 @@ void M_DrawTimeAttack(void)
 			// Star Within The Seal
 
 #define SEAL_PULSELEN ((6*TICRATE)/5) // The rate of O_SSTAR3
-			INT32 crossfade = (timeattackmenu.ticker % (2*SEAL_PULSELEN)) - SEAL_PULSELEN;
+			int32_t crossfade = (timeattackmenu.ticker % (2*SEAL_PULSELEN)) - SEAL_PULSELEN;
 			if (crossfade < 0)
 				crossfade = -crossfade;
 			crossfade = (crossfade * 10)/SEAL_PULSELEN;
@@ -3908,7 +3908,7 @@ void M_DrawTimeAttack(void)
 		}
 		else if (levellist.newgametype == GT_VERSUS)
 		{
-			const INT32 teaserh = 56;
+			const int32_t teaserh = 56;
 			minimapy -= 1; // tiny adjustment
 
 			V_DrawScaledPatch(
@@ -3940,7 +3940,7 @@ void M_DrawTimeAttack(void)
 		recordtimes_t *record = cv_dummyspbattack.value ? &rcp->spbattack : &rcp->timeattack;
 		tic_t timerec = record->time;
 		tic_t laprec = record->lap;
-		UINT32 timeheight = 82;
+		uint32_t timeheight = 82;
 
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 			&& (mapheaderinfo[map]->numlaps != 1))
@@ -3959,8 +3959,8 @@ void M_DrawTimeAttack(void)
 
 		// SPB Attack control hint + menu overlay
 		{
-			INT32 buttonx = 162 + t;
-			INT32 buttony = timeheight;
+			int32_t buttonx = 162 + t;
+			int32_t buttony = timeheight;
 
 			if (M_EncoreAttackTogglePermitted())
 			{
@@ -3981,7 +3981,7 @@ void M_DrawTimeAttack(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		UINT32 f = (i == itemOn) ? highlightflags : 0;
+		uint32_t f = (i == itemOn) ? highlightflags : 0;
 
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
@@ -4013,7 +4013,7 @@ void M_DrawTimeAttack(void)
 				// Cvar specific handling
 				{
 					const char *str = NULL;
-					INT32 optflags = f;
+					int32_t optflags = f;
 					dboolean drawarrows = (i == itemOn);
 
 					if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_ARROWS)
@@ -4080,26 +4080,26 @@ void M_DrawMasterServerReminder(void)
 {
 	// Did you change the Server Browser address? Have a little reminder.
 
-	INT32 mservflags = 0;
+	int32_t mservflags = 0;
 	if (CV_IsSetToDefault(&cv_masterserver))
 		mservflags = highlightflags;
 	else
 		mservflags = warningflags;
 
-	INT32 y = BASEVIDHEIGHT - 10;
+	int32_t y = BASEVIDHEIGHT - 10;
 
 	V_DrawFadeFill(0, y-1, BASEVIDWIDTH, 10+1, 0, 31, 5);
 	V_DrawCenteredThinString(BASEVIDWIDTH/2, y,
 		mservflags, va("List via \"%s\"", cv_masterserver.string));
 }
 
-static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
+static void M_MPOptDrawer(menu_t *m, int16_t extend[3][3])
 {
 	// This is a copypaste of the generic gamemode menu code with a few changes.
 	// TODO: Allow specific options to "expand" into smaller ones.
 
 	patch_t *buttback = W_CachePatchName("M_PLAT2", PU_CACHE);
-	INT32 i, x = 132, y = 32;	// Dirty magic numbers for now but they work out.
+	int32_t i, x = 132, y = 32;	// Dirty magic numbers for now but they work out.
 
 	for (i = 0; i < m->numitems; i++)
 	{
@@ -4108,8 +4108,8 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 		{
 			case IT_STRING:
 				{
-					UINT8 *colormap = NULL;
-					INT16 j = 0;
+					uint8_t *colormap = NULL;
+					int16_t j = 0;
 
 					if ((currentMenu == m && i == itemOn) || extend[i][0])	// Selected / unfolded
 					{
@@ -4168,7 +4168,7 @@ void M_DrawMPOptSelect(void)
 void M_DrawMPHost(void)
 {
 	patch_t *gobutt = W_CachePatchName("M_BUTTGO", PU_CACHE);	// I'm very mature
-	INT32 xp = 40, yp = 64, i = 0, w = 0;	// Starting position for the text drawing.
+	int32_t xp = 40, yp = 64, i = 0, w = 0;	// Starting position for the text drawing.
 
 	M_DrawMPOptSelect();	// Draw the Multiplayer option select menu first
 
@@ -4180,7 +4180,7 @@ void M_DrawMPHost(void)
 			xp = 202;
 			yp = 100;
 
-			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
+			uint8_t *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
 			if (i == itemOn)
 				colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
@@ -4213,7 +4213,7 @@ void M_DrawMPHost(void)
 							{
 								case IT_CV_STRING:
 									{
-										INT32 xoffs = 0;
+										int32_t xoffs = 0;
 										if (itemOn == i)
 										{
 											xoffs += 8;
@@ -4276,10 +4276,10 @@ void M_DrawMPJoinIP(void)
 	//patch_t *minigo = W_CachePatchName("M_SGO", PU_CACHE);
 	patch_t *typebar = W_CachePatchName("M_TYPEB", PU_CACHE);
 
-	//UINT8 *colormap = NULL;
-	UINT8 *colormapc = NULL;
+	//uint8_t *colormap = NULL;
+	uint8_t *colormapc = NULL;
 
-	INT32 xp = 73, yp = 133, i = 0;	// Starting position for the text drawing.
+	int32_t xp = 73, yp = 133, i = 0;	// Starting position for the text drawing.
 	M_DrawMPOptSelect();	// Draw the Multiplayer option select menu first
 
 
@@ -4298,7 +4298,7 @@ void M_DrawMPJoinIP(void)
 				// The last 3 options of this menu are to be the joined IP addresses...
 				if (currentMenu->numitems - i <= NUMLOGIP)
 				{
-					UINT8 index = NUMLOGIP - (currentMenu->numitems - i);
+					uint8_t index = NUMLOGIP - (currentMenu->numitems - i);
 					if (index == 0)
 					{
 						xp += 8;
@@ -4330,7 +4330,7 @@ void M_DrawMPJoinIP(void)
 								V_DrawFixedPatch((xp + 12)<<FRACBITS, (yp-2)<<FRACBITS, FRACUNIT, 0, typebar, colormapc);	// Always consider that this is selected otherwise it clashes.
 
 								{
-									INT32 xoffs = 0;
+									int32_t xoffs = 0;
 									if (itemOn == i)
 									{
 										xoffs += 8;
@@ -4369,8 +4369,8 @@ void M_DrawMPJoinIP(void)
 void M_DrawMPRoomSelect(void)
 {
 	// Greyscale colormaps for the option that's not selected's background
-	UINT8 *colormap_l = NULL;
-	UINT8 *colormap_r = NULL;
+	uint8_t *colormap_l = NULL;
+	uint8_t *colormap_r = NULL;
 
 	patch_t *bg_l = W_CachePatchName("BG_MPS21", PU_CACHE);
 	patch_t *bg_r = W_CachePatchName("BG_MPS22", PU_CACHE);
@@ -4384,8 +4384,8 @@ void M_DrawMPRoomSelect(void)
 	patch_t *drawp = scrollp[mpmenu.room];
 
 	fixed_t scrollposx[] = {(BASEVIDWIDTH/4)<<FRACBITS, (BASEVIDWIDTH/2 + BASEVIDWIDTH/4)<<FRACBITS};
-	UINT8 i;
-	INT32 soffy = 0;
+	uint8_t i;
+	int32_t soffy = 0;
 
 	if (mpmenu.room)
 		colormap_l = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_CACHE);
@@ -4427,10 +4427,10 @@ void M_DrawMPRoomSelect(void)
 static void M_DrawServerCountAndHorizontalBar(void)
 {
 	const char *text;
-	INT32 y = currentMenu->y+STRINGHEIGHT;
+	int32_t y = currentMenu->y+STRINGHEIGHT;
 
 	const char throbber[4] = {'-', '\\', '|', '/'};
-	UINT8 throbindex = (mpmenu.ticker/4) % 4;
+	uint8_t throbindex = (mpmenu.ticker/4) % 4;
 
 	switch (M_GetWaitingMode())
 	{
@@ -4498,7 +4498,7 @@ void M_DrawMPServerBrowser(void)
 	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
 	patch_t *text2 = W_CachePatchName("MENUBGT2", PU_CACHE);
 
-	UINT8 i;
+	uint8_t i;
 
 	patch_t *servpats[3];
 	patch_t *gearpats[3];
@@ -4513,10 +4513,10 @@ void M_DrawMPServerBrowser(void)
 	fixed_t text1loop = LSBF_SHORT(text1->height)*FRACUNIT;
 	fixed_t text2loop = LSBF_SHORT(text2->width)*FRACUNIT;
 
-	const UINT8 startx = 18;
-	const UINT8 basey = 56;
-	const INT32 starty = basey - 18*mpmenu.scrolln + mpmenu.slide;
-	INT32 ypos = 0;
+	const uint8_t startx = 18;
+	const uint8_t basey = 56;
+	const int32_t starty = basey - 18*mpmenu.scrolln + mpmenu.slide;
+	int32_t ypos = 0;
 
 	// background stuff
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName(header[mode][1], PU_CACHE), NULL);
@@ -4538,8 +4538,8 @@ void M_DrawMPServerBrowser(void)
 	// the actual server list.
 	for (i = 0; i < serverlistcount; i++)
 	{
-		INT32 transflag = 0;
-		INT32 basetransflag = 0;
+		int32_t transflag = 0;
+		int32_t basetransflag = 0;
 
 		if (serverlist[i].info.numberofplayer >= serverlist[i].info.maxplayer)
 			basetransflag = 5;
@@ -4603,7 +4603,7 @@ void M_DrawMPServerBrowser(void)
 			// game speed if applicable:
 			if (serverlist[i].cachedgtcalc != GTCALC_BATTLE)
 			{
-				UINT8 speed = serverlist[i].info.kartvars & SV_SPEEDMASK;
+				uint8_t speed = serverlist[i].info.kartvars & SV_SPEEDMASK;
 
 				if (speed < 3)
 				{
@@ -4648,15 +4648,15 @@ void M_DrawOptionsCogs(void)
 			)
 		);
 	dboolean solidbg = M_GameTrulyStarted() && !eggahack;
-	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
+	uint32_t tick = ((optionsmenu.ticker/10) % 3) + 1;
 
 	// the background isn't drawn outside of being in the main menu state.
 	if (gamestate == GS_MENU && solidbg)
 	{
 		patch_t *back = W_CachePatchName(va("OPT_BG%u", tick), PU_CACHE);
-		INT32 tflag = 0;
-		UINT8 *c;
-		UINT8 *c2;	// colormap for the one we're changing
+		int32_t tflag = 0;
+		uint8_t *c;
+		uint8_t *c2;	// colormap for the one we're changing
 
 		if (optionsmenu.fade)
 		{
@@ -4698,7 +4698,7 @@ void M_DrawOptionsColorProfile(void)
 			)
 		);
 	dboolean solidbg = M_GameTrulyStarted() && !eggahack;
-	UINT32 tick = ((optionsmenu.ticker/10) % 3) + 1;
+	uint32_t tick = ((optionsmenu.ticker/10) % 3) + 1;
 
 	// the background isn't drawn outside of being in the main menu state.
 	if (gamestate == GS_MENU && solidbg)
@@ -4706,9 +4706,9 @@ void M_DrawOptionsColorProfile(void)
 		patch_t *back = W_CachePatchName(va("OPT_BG%u", tick), PU_CACHE);
 		patch_t *colorp_photo = W_CachePatchName("COL_PHO", PU_CACHE);
 		patch_t *colorp_bar = W_CachePatchName("COL_BAR", PU_CACHE);
-		INT32 tflag = 0;
-		UINT8 *c;
-		UINT8 *c2;	// colormap for the one we're changing
+		int32_t tflag = 0;
+		uint8_t *c;
+		uint8_t *c2;	// colormap for the one we're changing
 
 		if (optionsmenu.fade)
 		{
@@ -4746,7 +4746,7 @@ void M_DrawOptionsColorProfile(void)
 void M_DrawOptionsMovingButton(void)
 {
 	patch_t *butt = W_CachePatchName("OPT_BUTT", PU_CACHE);
-	UINT8 *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+	uint8_t *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 	fixed_t t = M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
 	fixed_t z = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist * FRACUNIT, 0);
 	fixed_t tx = Easing_OutQuad(t, optionsmenu.optx * FRACUNIT, optionsmenu.toptx * FRACUNIT) + z;
@@ -4778,20 +4778,20 @@ void M_DrawOptionsMovingButton(void)
 
 void M_DrawOptions(void)
 {
-	UINT8 i;
+	uint8_t i;
 	fixed_t t = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist * FRACUNIT, 0);
 	fixed_t x = (140 - (48*itemOn))*FRACUNIT + t;
 	fixed_t y = 70*FRACUNIT + t;
 	fixed_t tx = M_EaseWithTransition(Easing_InQuart, 5 * 64 * FRACUNIT);
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
-	UINT8 *c = NULL;
+	uint8_t *c = NULL;
 
 	for (i=0; i < currentMenu->numitems; i++)
 	{
 		fixed_t py = y - (itemOn*48)*FRACUNIT;
 		fixed_t px = x - tx;
-		INT32 tflag = 0;
+		int32_t tflag = 0;
 
 		if (i == itemOn)
 			c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
@@ -4838,9 +4838,9 @@ void M_DrawOptions(void)
 
 }
 
-static void M_DrawOptionsBoxTerm(INT32 x, INT32 top, INT32 bottom)
+static void M_DrawOptionsBoxTerm(int32_t x, int32_t top, int32_t bottom)
 {
-	INT32 px = x - 20;
+	int32_t px = x - 20;
 
 	V_DrawFill(px, top + 4, 2, bottom - top, orangemap[0]);
 	V_DrawFill(px + 1, top + 5, 2, bottom - top, 31);
@@ -4852,9 +4852,9 @@ static void M_DrawOptionsBoxTerm(INT32 x, INT32 top, INT32 bottom)
 	V_DrawFill(px, bottom + 3, BASEVIDWIDTH - (2 * px), 2, 31);
 }
 
-static void M_DrawLinkArrow(INT32 x, INT32 y, INT32 i)
+static void M_DrawLinkArrow(int32_t x, int32_t y, int32_t i)
 {
-	UINT8 ch = currentMenu->menuitems[i].text[0];
+	uint8_t ch = currentMenu->menuitems[i].text[0];
 
 	V_DrawMenuString(
 		x + (i == itemOn ? 1 + skullAnimCounter/5 : 0),
@@ -4867,9 +4867,9 @@ static void M_DrawLinkArrow(INT32 x, INT32 y, INT32 i)
 
 void M_DrawGenericOptions(void)
 {
-	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = -100;
-	INT32 expand = -1;
-	INT32 boxy = 0;
+	int32_t x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y, w, i, cursory = -100;
+	int32_t expand = -1;
+	int32_t boxy = 0;
 	dboolean collapse = false;
 	dboolean opening = false;
 	fixed_t boxt = 0;
@@ -4922,7 +4922,7 @@ box_found:
 
 					if (menutransition.tics == menutransition.dest)
 					{
-						INT32 px = x - 20;
+						int32_t px = x - 20;
 						V_DrawFill(px, y + 4, BASEVIDWIDTH - (2 * px), 2, orangemap[0]);
 						V_DrawFill(px + 1, y + 5, BASEVIDWIDTH - (2 * px), 2, 31);
 					}
@@ -5005,7 +5005,7 @@ box_found:
 					break;
 				}
 
-				INT32 px = x + ((currentMenu->menuitems[i].status & IT_TYPE) == IT_SUBMENU
+				int32_t px = x + ((currentMenu->menuitems[i].status & IT_TYPE) == IT_SUBMENU
 					|| (currentMenu->menuitems[i].status & IT_DISPLAY) == IT_LINKTEXT ? 8 : 0);
 
 				if (i == itemOn)
@@ -5039,7 +5039,7 @@ box_found:
 								break;
 							case IT_CV_STRING:
 								{
-									INT32 xoffs = 6;
+									int32_t xoffs = 6;
 									if (itemOn == i)
 									{
 										xoffs = 8;
@@ -5134,8 +5134,8 @@ box_found:
 // *Heavily* simplified version of the generic options menu, cattered only towards erasing profiles.
 void M_DrawProfileErase(void)
 {
-	INT32 x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y-SMALLLINEHEIGHT, i, cursory = 0;
-	UINT8 np = PR_GetNumProfiles();
+	int32_t x = currentMenu->x - M_EaseWithTransition(Easing_Linear, 5 * 48), y = currentMenu->y-SMALLLINEHEIGHT, i, cursory = 0;
+	uint8_t np = PR_GetNumProfiles();
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
@@ -5163,10 +5163,10 @@ void M_DrawProfileErase(void)
 // Draws profile selection
 void M_DrawProfileSelect(void)
 {
-	INT32 i;
-	const INT32 maxp = PR_GetNumProfiles();
-	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist, 0);
-	INT32 y = 35 + M_EaseWithTransition(Easing_Linear, 5 * 32);
+	int32_t i;
+	const int32_t maxp = PR_GetNumProfiles();
+	int32_t x = 160 - optionsmenu.profilen*(128 + 128/8) + Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist, 0);
+	int32_t y = 35 + M_EaseWithTransition(Easing_Linear, 5 * 32);
 
 	M_DrawMenuTooltips();
 
@@ -5213,9 +5213,9 @@ void M_DrawEditProfileTooltips(void)
 void M_DrawEditProfile(void)
 {
 
-	INT32 y = 34;
-	INT32 x = (145 + M_EaseWithTransition(Easing_InSine, 5 * 48));
-	INT32 i;
+	int32_t y = 34;
+	int32_t x = (145 + M_EaseWithTransition(Easing_InSine, 5 * 48));
+	int32_t i;
 
 	M_DrawEditProfileTooltips();
 
@@ -5223,9 +5223,9 @@ void M_DrawEditProfile(void)
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 
-		UINT8 *colormap = NULL;
-		INT32 tflag = (currentMenu->menuitems[i].status & IT_TRANSTEXT) ? V_TRANSLUCENT : 0;
-		INT32 cx = x;
+		uint8_t *colormap = NULL;
+		int32_t tflag = (currentMenu->menuitems[i].status & IT_TRANSTEXT) ? V_TRANSLUCENT : 0;
+		int32_t cx = x;
 
 		y = currentMenu->menuitems[i].mvar2;
 
@@ -5271,7 +5271,7 @@ void M_DrawEditProfile(void)
 }
 
 // Controller offsets to center on each button.
-INT16 controlleroffsets[][2] = {
+int16_t controlleroffsets[][2] = {
 	{0, 0},			// gc_none
 	{69, 142},		// gc_up
 	{69, 182},		// gc_down
@@ -5288,7 +5288,7 @@ INT16 controlleroffsets[][2] = {
 	{149, 187},		// gc_start
 };
 
-static void M_DrawBindBen(INT32 x, INT32 y, INT32 scroll_remaining)
+static void M_DrawBindBen(int32_t x, int32_t y, int32_t scroll_remaining)
 {
 	// optionsmenu.bindben_swallow
 	const int pose_time = 30;
@@ -5357,7 +5357,7 @@ static void M_DrawBindBen(INT32 x, INT32 y, INT32 scroll_remaining)
 	V_DrawMappedPatch(x-30, y, 0, W_CachePatchName(va("PR_BIN%c%c", state, '1' + frame), PU_CACHE), aquamap);
 }
 
-static void M_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
+static void M_DrawBindMediumString(int32_t y, int32_t flags, const char *string)
 {
 	fixed_t w = V_StringScaledWidth(FRACUNIT, FRACUNIT, FRACUNIT, flags, MED_FONT, string);
 	fixed_t x = BASEVIDWIDTH/2 * FRACUNIT - w/2;
@@ -5376,9 +5376,9 @@ static void M_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
 
 // largely replaced by K_DrawGameControl
 /*
-static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const char *mediocre_key)
+static int32_t M_DrawProfileLegend(int32_t x, int32_t y, const char *legend, const char *mediocre_key)
 {
-	INT32 w = V_ThinStringWidth(legend, 0);
+	int32_t w = V_ThinStringWidth(legend, 0);
 	V_DrawThinString(x - w, y, 0, legend);
 	x -= w + 2;
 	if (mediocre_key)
@@ -5391,13 +5391,13 @@ static INT32 M_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const cha
 // Dear god.
 void M_DrawProfileControls(void)
 {
-	const UINT8 spacing = 34;
-	INT32 y = 16 - (optionsmenu.controlscroll*spacing);
-	INT32 x = 8;
-	INT32 i, j, k;
-	const UINT8 pid = 0;
+	const uint8_t spacing = 34;
+	int32_t y = 16 - (optionsmenu.controlscroll*spacing);
+	int32_t x = 8;
+	int32_t i, j, k;
+	const uint8_t pid = 0;
 	patch_t *hint = W_CachePatchName("MENUHINT", PU_CACHE);
-	INT32 hintofs = 3;
+	int32_t hintofs = 3;
 
 	K_DrawInputDisplay(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 - optionsmenu.conty, 0, '_', pid, true, false);
 
@@ -5439,7 +5439,7 @@ void M_DrawProfileControls(void)
 	{
 		char buf[256];
 		char buf2[256];
-		INT32 keys[MAXINPUTMAPPING];
+		int32_t keys[MAXINPUTMAPPING];
 
 		// cursor
 		if (i == itemOn)
@@ -5476,7 +5476,7 @@ void M_DrawProfileControls(void)
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)	// not the proper way to check but this menu only has normal onoff cvars.
 				{												// (bitch you thought - Tyron 2024-09-22)
-					INT32 w;
+					int32_t w;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					w = V_MenuStringWidth(cv->string, 0);
@@ -5489,10 +5489,10 @@ void M_DrawProfileControls(void)
 				}
 				else if (currentMenu->menuitems[i].status & IT_CONTROL)
 				{
-					UINT32 vflags = V_FORCEUPPERCASE;
-					INT32 gc = currentMenu->menuitems[i].mvar1;
+					uint32_t vflags = V_FORCEUPPERCASE;
+					int32_t gc = currentMenu->menuitems[i].mvar1;
 
-					UINT8 available = 0, set = 0;
+					uint8_t available = 0, set = 0;
 
 					if (i != itemOn)
 						vflags |= V_GRAYMAP;
@@ -5590,9 +5590,9 @@ void M_DrawProfileControls(void)
 						}
 					}
 
-					INT32 bindx = x;
-					INT32 benx = 142;
-					INT32 beny = y - 8;
+					int32_t bindx = x;
+					int32_t benx = 142;
+					int32_t beny = y - 8;
 					if (i == itemOn)
 					{
 						// Extend yellow wedge down behind
@@ -5614,8 +5614,8 @@ void M_DrawProfileControls(void)
 							// the end of the first line onto
 							// the beginning of the second
 							// line.
-							UINT16 n = strlen(buf);
-							UINT16 t = min(optionsmenu.bindben, n);
+							uint16_t n = strlen(buf);
+							uint16_t t = min(optionsmenu.bindben, n);
 							memmove(&buf2[t], buf2, t + 1);
 							memcpy(buf2, &buf[n - t], t);
 							buf[n - t] = '\0';
@@ -5662,13 +5662,13 @@ void M_DrawProfileControls(void)
 	// Tooltip
 	// Draw it at the bottom of the screen
 	{
-		static UINT8 blue[256];
+		static uint8_t blue[256];
 		blue[31] = 253;
 		V_DrawMappedPatch(0, BASEVIDHEIGHT + hintofs, V_VFLIP, hint, blue);
 	}
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
-		INT32 ypos = BASEVIDHEIGHT + hintofs - 9 - 12;
+		int32_t ypos = BASEVIDHEIGHT + hintofs - 9 - 12;
 
 		if (!strcmp(currentMenu->menuitems[itemOn].tooltip, "DESCRIPTIVEINPUT-SENTINEL"))
 		{
@@ -5714,9 +5714,9 @@ void M_DrawProfileControls(void)
 			V_DrawThinString(12, ypos, V_YELLOWMAP, currentMenu->menuitems[itemOn].tooltip);
 		}
 
-		UINT16 oldsetting = cv_descriptiveinput->value;
+		uint16_t oldsetting = cv_descriptiveinput->value;
 		CV_StealthSetValue(cv_descriptiveinput, cv_dummyprofiledescriptiveinput.value);
-		INT32 xpos = BASEVIDWIDTH - 12;
+		int32_t xpos = BASEVIDWIDTH - 12;
 		xpos = K_DrawGameControl(xpos, ypos, 0, "<right> / <c>  Clear", 2, TINY_FONT, 0);
 		CV_StealthSetValue(cv_descriptiveinput, oldsetting);
 	}
@@ -5724,9 +5724,9 @@ void M_DrawProfileControls(void)
 	// Overlay for control binding
 	if (optionsmenu.bindtimer)
 	{
-		INT16 reversetimer = TICRATE*5 - optionsmenu.bindtimer;
-		INT32 fade = reversetimer;
-		INT32 ypos;
+		int16_t reversetimer = TICRATE*5 - optionsmenu.bindtimer;
+		int32_t fade = reversetimer;
+		int32_t ypos;
 
 		if (fade > 9)
 			fade = 9;
@@ -5764,8 +5764,8 @@ void M_DrawProfileControls(void)
 // Draw the video modes list, a-la-Quake
 void M_DrawVideoModes(void)
 {
-	INT32 i, j, row, col;
-	INT32 t = M_EaseWithTransition(Easing_Linear, 5 * 64);
+	int32_t i, j, row, col;
+	int32_t t = M_EaseWithTransition(Easing_Linear, 5 * 64);
 
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
@@ -5777,7 +5777,7 @@ void M_DrawVideoModes(void)
 	col = currentMenu->y + 14;
 	for (i = 0; i < optionsmenu.vidm_nummodes; i++)
 	{
-		INT32 colorflag = 0;
+		int32_t colorflag = 0;
 		dboolean isdefault = !strcmp(optionsmenu.modedescs[i].desc, va("%dx%d", cv_scr_width.value, cv_scr_height.value));
 
 		if (i == optionsmenu.vidm_selected)
@@ -5802,7 +5802,7 @@ void M_DrawVideoModes(void)
 
 	if (optionsmenu.vidm_testingmode > 0)
 	{
-		INT32 testtime = (optionsmenu.vidm_testingmode/TICRATE) + 1;
+		int32_t testtime = (optionsmenu.vidm_testingmode/TICRATE) + 1;
 
 		M_CentreText(t, currentMenu->y + 75,
 			va("Previewing mode %c%dx%d",
@@ -5852,7 +5852,7 @@ void M_DrawVideoModes(void)
 // Gameplay Item Tggles:
 tic_t shitsfree = 0;
 
-static void DrawMappedString(INT32 x, INT32 y, INT32 option, int font, const char *text, const UINT8 *colormap)
+static void DrawMappedString(int32_t x, int32_t y, int32_t option, int font, const char *text, const uint8_t *colormap)
 {
 	V_DrawStringScaled(
 		x * FRACUNIT,
@@ -5869,19 +5869,19 @@ static void DrawMappedString(INT32 x, INT32 y, INT32 option, int font, const cha
 
 void M_DrawItemToggles(void)
 {
-	static UINT8 black[256];
+	static uint8_t black[256];
 	memset(black, 16, 256);
 
-	const INT32 edges = 8;
-	const INT32 height = 4;
-	const INT32 spacing = 35;
-	const INT32 column = itemOn/height;
-	const INT32 row = itemOn%height;
-	INT32 leftdraw, rightdraw, totaldraw;
-	INT32 x, y = currentMenu->y;
-	INT32 onx = 0, ony = 0;
+	const int32_t edges = 8;
+	const int32_t height = 4;
+	const int32_t spacing = 35;
+	const int32_t column = itemOn/height;
+	const int32_t row = itemOn%height;
+	int32_t leftdraw, rightdraw, totaldraw;
+	int32_t x, y = currentMenu->y;
+	int32_t onx = 0, ony = 0;
 	consvar_t *cv;
-	INT32 i, drawnum;
+	int32_t i, drawnum;
 	patch_t *pat;
 
 	x = currentMenu->x
@@ -5914,11 +5914,11 @@ void M_DrawItemToggles(void)
 
 	for (i = leftdraw; i <= rightdraw; i++)
 	{
-		INT32 j;
+		int32_t j;
 
 		for (j = 0; j < height; j++)
 		{
-			const INT32 thisitem = (i*height)+j;
+			const int32_t thisitem = (i*height)+j;
 
 			if (thisitem >= currentMenu->numitems)
 				break;
@@ -5980,7 +5980,7 @@ void M_DrawItemToggles(void)
 			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBGD", PU_CACHE));
 			if (shitsfree)
 			{
-				INT32 trans = V_TRANSLUCENT;
+				int32_t trans = V_TRANSLUCENT;
 				if (shitsfree-1 > TICRATE-5)
 					trans = ((10-TICRATE)+shitsfree-1)<<V_ALPHASHIFT;
 				else if (shitsfree < 5)
@@ -6031,7 +6031,7 @@ void M_DrawItemToggles(void)
 	// Button prompts
 	x = (BASEVIDWIDTH/2) - cv_kartfrantic.value;
 	y = BASEVIDHEIGHT-20;
-	INT32 w = K_DrawGameControl(
+	int32_t w = K_DrawGameControl(
 		x, y, 0,
 		va(
 			"<c_animated> Toggle All %s<white>   <r_animated> Frantic Mode: %s",
@@ -6057,7 +6057,7 @@ void M_DrawItemToggles(void)
 void M_DrawExtrasMovingButton(void)
 {
 	patch_t *butt = W_CachePatchName("OPT_BUTT", PU_CACHE);
-	UINT8 *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+	uint8_t *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
 	V_DrawFixedPatch((extrasmenu.extx)*FRACUNIT, (extrasmenu.exty)*FRACUNIT, FRACUNIT, 0, butt, c);
 	V_DrawCenteredGamemodeString((extrasmenu.extx)-3, (extrasmenu.exty) - 16, 0, c, EXTRAS_MainDef.menuitems[EXTRAS_MainDef.lastOn].text);
@@ -6065,19 +6065,19 @@ void M_DrawExtrasMovingButton(void)
 
 void M_DrawExtras(void)
 {
-	UINT8 i;
-	INT32 t = Easing_OutSine(M_DueFrac(extrasmenu.offset.start, M_EXTRAS_OFSTIME), extrasmenu.offset.dist, 0);
-	INT32 x = 140 - (48*itemOn) + t;
-	INT32 y = 70 + t;
+	uint8_t i;
+	int32_t t = Easing_OutSine(M_DueFrac(extrasmenu.offset.start, M_EXTRAS_OFSTIME), extrasmenu.offset.dist, 0);
+	int32_t x = 140 - (48*itemOn) + t;
+	int32_t y = 70 + t;
 	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
 
-	UINT8 *c = NULL;
+	uint8_t *c = NULL;
 
 	for (i=0; i < currentMenu->numitems; i++)
 	{
-		INT32 py = y - (itemOn*48);
-		INT32 px = x - menutransition.tics*64;
-		INT32 tflag = 0;
+		int32_t py = y - (itemOn*48);
+		int32_t px = x - menutransition.tics*64;
+		int32_t tflag = 0;
 
 		if (i == itemOn)
 			c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
@@ -6139,21 +6139,21 @@ static char *M_GetGameplayMode(void)
 void M_DrawPause(void)
 {
 
-	SINT8 i;
-	SINT8 itemsdrawn = 0;
-	SINT8 countdown = 0;
-	INT16 ypos = -50;	// Draw 3 items from selected item (y=100 - 3 items spaced by 50 px each... you get the idea.)
-	INT16 dypos;
+	int8_t i;
+	int8_t itemsdrawn = 0;
+	int8_t countdown = 0;
+	int16_t ypos = -50;	// Draw 3 items from selected item (y=100 - 3 items spaced by 50 px each... you get the idea.)
+	int16_t dypos;
 
 	fixed_t mt = M_DueFrac(pausemenu.openoffset.start, 6);
 
 	if (pausemenu.openoffset.dist)
 		mt = FRACUNIT - mt;
 
-	INT16 offset = menutransition.tics ? floor(pow(2, (double)menutransition.tics)) : Easing_OutQuad(mt, 256, 0);
-	INT16 arrxpos = 150 + 2*offset;	// To draw the background arrow.
+	int16_t offset = menutransition.tics ? floor(pow(2, (double)menutransition.tics)) : Easing_OutQuad(mt, 256, 0);
+	int16_t arrxpos = 150 + 2*offset;	// To draw the background arrow.
 
-	INT16 j = 0;
+	int16_t j = 0;
 
 	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
@@ -6161,13 +6161,13 @@ void M_DrawPause(void)
 
 	fixed_t t = M_DueFrac(pausemenu.offset.start, 3);
 
-	UINT8 splitspectatestate = 0;
+	uint8_t splitspectatestate = 0;
 	if (G_GametypeHasSpectators() && pausemenu.splitscreenfocusid <= splitscreen)
 	{
 		// Identify relevant spectator state of pausemenu.splitscreenfocusid.
 		// See also M_HandleSpectatorToggle.
 
-		const UINT8 splitspecid =
+		const uint8_t splitspecid =
 			g_localplayers[pausemenu.splitscreenfocusid];
 
 		if (players[splitspecid].spectator)
@@ -6182,8 +6182,8 @@ void M_DrawPause(void)
 	//V_DrawFadeScreen(0xFF00, 16);
 
 	{
-		INT32 x = Easing_OutQuad(mt, -BASEVIDWIDTH, 0);
-		INT32 y = 56;
+		int32_t x = Easing_OutQuad(mt, -BASEVIDWIDTH, 0);
+		int32_t y = 56;
 
 		if (g_realsongcredit && !S_MusicDisabled())
 		{
@@ -6202,7 +6202,7 @@ void M_DrawPause(void)
 				name = buf;
 			}
 
-			INT32 width = V_StringScaledWidth(
+			int32_t width = V_StringScaledWidth(
 				FRACUNIT,
 				FRACUNIT,
 				FRACUNIT,
@@ -6286,7 +6286,7 @@ void M_DrawPause(void)
 			case IT_STRING:
 			{
 				patch_t *pp;
-				UINT8 *colormap = NULL;
+				uint8_t *colormap = NULL;
 
 				if (i == itemOn && (i == mpause_restartmap || i == mpause_tryagain))
 				{
@@ -6319,7 +6319,7 @@ void M_DrawPause(void)
 				// Multiply by -1 or 1 depending on whether we're below or above 100 px.
 				// This double ternary is awful, yes.
 
-				INT32 yofs = Easing_InQuad(t, pausemenu.offset.dist, 0);
+				int32_t yofs = Easing_InQuad(t, pausemenu.offset.dist, 0);
 				dypos = ypos + yofs;
 				V_DrawFixedPatch( ((i == itemOn ? (294 - yofs*2/3 * (dypos > 100 ? 1 : -1)) : 261) + offset) << FRACBITS, (dypos)*FRACUNIT, FRACUNIT, 0, pp, colormap);
 
@@ -6343,7 +6343,7 @@ void M_DrawPause(void)
 	const char *maintext = NULL;
 	const char *selectableheadertext = NULL;
 	const char *selectabletext = NULL;
-	INT32 mainflags = 0, selectableflags = 0;
+	int32_t mainflags = 0, selectableflags = 0;
 
 	if (itemOn == mpause_changegametype)
 	{
@@ -6390,7 +6390,7 @@ void M_DrawPause(void)
 	else if (itemOn == mpause_spectatetoggle)
 	{
 		const char *spectatetext = NULL;
-		INT32 spectateflags = 0;
+		int32_t spectateflags = 0;
 
 		if (splitspectatestate == 0)
 			spectatetext = "SPECTATE";
@@ -6434,7 +6434,7 @@ void M_DrawPause(void)
 		// The selectable text is shown below.
 		selectableflags |= V_YELLOWMAP;
 
-		INT32 w = V_LSTitleLowStringWidth(selectabletext, selectableflags)/2;
+		int32_t w = V_LSTitleLowStringWidth(selectabletext, selectableflags)/2;
 		V_DrawLSTitleLowString(220-w + offset*2, 103, selectableflags, selectabletext);
 
 		V_DrawMenuString(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, selectableflags, "\x1C"); // left arrow
@@ -6446,9 +6446,9 @@ void M_DrawPause(void)
 		// This is a regular menu option. Try to break it onto two lines.
 
 		char word1[MAXSTRINGLENGTH];
-		INT16 word1len = 0;
+		int16_t word1len = 0;
 		char word2[MAXSTRINGLENGTH];
-		INT16 word2len = 0;
+		int16_t word2len = 0;
 		dboolean sok = false;
 
 		while (maintext[j] && j < MAXSTRINGLENGTH)
@@ -6535,15 +6535,15 @@ void M_DrawPause(void)
 void M_DrawKickHandler(void)
 {
 	// fake round queue drawer simply to make release
-	INT32 x = 29 + 4, y = 70, returny = y;
-	INT32 pokeamount = playerkickmenu.poke ? ((playerkickmenu.poke & 1) ? -playerkickmenu.poke/2 : playerkickmenu.poke/2) : (I_GetTime() % 16 < 8);
-	INT32 x2 = x + pokeamount - 9 - 8 - 2;
+	int32_t x = 29 + 4, y = 70, returny = y;
+	int32_t pokeamount = playerkickmenu.poke ? ((playerkickmenu.poke & 1) ? -playerkickmenu.poke/2 : playerkickmenu.poke/2) : (I_GetTime() % 16 < 8);
+	int32_t x2 = x + pokeamount - 9 - 8 - 2;
 
 	dboolean datarightofcolumn = false;
 
 	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_CACHE); // Results bars for players
 
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -6568,7 +6568,7 @@ void M_DrawKickHandler(void)
 		{
 			if (players[i].skincolor != SKINCOLOR_NONE)
 			{
-				UINT8 *charcolormap;
+				uint8_t *charcolormap;
 				if ((players[i].pflags & PF_NOCONTEST) && players[i].bot)
 				{
 					// RETIRED !!
@@ -6634,10 +6634,10 @@ void M_DrawKickHandler(void)
 
 void M_DrawPlaybackMenu(void)
 {
-	INT16 i;
+	int16_t i;
 	patch_t *icon = NULL;
-	UINT8 *activemap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GOLD, GTC_MENUCACHE);
-	UINT32 transmap = max(0, (INT32)(leveltime - playback_last_menu_interaction_leveltime - 4*TICRATE)) / 5;
+	uint8_t *activemap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GOLD, GTC_MENUCACHE);
+	uint32_t transmap = max(0, (int32_t)(leveltime - playback_last_menu_interaction_leveltime - 4*TICRATE)) / 5;
 	transmap = min(8, transmap) << V_ALPHASHIFT;
 
 	// wip
@@ -6646,7 +6646,7 @@ void M_DrawPlaybackMenu(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		UINT8 *inactivemap = NULL;
+		uint8_t *inactivemap = NULL;
 
 		if (i >= playback_view1 && i <= playback_view4)
 		{
@@ -6654,7 +6654,7 @@ void M_DrawPlaybackMenu(void)
 
 			if (r_splitscreen >= i - playback_view1)
 			{
-				INT32 ply = displayplayers[i - playback_view1];
+				int32_t ply = displayplayers[i - playback_view1];
 
 				icon = faceprefix[players[ply].skin][FACE_RANK];
 				if (i != itemOn)
@@ -6748,10 +6748,10 @@ static void M_CacheAddonPatches(void)
 
 void M_DrawAddons(void)
 {
-	INT32 x, y;
+	int32_t x, y;
 	ptrdiff_t i, m;
-	const UINT8 *flashcol = NULL;
-	UINT8 hilicol;
+	const uint8_t *flashcol = NULL;
+	uint8_t hilicol;
 
 	M_CacheAddonPatches();
 
@@ -6778,8 +6778,8 @@ void M_DrawAddons(void)
 	M_DrawTextBox(x - (21 + 5), y, MAXSTRINGLENGTH, 1);
 	{
 		const char *str = (menusearch[0] ? cv_dummyaddonsearch.string : "Search...");
-		INT32 tflag = (menusearch[0] ? 0 : V_TRANSLUCENT);
-		INT32 xoffs = 0;
+		int32_t tflag = (menusearch[0] ? 0 : V_TRANSLUCENT);
+		int32_t xoffs = 0;
 		if (itemOn == 0)
 		{
 			xoffs += 8;
@@ -6836,10 +6836,10 @@ void M_DrawAddons(void)
 
 	for (; i < m; i++)
 	{
-		UINT32 flags = 0;
+		uint32_t flags = 0;
 		if (y > BASEVIDHEIGHT) break;
 		if (dirmenu[i])
-#define type (UINT8)(dirmenu[i][DIR_TYPE])
+#define type (uint8_t)(dirmenu[i][DIR_TYPE])
 		{
 			if (type & EXT_LOADED)
 			{
@@ -6890,17 +6890,17 @@ void M_DrawAddons(void)
 
 // Challenges Menu
 
-static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flashmap, dboolean hili)
+static void M_DrawChallengeTile(int16_t i, int16_t j, int32_t x, int32_t y, uint8_t *flashmap, dboolean hili)
 {
 #ifdef DEVELOP
 	extern consvar_t cv_debugchallenges;
 #endif
 	unlockable_t *ref = NULL;
 	patch_t *pat = missingpat;
-	UINT8 *colormap = NULL, *bgmap = NULL;
-	INT32 tileflags = 0;
+	uint8_t *colormap = NULL, *bgmap = NULL;
+	int32_t tileflags = 0;
 	fixed_t siz, accordion;
-	UINT16 id, num;
+	uint16_t id, num;
 	dboolean unlockedyet;
 
 	id = (i * CHALLENGEGRIDHEIGHT) + j;
@@ -6931,7 +6931,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 	// If we aren't unlocked yet, return early.
 	if (!unlockedyet)
 	{
-		UINT32 flags = 0;
+		uint32_t flags = 0;
 		dboolean hint = !!(challengesmenu.extradata[id].flags & CHE_HINT);
 
 		pat = W_CachePatchName(
@@ -6996,10 +6996,10 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 		(ref->majorunlock ? "UN_BORDB" : "UN_BORDA"),
 		PU_CACHE);
 
-	UINT8 iconid = 0;
+	uint8_t iconid = 0;
 
 	{
-		UINT16 bcol = SKINCOLOR_SILVER;
+		uint16_t bcol = SKINCOLOR_SILVER;
 		switch (ref->type)
 		{
 			case SECRET_SKIN:
@@ -7105,7 +7105,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 		{
 			case SECRET_SKIN:
 			{
-				INT32 skin = M_UnlockableSkinNum(ref);
+				int32_t skin = M_UnlockableSkinNum(ref);
 				if (skin != -1)
 				{
 					colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
@@ -7115,11 +7115,11 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 			}
 			case SECRET_FOLLOWER:
 			{
-				INT32 skin = M_UnlockableFollowerNum(ref);
+				int32_t skin = M_UnlockableFollowerNum(ref);
 				if (skin != -1)
 				{
-					INT32 psk = R_SkinAvailableEx(cv_skin[0].string, false);
-					UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, &followers[skin], cv_playercolor[0].value, (psk != -1) ? skins[psk] : skins[0]);
+					int32_t psk = R_SkinAvailableEx(cv_skin[0].string, false);
+					uint16_t col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, &followers[skin], cv_playercolor[0].value, (psk != -1) ? skins[psk] : skins[0]);
 					colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 					pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
 				}
@@ -7127,7 +7127,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 			}
 			case SECRET_COLOR:
 			{
-				INT32 colorid = M_UnlockableColorNum(ref);
+				int32_t colorid = M_UnlockableColorNum(ref);
 				if (colorid != SKINCOLOR_NONE)
 				{
 					colormap = R_GetTranslationColormap(TC_DEFAULT, colorid, GTC_MENUCACHE);
@@ -7138,7 +7138,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, UINT8 *flash
 
 			case SECRET_MAP:
 			{
-				UINT16 mapnum = M_UnlockableMapNum(ref);
+				uint16_t mapnum = M_UnlockableMapNum(ref);
 				if (mapnum < nummapheaders && mapheaderinfo[mapnum]
 					&& (
 					( // Check for visitation
@@ -7274,8 +7274,8 @@ drawborder:
 
 	if (num < MAXUNLOCKABLES && gamedata->unlockpending[num])
 	{
-		const INT32 area = (ref->majorunlock) ? 42 : 20;
-		INT32 val;
+		const int32_t area = (ref->majorunlock) ? 42 : 20;
+		int32_t val;
 		for (i = 0; i < area; i++)
 		{
 			val = (x + i + challengesmenu.ticker) % 40;
@@ -7322,7 +7322,7 @@ drawborder:
 
 #define challengetransparentstrength 8
 
-void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT16 skin, UINT8 *colormap, UINT16 baseskin)
+void M_DrawCharacterIconAndEngine(int32_t x, int32_t y, uint16_t skin, uint8_t *colormap, uint16_t baseskin)
 {
 	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT,
 		FRACUNIT,
@@ -7341,14 +7341,14 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT16 skin, UINT8 *colormap
 	V_DrawFill(x+16+1,   y+5,   14,  1,  0);
 	V_DrawFill(x+16+1,   y+5+5, 14,  1,  0);
 
-	INT32 s, w;
+	int32_t s, w;
 
 	if (skins[baseskin]->flags & SF_IRONMAN)
 	{
 		// this is the last thing i will do for rr pre-launhc ~toast 150424
 		// quoth tyron: "stat block rave holy shit"
 
-		UINT32 funnywomantimer = (gamedata->totalmenutime/4);
+		uint32_t funnywomantimer = (gamedata->totalmenutime/4);
 		funnywomantimer %= (8*2);
 		if (funnywomantimer <= 8)
 		{
@@ -7374,9 +7374,9 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT16 skin, UINT8 *colormap
 	}
 	else if (skins[baseskin]->flags & SF_HIVOLT)
 	{
-		UINT32 fucktimer = (gamedata->totalmenutime/2)%8;
-		UINT8 sq[] = {0, 1, 2, 2, 2, 1, 0, 0};
-		UINT8 wq[] = {0, 0, 0, 1, 2, 2, 2, 1};
+		uint32_t fucktimer = (gamedata->totalmenutime/2)%8;
+		uint8_t sq[] = {0, 1, 2, 2, 2, 1, 0, 0};
+		uint8_t wq[] = {0, 0, 0, 1, 2, 2, 2, 1};
 		s = sq[fucktimer];
 		w = wq[fucktimer];
 	}
@@ -7398,11 +7398,11 @@ void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT16 skin, UINT8 *colormap
 	V_DrawFill(x+16 + (s*5), y + (w*5), 6, 6, 0);
 }
 
-static const char* M_DrawChallengePreview(INT32 x, INT32 y)
+static const char* M_DrawChallengePreview(int32_t x, int32_t y)
 {
 	unlockable_t *ref = NULL;
-	UINT8 *colormap = NULL;
-	UINT16 specialmap = NEXTMAP_INVALID;
+	uint8_t *colormap = NULL;
+	uint16_t specialmap = NEXTMAP_INVALID;
 
 	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
@@ -7415,8 +7415,8 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		spritedef_t *sprdef = &sprites[SPR_UQMK];
 		spriteframe_t *sprframe;
 		patch_t *patch;
-		UINT32 useframe;
-		UINT32 addflags = 0;
+		uint32_t useframe;
+		uint32_t addflags = 0;
 
 		if (!sprdef->numframes)
 		{
@@ -7446,7 +7446,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 	{
 		case SECRET_SKIN:
 		{
-			INT32 skin = M_UnlockableSkinNum(ref), i;
+			int32_t skin = M_UnlockableSkinNum(ref), i;
 			// Draw our character!
 			if (skin != -1)
 			{
@@ -7485,8 +7485,8 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_FOLLOWER:
 		{
-			INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
-			INT32 fskin = M_UnlockableFollowerNum(ref);
+			int32_t skin = R_SkinAvailableEx(cv_skin[0].string, false);
+			int32_t fskin = M_UnlockableFollowerNum(ref);
 
 			// Draw proximity reference for character
 			if (skin == -1)
@@ -7502,7 +7502,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 			// Draw follower next to them
 			if (fskin != -1)
 			{
-				UINT16 col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, skins[skin]);
+				uint16_t col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, skins[skin]);
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				M_DrawFollowerSprite(x - 16, y, fskin, false, 0, colormap, NULL);
 
@@ -7578,10 +7578,10 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_COLOR:
 		{
-			INT32 colorid = M_UnlockableColorNum(ref);
+			int32_t colorid = M_UnlockableColorNum(ref);
 			if (colorid == SKINCOLOR_NONE)
 				break;
-			INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
+			int32_t skin = R_SkinAvailableEx(cv_skin[0].string, false);
 			if (skin == -1)
 				skin = 0;
 			colormap = R_GetTranslationColormap(skin, colorid, GTC_MENUCACHE);
@@ -7603,7 +7603,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		case SECRET_CUP:
 		{
 			levelsearch_t templevelsearch;
-			UINT32 i, id, maxid, offset;
+			uint32_t i, id, maxid, offset;
 			cupheader_t *temp = M_UnlockableCup(ref);
 
 			if (!temp)
@@ -7678,7 +7678,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		{
 			dboolean validdraw = false;
 			const char *gtname = "Find your prize...";
-			UINT16 mapnum = M_UnlockableMapNum(ref);
+			uint16_t mapnum = M_UnlockableMapNum(ref);
 
 			y = (BASEVIDHEIGHT-14);
 
@@ -7710,7 +7710,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 					mapnum,
 					NULL);
 
-				INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
+				int32_t guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
 
 				if (guessgt == -1)
 				{
@@ -7760,7 +7760,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_ENCORE:
 		{
-			static UINT16 encoremapcache = NEXTMAP_INVALID;
+			static uint16_t encoremapcache = NEXTMAP_INVALID;
 			if (encoremapcache > nummapheaders)
 			{
 				encoremapcache = G_RandMap(G_TOLFlag(GT_RACE), UINT16_MAX, true, false, NULL);
@@ -7770,7 +7770,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_TIMEATTACK:
 		{
-			static UINT16 tamapcache = NEXTMAP_INVALID;
+			static uint16_t tamapcache = NEXTMAP_INVALID;
 			if (tamapcache > nummapheaders)
 			{
 				tamapcache = G_RandMap(G_TOLFlag(GT_RACE), UINT16_MAX, true, false, NULL);
@@ -7780,7 +7780,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_PRISONBREAK:
 		{
-			static UINT16 btcmapcache = NEXTMAP_INVALID;
+			static uint16_t btcmapcache = NEXTMAP_INVALID;
 			if (btcmapcache > nummapheaders)
 			{
 				btcmapcache = G_RandMap(G_TOLFlag(GT_BATTLE), UINT16_MAX, true, false, NULL);
@@ -7790,7 +7790,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_SPECIALATTACK:
 		{
-			static UINT16 sscmapcache = NEXTMAP_INVALID;
+			static uint16_t sscmapcache = NEXTMAP_INVALID;
 			if (sscmapcache > nummapheaders)
 			{
 				sscmapcache = G_RandMap(G_TOLFlag(GT_SPECIAL), UINT16_MAX, true, false, NULL);
@@ -7800,7 +7800,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_SPBATTACK:
 		{
-			static UINT16 spbmapcache = NEXTMAP_INVALID;
+			static uint16_t spbmapcache = NEXTMAP_INVALID;
 			if (spbmapcache > nummapheaders)
 			{
 				spbmapcache = G_RandMap(G_TOLFlag(GT_RACE), UINT16_MAX, true, false, NULL);
@@ -7810,7 +7810,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_HARDSPEED:
 		{
-			static UINT16 hardmapcache = NEXTMAP_INVALID;
+			static uint16_t hardmapcache = NEXTMAP_INVALID;
 			if (hardmapcache > nummapheaders)
 			{
 				hardmapcache = G_RandMap(G_TOLFlag(GT_RACE), UINT16_MAX, true, false, NULL);
@@ -7820,7 +7820,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_MASTERMODE:
 		{
-			static UINT16 mastermapcache = NEXTMAP_INVALID;
+			static uint16_t mastermapcache = NEXTMAP_INVALID;
 			if (mastermapcache > nummapheaders)
 			{
 				mastermapcache = G_RandMap(G_TOLFlag(GT_RACE), UINT16_MAX, true, false, NULL);
@@ -7878,14 +7878,14 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_ALTMUSIC:
 		{
-			UINT16 map = M_UnlockableMapNum(ref);
+			uint16_t map = M_UnlockableMapNum(ref);
 			if (map >= nummapheaders
 				|| !mapheaderinfo[map])
 			{
 				break;
 			}
 
-			UINT8 musicid;
+			uint8_t musicid;
 			for (musicid = 1; musicid < MAXMUSNAMES; musicid++)
 			{
 				if (mapheaderinfo[map]->cache_muslock[musicid - 1] == challengesmenu.currentunlock)
@@ -7899,7 +7899,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 
 			const char *tune = "challenge_altmusic";
 
-			SINT8 pushed = 0;
+			int8_t pushed = 0;
 			const dboolean epossible = (M_SecretUnlocked(SECRET_ENCORE, true)
 				&& musicid < mapheaderinfo[map]->encoremusname_size);
 
@@ -7920,7 +7920,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 				spritedef_t *sprdef = &sprites[SPR_ALTM];
 				spriteframe_t *sprframe;
 				patch_t *patch = NULL;
-				UINT32 addflags = 0;
+				uint32_t addflags = 0;
 
 				x -= 10;
 				y += 15;
@@ -7929,7 +7929,7 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 				{
 #ifdef ROTSPRITE
 					spriteinfo_t *sprinfo = &spriteinfo[SPR_ALTM];
-					INT32 rollangle = 0;
+					int32_t rollangle = 0;
 					if (pushed != 0)
 					{
 						rollangle = (Music_Elapsed(tune) % (ROTANGLES/2))*2;
@@ -8055,12 +8055,12 @@ static const char* M_DrawChallengePreview(INT32 x, INT32 y)
 
 #define challengesgridstep 22
 
-static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
+static void M_DrawChallengeKeys(int32_t tilex, int32_t tiley)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
 	patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
-	INT32 offs = challengesmenu.unlockcount[CMC_CHAONOPE];
+	int32_t offs = challengesmenu.unlockcount[CMC_CHAONOPE];
 	if (offs & 1)
 		offs = -offs;
 	offs /= 2;
@@ -8078,7 +8078,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	// Metyr of rounds played that contribute to Chao Key generation
 	{
-		const INT32 keybarlen = 32, keybary = 28;
+		const int32_t keybarlen = 32, keybary = 28;
 
 		offs = keybarlen;
 		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
@@ -8098,8 +8098,8 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	// Counter
 	{
-		INT32 textx = 4, texty = 20-challengesmenu.unlockcount[CMC_CHAOANIM];
-		UINT8 numbers[4];
+		int32_t textx = 4, texty = 20-challengesmenu.unlockcount[CMC_CHAOANIM];
+		uint8_t numbers[4];
 		numbers[0] = ((gamedata->chaokeys / 100) % 10);
 		numbers[1] = ((gamedata->chaokeys / 10) % 10);
 		numbers[2] = (gamedata->chaokeys % 10);
@@ -8111,7 +8111,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 			textx += 2;
 		}
 
-		UINT8 i = 0;
+		uint8_t i = 0;
 		while (i < 3)
 		{
 			V_DrawScaledPatch(textx, texty, 0, kp_facenum[numbers[i]]);
@@ -8123,7 +8123,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	// Hand
 	if (challengesmenu.keywasadded == true)
 	{
-		INT32 handx = 32 + 16;
+		int32_t handx = 32 + 16;
 		if (keybuttonpress == false)
 		{
 			// Only animate if it's the focus
@@ -8134,7 +8134,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 			W_CachePatchName("M_CURSOR", PU_CACHE));
 	}
 
-	UINT8 keysbeingused = 0;
+	uint8_t keysbeingused = 0;
 
 	// The Chao Key swooping animation
 	if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.chaokeyhold)
@@ -8150,7 +8150,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 			baseradius = (7*baseradius)/4;
 		}
 
-		const INT32 chaohold_duration =
+		const int32_t chaohold_duration =
 			CHAOHOLD_PADDING
 			+ (major
 				? CHAOHOLD_MAJOR
@@ -8163,7 +8163,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 			baseradius = ((chaohold_duration - challengesmenu.chaokeyhold)*baseradius)*(FRACUNIT/CHAOHOLD_END);
 		}
 
-		INT16 specifickeyholdtime = challengesmenu.chaokeyhold;
+		int16_t specifickeyholdtime = challengesmenu.chaokeyhold;
 
 		for (; keysbeingused < (major ? 10 : 1); keysbeingused++, specifickeyholdtime -= (CHAOHOLD_STANDARD/10))
 		{
@@ -8196,7 +8196,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 					if (keysbeingused == 0)
 					{
-						INT32 time = (major ? 5 : 3) - (keyholdrotation - 1) / (90 * FRACUNIT);
+						int32_t time = (major ? 5 : 3) - (keyholdrotation - 1) / (90 * FRACUNIT);
 						if (time <= 5 && time >= 0)
 							V_DrawScaledPatch(tilex + 2, tiley - 2, 0, kp_eggnum[time]);
 					}
@@ -8222,7 +8222,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	// The final Chao Key on the stack
 	{
-		UINT8 *lastkeycolormap = NULL;
+		uint8_t *lastkeycolormap = NULL;
 
 		if (gamedata->chaokeys <= keysbeingused)
 		{
@@ -8235,7 +8235,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 		// Extra glowverlay if you can use a Chao Key
 		if (keysbeingused == 0 && M_CanKeyHiliTile())
 		{
-			INT32 trans = (((challengesmenu.ticker/5) % 6) - 3);
+			int32_t trans = (((challengesmenu.ticker/5) % 6) - 3);
 			if (trans)
 			{
 				trans = ((trans < 0)
@@ -8251,25 +8251,25 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	}
 }
 
-static void M_DrawChallengeScrollBar(UINT8 *flashmap)
+static void M_DrawChallengeScrollBar(uint8_t *flashmap)
 {
 #ifdef DEVELOP
 	extern consvar_t cv_debugchallenges;
 #endif
 
-	const INT32 bary = 4, barh = 1, hiliw = 1;
+	const int32_t bary = 4, barh = 1, hiliw = 1;
 
 	if (!gamedata->challengegrid || !gamedata->challengegridwidth)
 		return;
 
-	const INT32 barlen = gamedata->challengegridwidth*hiliw;
+	const int32_t barlen = gamedata->challengegridwidth*hiliw;
 
-	INT32 barx = (BASEVIDWIDTH - barlen)/2;
+	int32_t barx = (BASEVIDWIDTH - barlen)/2;
 	if (barlen > 200)
 	{
 		// TODO I DONT KNOW IF THE MATHS IS WRONG BUT WE DON'T HAVE
 		// 200 COLUMNS YET SO KICKING CAN DOWN THE ROAD ~toast 190324
-		INT32 shif = barlen - 200;
+		int32_t shif = barlen - 200;
 		barx -= (shif/2 + (shif * challengesmenu.col)/barlen);
 	}
 
@@ -8280,7 +8280,7 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 	#define COLTOPIX(col) (col*hiliw)
 		//((col * barlen)/gamedata->challengegridwidth)
 
-	INT32 hilix, nextstep, i, numincolumn, completionamount, skiplevel;
+	int32_t hilix, nextstep, i, numincolumn, completionamount, skiplevel;
 
 	// selection
 	hilix = COLTOPIX(challengesmenu.col);
@@ -8291,7 +8291,7 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 	nextstep = numincolumn = completionamount = skiplevel = 0;
 	for (i = 0; ; i++)
 	{
-		INT32 prevstep = nextstep;
+		int32_t prevstep = nextstep;
 		nextstep = (i % CHALLENGEGRIDHEIGHT);
 		if (prevstep >= nextstep)
 		{
@@ -8363,7 +8363,7 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 		if (gamedata->unlockpending[gamedata->challengegrid[i]] == false)
 			continue;
 
-		INT32 val = (hilix + challengesmenu.ticker) % 40;
+		int32_t val = (hilix + challengesmenu.ticker) % 40;
 		if (val >= 20)
 			val = 40 - val;
 		val = (val + 6)/10;
@@ -8379,16 +8379,16 @@ static void M_DrawChallengeScrollBar(UINT8 *flashmap)
 
 void M_DrawChallenges(void)
 {
-	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
-	INT32 y;
-	INT16 i, j;
+	int32_t x = currentMenu->x, explodex, selectx = 0, selecty = 0;
+	int32_t y;
+	int16_t i, j;
 	const char *str;
-	INT16 offset;
+	int16_t offset;
 
 	{
 #define questionslow 4 // slows down the scroll by this factor
 #define questionloop (questionslow*100) // modulo
-		INT32 questionoffset;
+		int32_t questionoffset;
 		double questionoffset_f;
 		patch_t *bg = W_CachePatchName("BGUNLCKG", PU_CACHE);
 		patch_t *qm = W_CachePatchName("BGUNLSC", PU_CACHE);
@@ -8429,7 +8429,7 @@ void M_DrawChallenges(void)
 		goto challengedesc;
 	}
 
-	UINT8 *flashmap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
+	uint8_t *flashmap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
 
 	y = currentMenu->y;
 
@@ -8531,7 +8531,7 @@ challengedesc:
 
 	// Wings
 	{
-		const INT32 endy = 18, endlen = 38;
+		const int32_t endy = 18, endlen = 38;
 		patch_t *endwing = W_CachePatchName("K_BOSB01", PU_CACHE);
 
 		V_DrawFill(0, endy, endlen, 11, 24);
@@ -8563,7 +8563,7 @@ challengedesc:
 				0
 			);
 
-			UINT8 *medalcolormap = NULL;
+			uint8_t *medalcolormap = NULL;
 			if (i == CMC_MEDALBLANK)
 			{
 				medalcolormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
@@ -8580,8 +8580,8 @@ challengedesc:
 			medalchopy += challengesmenu.unlockcount[i];
 		}
 
-		INT32 textx = BASEVIDWIDTH - 21, texty = 20-challengesmenu.unlockcount[CMC_ANIM];
-		UINT8 numbers[3];
+		int32_t textx = BASEVIDWIDTH - 21, texty = 20-challengesmenu.unlockcount[CMC_ANIM];
+		uint8_t numbers[3];
 		numbers[0] = ((challengesmenu.unlockcount[CMC_PERCENT] / 100) % 10);
 		numbers[1] = ((challengesmenu.unlockcount[CMC_PERCENT] / 10) % 10);
 		numbers[2] = (challengesmenu.unlockcount[CMC_PERCENT] % 10);
@@ -8651,9 +8651,9 @@ challengedesc:
 
 #define STATSSTEP 10
 
-static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, dboolean allowtime, dboolean allowencore, dboolean allowspb, dboolean allowbonus, dboolean draw)
+static int32_t M_DrawMapMedals(int32_t mapnum, int32_t x, int32_t y, dboolean allowtime, dboolean allowencore, dboolean allowspb, dboolean allowbonus, dboolean draw)
 {
-	UINT8 lasttype = UINT8_MAX, curtype;
+	uint8_t lasttype = UINT8_MAX, curtype;
 
 	// M_GetLevelEmblems is ONE-indexed, urgh
 	emblem_t *emblem = M_GetLevelEmblems(mapnum+1);
@@ -8742,7 +8742,7 @@ static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, dboolean allowtime,
 	}
 	else if (mapheaderinfo[mapnum]->records.spraycan < gamedata->numspraycans)
 	{
-		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->records.spraycan].col;
+		uint16_t col = gamedata->spraycans[mapheaderinfo[mapnum]->records.spraycan].col;
 
 		if (draw && col < numskincolors)
 		{
@@ -8766,10 +8766,10 @@ static INT32 M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y, dboolean allowtime,
 
 static void M_DrawStatsMaps(void)
 {
-	INT32 y = 70, i;
-	INT16 mnum;
+	int32_t y = 70, i;
+	int16_t mnum;
 	dboolean dotopname = true, dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
-	INT32 location = statisticsmenu.location;
+	int32_t location = statisticsmenu.location;
 
 	tic_t besttime = 0;
 
@@ -8779,7 +8779,7 @@ static void M_DrawStatsMaps(void)
 		return;
 	}
 
-	INT32 mapsunfinished = 0, medalspos;
+	int32_t mapsunfinished = 0, medalspos;
 
 	char *medalcountstr = va("x %d/%d", statisticsmenu.gotmedals, statisticsmenu.nummedals);
 
@@ -9005,7 +9005,7 @@ static void M_DrawStatsMaps(void)
 		{
 			if (gamedata->unlocked[i])
 			{
-				UINT16 color = min(unlockables[i].color, numskincolors-1);
+				uint16_t color = min(unlockables[i].color, numskincolors-1);
 				if (!color)
 					color = SKINCOLOR_GOLD;
 				V_DrawMappedPatch(291, y+1, 0, W_CachePatchName("GOTITA", PU_CACHE),
@@ -9035,10 +9035,10 @@ bottomarrow:
 
 static void M_DrawStatsChars(void)
 {
-	INT32 y = 80, i, j;
-	INT16 skin;
+	int32_t y = 80, i, j;
+	int16_t skin;
 	dboolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
-	INT32 location = statisticsmenu.location;
+	int32_t location = statisticsmenu.location;
 
 	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
 	{
@@ -9064,7 +9064,7 @@ static void M_DrawStatsChars(void)
 		}
 
 		{
-			UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
+			uint8_t *colormap = R_GetTranslationColormap(skin, skins[skin]->prefcolor, GTC_MENUCACHE);
 
 			M_DrawCharacterIconAndEngine(24, y, skin, colormap, skin);
 		}
@@ -9084,7 +9084,7 @@ bottomarrow:
 		V_DrawMenuString(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
 			highlightflags, "\x1B"); // down arrow
 
-	UINT32 x = BASEVIDWIDTH - 20 - 90;
+	uint32_t x = BASEVIDWIDTH - 20 - 90;
 	y = 88;
 
 	V_DrawCenteredThinString(x + 45, y - 10, highlightflags, "HEATMAP");
@@ -9122,10 +9122,10 @@ bottomarrow:
 
 static void M_DrawStatsGP(void)
 {
-	INT32 y = 80, i, x, j, endj;
-	INT16 id;
+	int32_t y = 80, i, x, j, endj;
+	int16_t id;
 	dboolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
-	INT32 location = statisticsmenu.location;
+	int32_t location = statisticsmenu.location;
 
 	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
 	{
@@ -9137,7 +9137,7 @@ static void M_DrawStatsGP(void)
 		V_DrawMenuString(10, y-(skullAnimCounter/5),
 			highlightflags, "\x1A"); // up arrow
 
-	const INT32 width = 53;
+	const int32_t width = 53;
 
 	endj = KARTSPEED_NORMAL;
 	if (M_SecretUnlocked(SECRET_HARDSPEED, true))
@@ -9147,7 +9147,7 @@ static void M_DrawStatsGP(void)
 			: KARTSPEED_HARD;
 	}
 
-	const INT32 h = (21 * min(5, statisticsmenu.nummaps)) - 1;
+	const int32_t h = (21 * min(5, statisticsmenu.nummaps)) - 1;
 
 	x = 7 + BASEVIDWIDTH - 20 - width;
 	for (j = endj; j >= KARTSPEED_EASY; j--, x -= width)
@@ -9217,13 +9217,13 @@ bottomarrow:
 
 #undef STATSSTEP
 
-static void M_GetStatsTime(char *beststr, UINT32 totaltime)
+static void M_GetStatsTime(char *beststr, uint32_t totaltime)
 {
 	beststr[0] = 0;
 
 	dboolean showallsubsequent = false;
 
-	UINT32 besttime = G_TicsToHours(totaltime);
+	uint32_t besttime = G_TicsToHours(totaltime);
 	if (besttime)
 	{
 		showallsubsequent = true;
@@ -9247,7 +9247,7 @@ static void M_GetStatsTime(char *beststr, UINT32 totaltime)
 
 static void M_DrawStatsTimeTracked(void)
 {
-	INT32 y = 70;
+	int32_t y = 70;
 	char beststr[256];
 
 	#define DISPLAYAMODE(str, besttime) \
@@ -9317,7 +9317,7 @@ void M_DrawStatistics(void)
 
 	{
 		const char *pagename = NULL;
-		INT32 pagenamewidth = 0;
+		int32_t pagenamewidth = 0;
 
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 
@@ -9420,13 +9420,13 @@ void M_DrawStatistics(void)
 	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 50, 0, beststr);
 }
 
-static void M_DrawWrongPlayer(UINT8 i)
+static void M_DrawWrongPlayer(uint8_t i)
 {
 #define wrongpl wrongwarp.wrongplayers[i]
 	if (wrongpl.skin >= numskins)
 		return;
 
-	UINT8 *colormap = R_GetTranslationColormap(wrongpl.skin, skins[wrongpl.skin]->prefcolor, GTC_MENUCACHE);
+	uint8_t *colormap = R_GetTranslationColormap(wrongpl.skin, skins[wrongpl.skin]->prefcolor, GTC_MENUCACHE);
 
 	M_DrawCharacterSprite(
 		wrongpl.across,
@@ -9442,7 +9442,7 @@ static void M_DrawWrongPlayer(UINT8 i)
 
 void M_DrawWrongWarp(void)
 {
-	INT32 titleoffset = 0, titlewidth, x, y;
+	int32_t titleoffset = 0, titlewidth, x, y;
 	const char *titletext = "WRONG GAME? WRONG GAME! ";
 
 	if (wrongwarp.ticker < 2*TICRATE/3)
@@ -9467,7 +9467,7 @@ void M_DrawWrongWarp(void)
 
 	if (wrongwarp.ticker < TICRATE)
 	{
-		INT32 adjust = floor(pow(2, (double)(TICRATE - wrongwarp.ticker)));
+		int32_t adjust = floor(pow(2, (double)(TICRATE - wrongwarp.ticker)));
 		x += adjust/2;
 		y += adjust;
 	}
@@ -9487,10 +9487,10 @@ void M_DrawWrongWarp(void)
 
 void M_DrawSoundTest(void)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
-	INT32 x, y, i, cursorx = 0;
-	INT32 titleoffset = 0, titlewidth;
+	int32_t x, y, i, cursorx = 0;
+	int32_t titleoffset = 0, titlewidth;
 	const char *titletext;
 
 	patch_t *btn = W_CachePatchName("STER_BTN", PU_CACHE);
@@ -9579,7 +9579,7 @@ void M_DrawSoundTest(void)
 	}
 
 	{
-		UINT32 currenttime = min(Music_Elapsed(tune), Music_TotalDuration(tune));
+		uint32_t currenttime = min(Music_Elapsed(tune), Music_TotalDuration(tune));
 
 		V_DrawRightAlignedThinString(x + 272-1, 18+32, 0,
 			va("%02u:%02u",
@@ -9593,7 +9593,7 @@ void M_DrawSoundTest(void)
 		&& (soundtest.current->basenoloop[soundtest.currenttrack] == true
 		|| soundtest.autosequence == true))
 	{
-		UINT32 exittime = Music_TotalDuration(tune);
+		uint32_t exittime = Music_TotalDuration(tune);
 
 		V_DrawRightAlignedThinString(x + 272-1, 18+32+10, 0,
 			va("%02u:%02u",
@@ -9692,10 +9692,10 @@ void M_DrawSoundTest(void)
 		else if (currentMenu->menuitems[i].mvar2 == stereospecial_vol) // Vol
 		{
 			consvar_t *voltoadjust = M_GetSoundTestVolumeCvar();
-			INT32 j = 0, vol = 0;
-			const INT32 barheight = 22;
+			int32_t j = 0, vol = 0;
+			const int32_t barheight = 22;
 			patch_t *knob = NULL;
-			INT32 knobflags = 0;
+			int32_t knobflags = 0;
 
 			if (i == itemOn)
 			{
@@ -9729,7 +9729,7 @@ void M_DrawSoundTest(void)
 
 			for (j = 0; j <= barheight/3; j++)
 			{
-				UINT8 col = 130;
+				uint8_t col = 130;
 
 				if (j == 0)
 				{
@@ -9786,16 +9786,16 @@ void M_DrawSoundTest(void)
 void M_DrawDiscordRequests(void)
 {
 	discordRequest_t *curRequest = discordRequestList;
-	UINT8 *colormap;
+	uint8_t *colormap;
 	patch_t *hand = NULL;
 
 	const char *wantText = "...would like to join!";
 
-	INT32 x = 100;
-	INT32 y = 133;
+	int32_t x = 100;
+	int32_t y = 133;
 
-	INT32 slide = 0;
-	INT32 maxYSlide = 18;
+	int32_t slide = 0;
+	int32_t maxYSlide = 18;
 
 	if (discordrequestmenu.confirmDelay > 0)
 	{
@@ -9837,7 +9837,7 @@ void M_DrawDiscordRequests(void)
 	// K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
 	*/
 
-	UINT32 bigwidth = K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, TINY_FONT, V_SNAPTORIGHT);
+	uint32_t bigwidth = K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, TINY_FONT, V_SNAPTORIGHT);
 	K_DrawSticker(x, y + 26, bigwidth, 0, true);
 	K_DrawGameControl(x, y+22, 0, "<a_animated> Accept   <b_animated> <x_animated> Decline", 0, TINY_FONT, V_SNAPTORIGHT);
 
@@ -9860,7 +9860,7 @@ void M_DrawDiscordRequests(void)
 
 	while (curRequest->next != NULL)
 	{
-		INT32 ySlide = min(slide * 4, maxYSlide);
+		int32_t ySlide = min(slide * 4, maxYSlide);
 
 		curRequest = curRequest->next;
 

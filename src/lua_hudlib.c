@@ -36,9 +36,9 @@
 #define HUDONLY if (!hud_running) return luaL_error(L, "HUD rendering code should not be called outside of rendering hooks!");
 
 dboolean hud_running = false;
-static UINT8 hud_enabled[(hud_MAX/8)+1];
+static uint8_t hud_enabled[(hud_MAX/8)+1];
 
-static UINT8 camnum = 1;
+static uint8_t camnum = 1;
 
 // must match enum hud in lua_hud.h
 static const char *const hud_disable_options[] = {
@@ -159,8 +159,8 @@ static const char *const camera_opt[] = {
 
 static int colormap_get(lua_State *L)
 {
-	const UINT8 *colormap = *((UINT8 **)luaL_checkudata(L, 1, META_COLORMAP));
-	UINT32 i = luaL_checkinteger(L, 2);
+	const uint8_t *colormap = *((uint8_t **)luaL_checkudata(L, 1, META_COLORMAP));
+	uint32_t i = luaL_checkinteger(L, 2);
 	if (i >= 256)
 		return luaL_error(L, "colormap index %d out of range (0 - %d)", i, 255);
 	lua_pushinteger(L, colormap[i]);
@@ -293,9 +293,9 @@ static int libd_cachePatch(lua_State *L)
 // v.getSpritePatch(sprite, [frame, [angle, [rollangle]]])
 static int libd_getSpritePatch(lua_State *L)
 {
-	UINT32 i; // sprite prefix
-	UINT32 frame = 0; // 'A'
-	UINT8 angle = 0;
+	uint32_t i; // sprite prefix
+	uint32_t frame = 0; // 'A'
+	uint8_t angle = 0;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 	HUDONLY
@@ -346,7 +346,7 @@ static int libd_getSpritePatch(lua_State *L)
 	{
 		// rotsprite?????
 		angle_t rollangle = luaL_checkangle(L, 4);
-		INT32 rot = R_GetRollAngle(rollangle);
+		int32_t rot = R_GetRollAngle(rollangle);
 
 		if (rot) {
 			patch_t *rotsprite = Patch_GetRotatedSprite(sprframe, frame, angle, sprframe->flip & (1<<angle), true, &spriteinfo[i], rot);
@@ -367,10 +367,10 @@ static int libd_getSpritePatch(lua_State *L)
 // v.getSprite2Patch(skin, sprite, [super?,] [frame, [angle, [rollangle]]])
 static int libd_getSprite2Patch(lua_State *L)
 {
-	INT32 i; // skin number
+	int32_t i; // skin number
 	playersprite_t j; // sprite2 prefix
-	UINT32 frame = 0; // 'A'
-	UINT8 angle = 0;
+	uint32_t frame = 0; // 'A'
+	uint8_t angle = 0;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 	dboolean super = false; // add FF_SPR2SUPER to sprite2 if true
@@ -459,7 +459,7 @@ static int libd_getSprite2Patch(lua_State *L)
 	{
 		// rotsprite?????
 		angle_t rollangle = luaL_checkangle(L, 4);
-		INT32 rot = R_GetRollAngle(rollangle);
+		int32_t rot = R_GetRollAngle(rollangle);
 
 		if (rot) {
 			patch_t *rotsprite = Patch_GetRotatedSprite(sprframe, frame, angle, sprframe->flip & (1<<angle), true, &skins[i]->sprinfo[j], rot);
@@ -479,9 +479,9 @@ static int libd_getSprite2Patch(lua_State *L)
 
 static int libd_draw(lua_State *L)
 {
-	INT32 x, y, flags;
+	int32_t x, y, flags;
 	patch_t *patch;
-	UINT8 *colormap = NULL;
+	uint8_t *colormap = NULL;
 	huddrawlist_h list;
 
 	HUDONLY
@@ -492,7 +492,7 @@ static int libd_draw(lua_State *L)
 		return LUA_ErrInvalid(L, "patch_t");
 	flags = luaL_optinteger(L, 4, 0);
 	if (!lua_isnoneornil(L, 5))
-		colormap = *((UINT8 **)luaL_checkudata(L, 5, META_COLORMAP));
+		colormap = *((uint8_t **)luaL_checkudata(L, 5, META_COLORMAP));
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
@@ -510,9 +510,9 @@ static int libd_draw(lua_State *L)
 static int libd_drawScaled(lua_State *L)
 {
 	fixed_t x, y, scale;
-	INT32 flags;
+	int32_t flags;
 	patch_t *patch;
-	UINT8 *colormap = NULL;
+	uint8_t *colormap = NULL;
 	huddrawlist_h list;
 
 	HUDONLY
@@ -526,7 +526,7 @@ static int libd_drawScaled(lua_State *L)
 		return LUA_ErrInvalid(L, "patch_t");
 	flags = luaL_optinteger(L, 5, 0);
 	if (!lua_isnoneornil(L, 6))
-		colormap = *((UINT8 **)luaL_checkudata(L, 6, META_COLORMAP));
+		colormap = *((uint8_t **)luaL_checkudata(L, 6, META_COLORMAP));
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
@@ -544,9 +544,9 @@ static int libd_drawScaled(lua_State *L)
 static int libd_drawStretched(lua_State *L)
 {
 	fixed_t x, y, hscale, vscale;
-	INT32 flags;
+	int32_t flags;
 	patch_t *patch;
-	UINT8 *colormap = NULL;
+	uint8_t *colormap = NULL;
 	huddrawlist_h list;
 
 	HUDONLY
@@ -561,7 +561,7 @@ static int libd_drawStretched(lua_State *L)
 	patch = *((patch_t **)luaL_checkudata(L, 5, META_PATCH));
 	flags = luaL_optinteger(L, 6, 0);
 	if (!lua_isnoneornil(L, 7))
-		colormap = *((UINT8 **)luaL_checkudata(L, 7, META_COLORMAP));
+		colormap = *((uint8_t **)luaL_checkudata(L, 7, META_COLORMAP));
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
@@ -583,7 +583,7 @@ static int libd_drawOnMinimap(lua_State *L)
 {
 	fixed_t x, y, scale;	// coordinates of the object
 	patch_t *patch;	// patch we want to draw
-	UINT8 *colormap = NULL;	// do we want to colormap this patch?
+	uint8_t *colormap = NULL;	// do we want to colormap this patch?
 	dboolean centered;	// the patch is centered and doesn't need readjusting on x/y coordinates.
 	huddrawlist_h list;
 
@@ -592,9 +592,9 @@ static int libd_drawOnMinimap(lua_State *L)
 
 	// variables used for actually drawing the icon:
 	position_t amnumpos;
-	INT32 minimapflags;
+	int32_t minimapflags;
 	fixed_t amxpos, amypos;
-	INT32 mm_x, mm_y;
+	int32_t mm_x, mm_y;
 	fixed_t patchw, patchh;
 
 	HUDONLY	// only run this function in hud hooks
@@ -603,7 +603,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	scale = luaL_checkinteger(L, 3);
 	patch = *((patch_t **)luaL_checkudata(L, 4, META_PATCH));
 	if (!lua_isnoneornil(L, 5))
-		colormap = *((UINT8 **)luaL_checkudata(L, 5, META_COLORMAP));
+		colormap = *((uint8_t **)luaL_checkudata(L, 5, META_COLORMAP));
 	centered = lua_optboolean(L, 6);
 
 	// Draw the HUD only when playing in a level.
@@ -662,7 +662,7 @@ static int libd_drawOnMinimap(lua_State *L)
 
 static int libd_drawNum(lua_State *L)
 {
-	INT32 x, y, flags, num;
+	int32_t x, y, flags, num;
 	huddrawlist_h list;
 
 	HUDONLY
@@ -685,7 +685,7 @@ static int libd_drawNum(lua_State *L)
 
 static int libd_drawPaddedNum(lua_State *L)
 {
-	INT32 x, y, flags, num, digits;
+	int32_t x, y, flags, num, digits;
 	huddrawlist_h list;
 
 	HUDONLY
@@ -709,8 +709,8 @@ static int libd_drawPaddedNum(lua_State *L)
 
 static int libd_drawPingNum(lua_State *L)
 {
-	INT32 x, y, flags, num;
-	UINT8 *colormap = NULL;
+	int32_t x, y, flags, num;
+	uint8_t *colormap = NULL;
 	huddrawlist_h list;
 	HUDONLY
 	x = luaL_checkfixed(L, 1);
@@ -719,7 +719,7 @@ static int libd_drawPingNum(lua_State *L)
 	flags = luaL_optinteger(L, 4, 0);
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 	if (!lua_isnoneornil(L, 5))
-		colormap = *((UINT8 **)luaL_checkudata(L, 5, META_COLORMAP));
+		colormap = *((uint8_t **)luaL_checkudata(L, 5, META_COLORMAP));
 
 	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
 	list = (huddrawlist_h) lua_touserdata(L, -1);
@@ -735,11 +735,11 @@ static int libd_drawPingNum(lua_State *L)
 static int libd_drawFill(lua_State *L)
 {
 	huddrawlist_h list;
-	INT32 x = luaL_optinteger(L, 1, 0);
-	INT32 y = luaL_optinteger(L, 2, 0);
-	INT32 w = luaL_optinteger(L, 3, BASEVIDWIDTH);
-	INT32 h = luaL_optinteger(L, 4, BASEVIDHEIGHT);
-	INT32 c = luaL_optinteger(L, 5, 31);
+	int32_t x = luaL_optinteger(L, 1, 0);
+	int32_t y = luaL_optinteger(L, 2, 0);
+	int32_t w = luaL_optinteger(L, 3, BASEVIDWIDTH);
+	int32_t h = luaL_optinteger(L, 4, BASEVIDHEIGHT);
+	int32_t c = luaL_optinteger(L, 5, 31);
 
 	HUDONLY
 
@@ -756,9 +756,9 @@ static int libd_drawFill(lua_State *L)
 
 static int libd_fadeScreen(lua_State *L)
 {
-	UINT16 color = luaL_checkinteger(L, 1);
-	UINT8 strength = luaL_checkinteger(L, 2);
-	const UINT8 maxstrength = ((color & 0xFF00) ? 32 : 10);
+	uint16_t color = luaL_checkinteger(L, 1);
+	uint8_t strength = luaL_checkinteger(L, 2);
+	const uint8_t maxstrength = ((color & 0xFF00) ? 32 : 10);
 	huddrawlist_h list;
 
 	HUDONLY
@@ -795,7 +795,7 @@ static int libd_drawString(lua_State *L)
 	fixed_t x = luaL_checkinteger(L, 1);
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
-	INT32 flags = luaL_optinteger(L, 4, 0);
+	int32_t flags = luaL_optinteger(L, 4, 0);
 	enum align align = luaL_checkoption(L, 5, "left", align_opt);
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
@@ -852,10 +852,10 @@ static int libd_drawTitleCardString(lua_State *L)
 	fixed_t x = luaL_checkinteger(L, 1);
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
-	INT32 flags = luaL_optinteger(L, 4, 0);
+	int32_t flags = luaL_optinteger(L, 4, 0);
 	dboolean rightalign = lua_optboolean(L, 5);
-	INT32 timer = luaL_optinteger(L, 6, 0);
-	INT32 threshold = luaL_optinteger(L, 7, 0);
+	int32_t timer = luaL_optinteger(L, 6, 0);
+	int32_t threshold = luaL_optinteger(L, 7, 0);
 	dboolean p4 = lua_optboolean(L, 8);
 	huddrawlist_h list;
 
@@ -878,7 +878,7 @@ static int libd_drawKartString(lua_State *L)
 	fixed_t x = luaL_checkinteger(L, 1);
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
-	INT32 flags = luaL_optinteger(L, 4, 0);
+	int32_t flags = luaL_optinteger(L, 4, 0);
 	huddrawlist_h list;
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
@@ -901,7 +901,7 @@ static int libd_setClipRect(lua_State *L)
 	fixed_t y = luaL_checkinteger(L, 2);
 	fixed_t w = luaL_checkinteger(L, 3);
 	fixed_t h = luaL_checkinteger(L, 4);
-	INT32 flags = luaL_optinteger(L, 5, 0);
+	int32_t flags = luaL_optinteger(L, 5, 0);
 	huddrawlist_h list;
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
@@ -947,7 +947,7 @@ static int libd_titleCardStringWidth(lua_State *L)
 static int libd_stringWidth(lua_State *L)
 {
 	const char *str = luaL_checkstring(L, 1);
-	INT32 flags = luaL_optinteger(L, 2, 0);
+	int32_t flags = luaL_optinteger(L, 2, 0);
 	enum widtht widtht = luaL_checkoption(L, 3, "normal", widtht_opt);
 
 	HUDONLY
@@ -983,15 +983,15 @@ static int libd_parseText(lua_State *L)
 
 static int libd_getColormap(lua_State *L)
 {
-	INT32 skinnum = TC_DEFAULT;
+	int32_t skinnum = TC_DEFAULT;
 	skincolornum_t color = luaL_optinteger(L, 2, 0);
-	UINT8* colormap = NULL;
+	uint8_t* colormap = NULL;
 	HUDONLY
 	if (lua_isnoneornil(L, 1))
 		; // defaults to TC_DEFAULT
 	else if (lua_type(L, 1) == LUA_TNUMBER) // skin number
 	{
-		skinnum = (INT32)luaL_checkinteger(L, 1);
+		skinnum = (int32_t)luaL_checkinteger(L, 1);
 		if (skinnum >= MAXSKINS)
 			return luaL_error(L, "skin number %d is out of range (>%d)", skinnum, MAXSKINS-1);
 		else if (skinnum < 0 && skinnum > TC_DEFAULT)
@@ -1000,7 +1000,7 @@ static int libd_getColormap(lua_State *L)
 	else // skin name
 	{
 		const char *skinname = luaL_checkstring(L, 1);
-		INT32 i = R_SkinAvailable(skinname);
+		int32_t i = R_SkinAvailable(skinname);
 		if (i != -1) // if -1, just default to TC_DEFAULT as above
 			skinnum = i;
 	}
@@ -1017,8 +1017,8 @@ static int libd_getColormap(lua_State *L)
 
 static int libd_getStringColormap(lua_State *L)
 {
-	INT32 flags = luaL_checkinteger(L, 1);
-	UINT8* colormap = NULL;
+	int32_t flags = luaL_checkinteger(L, 1);
+	uint8_t* colormap = NULL;
 	HUDONLY
 	colormap = V_GetStringColormap(flags & V_CHARCOLORMASK);
 	if (colormap) {
@@ -1095,7 +1095,7 @@ static int libd_RandomByte(lua_State *L)
 
 static int libd_RandomKey(lua_State *L)
 {
-	INT32 a = (INT32)luaL_checkinteger(L, 1);
+	int32_t a = (int32_t)luaL_checkinteger(L, 1);
 
 	HUDONLY
 	if (a > 65536)
@@ -1106,12 +1106,12 @@ static int libd_RandomKey(lua_State *L)
 
 static int libd_RandomRange(lua_State *L)
 {
-	INT32 a = (INT32)luaL_checkinteger(L, 1);
-	INT32 b = (INT32)luaL_checkinteger(L, 2);
+	int32_t a = (int32_t)luaL_checkinteger(L, 1);
+	int32_t b = (int32_t)luaL_checkinteger(L, 2);
 
 	HUDONLY
 	if (b < a) {
-		INT32 c = a;
+		int32_t c = a;
 		a = b;
 		b = c;
 	}

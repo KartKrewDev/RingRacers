@@ -48,11 +48,11 @@ void LUA_ClearExtVars(void);
 
 void LUA_ClearState(void);
 
-extern INT32 lua_lumploading; // is LUA_LoadLump being called?
+extern int32_t lua_lumploading; // is LUA_LoadLump being called?
 
 int LUA_GetErrorMessage(lua_State *L);
 int LUA_Call(lua_State *L, int nargs, int nresults, int errorhandlerindex);
-void LUA_LoadLump(UINT16 wad, UINT16 lump, dboolean noresults);
+void LUA_LoadLump(uint16_t wad, uint16_t lump, dboolean noresults);
 #ifdef LUA_ALLOW_BYTECODE
 void LUA_DumpFile(const char *filename);
 #endif
@@ -64,7 +64,7 @@ void LUA_UnArchive(savebuffer_t *save, dboolean network);
 int LUA_PushGlobals(lua_State *L, const char *word);
 int LUA_WriteGlobals(lua_State *L, const char *word);
 
-void Got_Luacmd(const UINT8 **cp, INT32 playernum); // lua_consolelib.c
+void Got_Luacmd(const uint8_t **cp, int32_t playernum); // lua_consolelib.c
 void LUA_CVarChanged(void *cvar); // lua_consolelib.c
 int Lua_optoption(lua_State *L, int narg,
 	const char *def, const char *const lst[]);
@@ -124,7 +124,7 @@ void COM_Lua_f(void);
 // Shows once upon use. Then doesn't show again.
 #define LUA_Deprecated(L,this_func,use_instead)\
 {\
-	static UINT8 seen = 0;\
+	static uint8_t seen = 0;\
 	if (!seen) {\
 		seen = 1;\
 		CONS_Alert(CONS_WARNING,"\"%s\" is deprecated and will be removed.\nUse \"%s\" instead.\n", this_func, use_instead);\
@@ -135,7 +135,7 @@ void COM_Lua_f(void);
 // Shows once, then never again, like deprecation
 #define LUA_UsageWarning(L, warningmsg)\
 {\
-	static UINT8 seen = 0;\
+	static uint8_t seen = 0;\
 	if (!seen) {\
 		seen = 1;\
 		CONS_Alert(CONS_WARNING,"%s\n", warningmsg);\

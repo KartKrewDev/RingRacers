@@ -48,9 +48,9 @@ menu_t PLAY_CupSelectDef = {
 
 struct cupgrid_s cupgrid;
 
-static void M_StartCup(UINT8 entry)
+static void M_StartCup(uint8_t entry)
 {
-	UINT8 ssplayers = cv_splitplayers.value-1;
+	uint8_t ssplayers = cv_splitplayers.value-1;
 
 	if (ssplayers > 0)
 	{
@@ -162,9 +162,9 @@ static void M_StartCup(UINT8 entry)
 	}
 }
 
-static UINT16 cupselecttutorial_hack = NEXTMAP_INVALID;
+static uint16_t cupselecttutorial_hack = NEXTMAP_INVALID;
 
-static void M_GPTutorialResponse(INT32 choice)
+static void M_GPTutorialResponse(int32_t choice)
 {
 	if (choice != MA_YES)
 		return;
@@ -205,13 +205,13 @@ static dboolean M_GPTutorialRecommendation(cupheader_t *cup)
 		return false;
 
 	// Does the thing have no condition?
-	const UINT16 condition = unlockables[cup->cache_cuplock].conditionset;
+	const uint16_t condition = unlockables[cup->cache_cuplock].conditionset;
 	if (condition == 0)
 		return false;
 
 	const conditionset_t *c = &conditionSets[condition-1];
-	UINT32 i;
-	INT32 mapnum = NEXTMAP_INVALID;
+	uint32_t i;
+	int32_t mapnum = NEXTMAP_INVALID;
 
 	// Identify the map to visit/beat.
 	for (i = 0; i < c->numconditions; ++i)
@@ -270,7 +270,7 @@ static dboolean M_GPTutorialRecommendation(cupheader_t *cup)
 	return true;
 }
 
-static void M_GPBackup(INT32 choice)
+static void M_GPBackup(int32_t choice)
 {
 	if (choice == MA_YES)
 	{
@@ -290,20 +290,20 @@ static void M_GPBackup(INT32 choice)
 static dboolean M_IsCupQueueable(cupheader_t *cup)
 {
 	levelsearch_t templevelsearch = levellist.levelsearch; // copy levellist so we don't mess with stuff I think
-	UINT16 ShownCount = 0;
-	UINT16 CupCount = 0;
-	UINT32 CheckGametype[2] = {TOL_RACE,TOL_BATTLE};
+	uint16_t ShownCount = 0;
+	uint16_t CupCount = 0;
+	uint32_t CheckGametype[2] = {TOL_RACE,TOL_BATTLE};
 	
 	templevelsearch.cup = cup;
 	
-	UINT8 e, i = 0;
+	uint8_t e, i = 0;
 	for (e = 0; e < 2; e++)
 	{
 		templevelsearch.typeoflevel = CheckGametype[e];
 		ShownCount += M_CountLevelsToShowInList(&templevelsearch);
 	}
 	//CONS_Printf(M_GetText("ShownCount: %d\n"), ShownCount);
-	UINT16 checkmap = NEXTMAP_INVALID;
+	uint16_t checkmap = NEXTMAP_INVALID;
 	for (i = 0; i < CUPCACHE_SPECIAL; i++)
 	{
 		checkmap = templevelsearch.cup->cachedlevels[i];
@@ -320,7 +320,7 @@ static dboolean M_IsCupQueueable(cupheader_t *cup)
 	return false;
 }
 
-static void M_CupStartResponse(INT32 ch)
+static void M_CupStartResponse(int32_t ch)
 {
 	if (ch != MA_YES)
 		return;
@@ -331,7 +331,7 @@ static void M_CupStartResponse(INT32 ch)
 	M_LevelConfirmHandler();
 }
 
-static void M_CupQueueResponse(INT32 ch)
+static void M_CupQueueResponse(int32_t ch)
 {
 	if (ch != MA_YES)
 		return;
@@ -378,9 +378,9 @@ static void M_CupQueueResponse(INT32 ch)
 	}
 }
 
-void M_CupSelectHandler(INT32 choice)
+void M_CupSelectHandler(int32_t choice)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
 	(void)choice;
 
@@ -449,7 +449,7 @@ void M_CupSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
-		UINT16 count;
+		uint16_t count;
 		cupheader_t *newcup = cupgrid.builtgrid[CUPMENU_CURSORID];
 		cupheader_t *oldcup = levellist.levelsearch.cup;
 

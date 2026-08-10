@@ -21,11 +21,11 @@
 #include "k_follower.h"
 
 /*--------------------------------------------------
-	UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
+	uint8_t K_ColorRelativeLuminance(uint8_t r, uint8_t g, uint8_t b)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
+uint8_t K_ColorRelativeLuminance(uint8_t r, uint8_t g, uint8_t b)
 {
 	double redWeight = ((r * 1.0) / UINT8_MAX);
 	double greenWeight = ((g * 1.0) / UINT8_MAX);
@@ -38,34 +38,34 @@ UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 
 	brightness = pow(redWeight + greenWeight + blueWeight, 1.0 / 2.2);
 
-	return (UINT8)(brightness * UINT8_MAX);
+	return (uint8_t)(brightness * UINT8_MAX);
 }
 
 /*--------------------------------------------------
-	UINT16 K_RainbowColor(tic_t time)
+	uint16_t K_RainbowColor(tic_t time)
 
 		See header file for description.
 --------------------------------------------------*/
 
-UINT16 K_RainbowColor(tic_t time)
+uint16_t K_RainbowColor(tic_t time)
 {
-	return (UINT16)(FIRSTRAINBOWCOLOR + (time % (FIRSTSUPERCOLOR - FIRSTRAINBOWCOLOR)));
+	return (uint16_t)(FIRSTRAINBOWCOLOR + (time % (FIRSTSUPERCOLOR - FIRSTRAINBOWCOLOR)));
 }
 
 /*--------------------------------------------------
-	void K_RainbowColormap(UINT8 *dest_colormap, skincolornum_t skincolor)
+	void K_RainbowColormap(uint8_t *dest_colormap, skincolornum_t skincolor)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_RainbowColormap(UINT8 *dest_colormap, skincolornum_t skincolor)
+void K_RainbowColormap(uint8_t *dest_colormap, skincolornum_t skincolor)
 {
-	INT32 i;
+	int32_t i;
 	RGBA_t color;
-	UINT8 brightness;
-	INT32 j;
-	UINT8 colorbrightnesses[16];
-	UINT16 brightdif;
-	INT32 temp;
+	uint8_t brightness;
+	int32_t j;
+	uint8_t colorbrightnesses[16];
+	uint16_t brightdif;
+	int32_t temp;
 
 	// first generate the brightness of all the colours of that skincolour
 	for (i = 0; i < 16; i++)
@@ -79,7 +79,7 @@ void K_RainbowColormap(UINT8 *dest_colormap, skincolornum_t skincolor)
 	{
 		if (i == 0 || i == 31) // pure black and pure white don't change
 		{
-			dest_colormap[i] = (UINT8)i;
+			dest_colormap[i] = (uint8_t)i;
 			continue;
 		}
 
@@ -89,11 +89,11 @@ void K_RainbowColormap(UINT8 *dest_colormap, skincolornum_t skincolor)
 
 		for (j = 0; j < 16; j++)
 		{
-			temp = abs((INT16)brightness - (INT16)colorbrightnesses[j]);
+			temp = abs((int16_t)brightness - (int16_t)colorbrightnesses[j]);
 
 			if (temp < brightdif)
 			{
-				brightdif = (UINT16)temp;
+				brightdif = (uint16_t)temp;
 				dest_colormap[i] = skincolors[skincolor].ramp[j];
 			}
 		}
@@ -101,14 +101,14 @@ void K_RainbowColormap(UINT8 *dest_colormap, skincolornum_t skincolor)
 }
 
 /*--------------------------------------------------
-	UINT8 K_HitlagColorValue(RGBA_t color)
+	uint8_t K_HitlagColorValue(RGBA_t color)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT8 K_HitlagColorValue(RGBA_t color)
+uint8_t K_HitlagColorValue(RGBA_t color)
 {
 	// Outputs a raw brightness value (makes OGL support easier)
-	INT32 output = K_ColorRelativeLuminance(color.s.red, color.s.green, color.s.blue);
+	int32_t output = K_ColorRelativeLuminance(color.s.red, color.s.green, color.s.blue);
 
 	// Invert the color
 	output = 255 - output;
@@ -130,15 +130,15 @@ UINT8 K_HitlagColorValue(RGBA_t color)
 }
 
 /*--------------------------------------------------
-	void K_HitlagColormap(UINT8 *dest_colormap)
+	void K_HitlagColormap(uint8_t *dest_colormap)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_HitlagColormap(UINT8 *dest_colormap)
+void K_HitlagColormap(uint8_t *dest_colormap)
 {
 	RGBA_t color;
-	UINT8 v, offset;
-	INT32 i;
+	uint8_t v, offset;
+	int32_t i;
 
 	// for every colour in the palette, invert, greyscale, and increase the contrast.
 	for (i = 0; i < NUM_PALETTE_ENTRIES; i++)
@@ -154,22 +154,22 @@ void K_HitlagColormap(UINT8 *dest_colormap)
 }
 
 /*--------------------------------------------------
-	static void K_IntermissionColormap(UINT8 *dest_colormap)
+	static void K_IntermissionColormap(uint8_t *dest_colormap)
 
 		Turns warm colors tan, and cool colors steel-blue.
 --------------------------------------------------*/
-static void K_IntermissionColormap(UINT8 *dest_colormap)
+static void K_IntermissionColormap(uint8_t *dest_colormap)
 {
 	RGBA_t color;
-	INT32 i;
+	int32_t i;
 
 	// for every colour in the palette, check its
 	for (i = 0; i < NUM_PALETTE_ENTRIES; i++)
 	{
 		color = V_GetColor(i);
 
-		UINT8 lo = min(min(color.s.red, color.s.green), color.s.blue);
-		UINT8 hi = max(max(color.s.red, color.s.green), color.s.blue);
+		uint8_t lo = min(min(color.s.red, color.s.green), color.s.blue);
+		uint8_t hi = max(max(color.s.red, color.s.green), color.s.blue);
 
 		double hue = 0.0;
 		if (lo != hi)
@@ -206,22 +206,22 @@ static void K_IntermissionColormap(UINT8 *dest_colormap)
 			skincolor = SKINCOLOR_INTERMISSION2;
 		}
 
-		INT32 lum = K_ColorRelativeLuminance(color.s.red, color.s.green, color.s.blue);
-		INT32 skincolor_index = ((255 - lum) * 15) / 255;
+		int32_t lum = K_ColorRelativeLuminance(color.s.red, color.s.green, color.s.blue);
+		int32_t skincolor_index = ((255 - lum) * 15) / 255;
 
 		dest_colormap[i] = skincolors[skincolor].ramp[skincolor_index];
 	}
 }
 
 /*--------------------------------------------------
-	void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t color)
+	void K_GenerateKartColormap(uint8_t *dest_colormap, int32_t skinnum, skincolornum_t color)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t color)
+void K_GenerateKartColormap(uint8_t *dest_colormap, int32_t skinnum, skincolornum_t color)
 {
-	INT32 i;
-	INT32 starttranscolor;
+	int32_t i;
+	int32_t starttranscolor;
 
 	if (skinnum == TC_HITLAG)
 	{
@@ -247,7 +247,7 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t 
 			else if (skinnum == TC_BLINK)
 				dest_colormap[i] = skincolors[color].ramp[3];
 			else
-				dest_colormap[i] = (UINT8)i;
+				dest_colormap[i] = (uint8_t)i;
 		}
 
 		// White!
@@ -268,10 +268,10 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t 
 
 	// Fill in the entries of the palette that are fixed
 	for (i = 0; i < starttranscolor; i++)
-		dest_colormap[i] = (UINT8)i;
+		dest_colormap[i] = (uint8_t)i;
 
-	for (i = (UINT8)(starttranscolor + 16); i < NUM_PALETTE_ENTRIES; i++)
-		dest_colormap[i] = (UINT8)i;
+	for (i = (uint8_t)(starttranscolor + 16); i < NUM_PALETTE_ENTRIES; i++)
+		dest_colormap[i] = (uint8_t)i;
 
 	// Build the translated ramp
 	for (i = 0; i < SKIN_RAMP_LENGTH; i++)
@@ -288,7 +288,7 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, skincolornum_t 
 --------------------------------------------------*/
 dboolean K_ColorUsable(skincolornum_t color, dboolean follower, dboolean locked)
 {
-	INT32 i = MAXUNLOCKABLES;
+	int32_t i = MAXUNLOCKABLES;
 
 	if (color == FOLLOWERCOLOR_MATCH || color == FOLLOWERCOLOR_OPPOSITE)
 	{

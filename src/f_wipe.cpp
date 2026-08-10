@@ -45,13 +45,13 @@
 using namespace srb2;
 
 typedef struct fademask_s {
-	UINT8* mask;
-	UINT16 width, height;
+	uint8_t* mask;
+	uint16_t width, height;
 	size_t size;
 	fixed_t xscale, yscale;
 } fademask_t;
 
-UINT8 wipedefs[NUMWIPEDEFS] = {
+uint8_t wipedefs[NUMWIPEDEFS] = {
 	99, // wipe_credits_intermediate (0)
 
 	0,  // wipe_level_toblack
@@ -211,20 +211,20 @@ static dboolean g_wipedef_crossfade[NUMWIPEDEFS] = {
 //--------------------------------------------------------------------------
 
 dboolean WipeInAction = false;
-UINT8 g_wipemode = 0;
-UINT8 g_wipetype = 0;
-UINT8 g_wipeframe = 0;
+uint8_t g_wipemode = 0;
+uint8_t g_wipetype = 0;
+uint8_t g_wipeframe = 0;
 dboolean g_wipereverse = false;
 dboolean g_wipeencorewiggle = false;
 dboolean WipeStageTitle = false;
-INT32 lastwipetic = 0;
+int32_t lastwipetic = 0;
 
 #ifndef NOWIPE
 
 #define GENLEN 31
 
-static UINT8 *wipe_scr; //screen 0 (main drawing)
-static UINT8 pallen;
+static uint8_t *wipe_scr; //screen 0 (main drawing)
+static uint8_t pallen;
 static fixed_t paldiv;
 
 /** Create fademask_t from lump
@@ -232,11 +232,11 @@ static fixed_t paldiv;
   * \param	lump	Lump name to get data from
   * \return	fademask_t for lump
   */
-static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
+static fademask_t *F_GetFadeMask(uint8_t masknum, uint8_t scrnnum) {
 	static char lumpname[9] = "FADEmmss";
 	static fademask_t fm = {NULL,0,0,0,0,0};
 	lumpnum_t lumpnum;
-	UINT8 *lump, *mask;
+	uint8_t *lump, *mask;
 	size_t lsize;
 	RGBA_t *pcolor;
 
@@ -244,7 +244,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 		goto freemask;
 
 	// SRB2Kart: This suddenly triggers ERRORMODE now
-	//sprintf(&lumpname[4], "%.2hu%.2hu", (UINT16)masknum, (UINT16)scrnnum);
+	//sprintf(&lumpname[4], "%.2hu%.2hu", (uint16_t)masknum, (uint16_t)scrnnum);
 
 	lumpname[4] = '0'+(masknum/10);
 	lumpname[5] = '0'+(masknum%10);
@@ -256,7 +256,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	if (lumpnum == LUMPERROR)
 		goto freemask;
 
-	lump = static_cast<UINT8*>(W_CacheLumpNum(lumpnum, PU_CACHE));
+	lump = static_cast<uint8_t*>(W_CacheLumpNum(lumpnum, PU_CACHE));
 	lsize = W_LumpLength(lumpnum);
 	switch (lsize)
 	{
@@ -283,7 +283,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 			goto freemask;
 	}
 	if (lsize != fm.size)
-		fm.mask = reinterpret_cast<UINT8*>(Z_Realloc(fm.mask, lsize, PU_STATIC, NULL));
+		fm.mask = reinterpret_cast<uint8_t*>(Z_Realloc(fm.mask, lsize, PU_STATIC, NULL));
 	fm.size = lsize;
 
 	mask = fm.mask;
@@ -423,7 +423,7 @@ void F_WipeStageTitle(void)
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipemode, UINT8 wipetype, dboolean drawMenu, const char *colormap, dboolean reverse, dboolean encorewiggle)
+void F_RunWipe(uint8_t wipemode, uint8_t wipetype, dboolean drawMenu, const char *colormap, dboolean reverse, dboolean encorewiggle)
 {
 #ifdef NOWIPE
 	(void)wipemode;
@@ -434,7 +434,7 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, dboolean drawMenu, const char *co
 	(void)encorewiggle;
 #else
 	tic_t nowtime;
-	UINT8 wipeframe = 0;
+	uint8_t wipeframe = 0;
 	fademask_t *fmask;
 
 	lumpnum_t clump = LUMPERROR;
@@ -561,7 +561,7 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, dboolean drawMenu, const char *co
 /** Returns tic length of wipe
   * One lump equals one tic
   */
-tic_t F_GetWipeLength(UINT8 wipetype)
+tic_t F_GetWipeLength(uint8_t wipetype)
 {
 #ifdef NOWIPE
 	(void)wipetype;
@@ -569,14 +569,14 @@ tic_t F_GetWipeLength(UINT8 wipetype)
 #else
 	static char lumpname[10] = "FADEmmss";
 	lumpnum_t lumpnum;
-	UINT8 wipeframe;
+	uint8_t wipeframe;
 
 	if (wipetype > 99)
 		return 0;
 
 	for (wipeframe = 0; wipeframe < 100; wipeframe++)
 	{
-		snprintf(&lumpname[4], sizeof(lumpname) - 4, "%.2hu%.2hu", (UINT16)wipetype, (UINT16)wipeframe);
+		snprintf(&lumpname[4], sizeof(lumpname) - 4, "%.2hu%.2hu", (uint16_t)wipetype, (uint16_t)wipeframe);
 
 		lumpnum = W_CheckNumForName(lumpname);
 		if (lumpnum == LUMPERROR)
@@ -588,7 +588,7 @@ tic_t F_GetWipeLength(UINT8 wipetype)
 
 /** Does the specified wipe exist?
   */
-dboolean F_WipeExists(UINT8 wipetype)
+dboolean F_WipeExists(uint8_t wipetype)
 {
 #ifdef NOWIPE
 	(void)wipetype;
@@ -600,29 +600,29 @@ dboolean F_WipeExists(UINT8 wipetype)
 	if (wipetype > 99)
 		return false;
 
-	snprintf(&lumpname[4], sizeof(lumpname) - 4, "%.2hu00", (UINT16)wipetype);
+	snprintf(&lumpname[4], sizeof(lumpname) - 4, "%.2hu00", (uint16_t)wipetype);
 
 	lumpnum = W_CheckNumForName(lumpname);
 	return !(lumpnum == LUMPERROR);
 #endif
 }
 
-dboolean F_WipeIsToBlack(UINT8 wipemode)
+dboolean F_WipeIsToBlack(uint8_t wipemode)
 {
 	return g_wipedef_toblack[wipemode];
 }
 
-dboolean F_WipeIsToWhite(UINT8 wipemode)
+dboolean F_WipeIsToWhite(uint8_t wipemode)
 {
 	return g_wipedef_towhite[wipemode];
 }
 
-dboolean F_WipeIsToInvert(UINT8 wipemode)
+dboolean F_WipeIsToInvert(uint8_t wipemode)
 {
 	return g_wipedef_toinvert[wipemode];
 }
 
-dboolean F_WipeIsCrossfade(UINT8 wipemode)
+dboolean F_WipeIsCrossfade(uint8_t wipemode)
 {
 	return g_wipedef_crossfade[wipemode];
 }

@@ -21,7 +21,7 @@
 #include "command.h"
 
 /// \brief program net id
-#define DOOMCOM_ID (INT32)0x12345678l
+#define DOOMCOM_ID (int32_t)0x12345678l
 
 /// \def MAXPACKETLENGTH
 /// For use in a LAN
@@ -36,8 +36,8 @@
 extern "C" {
 #endif
 
-extern INT16 hardware_MAXPACKETLENGTH;
-extern INT32 net_bandwidth; // in byte/s
+extern int16_t hardware_MAXPACKETLENGTH;
+extern int32_t net_bandwidth; // in byte/s
 
 #if defined(_MSC_VER)
 #pragma pack(1)
@@ -46,37 +46,37 @@ extern INT32 net_bandwidth; // in byte/s
 struct doomcom_t
 {
 	/// Supposed to be DOOMCOM_ID
-	INT32 id;
+	int32_t id;
 
-	/// SRB2 executes an INT32 to execute commands.
-	INT16 intnum;
+	/// SRB2 executes an int32_t to execute commands.
+	int16_t intnum;
 	/// Communication between SRB2 and the driver.
 	/// Is CMD_SEND or CMD_GET.
-	INT16 command;
+	int16_t command;
 	/// Is dest for send, set by get (-1 = no packet).
-	INT16 remotenode;
+	int16_t remotenode;
 
 	/// Number of bytes in doomdata to be sent
-	INT16 datalength;
+	int16_t datalength;
 
 	/// Info common to all nodes.
 	/// Console is always node 0.
-	INT16 numnodes;
+	int16_t numnodes;
 	/// Flag: 1 = no duplication, 2-5 = dup for slow nets.
-	INT16 ticdup;
+	int16_t ticdup;
 	/// Flag: 1 = send a backup tic in every packet.
-	INT16 extratics;
+	int16_t extratics;
 	/// kind of game
-	INT16 gametype;
+	int16_t gametype;
 	/// Flag: -1 = new game, 0-5 = load savegame
-	INT16 savegame;
+	int16_t savegame;
 	/// currect map
-	INT16 map;
+	int16_t map;
 
 	/// Info specific to this node.
-	INT16 consoleplayer;
+	int16_t consoleplayer;
 	/// Number of "slots": the highest player number in use plus one.
-	INT16 numslots;
+	int16_t numslots;
 
 	/// The packet data to be sent.
 	char data[MAXPACKETLENGTH];
@@ -84,9 +84,9 @@ struct doomcom_t
 
 struct holepunch_t
 {
-	INT32 magic;
-	INT32 addr;
-	INT16 port;
+	int32_t magic;
+	int32_t addr;
+	int16_t port;
 } ATTRPACK;
 
 #if defined(_MSC_VER)
@@ -120,7 +120,7 @@ extern dboolean (*I_NetCanSend)(void);
 
 
 */
-extern void (*I_NetFreeNodenum)(INT32 nodenum);
+extern void (*I_NetFreeNodenum)(int32_t nodenum);
 
 /**	\brief	open a connection with specified address
 
@@ -130,7 +130,7 @@ extern void (*I_NetFreeNodenum)(INT32 nodenum);
 
 
 */
-extern SINT8 I_NetMakeNode(const char *address);
+extern int8_t I_NetMakeNode(const char *address);
 
 /**	\brief	open a connection with specified address and port
 
@@ -142,7 +142,7 @@ extern SINT8 I_NetMakeNode(const char *address);
 
 
 */
-extern SINT8 (*I_NetMakeNodewPort)(const char *address, const char *port);
+extern int8_t (*I_NetMakeNodewPort)(const char *address, const char *port);
 
 /**	\brief open connection
 */
@@ -155,15 +155,15 @@ extern void (*I_NetCloseSocket)(void);
 
 /**	\brief send a hole punching request
 */
-extern void (*I_NetRequestHolePunch)(INT32 node);
+extern void (*I_NetRequestHolePunch)(int32_t node);
 
 /**	\brief register this machine on the hole punching server
 */
 extern void (*I_NetRegisterHolePunch)(void);
 
 
-extern const char *(*I_GetNodeAddress) (INT32 node);
-extern UINT32 (*I_GetNodeAddressInt) (INT32 node);
+extern const char *(*I_GetNodeAddress) (int32_t node);
+extern uint32_t (*I_GetNodeAddressInt) (int32_t node);
 extern dboolean (*I_IsExternalAddress) (const void *p);
 
 struct bannednode_t

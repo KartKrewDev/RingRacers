@@ -104,9 +104,9 @@ void Obj_MushroomHillPoleTouch(mobj_t *pole, mobj_t *toucher)
 	P_SetTarget(&pole->target, toucher);
 	pole->movefactor = max(FixedHypot(toucher->momx, toucher->momy), FixedMul(pole->info->speed, pole->scale)); // speed at which to spin around the pole
 	pole->movedir = R_PointToAngle2(pole->x, pole->y, toucher->x, toucher->y); // angle at which to project the player from the pole
-	pole->angle = toucher->angle + Easing_Linear(MOMENTUM_ANGLE_PROPORTION, 0, (INT32)(momentumAngle - toucher->angle)); // final launch angle
+	pole->angle = toucher->angle + Easing_Linear(MOMENTUM_ANGLE_PROPORTION, 0, (int32_t)(momentumAngle - toucher->angle)); // final launch angle
 	pole->extravalue1 = (pole->movedir - momentumAngle < ANGLE_180) ? -1 : 1; // direction to spin around the pole
-	pole->extravalue2 = (INT32)player->angleturn; // player's old angle, to restore upon launch
+	pole->extravalue2 = (int32_t)player->angleturn; // player's old angle, to restore upon launch
 	pole->movecount = AngleFixed(pole->extravalue1 * (pole->angle - pole->movedir) - ANGLE_90); // fixed-scale number of degrees to spin around the pole
 
 	while (pole->movecount < MINIMUM_SPIN_DEGREES * FRACUNIT)

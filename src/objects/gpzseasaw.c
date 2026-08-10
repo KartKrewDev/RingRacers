@@ -31,7 +31,7 @@ static void Obj_GPZSeasawUpdate(mobj_t *mo, dboolean ghostme)
 
 	mobj_t *ptr = mo;
 	mobj_t *ptrp = mo;
-	UINT8 j;
+	uint8_t j;
 	angle_t visan = (angle_t)mo->extravalue1 + ANGLE_90;
 
 	if (mo->tracer && !P_MobjWasRemoved(mo->tracer))
@@ -51,7 +51,7 @@ static void Obj_GPZSeasawUpdate(mobj_t *mo, dboolean ghostme)
 	fixed_t cx = mo->x + FixedMul(mo->scale, 96*FINECOSINE(visan>>ANGLETOFINESHIFT));
 	fixed_t cy = mo->y + FixedMul(mo->scale, 96*FINESINE(visan>>ANGLETOFINESHIFT));
 
-	INT32 hdist = 64;	// hitbox dist
+	int32_t hdist = 64;	// hitbox dist
 
 	angle_t tun_an = visan;
 
@@ -140,13 +140,13 @@ void Obj_GPZSeasawSpawn(mobj_t *mo)
 	mobj_t *pole;
 	mobj_t *ptr = mo;
 	mobj_t *ptrp = mo;
-	UINT8 j;
+	uint8_t j;
 
 	P_SetScale(mo, 2*mapobjectscale);
 	mo->destscale = 2*mapobjectscale;
 
 	// setup vars
-	mo->extravalue1 = (INT32)mo->angle;
+	mo->extravalue1 = (int32_t)mo->angle;
 
 	// center pole:
 	pole = P_SpawnMobj(mo->x, mo->y, mo->z, MT_THOK);
@@ -218,7 +218,7 @@ void Obj_GPZSeasawSpawn(mobj_t *mo)
 
 static void Obj_GPZSeasawReset(mobj_t *mo)
 {
-	mo->extravalue1 = (INT32)mo->angle;
+	mo->extravalue1 = (int32_t)mo->angle;
 	P_SetTarget(&mo->target, NULL);
 	Obj_GPZSeasawUpdate(mo, false);
 }
@@ -227,7 +227,7 @@ static void Obj_GPZSeasawReset(mobj_t *mo)
 void Obj_GPZSeasawThink(mobj_t *mo)
 {
 	dboolean ghost = false;
-	SINT8 rot = 1;
+	int8_t rot = 1;
 	fixed_t px, py;
 
 	if (mo->target && !P_MobjWasRemoved(mo->target))
@@ -244,7 +244,7 @@ void Obj_GPZSeasawThink(mobj_t *mo)
 		if (!mo->extravalue2)
 			rot = -1;
 
-		INT32 angleadd = ANG1*max(4, (3*mo->movefactor/4)/(mapobjectscale*2)) * rot;
+		int32_t angleadd = ANG1*max(4, (3*mo->movefactor/4)/(mapobjectscale*2)) * rot;
 
 		p->seasawcooldown = TICRATE/2;
 
@@ -289,9 +289,9 @@ void Obj_GPZSeasawThink(mobj_t *mo)
 	Obj_GPZSeasawUpdate(mo, ghost);
 }
 
-// ported just for convenience of not needing to rewrite the code to account for UINT32 angles...
+// ported just for convenience of not needing to rewrite the code to account for uint32_t angles...
 // the precision loss hardly matters whatsoever.
-static INT32 angtoint(angle_t a)
+static int32_t angtoint(angle_t a)
 {
 	return a/ANG1;
 }
@@ -301,7 +301,7 @@ static INT32 angtoint(angle_t a)
 void Obj_GPZSeasawCollide(mobj_t *mo, mobj_t *mo2)
 {
 	player_t *p = mo->player;
-	INT32 momangle;
+	int32_t momangle;
 
 	// cooldown / respawning
 	if (p->seasawcooldown || p->respawn.timer)

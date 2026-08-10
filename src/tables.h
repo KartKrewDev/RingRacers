@@ -75,7 +75,7 @@ extern fixed_t finetangent[FINEANGLES/2];
 #define ANGLE_120  0x53333333
 #define ANGLE_240  0xA6666666
 
-typedef UINT32 angle_t;
+typedef uint32_t angle_t;
 
 // To get a global angle from Cartesian coordinates, the coordinates are
 // flipped until they are in the first octant of the coordinate system, then
@@ -91,7 +91,7 @@ extern angle_t tantoangle[SLOPERANGE+1];
 // Utility function, called by R_PointToAngle.
 FUNCMATH unsigned SlopeDiv(unsigned num, unsigned den);
 // Only called by R_PointToAngleEx
-UINT64 SlopeDivEx(unsigned int num, unsigned int den);
+uint64_t SlopeDivEx(unsigned int num, unsigned int den);
 
 // 360 - angle_t(ANGLE_45) = ANGLE_315
 FUNCMATH FUNCINLINE static ATTRINLINE angle_t InvAngle(angle_t a)
@@ -112,7 +112,7 @@ FUNCMATH angle_t FixedAngle(fixed_t fa);
 FUNCMATH angle_t FixedAngleC(fixed_t fa, fixed_t factor);
 // difference between two angle_t
 FUNCMATH angle_t AngleDelta(angle_t a1, angle_t a2);
-FUNCMATH INT32 AngleDeltaSigned(angle_t a1, angle_t a2);
+FUNCMATH int32_t AngleDeltaSigned(angle_t a1, angle_t a2);
 FUNCMATH float AngleToFloat(angle_t x);
 FUNCMATH angle_t FloatToAngle(float f);
 
@@ -122,9 +122,9 @@ FUNCMATH angle_t FixedAcos(fixed_t x);
 /// Fixed Point Vector functions
 angle_t FV2_AngleBetweenVectors(const vector2_t *Vector1, const vector2_t *Vector2);
 angle_t FV3_AngleBetweenVectors(const vector3_t *Vector1, const vector3_t *Vector2);
-dboolean FV2_InsidePolygon(const vector2_t *vIntersection, const vector2_t *Poly, const INT32 vertexCount);
-dboolean FV3_InsidePolygon(const vector3_t *vIntersection, const vector3_t *Poly, const INT32 vertexCount);
-dboolean FV3_IntersectedPolygon(const vector3_t *vPoly, const vector3_t *vLine, const INT32 vertexCount, vector3_t *collisionPoint);
+dboolean FV2_InsidePolygon(const vector2_t *vIntersection, const vector2_t *Poly, const int32_t vertexCount);
+dboolean FV3_InsidePolygon(const vector3_t *vIntersection, const vector3_t *Poly, const int32_t vertexCount);
+dboolean FV3_IntersectedPolygon(const vector3_t *vPoly, const vector3_t *vLine, const int32_t vertexCount, vector3_t *collisionPoint);
 void FV3_Rotate(vector3_t *rotVec, const vector3_t *axisVec, const angle_t angle);
 /// Fixed Point Matrix functions
 void FM_Rotate(matrix_t *dest, angle_t angle, fixed_t x, fixed_t y, fixed_t z);

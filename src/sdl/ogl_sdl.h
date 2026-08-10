@@ -25,7 +25,7 @@ extern "C" {
 
 extern void *GLUhandle;
 
-dboolean OglSdlSurface(INT32 w, INT32 h);
+dboolean OglSdlSurface(int32_t w, int32_t h);
 
 void OglSdlFinishUpdate(dboolean vidwait);
 

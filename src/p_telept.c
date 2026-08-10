@@ -33,12 +33,12 @@
 
 */
 void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
-			INT16 cheatcheckx, INT16 cheatchecky, INT16 cheatcheckz,
-			INT32 cheatchecknum, tic_t cheatchecktime, angle_t cheatcheckangle,
-			fixed_t cheatcheckscale, angle_t drawangle, INT32 flags2)
+			int16_t cheatcheckx, int16_t cheatchecky, int16_t cheatcheckz,
+			int32_t cheatchecknum, tic_t cheatchecktime, angle_t cheatcheckangle,
+			fixed_t cheatcheckscale, angle_t drawangle, int32_t flags2)
 {
-	const INT32 takeflags2 = MF2_OBJECTFLIP;
-	UINT8 i;
+	const int32_t takeflags2 = MF2_OBJECTFLIP;
+	uint8_t i;
 
 	(void)cheatchecktime;
 	(void)cheatcheckangle;
@@ -124,7 +124,7 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 */
 dboolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle, dboolean flash, dboolean dontstopmove)
 {
-	UINT8 i;
+	uint8_t i;
 
 	if (!P_SetOrigin(thing, x, y, z))
 		return false;

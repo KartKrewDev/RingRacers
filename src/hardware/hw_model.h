@@ -96,8 +96,8 @@ typedef struct tag_s
 
 typedef struct
 {
-	INT32 frames[256];
-	UINT8 numframes;
+	int32_t frames[256];
+	uint8_t numframes;
 	dboolean interpolate;
 } modelspr2frames_t;
 

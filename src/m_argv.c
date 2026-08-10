@@ -21,7 +21,7 @@
 
 /**	\brief number of arg
 */
-INT32 myargc;
+int32_t myargc;
 
 /**	\brief string table
 */
@@ -33,7 +33,7 @@ dboolean myargmalloc = false;
 
 /**	\brief founded the parm
 */
-static INT32 found;
+static int32_t found;
 
 /**	\brief Parses a server URL (such as srb2://127.0.0.1) as may be passed to the game via a web browser, etc.
 
@@ -41,7 +41,7 @@ static INT32 found;
 */
 const char *M_GetUrlProtocolArg(void)
 {
-	INT32 i;
+	int32_t i;
 	const size_t len = strlen(SERVER_URL_PROTOCOL);
 
 	for (i = 1; i < myargc; i++)
@@ -63,9 +63,9 @@ const char *M_GetUrlProtocolArg(void)
 
 
 */
-INT32 M_CheckParm(const char *check)
+int32_t M_CheckParm(const char *check)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 1; i < myargc; i++)
 	{
@@ -111,7 +111,7 @@ const char *M_GetNextParm(void)
 */
 void M_PushSpecialParameters(void)
 {
-	INT32 i;
+	int32_t i;
 	for (i = 1; i < myargc; i++)
 	{
 		if (myargv[i][0] == '+')
@@ -140,16 +140,16 @@ void M_PushSpecialParameters(void)
 */
 void M_FindResponseFile(void)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 1; i < myargc; i++)
 		if (myargv[i][0] == '@')
 		{
 			FILE *handle;
-			INT32 k, pindex, indexinfile;
+			int32_t k, pindex, indexinfile;
 			long size;
 			dboolean inquote = false;
-			UINT8 *infile;
+			uint8_t *infile;
 			char *file;
 			char *moreargs[20];
 			char *firstargv;
@@ -185,7 +185,7 @@ void M_FindResponseFile(void)
 			memset(myargv, 0, sizeof (char *) * MAXARGVS);
 			myargv[0] = firstargv;
 
-			infile = (UINT8 *)file;
+			infile = (uint8_t *)file;
 			indexinfile = k = 0;
 			indexinfile++; // skip past argv[0]
 			do

@@ -60,12 +60,12 @@ struct thinker_t
 
 	// killough 11/98: count of how many other objects reference
 	// this one using pointers. Used for garbage collection.
-	INT32 references;
-	INT32 alloctype;
+	int32_t references;
+	int32_t alloctype;
 	size_t size;
 
 #ifdef PARANOIA
-	INT32 debug_mobjtype;
+	int32_t debug_mobjtype;
 	tic_t debug_time;
 #endif
 };

@@ -7,14 +7,14 @@
  * (WHICH MEANS WRITE THE LOW DWORD FIRST)
  *
  * Now in yer code do:
- *   INT64 count,total;
+ *   int64_t count,total;
  *
  *   ...
  *   RDMSR(0x10,&count);        //inner loop count
  *   total += count;
  *   ...
  *
- *   printf("0x%x %x", (INT32)total, *((INT32 *)&total+1));
+ *   printf("0x%x %x", (int32_t)total, *((int32_t *)&total+1));
  *   //                  HIGH        LOW
  *
  *********************************************************/
@@ -150,7 +150,7 @@ __asm__("
 
 #elif defined (__WATCOMC__)
 
-extern void RDTSC(UINT32 *dst);
+extern void RDTSC(uint32_t *dst);
 #pragma aux RDTSC =\
    "db 0x0F,0x31"\
    "mov [edi],edx"\
@@ -158,7 +158,7 @@ extern void RDTSC(UINT32 *dst);
    parm [edi]\
    modify [eax edx edi];
 
-extern void RDMSR(UINT32 msri, UINT32 *msrd);
+extern void RDMSR(uint32_t msri, uint32_t *msrd);
 #pragma aux RDMSR =\
    "db 0x0F,0x32"\
    "mov [edi],edx"\
@@ -166,14 +166,14 @@ extern void RDMSR(UINT32 msri, UINT32 *msrd);
    parm [ecx] [edi]\
    modify [eax ecx edx edi];
 
-extern void WRMSR(UINT32 msri, UINT32 msrd);
+extern void WRMSR(uint32_t msri, uint32_t msrd);
 #pragma aux WRMSR =\
    "xor edx,edx"\
    "db 0x0F,0x30"\
    parm [ecx] [eax]\
    modify [eax ecx edx];
 
-extern void RDMSR_0x12_0x13(UINT32 *msr12, UINT32 *msr13);
+extern void RDMSR_0x12_0x13(uint32_t *msr12, uint32_t *msr13);
 #pragma aux RDMSR_0x12_0x13 =\
    "mov ecx,0x12"\
    "db 0x0F,0x32"\
@@ -250,10 +250,10 @@ typedef enum
 #define RING_3      (0x80)
 #define RING_0123   (RING_012 | RING_3)
 
-/*void ProfSetProfiles(UINT32 msr12, UINT32 msr13);*/
+/*void ProfSetProfiles(uint32_t msr12, uint32_t msr13);*/
 #define ProfSetProfiles(_msr12, _msr13)\
 {\
-   UINT32 prof;\
+   uint32_t prof;\
 \
    prof = (_msr12) | ((_msr13) << 16);\
    WRMSR(0x11, prof);\
@@ -263,7 +263,7 @@ typedef enum
 #define ProfBeginProfiles()\
    ZERO_MSR_0x12_0x13();
 
-/*void ProfGetProfiles(UINT32 msr12[2], UINT32 msr13[2]);*/
+/*void ProfGetProfiles(uint32_t msr12[2], uint32_t msr13[2]);*/
 #define ProfGetProfiles(_msr12, _msr13)\
    RDMSR_0x12_0x13(_msr12, _msr13);
 
@@ -271,7 +271,7 @@ typedef enum
 #define ProfZeroTimer()\
    WRMSR(0x10, 0);
 
-/*void ProfReadTimer(UINT32 timer[2]);*/
+/*void ProfReadTimer(uint32_t timer[2]);*/
 #define ProfReadTimer(timer)\
    RDMSR(0x10, timer);
 

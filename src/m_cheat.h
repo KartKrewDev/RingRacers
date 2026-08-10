@@ -59,8 +59,8 @@ extern consvar_t cv_opflags, cv_ophoopflags, cv_mapthingnum, cv_speed;
 
 extern dboolean objectplacing;
 extern mobjtype_t op_currentthing;
-extern UINT16 op_currentdoomednum;
-extern UINT32 op_displayflags;
+extern uint16_t op_currentdoomednum;
+extern uint32_t op_displayflags;
 
 dboolean OP_FreezeObjectplace(void);
 void OP_ResetObjectplace(void);

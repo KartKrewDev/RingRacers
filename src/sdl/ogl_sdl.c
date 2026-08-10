@@ -69,7 +69,7 @@ PFNglGetString pglGetString;
 
 /**	\brief SDL video display surface
 */
-INT32 oglflags = 0;
+int32_t oglflags = 0;
 void *GLUhandle = NULL;
 SDL_GLContext sdlglcontext = 0;
 
@@ -158,9 +158,9 @@ dboolean LoadGL(void)
 
 	\return	if true, changed video mode
 */
-dboolean OglSdlSurface(INT32 w, INT32 h)
+dboolean OglSdlSurface(int32_t w, int32_t h)
 {
-	INT32 cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
+	int32_t cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
 	static dboolean first_init = false;
 
 	oglflags = 0;

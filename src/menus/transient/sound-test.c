@@ -14,7 +14,7 @@
 #include "../../music.h"
 #include "../../s_sound.h"
 
-static void M_SoundTestMainControl(INT32 choice)
+static void M_SoundTestMainControl(int32_t choice)
 {
 	(void)choice;
 
@@ -77,14 +77,14 @@ static void M_SoundTestMainControl(INT32 choice)
 	}
 }
 
-static void M_SoundTestNextPrev(INT32 choice)
+static void M_SoundTestNextPrev(int32_t choice)
 {
 	(void)choice;
 
 	S_UpdateSoundTestDef((currentMenu->menuitems[itemOn].mvar1 < 0), true, false);
 }
 
-static void M_SoundTestSeq(INT32 choice)
+static void M_SoundTestSeq(int32_t choice)
 {
 	(void)choice;
 
@@ -111,7 +111,7 @@ static void M_SoundTestSeq(INT32 choice)
 	}
 }
 
-static void M_SoundTestShf(INT32 choice)
+static void M_SoundTestShf(int32_t choice)
 {
 	(void)choice;
 
@@ -144,7 +144,7 @@ consvar_t *M_GetSoundTestVolumeCvar(void)
 	return &cv_digmusicvolume;
 }
 
-static void M_SoundTestVol(INT32 choice)
+static void M_SoundTestVol(int32_t choice)
 {
 	consvar_t *voltoadjust = M_GetSoundTestVolumeCvar();
 
@@ -154,9 +154,9 @@ static void M_SoundTestVol(INT32 choice)
 	M_ChangeCvarDirect(choice, voltoadjust);
 }
 
-static void M_SoundTestTrack(INT32 choice)
+static void M_SoundTestTrack(int32_t choice)
 {
-	const UINT8 numtracks = (soundtest.current != NULL) ? soundtest.current->numtracks : 0;
+	const uint8_t numtracks = (soundtest.current != NULL) ? soundtest.current->numtracks : 0;
 
 	if (numtracks == 1 // No cycling
 		|| choice == -1) // Extra
@@ -194,7 +194,7 @@ static void M_SoundTestTrack(INT32 choice)
 	}
 }
 
-static dboolean M_SoundTestInputs(INT32 ch)
+static dboolean M_SoundTestInputs(int32_t ch)
 {
 	(void)ch;
 	soundtest.justopened = false;
@@ -244,7 +244,7 @@ menu_t MISC_SoundTestDef = {
 	M_SoundTestInputs,
 };
 
-void M_SoundTest(INT32 choice)
+void M_SoundTest(int32_t choice)
 {
 	(void)choice;
 

@@ -19,7 +19,7 @@
 #include "../m_pw.h"
 #include "../i_system.h"
 
-static void M_Credits(INT32 choice)
+static void M_Credits(int32_t choice)
 {
 	(void)choice;
 	restoreMenu = currentMenu;
@@ -29,7 +29,7 @@ static void M_Credits(INT32 choice)
 
 const char *manual_url = "https://kartkrew.org/rr-manual";
 
-static void M_ManualSelect(INT32 choice)
+static void M_ManualSelect(int32_t choice)
 {
 	if (choice != MA_YES)
 		return;
@@ -37,7 +37,7 @@ static void M_ManualSelect(INT32 choice)
 	I_OpenURL(manual_url);
 }
 
-static void M_Manual(INT32 choice)
+static void M_Manual(int32_t choice)
 {
 	(void)choice;
 	restoreMenu = currentMenu;
@@ -111,7 +111,7 @@ menu_t EXTRAS_MainDef = {
 
 struct extrasmenu_s extrasmenu;
 
-void M_InitExtras(INT32 choice)
+void M_InitExtras(int32_t choice)
 {
 	// Addons
 	if (M_SecretUnlocked(SECRET_ADDONS, true))
@@ -132,7 +132,7 @@ void M_InitExtras(INT32 choice)
 
 	// Tutorial
 	{
-		UINT16 map = G_GetFirstMapOfGametype(GT_TUTORIAL);
+		uint16_t map = G_GetFirstMapOfGametype(GT_TUTORIAL);
 
 		EXTRAS_Main[extras_tutorial].status = (IT_STRING | 
 			((map == NEXTMAP_INVALID) ? IT_TRANSTEXT : IT_CALL));
@@ -237,10 +237,10 @@ void M_ExtrasTick(void)
 	}
 }
 
-dboolean M_ExtrasInputs(INT32 ch)
+dboolean M_ExtrasInputs(int32_t ch)
 {
 
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	(void) ch;
 
 	if (menucmd[pid].dpad_ud > 0)

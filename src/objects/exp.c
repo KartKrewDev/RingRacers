@@ -100,7 +100,7 @@ void Obj_ExpThink (mobj_t *exp)
 
 		exp->angle += ANGLE_45/2;
 
-		UINT8 damper = 3;
+		uint8_t damper = 3;
 
 		fixed_t vert = dist/3;
 		fixed_t speed = 60*exp->scale;

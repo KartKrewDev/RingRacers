@@ -515,7 +515,7 @@ void srb2::load_ng_gamedata()
 		if (gamedata->challengegridwidth)
 		{
 			gamedata->challengegrid = static_cast<uint16_t*>(Z_Malloc(
-				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT16)),
+				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(uint16_t)),
 				PU_STATIC, NULL));
 			for (size_t i = 0; i < std::min<size_t>((size_t)(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT), js.challengegrid.grid.size()); i++)
 			{
@@ -533,7 +533,7 @@ void srb2::load_ng_gamedata()
 
 	for (auto& skinpair : js.skins)
 	{
-		INT32 skin = R_SkinAvailableEx(skinpair.first.c_str(), false);
+		int32_t skin = R_SkinAvailableEx(skinpair.first.c_str(), false);
 		skinrecord_t dummyrecord {};
 
 		dummyrecord.wins = skinpair.second.records.wins;
@@ -726,7 +726,7 @@ void srb2::load_ng_gamedata()
 				break;
 			}
 
-			UINT16 mapnum = NEXTMAP_INVALID;
+			uint16_t mapnum = NEXTMAP_INVALID;
 			if (!deprecatedcan.map.empty())
 			{
 				mapnum = G_MapNumber(deprecatedcan.map.c_str());
@@ -890,8 +890,8 @@ void srb2::load_ng_gamedata()
 		}
 	}
 
-	UINT32 chao_key_rounds = GDCONVERT_ROUNDSTOKEY;
-	UINT32 start_keys = GDINIT_CHAOKEYS;
+	uint32_t chao_key_rounds = GDCONVERT_ROUNDSTOKEY;
+	uint32_t start_keys = GDINIT_CHAOKEYS;
 
 	if (minorversion == 0)
 	{

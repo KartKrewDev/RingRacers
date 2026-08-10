@@ -18,14 +18,14 @@
 
 dboolean VS_ArenaCenterInit(mobj_t *mobj, mapthing_t *mthing)
 {
-	INT32 dist1 = mthing->thing_args[1]*FRACUNIT;
-	INT32 dist2 = mthing->thing_args[2]*FRACUNIT;
+	int32_t dist1 = mthing->thing_args[1]*FRACUNIT;
+	int32_t dist2 = mthing->thing_args[2]*FRACUNIT;
 
 	if (dist1 || dist2)
 	{
 		if (dist1 > dist2)
 		{
-			INT32 swap = dist1;
+			int32_t swap = dist1;
 			dist1 = dist2;
 			dist2 = swap;
 		}
@@ -39,7 +39,7 @@ dboolean VS_ArenaCenterInit(mobj_t *mobj, mapthing_t *mthing)
 	return false;
 }
 
-mobj_t *VS_GetArena(INT32 bossindex)
+mobj_t *VS_GetArena(int32_t bossindex)
 {
 	size_t i;
 

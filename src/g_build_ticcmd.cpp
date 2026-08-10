@@ -47,11 +47,11 @@ namespace
 
 // Take a magnitude of two axes, and adjust it to take out the deadzone
 // Will return a value between 0 and JOYAXISRANGE
-INT32 G_BasicDeadZoneCalculation(INT32 magnitude, fixed_t deadZone)
+int32_t G_BasicDeadZoneCalculation(int32_t magnitude, fixed_t deadZone)
 {
-	const INT32 jdeadzone = (JOYAXISRANGE * deadZone) / FRACUNIT;
+	const int32_t jdeadzone = (JOYAXISRANGE * deadZone) / FRACUNIT;
 
-	INT32 adjustedMagnitude = std::abs(magnitude);
+	int32_t adjustedMagnitude = std::abs(magnitude);
 
 	if (jdeadzone >= JOYAXISRANGE && adjustedMagnitude >= JOYAXISRANGE) // If the deadzone and magnitude are both 100%...
 	{
@@ -64,7 +64,7 @@ INT32 G_BasicDeadZoneCalculation(INT32 magnitude, fixed_t deadZone)
 	}
 
 	// Calculate how much the magnitude exceeds the deadzone
-	adjustedMagnitude = std::min<INT32>(adjustedMagnitude, JOYAXISRANGE) - jdeadzone;
+	adjustedMagnitude = std::min<int32_t>(adjustedMagnitude, JOYAXISRANGE) - jdeadzone;
 	return (adjustedMagnitude * JOYAXISRANGE) / (JOYAXISRANGE - jdeadzone);
 }
 
@@ -72,23 +72,23 @@ class TiccmdBuilder
 {
 	struct JoyStickVector2
 	{
-		INT32 xaxis;
-		INT32 yaxis;
+		int32_t xaxis;
+		int32_t yaxis;
 	};
 
 	ticcmd_t* cmd;
-	INT32 realtics;
-	UINT8 ssplayer;
-	UINT8 viewnum = G_PartyPosition(g_localplayers[forplayer()]);
-	UINT8 pid = swap_ssplayer() - 1;
+	int32_t realtics;
+	uint8_t ssplayer;
+	uint8_t viewnum = G_PartyPosition(g_localplayers[forplayer()]);
+	uint8_t pid = swap_ssplayer() - 1;
 	JoyStickVector2 joystickvector;
 
-	UINT8 forplayer() const { return ssplayer - 1; }
+	uint8_t forplayer() const { return ssplayer - 1; }
 	player_t* player() const { return &players[g_localplayers[forplayer()]]; }
 
 	bool freecam() const { return camera[forplayer()].freecam; }
 
-	UINT8 swap_ssplayer() const
+	uint8_t swap_ssplayer() const
 	{
 		if (ssplayer == cv_1pswap.value)
 		{
@@ -107,7 +107,7 @@ class TiccmdBuilder
 	// Get the actual sensible radial value for a joystick axis when accounting for a deadzone
 	void handle_axis_deadzone()
 	{
-		INT32 gamepadStyle = Joystick[pid].bGamepadStyle;
+		int32_t gamepadStyle = Joystick[pid].bGamepadStyle;
 		fixed_t deadZone = cv_deadzone[pid].value;
 
 		// When gamepadstyle is "true" the values are just -1, 0, or 1. This is done in the interface code.
@@ -117,26 +117,26 @@ class TiccmdBuilder
 		}
 
 		// Get the total magnitude of the 2 axes
-		INT32 magnitude = std::sqrt(static_cast<double>(
+		int32_t magnitude = std::sqrt(static_cast<double>(
 				(joystickvector.xaxis * joystickvector.xaxis) + (joystickvector.yaxis * joystickvector.yaxis)
 		));
 
 		// Get the normalised xy values from the magnitude
-		INT32 normalisedXAxis = (joystickvector.xaxis * magnitude) / JOYAXISRANGE;
-		INT32 normalisedYAxis = (joystickvector.yaxis * magnitude) / JOYAXISRANGE;
+		int32_t normalisedXAxis = (joystickvector.xaxis * magnitude) / JOYAXISRANGE;
+		int32_t normalisedYAxis = (joystickvector.yaxis * magnitude) / JOYAXISRANGE;
 
 		// Apply the deadzone to the magnitude to give a correct value between 0 and JOYAXISRANGE
-		INT32 normalisedMagnitude = G_BasicDeadZoneCalculation(magnitude, deadZone);
+		int32_t normalisedMagnitude = G_BasicDeadZoneCalculation(magnitude, deadZone);
 
 		// Apply the deadzone to the xy axes
 		joystickvector.xaxis = (normalisedXAxis * normalisedMagnitude) / JOYAXISRANGE;
 		joystickvector.yaxis = (normalisedYAxis * normalisedMagnitude) / JOYAXISRANGE;
 
 		// Cap the values so they don't go above the correct maximum
-		joystickvector.xaxis = std::min<INT32>(joystickvector.xaxis, JOYAXISRANGE);
-		joystickvector.xaxis = std::max<INT32>(joystickvector.xaxis, -JOYAXISRANGE);
-		joystickvector.yaxis = std::min<INT32>(joystickvector.yaxis, JOYAXISRANGE);
-		joystickvector.yaxis = std::max<INT32>(joystickvector.yaxis, -JOYAXISRANGE);
+		joystickvector.xaxis = std::min<int32_t>(joystickvector.xaxis, JOYAXISRANGE);
+		joystickvector.xaxis = std::max<int32_t>(joystickvector.xaxis, -JOYAXISRANGE);
+		joystickvector.yaxis = std::min<int32_t>(joystickvector.yaxis, JOYAXISRANGE);
+		joystickvector.yaxis = std::max<int32_t>(joystickvector.yaxis, -JOYAXISRANGE);
 	}
 
 	void hook()
@@ -196,7 +196,7 @@ class TiccmdBuilder
 
 		while (realtics > 0)
 		{
-			INT32& steering = localsteering[forplayer()];
+			int32_t& steering = localsteering[forplayer()];
 
 			steering = K_UpdateSteeringValue(steering, cmd->turning);
 			angleChange = K_GetKartTurnValue(player(), steering) << TICCMD_REDUCE;
@@ -328,7 +328,7 @@ class TiccmdBuilder
 	void kart_analog_input()
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		INT32 value = G_PlayerInputAnalog(pid, gc_accel, 0);
+		int32_t value = G_PlayerInputAnalog(pid, gc_accel, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
@@ -391,7 +391,7 @@ class TiccmdBuilder
 
 	void common_button_input()
 	{
-		auto map = [this](INT32 gamecontrol, UINT32 button)
+		auto map = [this](int32_t gamecontrol, uint32_t button)
 		{
 			if (G_PlayerInputDown(pid, gamecontrol, 0))
 			{
@@ -414,7 +414,7 @@ class TiccmdBuilder
 	}
 
 public:
-	explicit TiccmdBuilder(ticcmd_t* cmd_, INT32 realtics_, UINT8 ssplayer_) :
+	explicit TiccmdBuilder(ticcmd_t* cmd_, int32_t realtics_, uint8_t ssplayer_) :
 		cmd(cmd_), realtics(realtics_), ssplayer(ssplayer_)
 	{
 		auto regular_input = [this]
@@ -480,7 +480,7 @@ public:
 
 }; // namespace
 
-void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
+void G_BuildTiccmd(ticcmd_t *cmd, int32_t realtics, uint8_t ssplayer)
 {
 	TiccmdBuilder(cmd, realtics, ssplayer);
 }

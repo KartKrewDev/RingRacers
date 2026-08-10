@@ -89,26 +89,26 @@ dboolean Obj_BrolyKiThink(mobj_t *ki);
 /* Special Stage UFO */
 waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo);
 void Obj_SpecialUFOThinker(mobj_t *ufo);
-dboolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType);
+dboolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, uint8_t damageType);
 void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other);
 dboolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher);
 void Obj_UFOPieceThink(mobj_t *piece);
 void Obj_UFOPieceDead(mobj_t *piece);
 void Obj_UFOPieceRemoved(mobj_t *piece);
 mobj_t *Obj_CreateSpecialUFO(void);
-UINT32 K_GetSpecialUFODistance(void);
+uint32_t K_GetSpecialUFODistance(void);
 void Obj_UFOEmeraldThink(mobj_t *emerald);
 
 /* Monitors */
-mobj_t *Obj_SpawnMonitor(mobj_t *origin, UINT8 numItemTypes, UINT8 emerald);
+mobj_t *Obj_SpawnMonitor(mobj_t *origin, uint8_t numItemTypes, uint8_t emerald);
 void Obj_MonitorSpawnParts(mobj_t *monitor);
 void Obj_MonitorThink(mobj_t *monitor);
 void Obj_MonitorPartThink(mobj_t *part);
-fixed_t Obj_MonitorGetDamage(mobj_t *monitor, mobj_t *inflictor, UINT8 damagetype);
-void Obj_MonitorOnDamage(mobj_t *monitor, mobj_t *inflictor, INT32 damage);
+fixed_t Obj_MonitorGetDamage(mobj_t *monitor, mobj_t *inflictor, uint8_t damagetype);
+void Obj_MonitorOnDamage(mobj_t *monitor, mobj_t *inflictor, int32_t damage);
 void Obj_MonitorOnDeath(mobj_t *monitor, mobj_t *source);
 void Obj_MonitorShardThink(mobj_t *shard);
-UINT32 Obj_MonitorGetEmerald(const mobj_t *monitor);
+uint32_t Obj_MonitorGetEmerald(const mobj_t *monitor);
 void Obj_MonitorSetItemSpot(mobj_t *monitor, mobj_t *spot);
 
 /* Item Spot */
@@ -120,7 +120,7 @@ void Obj_ItemSpotUpdate(mobj_t *spot);
 mobj_t *Obj_FindLoopCenter(const mtag_t tag);
 void Obj_InitLoopEndpoint(mobj_t *end, mobj_t *anchor);
 void Obj_InitLoopCenter(mobj_t *center);
-void Obj_LinkLoopAnchor(mobj_t *anchor, mobj_t *center, UINT8 type);
+void Obj_LinkLoopAnchor(mobj_t *anchor, mobj_t *center, uint8_t type);
 void Obj_LoopEndpointCollide(mobj_t *special, mobj_t *toucher);
 
 /* Drop Target */
@@ -166,7 +166,7 @@ void Obj_RingShooterDelete(mobj_t *mo);
 void Obj_UpdateRingShooterFace(mobj_t *part);
 
 /* Follower Audience */
-void Obj_AudienceInit(mobj_t * mobj, mapthing_t *mthing, INT32 followerpick);
+void Obj_AudienceInit(mobj_t * mobj, mapthing_t *mthing, int32_t followerpick);
 void Obj_AudienceThink(mobj_t * mobj, dboolean focusonplayer, dboolean checkdeathpit);
 
 /* Random Item Boxes */
@@ -210,9 +210,9 @@ void Obj_BattleUFODeath(mobj_t *ufo, mobj_t *inflictor);
 void Obj_LinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_SpawnBattleUFOFromSpawner(void);
-INT32 Obj_RandomBattleUFOSpawnerID(void);
+int32_t Obj_RandomBattleUFOSpawnerID(void);
 void Obj_BattleUFOBeamThink(mobj_t *beam);
-INT32 Obj_BattleUFOSpawnerID(const mobj_t *spawner);
+int32_t Obj_BattleUFOSpawnerID(const mobj_t *spawner);
 mobj_t *Obj_GetNextUFOSpawner(void);
 
 /* Power-Up Aura */
@@ -252,7 +252,7 @@ void Obj_SneakerPanelSpawnerFuse(mobj_t *mobj);
 void Obj_SpawnEmeraldSparks(mobj_t *source);
 void Obj_EmeraldThink(mobj_t *emerald);
 void Obj_EmeraldFlareThink(mobj_t *flare);
-void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse);
+void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, int32_t revolution_time, tic_t fuse);
 void Obj_GiveEmerald(mobj_t *emerald);
 void Obj_SetEmeraldAwardee(mobj_t *emerald, mobj_t *awardee);
 dboolean Obj_EmeraldCanHUDTrack(const mobj_t *emerald);
@@ -267,11 +267,11 @@ void Obj_LinkCheckpoint(mobj_t *end);
 void Obj_UnlinkCheckpoint(mobj_t *end);
 void Obj_CheckpointThink(mobj_t *end);
 void Obj_CrossCheckpoints(player_t *player, fixed_t old_x, fixed_t old_y);
-mobj_t *Obj_FindCheckpoint(INT32 id);
+mobj_t *Obj_FindCheckpoint(int32_t id);
 dboolean Obj_GetCheckpointRespawnPosition(const mobj_t *checkpoint, vector3_t *return_pos);
 angle_t Obj_GetCheckpointRespawnAngle(const mobj_t *checkpoint);
 void Obj_ActivateCheckpointInstantly(mobj_t* mobj);
-UINT32 Obj_GetCheckpointCount();
+uint32_t Obj_GetCheckpointCount();
 void Obj_ClearCheckpoints();
 void Obj_DeactivateCheckpoints();
 
@@ -431,7 +431,7 @@ void Obj_TalkPointThink(mobj_t* mo);
 void Obj_TalkPointOrbThink(mobj_t* mo);
 
 /* Power-up Spinner */
-void Obj_SpawnPowerUpSpinner(mobj_t *source, INT32 powerup, tic_t duration);
+void Obj_SpawnPowerUpSpinner(mobj_t *source, int32_t powerup, tic_t duration);
 void Obj_TickPowerUpSpinner(mobj_t *mobj);
 
 /* Destroyed Kart */
@@ -452,9 +452,9 @@ void Obj_PulleyThink(mobj_t *root);
 void Obj_PulleyHookTouch(mobj_t *special, mobj_t *toucher);
 
 /* Ballhog */
-UINT8 K_HogChargeToHogCount(INT32 charge, UINT8 cap);
-void K_UpdateBallhogReticules(player_t *player, UINT8 num_hogs, dboolean on_release);
-void K_DoBallhogAttack(player_t *player, UINT8 num_hogs);
+uint8_t K_HogChargeToHogCount(int32_t charge, uint8_t cap);
+void K_UpdateBallhogReticules(player_t *player, uint8_t num_hogs, dboolean on_release);
+void K_DoBallhogAttack(player_t *player, uint8_t num_hogs);
 
 /* Bubble Shield */
 void Obj_SpawnBubbleShieldVisuals(mobj_t *source);
@@ -473,7 +473,7 @@ void Obj_SpawnFlameShieldVisuals(mobj_t *source);
 dboolean Obj_TickFlameShieldVisual(mobj_t *mobj);
 
 /* Stone Shoe */
-mobj_t *Obj_SpawnStoneShoe(INT32 owner, mobj_t *victim);
+mobj_t *Obj_SpawnStoneShoe(int32_t owner, mobj_t *victim);
 dboolean Obj_TickStoneShoe(mobj_t *shoe);
 dboolean Obj_TickStoneShoeChain(mobj_t *chain);
 player_t *Obj_StoneShoeOwnerPlayer(mobj_t *shoe);

@@ -28,52 +28,52 @@
 
 // current state of the keys
 // FRACUNIT for fully pressed, 0 for not pressed
-INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
+int32_t gamekeydown[MAXDEVICES][NUMINPUTS];
 
 // two key codes (or virtual key) per game control
-INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
-UINT8 gamecontrolflags[MAXSPLITSCREENPLAYERS];
-UINT8 showgamepadprompts[MAXSPLITSCREENPLAYERS];
-INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
-INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
+int32_t gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
+uint8_t gamecontrolflags[MAXSPLITSCREENPLAYERS];
+uint8_t showgamepadprompts[MAXSPLITSCREENPLAYERS];
+int32_t gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
+int32_t menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 
 // lists of GC codes for selective operation
 /*
-const INT32 gcl_accelerate[num_gcl_accelerate] = { gc_a };
+const int32_t gcl_accelerate[num_gcl_accelerate] = { gc_a };
 
-const INT32 gcl_brake[num_gcl_brake] = { gc_b };
+const int32_t gcl_brake[num_gcl_brake] = { gc_b };
 
-const INT32 gcl_drift[num_gcl_drift] = { gc_c };
+const int32_t gcl_drift[num_gcl_drift] = { gc_c };
 
-const INT32 gcl_spindash[num_gcl_spindash] = {
+const int32_t gcl_spindash[num_gcl_spindash] = {
 	gc_a, gc_b, gc_c, gc_abc
 };
 
-const INT32 gcl_movement[num_gcl_movement] = {
+const int32_t gcl_movement[num_gcl_movement] = {
 	gc_a, gc_b, gc_c, gc_abc, gc_left, gc_right
 };
 
-const INT32 gcl_item[num_gcl_item] = {
+const int32_t gcl_item[num_gcl_item] = {
 	gc_fire, gc_aimforward, gc_aimbackward
 };
 
-const INT32 gcl_full[num_gcl_full] = {
+const int32_t gcl_full[num_gcl_full] = {
 	gc_a, gc_drift, gc_b, gc_spindash, gc_turnleft, gc_turnright,
 	gc_fire, gc_aimforward, gc_aimbackward,
 	gc_lookback
 };
 */
 
-static INT32 g_gamekeydown_device0[NUMINPUTS];
+static int32_t g_gamekeydown_device0[NUMINPUTS];
 
-static INT32 g_available_gamepad_devices;
-static INT32 g_gamepad_device_ids[MAXGAMEPADS];
-static INT32* g_gamepad_gamekeydown[MAXGAMEPADS];
+static int32_t g_available_gamepad_devices;
+static int32_t g_gamepad_device_ids[MAXGAMEPADS];
+static int32_t* g_gamepad_gamekeydown[MAXGAMEPADS];
 static dboolean g_device0_responding;
 static dboolean g_gamepad_responding[MAXGAMEPADS];
-static INT32 g_player_devices[MAXSPLITSCREENPLAYERS] = {-1, -1, -1, -1};
+static int32_t g_player_devices[MAXSPLITSCREENPLAYERS] = {-1, -1, -1, -1};
 
-void G_RegisterAvailableGamepad(INT32 device_id)
+void G_RegisterAvailableGamepad(int32_t device_id)
 {
 	I_Assert(device_id >= 1);
 
@@ -85,14 +85,14 @@ void G_RegisterAvailableGamepad(INT32 device_id)
 
 	g_gamepad_device_ids[g_available_gamepad_devices] = device_id;
 
-	g_gamepad_gamekeydown[g_available_gamepad_devices] = Z_CallocAlign(NUMINPUTS * sizeof(INT32), PU_STATIC, NULL, 4);
+	g_gamepad_gamekeydown[g_available_gamepad_devices] = Z_CallocAlign(NUMINPUTS * sizeof(int32_t), PU_STATIC, NULL, 4);
 
 	g_gamepad_responding[g_available_gamepad_devices] = false;
 
 	g_available_gamepad_devices += 1;
 }
 
-void G_UnregisterAvailableGamepad(INT32 device_id)
+void G_UnregisterAvailableGamepad(int32_t device_id)
 {
 	int i = 0;
 
@@ -118,12 +118,12 @@ void G_UnregisterAvailableGamepad(INT32 device_id)
 	}
 }
 
-INT32 G_GetNumAvailableGamepads(void)
+int32_t G_GetNumAvailableGamepads(void)
 {
 	return g_available_gamepad_devices;
 }
 
-INT32 G_GetAvailableGamepadDevice(INT32 available_index)
+int32_t G_GetAvailableGamepadDevice(int32_t available_index)
 {
 	if (available_index < 0 || available_index >= G_GetNumAvailableGamepads())
 	{
@@ -133,9 +133,9 @@ INT32 G_GetAvailableGamepadDevice(INT32 available_index)
 	return g_gamepad_device_ids[available_index];
 }
 
-INT32 G_GetPlayerForDevice(INT32 device_id)
+int32_t G_GetPlayerForDevice(int32_t device_id)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -148,7 +148,7 @@ INT32 G_GetPlayerForDevice(INT32 device_id)
 	return -1;
 }
 
-INT32 G_GetDeviceForPlayer(INT32 player)
+int32_t G_GetDeviceForPlayer(int32_t player)
 {
 	int i;
 
@@ -159,7 +159,7 @@ INT32 G_GetDeviceForPlayer(INT32 player)
 
 	for (i = 0; i < G_GetNumAvailableGamepads() + 1; i++)
 	{
-		INT32 device = G_GetAvailableGamepadDevice(i);
+		int32_t device = G_GetAvailableGamepadDevice(i);
 		if (G_GetPlayerForDevice(device) == player)
 		{
 			return device;
@@ -169,7 +169,7 @@ INT32 G_GetDeviceForPlayer(INT32 player)
 	return -1;
 }
 
-void G_SetDeviceForPlayer(INT32 player, INT32 device)
+void G_SetDeviceForPlayer(int32_t player, int32_t device)
 {
 	int i;
 
@@ -208,10 +208,10 @@ void G_SetDeviceForPlayer(INT32 player, INT32 device)
 	}
 }
 
-void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
+void G_SetPlayerGamepadIndicatorToPlayerColor(int32_t player)
 {
-	INT32 device;
-	UINT16 skincolor;
+	int32_t device;
+	uint16_t skincolor;
 	byteColor_t byte_color;
 
 	I_Assert(player >= 0 && player < MAXSPLITSCREENPLAYERS);
@@ -230,7 +230,7 @@ void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 	I_SetGamepadIndicatorColor(device, byte_color.red, byte_color.green, byte_color.blue);
 }
 
-INT32* G_GetDeviceGameKeyDownArray(INT32 device)
+int32_t* G_GetDeviceGameKeyDownArray(int32_t device)
 {
 	int i;
 
@@ -261,11 +261,11 @@ void G_ResetAllDeviceGameKeyDown(void)
 
 	for (i = 0; i < g_available_gamepad_devices; i++)
 	{
-		memset(g_gamepad_gamekeydown[i], 0, sizeof(INT32) * NUMINPUTS);
+		memset(g_gamepad_gamekeydown[i], 0, sizeof(int32_t) * NUMINPUTS);
 	}
 }
 
-dboolean G_IsDeviceResponding(INT32 device)
+dboolean G_IsDeviceResponding(int32_t device)
 {
 	int i;
 
@@ -278,7 +278,7 @@ dboolean G_IsDeviceResponding(INT32 device)
 
 	for (i = 0; i < g_available_gamepad_devices; i++)
 	{
-		INT32 device_id = G_GetAvailableGamepadDevice(i);
+		int32_t device_id = G_GetAvailableGamepadDevice(i);
 		if (device_id == device)
 		{
 			return g_gamepad_responding[i];
@@ -288,7 +288,7 @@ dboolean G_IsDeviceResponding(INT32 device)
 	return false;
 }
 
-void G_SetDeviceResponding(INT32 device, dboolean responding)
+void G_SetDeviceResponding(int32_t device, dboolean responding)
 {
 	int i;
 
@@ -302,7 +302,7 @@ void G_SetDeviceResponding(INT32 device, dboolean responding)
 
 	for (i = 0; i < g_available_gamepad_devices; i++)
 	{
-		INT32 device_id = G_GetAvailableGamepadDevice(i);
+		int32_t device_id = G_GetAvailableGamepadDevice(i);
 		if (device_id == device)
 		{
 			g_gamepad_responding[i] = responding;
@@ -326,9 +326,9 @@ void G_ResetAllDeviceResponding(void)
 	}
 }
 
-void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strength)
+void G_PlayerDeviceRumble(int32_t player, uint16_t low_strength, uint16_t high_strength)
 {
-	INT32 device_id;
+	int32_t device_id;
 
 	if (cv_rumble[player].value == 0)
 	{
@@ -345,9 +345,9 @@ void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strengt
 	I_GamepadRumble(device_id, low_strength, high_strength);
 }
 
-void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 right_strength)
+void G_PlayerDeviceRumbleTriggers(int32_t player, uint16_t left_strength, uint16_t right_strength)
 {
-	INT32 device_id;
+	int32_t device_id;
 
 	if (cv_rumble[player].value == 0)
 	{
@@ -364,9 +364,9 @@ void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 rig
 	I_GamepadRumbleTriggers(device_id, left_strength, right_strength);
 }
 
-void G_ResetPlayerDeviceRumble(INT32 player)
+void G_ResetPlayerDeviceRumble(int32_t player)
 {
-	INT32 device_id;
+	int32_t device_id;
 
 	device_id = G_GetDeviceForPlayer(player);
 
@@ -388,14 +388,14 @@ void G_ResetAllDeviceRumbles(void)
 
 	for (i = 0; i < devices; i++)
 	{
-		INT32 device_id = G_GetAvailableGamepadDevice(i);
+		int32_t device_id = G_GetAvailableGamepadDevice(i);
 
 		I_GamepadRumble(device_id, 0, 0);
 		I_GamepadRumbleTriggers(device_id, 0, 0);
 	}
 }
 
-static dboolean AutomaticControllerReassignmentIsAllowed(INT32 device)
+static dboolean AutomaticControllerReassignmentIsAllowed(int32_t device)
 {
 	dboolean device_is_gamepad = device > 0;
 	dboolean device_is_unassigned = G_GetPlayerForDevice(device) == -1;
@@ -404,7 +404,7 @@ static dboolean AutomaticControllerReassignmentIsAllowed(INT32 device)
 	return device_is_gamepad && device_is_unassigned && gamestate_is_in_active_play;
 }
 
-static INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
+static int32_t AssignDeviceToFirstUnassignedPlayer(int32_t device)
 {
 	int i;
 
@@ -420,7 +420,7 @@ static INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
 	return -1;
 }
 
-static void update_vkb_axis(INT32 axis)
+static void update_vkb_axis(int32_t axis)
 {
 	if (axis > JOYAXISRANGE/2)
 		M_SwitchVirtualKeyboard(true);
@@ -435,8 +435,8 @@ static void update_vkb_axis(INT32 axis)
 //
 void G_MapEventsToControls(event_t *ev)
 {
-	INT32 i;
-	INT32 *DeviceGameKeyDownArray;
+	int32_t i;
+	int32_t *DeviceGameKeyDownArray;
 
 	if (ev->device >= 0)
 	{
@@ -479,7 +479,7 @@ void G_MapEventsToControls(event_t *ev)
 
 				if (AutomaticControllerReassignmentIsAllowed(ev->device))
 				{
-					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					int32_t assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
 					if (assigned >= 0)
 					{
 						CONS_Alert(CONS_NOTICE, "Player %d device was reassigned\n", assigned + 1);
@@ -556,7 +556,7 @@ void G_MapEventsToControls(event_t *ev)
 				if (AutomaticControllerReassignmentIsAllowed(ev->device)
 					&& (abs(ev->data2) > JOYAXISRANGE/2 || abs(ev->data3) > JOYAXISRANGE/2))
 				{
-					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					int32_t assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
 					if (assigned >= 0)
 					{
 						CONS_Alert(CONS_NOTICE, "Player %d device was reassigned\n", assigned + 1);
@@ -582,7 +582,7 @@ void G_MapEventsToControls(event_t *ev)
 				if (AutomaticControllerReassignmentIsAllowed(ev->device)
 					&& (abs(ev->data2) > JOYAXISRANGE/2 || abs(ev->data3) > JOYAXISRANGE/2))
 				{
-					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					int32_t assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
 					if (assigned >= 0)
 					{
 						CONS_Alert(CONS_NOTICE, "Player %d device was reassigned\n", assigned + 1);
@@ -633,7 +633,7 @@ void G_MapEventsToControls(event_t *ev)
 
 typedef struct
 {
-	INT32 keynum;
+	int32_t keynum;
 	const char *name;
 } keyname_t;
 
@@ -916,7 +916,7 @@ static const char *gamecontrolname[num_gamecontrols] =
 #define NUMKEYNAMES (sizeof (keynames)/sizeof (keyname_t))
 
 // If keybind is necessary to navigate menus, it's on this list.
-dboolean G_KeyBindIsNecessary(INT32 gc)
+dboolean G_KeyBindIsNecessary(int32_t gc)
 {
 	switch (gc)
 	{
@@ -936,7 +936,7 @@ dboolean G_KeyBindIsNecessary(INT32 gc)
 }
 
 // Returns false if a key is deemed unreachable for this device.
-dboolean G_KeyIsAvailable(INT32 key, INT32 deviceID)
+dboolean G_KeyIsAvailable(int32_t key, int32_t deviceID)
 {
 	dboolean gamepad_key = false;
 
@@ -970,9 +970,9 @@ dboolean G_KeyIsAvailable(INT32 key, INT32 deviceID)
 //
 // Detach any keys associated to the given game control
 // - pass the pointer to the gamecontrol table for the player being edited
-void G_ClearControlKeys(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 control)
+void G_ClearControlKeys(int32_t (*setupcontrols)[MAXINPUTMAPPING], int32_t control)
 {
-	INT32 i;
+	int32_t i;
 	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
 		setupcontrols[control][i] = KEY_NULL;
@@ -981,7 +981,7 @@ void G_ClearControlKeys(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 control)
 
 void G_ClearAllControlKeys(void)
 {
-	INT32 i, j;
+	int32_t i, j;
 	for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
 	{
 		for (i = 0; i < num_gamecontrols; i++)
@@ -995,11 +995,11 @@ void G_ClearAllControlKeys(void)
 // Returns the name of a key (or virtual key for mouse and joy)
 // the input value being an keynum
 //
-const char *G_KeynumToString(INT32 keynum)
+const char *G_KeynumToString(int32_t keynum)
 {
 	static char keynamestr[8];
 
-	UINT32 j;
+	uint32_t j;
 
 	// return a string with the ascii char if displayable
 	if (keynum > ' ' && keynum <= 'z' && keynum != KEY_CONSOLE)
@@ -1019,11 +1019,11 @@ const char *G_KeynumToString(INT32 keynum)
 	return keynamestr;
 }
 
-const char *G_KeynumToShortString(INT32 keynum)
+const char *G_KeynumToShortString(int32_t keynum)
 {
 	static char keynamestr[8];
 
-	UINT32 j;
+	uint32_t j;
 
 	// return a string with the ascii char if displayable
 	if (keynum > ' ' && keynum <= 'z' && keynum != KEY_CONSOLE)
@@ -1043,9 +1043,9 @@ const char *G_KeynumToShortString(INT32 keynum)
 	return keynamestr;
 }
 
-INT32 G_KeyStringtoNum(const char *keystr)
+int32_t G_KeyStringtoNum(const char *keystr)
 {
-	UINT32 j;
+	uint32_t j;
 
 	if (!keystr[0])
 		return 0;
@@ -1127,11 +1127,11 @@ void G_DefineDefaultControls(void)
 	menucontrolreserved[gc_start][0] = KEY_ESCAPE; // Handled special
 }
 
-static dboolean G_ControlUsesAxis(INT32 map[MAXINPUTMAPPING])
+static dboolean G_ControlUsesAxis(int32_t map[MAXINPUTMAPPING])
 {
-	for (INT32 i = 0; i < MAXINPUTMAPPING; i++)
+	for (int32_t i = 0; i < MAXINPUTMAPPING; i++)
 	{
-		INT32 key = map[i];
+		int32_t key = map[i];
 		if (key >= KEY_AXIS1 && key < JOYINPUTEND)
 		{
 			return true;
@@ -1141,9 +1141,9 @@ static dboolean G_ControlUsesAxis(INT32 map[MAXINPUTMAPPING])
 	return false;
 }
 
-void G_ApplyControlScheme(UINT8 splitplayer, INT32 (*fromcontrols)[MAXINPUTMAPPING])
+void G_ApplyControlScheme(uint8_t splitplayer, int32_t (*fromcontrols)[MAXINPUTMAPPING])
 {
-	UINT8 flags = 0;
+	uint8_t flags = 0;
 
 	if (G_ControlUsesAxis(fromcontrols[gc_up]) ||
 		G_ControlUsesAxis(fromcontrols[gc_down]) ||
@@ -1160,9 +1160,9 @@ void G_ApplyControlScheme(UINT8 splitplayer, INT32 (*fromcontrols)[MAXINPUTMAPPI
 		WeaponPref_Send(splitplayer); // update PF_ANALOGSTICK
 }
 
-void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*fromcontrolsb)[MAXINPUTMAPPING], INT32 (*fromcontrolsc)[MAXINPUTMAPPING], INT32 (*fromcontrolsd)[MAXINPUTMAPPING])
+void G_SaveKeySetting(FILE *f, int32_t (*fromcontrolsa)[MAXINPUTMAPPING], int32_t (*fromcontrolsb)[MAXINPUTMAPPING], int32_t (*fromcontrolsc)[MAXINPUTMAPPING], int32_t (*fromcontrolsd)[MAXINPUTMAPPING])
 {
-	INT32 i, j;
+	int32_t i, j;
 
 	// TODO: would be nice to get rid of this code duplication
 	for (i = 1; i < num_gamecontrols; i++)
@@ -1241,13 +1241,13 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*
 	}
 }
 
-INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, dboolean modify)
+int32_t G_CheckDoubleUsage(int32_t keynum, int32_t playernum, dboolean modify)
 {
-	INT32 result = gc_null;
+	int32_t result = gc_null;
 
 	if (cv_controlperkey.value == 1)
 	{
-		INT32 i, j;
+		int32_t i, j;
 		for (i = 0; i < num_gamecontrols; i++)
 		{
 			for (j = 0; j < MAXINPUTMAPPING; j++)
@@ -1270,21 +1270,21 @@ INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, dboolean modify)
 	return result;
 }
 
-INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
+int32_t G_FindPlayerBindForGameControl(int32_t player, gamecontrols_e control)
 {
-	INT32 device = showgamepadprompts[player] ? 1 : KEYBOARD_MOUSE_DEVICE;
+	int32_t device = showgamepadprompts[player] ? 1 : KEYBOARD_MOUSE_DEVICE;
 
-	INT32 bestbind = -1; // Bind that matches our input device
-	INT32 anybind = -1; // Bind that doesn't match, but is at least for this control
+	int32_t bestbind = -1; // Bind that matches our input device
+	int32_t anybind = -1; // Bind that doesn't match, but is at least for this control
 
-	INT32 bindindex = MAXINPUTMAPPING-1;
+	int32_t bindindex = MAXINPUTMAPPING-1;
 
 	// CONS_Printf("Check bind %d for player %d device %d\n", control, player, device);
 
 	// PASS 1: Binds that are directly in our active control mapping.
 	while (bindindex >= 0) // Prefer earlier binds
 	{
-		INT32 possiblecontrol = gamecontrol[player][control][bindindex];
+		int32_t possiblecontrol = gamecontrol[player][control][bindindex];
 
 		bindindex--;
 
@@ -1312,7 +1312,7 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 
 		while (bindindex >= 0)
 		{
-			INT32 possiblecontrol = menucontrolreserved[control][bindindex];
+			int32_t possiblecontrol = menucontrolreserved[control][bindindex];
 
 			bindindex--;
 
@@ -1336,13 +1336,13 @@ INT32 G_FindPlayerBindForGameControl(INT32 player, gamecontrols_e control)
 	return (bestbind != -1) ? bestbind : anybind; // If we couldn't find a device-appropriate bind, try to at least use something
 }
 
-static void setcontrol(UINT8 player)
+static void setcontrol(uint8_t player)
 {
-	INT32 numctrl;
+	int32_t numctrl;
 	const char *namectrl;
-	INT32 keynum;
-	INT32 inputMap = 0;
-	INT32 i;
+	int32_t keynum;
+	int32_t inputMap = 0;
+	int32_t i;
 
 	namectrl = COM_Argv(1);
 
@@ -1398,9 +1398,9 @@ static void setcontrol(UINT8 player)
 
 void Command_Setcontrol_f(void)
 {
-	INT32 na;
+	int32_t na;
 
-	na = (INT32)COM_Argc();
+	na = (int32_t)COM_Argc();
 
 	if (na < 3 || na > MAXINPUTMAPPING+2)
 	{
@@ -1413,9 +1413,9 @@ void Command_Setcontrol_f(void)
 
 void Command_Setcontrol2_f(void)
 {
-	INT32 na;
+	int32_t na;
 
-	na = (INT32)COM_Argc();
+	na = (int32_t)COM_Argc();
 
 	if (na < 3 || na > MAXINPUTMAPPING+2)
 	{
@@ -1428,9 +1428,9 @@ void Command_Setcontrol2_f(void)
 
 void Command_Setcontrol3_f(void)
 {
-	INT32 na;
+	int32_t na;
 
-	na = (INT32)COM_Argc();
+	na = (int32_t)COM_Argc();
 
 	if (na < 3 || na > MAXINPUTMAPPING+2)
 	{
@@ -1443,9 +1443,9 @@ void Command_Setcontrol3_f(void)
 
 void Command_Setcontrol4_f(void)
 {
-	INT32 na;
+	int32_t na;
 
-	na = (INT32)COM_Argc();
+	na = (int32_t)COM_Argc();
 
 	if (na < 3 || na > MAXINPUTMAPPING+2)
 	{

@@ -58,7 +58,7 @@ visplane_t *floorplane;
 visplane_t *ceilingplane;
 
 visffloor_t ffloor[MAXFFLOORS];
-INT32 numffloors;
+int32_t numffloors;
 
 //SoM: 3/23/2000: Boom visplane hashing routine.
 #define visplane_hash(picnum,lightlevel,height) \
@@ -66,21 +66,21 @@ INT32 numffloors;
 
 //SoM: 3/23/2000: Use boom opening limit removal
 size_t maxopenings;
-INT16 *openings, *lastopening; /// \todo free leak
+int16_t *openings, *lastopening; /// \todo free leak
 
 //
 // Clip values are the solid pixel bounding the range.
 //  floorclip starts out SCREENHEIGHT
 //  ceilingclip starts out -1
 //
-INT16 floorclip[MAXVIDWIDTH], ceilingclip[MAXVIDWIDTH];
+int16_t floorclip[MAXVIDWIDTH], ceilingclip[MAXVIDWIDTH];
 fixed_t frontscale[MAXVIDWIDTH];
 
 //
 // spanstart holds the start of a plane span
 // initialized to 0 at start
 //
-static INT32 spanstart[MAXVIDHEIGHT];
+static int32_t spanstart[MAXVIDHEIGHT];
 
 //
 // texture mapping
@@ -106,14 +106,14 @@ void R_InitPlanes(void)
 }
 
 // ripples da water texture
-static fixed_t R_CalculateRippleOffset(drawspandata_t* ds, INT32 y)
+static fixed_t R_CalculateRippleOffset(drawspandata_t* ds, int32_t y)
 {
 	if (cv_reducevfx.value)
 	{
 		return 0;
 	}
 	fixed_t distance = FixedMul(ds->planeheight, yslope[y]);
-	const INT32 yay = (ds->planeripple.offset + (distance>>9)) & 8191;
+	const int32_t yay = (ds->planeripple.offset + (distance>>9)) & 8191;
 	return FixedDiv(FINESINE(yay), (1<<12) + (distance>>11));
 }
 
@@ -131,9 +131,9 @@ static void R_UpdatePlaneRipple(drawspandata_t* ds)
 	ds->planeripple.offset = (leveltime * 140);
 }
 
-static void R_SetSlopePlaneVectors(drawspandata_t* ds, visplane_t *pl, INT32 y, fixed_t xoff, fixed_t yoff);
+static void R_SetSlopePlaneVectors(drawspandata_t* ds, visplane_t *pl, int32_t y, fixed_t xoff, fixed_t yoff);
 
-static bool R_CheckMapPlane(const char* funcname, INT32 y, INT32 x1, INT32 x2)
+static bool R_CheckMapPlane(const char* funcname, int32_t y, int32_t x1, int32_t x2)
 {
 	if (x1 == x2)
 		return true;
@@ -145,7 +145,7 @@ static bool R_CheckMapPlane(const char* funcname, INT32 y, INT32 x1, INT32 x2)
 	return false;
 }
 
-static void R_MapPlane(drawspandata_t *ds, spandrawfunc_t *spanfunc, INT32 y, INT32 x1, INT32 x2, dboolean allow_parallel)
+static void R_MapPlane(drawspandata_t *ds, spandrawfunc_t *spanfunc, int32_t y, int32_t x1, int32_t x2, dboolean allow_parallel)
 {
 	ZoneScoped;
 	angle_t angle, planecos, planesin;
@@ -227,7 +227,7 @@ static void R_MapPlane(drawspandata_t *ds, spandrawfunc_t *spanfunc, INT32 y, IN
 	spanfunc(ds);
 }
 
-static void R_MapTiltedPlane(drawspandata_t *ds, void(*spanfunc)(drawspandata_t*), INT32 y, INT32 x1, INT32 x2, dboolean allow_parallel)
+static void R_MapTiltedPlane(drawspandata_t *ds, void(*spanfunc)(drawspandata_t*), int32_t y, int32_t x1, int32_t x2, dboolean allow_parallel)
 {
 	ZoneScoped;
 
@@ -239,7 +239,7 @@ static void R_MapTiltedPlane(drawspandata_t *ds, void(*spanfunc)(drawspandata_t*
 	{
 		ds->bgofs = R_CalculateRippleOffset(ds, y);
 
-		R_SetTiltedSpan(ds, std::clamp<INT32>(y, 0, viewheight));
+		R_SetTiltedSpan(ds, std::clamp<int32_t>(y, 0, viewheight));
 
 		R_CalculatePlaneRipple(ds, ds->currentplane->viewangle + ds->currentplane->plangle);
 		R_SetSlopePlaneVectors(ds, ds->currentplane, y, (ds->xoffs + ds->planeripple.xfrac), (ds->yoffs + ds->planeripple.yfrac));
@@ -273,14 +273,14 @@ static void R_MapTiltedPlane(drawspandata_t *ds, void(*spanfunc)(drawspandata_t*
 
 void R_ClearFFloorClips (void)
 {
-	INT32 i, p;
+	int32_t i, p;
 
 	// opening / clipping determination
 	for (i = 0; i < viewwidth; i++)
 	{
 		for (p = 0; p < MAXFFLOORS; p++)
 		{
-			ffloor[p].f_clip[i] = (INT16)viewheight;
+			ffloor[p].f_clip[i] = (int16_t)viewheight;
 			ffloor[p].c_clip[i] = -1;
 		}
 	}
@@ -294,17 +294,17 @@ void R_ClearFFloorClips (void)
 //
 void R_ClearPlanes(void)
 {
-	INT32 i, p;
+	int32_t i, p;
 
 	// opening / clipping determination
 	for (i = 0; i < viewwidth; i++)
 	{
-		floorclip[i] = (INT16)viewheight;
+		floorclip[i] = (int16_t)viewheight;
 		ceilingclip[i] = -1;
 		frontscale[i] = INT32_MAX;
 		for (p = 0; p < MAXFFLOORS; p++)
 		{
-			ffloor[p].f_clip[i] = (INT16)viewheight;
+			ffloor[p].f_clip[i] = (int16_t)viewheight;
 			ffloor[p].c_clip[i] = -1;
 		}
 	}
@@ -346,7 +346,7 @@ static visplane_t *new_visplane(unsigned hash)
 //              Same height, same flattexture, same lightlevel.
 //              If not, allocates another of them.
 //
-visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
+visplane_t *R_FindPlane(fixed_t height, int32_t picnum, int32_t lightlevel,
 	fixed_t xoff, fixed_t yoff, angle_t plangle, extracolormap_t *planecolormap,
 	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, dboolean noencore,
 	dboolean ripple, dboolean reverseLight, const sector_t *lighting_sector,
@@ -365,8 +365,8 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 		if (plangle != 0)
 		{
 			// Must use 64-bit math to avoid an overflow!
-			INT64 vx = xoff + viewx;
-			INT64 vy = yoff - viewy;
+			int64_t vx = xoff + viewx;
+			int64_t vy = yoff - viewy;
 
 			// Add the view offset, rotated by the plane angle.
 			float ang = ANG2RAD(plangle);
@@ -481,11 +481,11 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 //
 // R_CheckPlane: return same visplane or alloc a new one if needed
 //
-visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop)
+visplane_t *R_CheckPlane(visplane_t *pl, int32_t start, int32_t stop)
 {
-	INT32 intrl, intrh;
-	INT32 unionl, unionh;
-	INT32 x;
+	int32_t intrl, intrh;
+	int32_t unionl, unionh;
+	int32_t x;
 
 	if (start < pl->minx)
 	{
@@ -568,7 +568,7 @@ visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop)
 // need to create new ones with R_CheckPlane, because 3D floor planes
 // are created by subsector and there is no way a subsector can graphically
 // overlap.
-void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop)
+void R_ExpandPlane(visplane_t *pl, int32_t start, int32_t stop)
 {
 	// Don't expand polyobject planes here - we do that on our own.
 	if (pl->polyobj)
@@ -578,7 +578,7 @@ void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop)
 	if (pl->maxx < stop)  pl->maxx = stop;
 }
 
-static void R_MakeSpans(void (*mapfunc)(drawspandata_t* ds, void(*spanfunc)(drawspandata_t*), INT32, INT32, INT32, dboolean), spandrawfunc_t* spanfunc, drawspandata_t* ds, INT32 x, INT32 t1, INT32 b1, INT32 t2, INT32 b2, dboolean allow_parallel)
+static void R_MakeSpans(void (*mapfunc)(drawspandata_t* ds, void(*spanfunc)(drawspandata_t*), int32_t, int32_t, int32_t, dboolean), spandrawfunc_t* spanfunc, drawspandata_t* ds, int32_t x, int32_t t1, int32_t b1, int32_t t2, int32_t b2, dboolean allow_parallel)
 {
 	ZoneScoped;
 	//    Alam: from r_splats's R_RasterizeFloorSplat
@@ -596,8 +596,8 @@ static void R_MakeSpans(void (*mapfunc)(drawspandata_t* ds, void(*spanfunc)(draw
 	drawspandata_t dc_copy = *ds;
 	while (t1 < t2 && t1 <= b1)
 	{
-		INT32 spanstartcopy[kSpanTaskGranularity] = {0};
-		INT32 taskspans = 0;
+		int32_t spanstartcopy[kSpanTaskGranularity] = {0};
+		int32_t taskspans = 0;
 		for (int i = 0; i < kSpanTaskGranularity; i++)
 		{
 			if (!((t1 + i) < t2 && (t1 + i) <= b1))
@@ -625,8 +625,8 @@ static void R_MakeSpans(void (*mapfunc)(drawspandata_t* ds, void(*spanfunc)(draw
 	}
 	while (b1 > b2 && b1 >= t1)
 	{
-		INT32 spanstartcopy[kSpanTaskGranularity] = {0};
-		INT32 taskspans = 0;
+		int32_t spanstartcopy[kSpanTaskGranularity] = {0};
+		int32_t taskspans = 0;
 		for (int i = 0; i < kSpanTaskGranularity; i++)
 		{
 			if (!((b1 - i) > b2 && (b1 - i) >= t1))
@@ -662,7 +662,7 @@ static void R_MakeSpans(void (*mapfunc)(drawspandata_t* ds, void(*spanfunc)(draw
 void R_DrawPlanes(void)
 {
 	visplane_t *pl;
-	INT32 i;
+	int32_t i;
 	drawspandata_t ds {0};
 
 	ZoneScoped;
@@ -688,7 +688,7 @@ void R_DrawPlanes(void)
 //
 static void R_DrawSkyPlane(visplane_t *pl, void(*colfunc)(drawcolumndata_t*), dboolean allow_parallel)
 {
-	INT32 x;
+	int32_t x;
 	drawcolumndata_t dc {0};
 
 	ZoneScoped;
@@ -744,7 +744,7 @@ static void R_DrawSkyPlane(visplane_t *pl, void(*colfunc)(drawcolumndata_t*), db
 					continue;
 				}
 
-				INT32 angle = (pl->viewangle + xtoviewangle[viewssnum][x + i])>>ANGLETOSKYSHIFT;
+				int32_t angle = (pl->viewangle + xtoviewangle[viewssnum][x + i])>>ANGLETOSKYSHIFT;
 				angle -= (skytextureoffset >> FRACBITS);
 
 				dc.iscale = FixedMul(skyscale[viewssnum], FINECOSINE(xtoviewangle[viewssnum][x + i]>>ANGLETOFINESHIFT));
@@ -772,15 +772,15 @@ static void R_DrawSkyPlane(visplane_t *pl, void(*colfunc)(drawcolumndata_t*), db
 }
 
 // Returns the height of the sloped plane at (x, y) as a 32.16 fixed_t
-static INT64 R_GetSlopeZAt(const pslope_t *slope, fixed_t x, fixed_t y)
+static int64_t R_GetSlopeZAt(const pslope_t *slope, fixed_t x, fixed_t y)
 {
-	INT64 x64 = ((INT64)x - (INT64)slope->o.x);
-	INT64 y64 = ((INT64)y - (INT64)slope->o.y);
+	int64_t x64 = ((int64_t)x - (int64_t)slope->o.x);
+	int64_t y64 = ((int64_t)y - (int64_t)slope->o.y);
 
-	x64 = (x64 * (INT64)slope->d.x) / FRACUNIT;
-	y64 = (y64 * (INT64)slope->d.y) / FRACUNIT;
+	x64 = (x64 * (int64_t)slope->d.x) / FRACUNIT;
+	y64 = (y64 * (int64_t)slope->d.y) / FRACUNIT;
 
-	return (INT64)slope->o.z + ((x64 + y64) * (INT64)slope->zdelta) / FRACUNIT;
+	return (int64_t)slope->o.z + ((x64 + y64) * (int64_t)slope->zdelta) / FRACUNIT;
 }
 
 // Sets the texture origin vector of the sloped plane.
@@ -788,8 +788,8 @@ static void R_SetSlopePlaneOrigin(drawspandata_t *ds, pslope_t *slope, fixed_t x
 {
 	floatv3_t *p = &ds->slope_origin;
 
-	INT64 vx = (INT64)xpos + (INT64)xoff;
-	INT64 vy = (INT64)ypos - (INT64)yoff;
+	int64_t vx = (int64_t)xpos + (int64_t)xoff;
+	int64_t vy = (int64_t)ypos - (int64_t)yoff;
 
 	float vxf = vx / (float)FRACUNIT;
 	float vyf = vy / (float)FRACUNIT;
@@ -892,7 +892,7 @@ d.z = (v1.x * v2.y) - (v1.y * v2.x)
 	ds->svp.z *= sfmult;
 }
 
-void R_SetTiltedSpan(drawspandata_t* ds, INT32 span)
+void R_SetTiltedSpan(drawspandata_t* ds, int32_t span)
 {
 	if (ds_su == NULL)
 		ds_su = static_cast<floatv3_t*>(Z_Calloc(sizeof(*ds_su) * vid.height, PU_STATIC, NULL));
@@ -906,7 +906,7 @@ void R_SetTiltedSpan(drawspandata_t* ds, INT32 span)
 	ds->szp = ds_sz[span];
 }
 
-static void R_SetSlopePlaneVectors(drawspandata_t* ds, visplane_t *pl, INT32 y, fixed_t xoff, fixed_t yoff)
+static void R_SetSlopePlaneVectors(drawspandata_t* ds, visplane_t *pl, int32_t y, fixed_t xoff, fixed_t yoff)
 {
 	R_SetTiltedSpan(ds, y);
 	R_SetSlopePlane(ds, pl->slope, pl->viewx, pl->viewy, pl->viewz, xoff, yoff, pl->viewangle, pl->plangle);
@@ -945,13 +945,13 @@ static inline void R_AdjustSlopeCoordinatesNPO2(drawspandata_t* ds, vector3_t *o
 void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, dboolean allow_parallel)
 {
 	levelflat_t *levelflat;
-	INT32 light = 0;
-	INT32 x, stop;
+	int32_t light = 0;
+	int32_t x, stop;
 	ffloor_t *rover;
-	INT32 type, spanfunctype = BASEDRAWFUNC;
+	int32_t type, spanfunctype = BASEDRAWFUNC;
 	debugrender_highlight_t debug = debugrender_highlight_t::SW_HI_PLANES;
-	void (*mapfunc)(drawspandata_t*, void(*)(drawspandata_t*), INT32, INT32, INT32, dboolean) = R_MapPlane;
-	INT16 highlight = R_PlaneIsHighlighted(pl);
+	void (*mapfunc)(drawspandata_t*, void(*)(drawspandata_t*), int32_t, int32_t, int32_t, dboolean) = R_MapPlane;
+	int16_t highlight = R_PlaneIsHighlighted(pl);
 
 	if (!(pl->minx <= pl->maxx))
 		return;
@@ -1034,7 +1034,7 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, dboolean allow_parall
 				// ...unhacked by toaster 04-01-2021
 				if (highlight == -1)
 				{
-					INT32 trans = (10*((256+12) - pl->ffloor->alpha))/255;
+					int32_t trans = (10*((256+12) - pl->ffloor->alpha))/255;
 					if (trans >= 10)
 						return; // Don't even draw it
 					if (!(ds->transmap = R_GetBlendTable(pl->ffloor->blend, trans)))
@@ -1065,7 +1065,7 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, dboolean allow_parall
 #ifndef NOWATER
 		if (pl->ripple)
 		{
-			INT32 top, bottom;
+			int32_t top, bottom;
 
 			ds->planeripple.active = true;
 			if (spanfunctype == SPANDRAWFUNC_TRANS)
@@ -1082,10 +1082,10 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, dboolean allow_parall
 					bottom = viewheight;
 
 				// Only copy the part of the screen we need
-				UINT8 i = R_GetViewNumber();
-				INT32 scrx = 0;
-				INT32 scry = top;
-				INT32 offset;
+				uint8_t i = R_GetViewNumber();
+				int32_t scrx = 0;
+				int32_t scry = top;
+				int32_t offset;
 
 				if (r_splitscreen == 1)
 				{
@@ -1129,13 +1129,13 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, dboolean allow_parall
 		case LEVELFLAT_NONE:
 			return;
 		case LEVELFLAT_FLAT:
-			ds->source = (UINT8 *)R_GetFlat(levelflat->u.flat.lumpnum);
+			ds->source = (uint8_t *)R_GetFlat(levelflat->u.flat.lumpnum);
 			R_CheckFlatLength(ds, W_LumpLength(levelflat->u.flat.lumpnum));
 			// Raw flats always have dimensions that are powers-of-two numbers.
 			ds->powersoftwo = true;
 			break;
 		default:
-			ds->source = (UINT8 *)R_GetLevelFlat(ds, levelflat);
+			ds->source = (uint8_t *)R_GetLevelFlat(ds, levelflat);
 			if (!ds->source)
 				return;
 			// Check if this texture or patch has power-of-two dimensions.
@@ -1147,13 +1147,13 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, dboolean allow_parall
 	{
 		// Get the span's brightmap.
 		// FLATS not supported, SORRY!!
-		INT32 bmNum = R_GetTextureBrightmap(levelflat->u.texture.num);
+		int32_t bmNum = R_GetTextureBrightmap(levelflat->u.texture.num);
 		if (bmNum != 0)
 		{
 			// FIXME: This has the potential to read out of
 			// bounds if the brightmap texture is not as
 			// large as the flat.
-			ds->brightmap = (UINT8 *)R_GenerateTextureAsFlat(bmNum);
+			ds->brightmap = (uint8_t *)R_GenerateTextureAsFlat(bmNum);
 		}
 	}
 
@@ -1261,8 +1261,8 @@ void R_DrawSinglePlane(drawspandata_t *ds, visplane_t *pl, dboolean allow_parall
 
 void R_PlaneBounds(visplane_t *plane)
 {
-	INT32 i;
-	INT32 hi, low;
+	int32_t i;
+	int32_t hi, low;
 
 	hi = plane->top[plane->minx];
 	low = plane->bottom[plane->minx];
@@ -1278,7 +1278,7 @@ void R_PlaneBounds(visplane_t *plane)
 	plane->low = low;
 }
 
-INT16 R_PlaneIsHighlighted(const visplane_t *pl)
+int16_t R_PlaneIsHighlighted(const visplane_t *pl)
 {
 	switch (pl->damage)
 	{

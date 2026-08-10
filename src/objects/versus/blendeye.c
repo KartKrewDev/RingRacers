@@ -53,7 +53,7 @@ typedef enum
 
 /// - MAIN BODY - ///
 
-static void VS_BlendEye_Eye_Parts(mobj_t *mobj, INT32 angledelta)
+static void VS_BlendEye_Eye_Parts(mobj_t *mobj, int32_t angledelta)
 {
 	fixed_t x, y;
 
@@ -89,7 +89,7 @@ static void VS_BlendEye_Eye_Parts(mobj_t *mobj, INT32 angledelta)
 	}
 }
 
-static mobj_t *VS_BlendEye_LoadAmmo(mobj_t *mobj, INT32 id)
+static mobj_t *VS_BlendEye_LoadAmmo(mobj_t *mobj, int32_t id)
 {
 	angle_t ang = mobj->tracer->cusval + FixedAngle(id*360*FRACUNIT/3);
 	fixed_t h = mobj->z + mobj->height - 4*mapobjectscale;
@@ -122,7 +122,7 @@ static mobj_t *VS_BlendEye_LoadAmmo(mobj_t *mobj, INT32 id)
 
 void VS_BlendEye_Init(mobj_t *mobj)
 {
-	UINT8 i;
+	uint8_t i;
 	mobj_t *prev, *newmo;
 	angle_t ang = 0;
 
@@ -147,7 +147,7 @@ void VS_BlendEye_Init(mobj_t *mobj)
 	// spawn the generators
 	prev = mobj;
 	ang = mobj->angle + ANGLE_45;
-	UINT8 numgenerators = (encoremode ? 4 : 3);
+	uint8_t numgenerators = (encoremode ? 4 : 3);
 	for (i = 0; i < numgenerators; i++)
 	{
 		newmo = P_SpawnMobjFromMobj(mobj,
@@ -262,7 +262,7 @@ static inline BlockItReturn_t PIT_MurderPuyos(mobj_t *thing)
 
 static void VS_BlendEye_MurderPuyos(mobj_t *mobj)
 {
-	INT32 bx, by, xl, xh, yl, yh;
+	int32_t bx, by, xl, xh, yl, yh;
 
 	sourceofmurder = mobj;
 
@@ -317,7 +317,7 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 			|| mobj->target->health <= 0);
 	}
 
-	INT32 i;
+	int32_t i;
 	fixed_t tiltstrength;
 	
 	// phases and attacks
@@ -963,8 +963,8 @@ void VS_BlendEye_Thinker(mobj_t *mobj)
 	// Look around.
 	if (mobj->target) // !deathwatch
 	{
-		INT32 angledelta = AngleDeltaSigned(R_PointToAngle2(mobj->x, mobj->y, mobj->target->x, mobj->target->y), mobj->angle)/4;
-		const INT32 maxdelta = (ANGLE_45/2);
+		int32_t angledelta = AngleDeltaSigned(R_PointToAngle2(mobj->x, mobj->y, mobj->target->x, mobj->target->y), mobj->angle)/4;
+		const int32_t maxdelta = (ANGLE_45/2);
 
 		if (angledelta > maxdelta)
 			angledelta = maxdelta;
@@ -990,7 +990,7 @@ dboolean VS_BlendEye_Touched(mobj_t *special, mobj_t *toucher)
 	return true;
 }
 
-void VS_BlendEye_Damage(mobj_t *mobj, mobj_t *inflictor, mobj_t *source, INT32 damage)
+void VS_BlendEye_Damage(mobj_t *mobj, mobj_t *inflictor, mobj_t *source, int32_t damage)
 {
 	(void)inflictor;
 
@@ -1110,7 +1110,7 @@ dboolean VS_BlendEye_Eye_Thinker(mobj_t *mobj)
 
 void VS_BlendEye_Glass_Death(mobj_t *mobj)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 	fixed_t thrust = 30*mapobjectscale;
 	for (i = 0; i <= 8; i++)
 	{
@@ -1139,7 +1139,7 @@ void VS_BlendEye_Eggbeater_Touched(mobj_t *t1, mobj_t *t2)
 	if (t1->z == t1->floorz)
 		return;
 
-	INT32 minextravalue1 = -(P_IsObjectOnGround(t2) ? 5 : 15)*t1->scale;
+	int32_t minextravalue1 = -(P_IsObjectOnGround(t2) ? 5 : 15)*t1->scale;
 	if (t1->extravalue1 > minextravalue1)
 		t1->extravalue1 = minextravalue1;
 
@@ -1222,14 +1222,14 @@ static void VS_PuyoJump(mobj_t *shot, mobj_t *target)
 	fixed_t a1, a2, aToUse; // Velocity squared
 	fixed_t g; // Gravity
 	fixed_t x; // Horizontal difference
-	INT32 x_int; // x! But in integer form!
+	int32_t x_int; // x! But in integer form!
 	fixed_t y; // Vertical difference (yes that's normally z in SRB2 shut up)
-	INT32 y_int; // y! But in integer form!
-	INT32 intHypotenuse; // x^2 + y^2. Frequently overflows fixed point, hence why we need integers proper.
+	int32_t y_int; // y! But in integer form!
+	int32_t intHypotenuse; // x^2 + y^2. Frequently overflows fixed point, hence why we need integers proper.
 	fixed_t fixedHypotenuse; // However, we can work around that and still get a fixed-point number.
 	angle_t theta; // Angle of attack
-	// INT32 locvar1 = var1;
-	// INT32 locvar2 = var2;
+	// int32_t locvar1 = var1;
+	// int32_t locvar2 = var2;
 
 	if (!shot || !target)
 		return; // Don't even bother if we've got nothing to aim at.
@@ -1388,7 +1388,7 @@ static mobj_t *VS_PredictedPuyoShot(mobj_t *arena, mobj_t *source, mobj_t *shot,
 	// handle reticle movement
 	if (momx != 0 || momy != 0)
 	{
-		UINT8 attempt = 0;
+		uint8_t attempt = 0;
 		dboolean lastsuccess = true;
 		// tries to immediately jump to the final location.
 		// if that fails, tries to xeno's paradox it:
@@ -1457,7 +1457,7 @@ static inline BlockItReturn_t PIT_GetBestLaunchablePuyo(mobj_t *thing)
 
 static void VS_FindBestPuyo(mobj_t *reference, mobj_t *source)
 {
-	INT32 bx, by, xl, xh, yl, yh;
+	int32_t bx, by, xl, xh, yl, yh;
 
 	referencepuyo = reference;
 	bestpuyo = NULL;
@@ -1621,7 +1621,7 @@ void VS_PuyoThinker(mobj_t *mobj)
 void VS_PuyoDeath(mobj_t *mobj)
 {
 	mobjtype_t dusttype = (encoremode ? MT_BLENDEYE_PUYO_DUST : MT_BLENDEYE_PUYO_DUST_COFFEE);
-	UINT8 i;
+	uint8_t i;
 	fixed_t momx, momy;
 	mobj_t *dustmo;
 

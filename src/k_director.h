@@ -22,9 +22,9 @@ void K_InitDirector(void);
 void K_UpdateDirector(void);
 void K_DrawDirectorDebugger(void);
 void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source);
-void K_ToggleDirector(UINT8 viewnum, dboolean active);
-dboolean K_DirectorIsEnabled(UINT8 viewnum);
-dboolean K_DirectorIsAvailable(UINT8 viewnum);
+void K_ToggleDirector(uint8_t viewnum, dboolean active);
+dboolean K_DirectorIsEnabled(uint8_t viewnum);
+dboolean K_DirectorIsAvailable(uint8_t viewnum);
 
 #ifdef __cplusplus
 } // extern "C"

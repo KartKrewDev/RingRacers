@@ -38,7 +38,7 @@ fixed_t FixedMul(fixed_t a, fixed_t b)
 {
 	// Need to cast to unsigned before shifting to avoid undefined behaviour
 	// for negative integers
-	return (fixed_t)(((UINT64)((INT64)a * b)) >> FRACBITS);
+	return (fixed_t)(((uint64_t)((int64_t)a * b)) >> FRACBITS);
 }
 
 #endif //__USE_C_FIXEDMUL__
@@ -54,12 +54,12 @@ fixed_t FixedMul(fixed_t a, fixed_t b)
 */
 fixed_t FixedDiv2(fixed_t a, fixed_t b)
 {
-	INT64 ret;
+	int64_t ret;
 
 	if (b == 0)
 		I_Error("FixedDiv: divide by zero");
 
-	ret = (((INT64)a * FRACUNIT)) / b;
+	ret = (((int64_t)a * FRACUNIT)) / b;
 
 	if ((ret > INT32_MAX) || (ret < INT32_MIN))
 		I_Error("FixedDiv: divide by zero");
@@ -86,7 +86,7 @@ fixed_t FixedSqrt(fixed_t x)
 	// Assembly 2006, 3rd- 6th August 2006
 	// (Revised: September 13, 2006)
 	// URL: http://jet.ro/files/The_neglected_art_of_Fixed_Point_arithmetic_20060913.pdf
-	register UINT32 root, remHi, remLo, testDiv, count;
+	register uint32_t root, remHi, remLo, testDiv, count;
 	root = 0;         /* Clear root */
 	remHi = 0;        /* Clear high part of partial remainder */
 	remLo = x;        /* Get argument into low part of partial remainder */
@@ -498,7 +498,7 @@ void FV3_ClosestPointOnVector(const vector3_t *dir, const vector3_t *p, vector3_
 //
 void FV3_ClosestPointOnTriangle(const vector3_t *tri, const vector3_t *point, vector3_t *result)
 {
-	UINT8 i;
+	uint8_t i;
 	fixed_t dist, closestdist;
 	vector3_t EdgePoints[3];
 	vector3_t Line[2];
@@ -736,11 +736,11 @@ vector3_t *FV3_IntersectionPoint(const vector3_t *vNormal, const vector3_t *vLin
 // If on the back side of the line, returns 0.
 // 2D only.
 //
-UINT8 FV3_PointOnLineSide(const vector3_t *point, const vector3_t *line)
+uint8_t FV3_PointOnLineSide(const vector3_t *point, const vector3_t *line)
 {
 	fixed_t s1 = FixedMul((point->y - line[0].y), (line[1].x - line[0].x));
 	fixed_t s2 = FixedMul((point->x - line[0].x), (line[1].y - line[0].y));
-	return (UINT8)(s1 - s2 < 0);
+	return (uint8_t)(s1 - s2 < 0);
 }
 
 //
@@ -855,7 +855,7 @@ void FM_MultMatrixVec3(const matrix_t *matrix, const vector3_t *vec, vector3_t *
 void FM_MultMatrix(matrix_t *dest, const matrix_t *multme)
 {
 	matrix_t result;
-	UINT8 i, j;
+	uint8_t i, j;
 #define M(row,col)  multme->m[col * 4 + row]
 #define D(row,col)  dest->m[col * 4 + row]
 #define R(row,col)  result.m[col * 4 + row]
@@ -919,7 +919,7 @@ void FM_Scale(matrix_t *dest, fixed_t x, fixed_t y, fixed_t z)
 //#define MULDIV_TEST
 #define SQRT_TEST
 
-static inline void M_print(INT64 a)
+static inline void M_print(int64_t a)
 {
 	const fixed_t w = (a >> FRACBITS);
 	fixed_t f = a % FRACUNIT;
@@ -944,17 +944,17 @@ static inline void M_print(INT64 a)
 
 FUNCMATH FUNCINLINE static inline fixed_t FixedMulC(fixed_t a, fixed_t b)
 {
-	return (fixed_t)((((INT64)a * b)) / FRACUNIT);
+	return (fixed_t)((((int64_t)a * b)) / FRACUNIT);
 }
 
 FUNCMATH FUNCINLINE static inline fixed_t FixedDivC2(fixed_t a, fixed_t b)
 {
-	INT64 ret;
+	int64_t ret;
 
 	if (b == 0)
 		I_Error("FixedDiv: divide by zero");
 
-	ret = (((INT64)a * FRACUNIT)) / b;
+	ret = (((int64_t)a * FRACUNIT)) / b;
 
 	if ((ret > INT32_MAX) || (ret < INT32_MIN))
 		I_Error("FixedDiv: divide by zero");
@@ -983,7 +983,7 @@ FUNCMATH FUNCINLINE static inline fixed_t FixedSqrtC(fixed_t x)
 int main(int argc, char** argv)
 {
 	int n = 10;
-	INT64 a, b;
+	int64_t a, b;
 	fixed_t c, d;
 	(void)argc;
 	(void)argv;

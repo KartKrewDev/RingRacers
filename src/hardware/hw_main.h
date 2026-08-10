@@ -30,63 +30,63 @@ void HWR_Startup(void);
 void HWR_Switch(void);
 void HWR_Shutdown(void);
 
-void HWR_drawAMline(const fline_t *fl, INT32 color);
-void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength);
-void HWR_DrawConsoleBack(UINT32 color, INT32 height);
+void HWR_drawAMline(const fline_t *fl, int32_t color);
+void HWR_FadeScreenMenuBack(uint16_t color, uint8_t strength);
+void HWR_DrawConsoleBack(uint32_t color, int32_t height);
 void HWR_EncoreInvertScreen(void);
-void HWR_DrawCustomFadeScreen(UINT8 color, UINT8 strength);
-void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight);
+void HWR_DrawCustomFadeScreen(uint8_t color, uint8_t strength);
+void HWR_DrawTutorialBack(uint32_t color, int32_t boxheight);
 void HWR_RenderSkyboxView(player_t *player);
 void HWR_RenderPlayerView(void);
 void HWR_ClearSkyDome(void);
 void HWR_BuildSkyDome(void);
-void HWR_DrawViewBorder(INT32 clearlines);
-void HWR_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum);
+void HWR_DrawViewBorder(int32_t clearlines);
+void HWR_DrawFlatFill(int32_t x, int32_t y, int32_t w, int32_t h, lumpnum_t flatlumpnum);
 void HWR_InitTextureMapping(void);
 void HWR_SetViewSize(void);
-void HWR_DrawPatch(patch_t *gpatch, INT32 x, INT32 y, INT32 option);
-void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap);
-void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
+void HWR_DrawPatch(patch_t *gpatch, int32_t x, int32_t y, int32_t option);
+void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, int32_t option, const uint8_t *colormap);
+void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, int32_t option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 void HWR_MakePatch(const patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, dboolean makebitmap);
-void HWR_CreatePlanePolygons(INT32 bspnum);
-void HWR_CreateStaticLightmaps(INT32 bspnum);
-void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color);
-void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 actualcolor, UINT8 strength);
-void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32 actualcolor);	// Lat: separate flags from color since color needs to be an uint to work right.
-void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color);
-void HWR_DrawPic(INT32 x,INT32 y,lumpnum_t lumpnum);
+void HWR_CreatePlanePolygons(int32_t bspnum);
+void HWR_CreateStaticLightmaps(int32_t bspnum);
+void HWR_DrawFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t color);
+void HWR_DrawFadeFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t color, uint16_t actualcolor, uint8_t strength);
+void HWR_DrawConsoleFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t color, uint32_t actualcolor);	// Lat: separate flags from color since color needs to be an uint to work right.
+void HWR_DrawDiag(int32_t x, int32_t y, int32_t wh, int32_t color);
+void HWR_DrawPic(int32_t x,int32_t y,lumpnum_t lumpnum);
 
-UINT8 *HWR_GetScreenshot(void);
+uint8_t *HWR_GetScreenshot(void);
 dboolean HWR_Screenshot(const char *pathname);
 
 void HWR_AddCommands(void);
 void HWR_AddSessionCommands(void);
 void transform(float *cx, float *cy, float *cz);
-INT32 HWR_GetTextureUsed(void);
+int32_t HWR_GetTextureUsed(void);
 void HWR_DoPostProcessor(player_t *player);
 void HWR_StartScreenWipe(void);
 void HWR_EndScreenWipe(void);
 void HWR_DrawIntermissionBG(void);
-void HWR_DoWipe(UINT8 wipenum, UINT8 scrnnum);
-void HWR_DoTintedWipe(UINT8 wipenum, UINT8 scrnnum);
+void HWR_DoWipe(uint8_t wipenum, uint8_t scrnnum);
+void HWR_DoTintedWipe(uint8_t wipenum, uint8_t scrnnum);
 void HWR_MakeScreenFinalTexture(void);
 void HWR_DrawScreenFinalTexture(int width, int height);
 
 // This stuff is put here so models can use them
-dboolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel);
-void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap, const dboolean directional);
-UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
+dboolean HWR_OverrideObjectLightLevel(mobj_t *thing, int32_t *lightlevel);
+void HWR_Lighting(FSurfaceInfo *Surface, int32_t light_level, extracolormap_t *colormap, const dboolean directional);
+uint8_t HWR_FogBlockAlpha(int32_t light, extracolormap_t *colormap); // Let's see if this can work
 
-UINT8 HWR_GetTranstableAlpha(INT32 transtablenum);
-FBITFIELD HWR_GetBlendModeFlag(INT32 ast);
-FBITFIELD HWR_SurfaceBlend(INT32 style, INT32 transtablenum, FSurfaceInfo *pSurf);
-FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
+uint8_t HWR_GetTranstableAlpha(int32_t transtablenum);
+FBITFIELD HWR_GetBlendModeFlag(int32_t ast);
+FBITFIELD HWR_SurfaceBlend(int32_t style, int32_t transtablenum, FSurfaceInfo *pSurf);
+FBITFIELD HWR_TranstableToAlpha(int32_t transtablenum, FSurfaceInfo *pSurf);
 
 dboolean HWR_CompileShaders(void);
 
 void HWR_LoadAllCustomShaders(void);
-void HWR_LoadCustomShadersFromFile(UINT16 wadnum, dboolean PK3);
-const char *HWR_GetShaderName(INT32 shader);
+void HWR_LoadCustomShadersFromFile(uint16_t wadnum, dboolean PK3);
+const char *HWR_GetShaderName(int32_t shader);
 
 extern customshaderxlat_t shaderxlat[];
 

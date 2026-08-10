@@ -121,7 +121,7 @@ struct Visual : Mobj
 			renderflags |= RF_ADD;
 
 			fixed_t transpercent = K_PlayerScamPercentage(bubble()->follow()->player, BUBBLESCAM);
-			UINT8 transfactor = (transpercent * NUMTRANSMAPS) / FRACUNIT;
+			uint8_t transfactor = (transpercent * NUMTRANSMAPS) / FRACUNIT;
 
 			if (transfactor < 10)
 				renderflags |= ((10-transfactor) << RF_TRANSSHIFT);

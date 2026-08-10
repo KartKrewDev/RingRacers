@@ -39,12 +39,12 @@ void
 Obj_AudienceInit
 (		mobj_t * mobj,
 		mapthing_t *mthing,
-		INT32 followerpick)
+		int32_t followerpick)
 {
 	const dboolean ourchoiceofvisuals = (followerpick < 0 || followerpick > numfollowers);
-	INT16 *reflist = NULL;
-	INT16 tempreflist[MAXHEADERFOLLOWERS];
-	UINT8 numref = 0;
+	int16_t *reflist = NULL;
+	int16_t tempreflist[MAXHEADERFOLLOWERS];
+	uint8_t numref = 0;
 
 	audience_mainstate(mobj) = S_NULL;
 
@@ -165,7 +165,7 @@ Obj_AudienceInit
 	// Handle colors
 	if (ourchoiceofvisuals == true)
 	{
-		UINT16 colorpick = SKINCOLOR_NONE;
+		uint16_t colorpick = SKINCOLOR_NONE;
 
 		if (mthing != NULL && mthing->thing_stringargs[1] != NULL)
 		{
@@ -248,7 +248,7 @@ Obj_AudienceThink
 		if (audience_focusdelay(mobj) == 0)
 		{
 			fixed_t bestdist = INT32_MAX, dist;
-			UINT8 i;
+			uint8_t i;
 
 			audience_focusplayer(mobj) = MAXPLAYERS;
 

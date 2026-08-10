@@ -119,11 +119,11 @@ private:
 
 void K_drawSpectatorHUD(dboolean director)
 {
-	const UINT8 viewnum = R_GetViewNumber();
+	const uint8_t viewnum = R_GetViewNumber();
 
-	UINT8 numingame = 0;
+	uint8_t numingame = 0;
 
-	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	for (uint8_t i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] && !players[i].spectator)
 		{
@@ -138,7 +138,7 @@ void K_drawSpectatorHUD(dboolean director)
 			return nullptr;
 		}
 
-		UINT8 p = G_PartyMember(consoleplayer, viewnum);
+		uint8_t p = G_PartyMember(consoleplayer, viewnum);
 
 		if (!playeringame[p] || players[p].spectator == false)
 		{

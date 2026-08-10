@@ -412,7 +412,7 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		strncpy(mapmusname, str, strlength);
 	}
 	else if (fastcmp(word, "mapmusrng"))
-		mapmusrng = (UINT8)luaL_checkinteger(L, 2);
+		mapmusrng = (uint8_t)luaL_checkinteger(L, 2);
 	// SRB2Kart
 	else if (fastcmp(word,"racecountdown"))
 		racecountdown = (tic_t)luaL_checkinteger(L, 2);
@@ -525,7 +525,7 @@ void LUA_ClearExtVars(void)
 // Use this variable to prevent certain functions from running
 // if they were not called on lump load
 // (i.e. they were called in hooks or coroutines etc)
-INT32 lua_lumploading = 0;
+int32_t lua_lumploading = 0;
 
 // Load a script from a MYFILE
 static inline void LUA_LoadFile(MYFILE *f, char *name, dboolean noresults)
@@ -555,7 +555,7 @@ static inline void LUA_LoadFile(MYFILE *f, char *name, dboolean noresults)
 }
 
 // Load a script from a lump
-void LUA_LoadLump(UINT16 wad, UINT16 lump, dboolean noresults)
+void LUA_LoadLump(uint16_t wad, uint16_t lump, dboolean noresults)
 {
 	MYFILE f;
 	char *name;
@@ -929,7 +929,7 @@ enum
 
 static const struct {
 	const char *meta;
-	UINT8 arch;
+	uint8_t arch;
 } meta2arch[] = {
 	{META_MOBJINFO, ARCH_MOBJINFO},
 	{META_STATE,    ARCH_STATE},
@@ -949,9 +949,9 @@ static const struct {
 	{NULL,          ARCH_NULL}
 };
 
-static UINT8 GetUserdataArchType(int index)
+static uint8_t GetUserdataArchType(int index)
 {
-	UINT8 i;
+	uint8_t i;
 	lua_getmetatable(gL, index);
 
 	for (i = 0; meta2arch[i].meta; i++)
@@ -969,7 +969,7 @@ static UINT8 GetUserdataArchType(int index)
 	return ARCH_NULL;
 }
 
-static UINT8 ArchiveValue(UINT8 **p, int TABLESINDEX, int myindex)
+static uint8_t ArchiveValue(uint8_t **p, int TABLESINDEX, int myindex)
 {
 	if (myindex < 0)
 		myindex = lua_gettop(gL)+1+myindex;
@@ -1010,9 +1010,9 @@ static UINT8 ArchiveValue(UINT8 **p, int TABLESINDEX, int myindex)
 	}
 	case LUA_TSTRING:
 	{
-		UINT32 len = (UINT32)lua_objlen(gL, myindex); // get length of string, including embedded zeros
+		uint32_t len = (uint32_t)lua_objlen(gL, myindex); // get length of string, including embedded zeros
 		const char *s = lua_tostring(gL, myindex);
-		UINT32 i = 0;
+		uint32_t i = 0;
 		// if you're wondering why we're writing a string to save_p this way,
 		// it turns out that Lua can have embedded zeros ('\0') in the strings,
 		// so we can't use WRITESTRING as that cuts off when it finds a '\0'.
@@ -1037,8 +1037,8 @@ static UINT8 ArchiveValue(UINT8 **p, int TABLESINDEX, int myindex)
 	case LUA_TTABLE:
 	{
 		dboolean found = false;
-		INT32 i;
-		UINT16 t = (UINT16)lua_objlen(gL, TABLESINDEX);
+		int32_t i;
+		uint16_t t = (uint16_t)lua_objlen(gL, TABLESINDEX);
 
 		for (i = 1; i <= t && !found; i++)
 		{
@@ -1184,7 +1184,7 @@ static UINT8 ArchiveValue(UINT8 **p, int TABLESINDEX, int myindex)
 			if (!rover)
 				WRITEUINT8(*p, ARCH_NULL);
 			else {
-				UINT16 i = P_GetFFloorID(rover);
+				uint16_t i = P_GetFFloorID(rover);
 				if (i == UINT16_MAX) // invalid ID
 					WRITEUINT8(*p, ARCH_NULL);
 				else
@@ -1246,10 +1246,10 @@ static UINT8 ArchiveValue(UINT8 **p, int TABLESINDEX, int myindex)
 	return 0;
 }
 
-static void ArchiveExtVars(UINT8 **p, void *pointer, const char *ptype)
+static void ArchiveExtVars(uint8_t **p, void *pointer, const char *ptype)
 {
 	int TABLESINDEX;
-	UINT16 i;
+	uint16_t i;
 
 	if (!gL) {
 		if (fastcmp(ptype,"player")) // players must always be included, even if no vars
@@ -1312,18 +1312,18 @@ static int NetArchive(lua_State *L)
 	return n;
 }
 
-static void ArchiveTables(UINT8 **p)
+static void ArchiveTables(uint8_t **p)
 {
 	int TABLESINDEX;
-	UINT16 i, n;
-	UINT8 e;
+	uint16_t i, n;
+	uint8_t e;
 
 	if (!gL)
 		return;
 
 	TABLESINDEX = lua_gettop(gL);
 
-	n = (UINT16)lua_objlen(gL, TABLESINDEX);
+	n = (uint16_t)lua_objlen(gL, TABLESINDEX);
 	for (i = 1; i <= n; i++)
 	{
 		lua_rawgeti(gL, TABLESINDEX, i);
@@ -1362,9 +1362,9 @@ static void ArchiveTables(UINT8 **p)
 	}
 }
 
-static UINT8 UnArchiveValue(UINT8 **p, int TABLESINDEX)
+static uint8_t UnArchiveValue(uint8_t **p, int TABLESINDEX)
 {
-	UINT8 type = READUINT8(*p);
+	uint8_t type = READUINT8(*p);
 	switch (type)
 	{
 	case ARCH_NULL:
@@ -1388,9 +1388,9 @@ static UINT8 UnArchiveValue(UINT8 **p, int TABLESINDEX)
 	case ARCH_SMALLSTRING:
 	case ARCH_LARGESTRING:
 	{
-		UINT32 len;
+		uint32_t len;
 		char *value;
-		UINT32 i = 0;
+		uint32_t i = 0;
 
 		// See my comments in the ArchiveValue function;
 		// it's much the same for reading strings as writing them!
@@ -1410,7 +1410,7 @@ static UINT8 UnArchiveValue(UINT8 **p, int TABLESINDEX)
 	}
 	case ARCH_TABLE:
 	{
-		UINT16 tid = READUINT16(*p);
+		uint16_t tid = READUINT16(*p);
 		lua_rawgeti(gL, TABLESINDEX, tid);
 		if (lua_isnil(gL, -1))
 		{
@@ -1455,7 +1455,7 @@ static UINT8 UnArchiveValue(UINT8 **p, int TABLESINDEX)
 	case ARCH_FFLOOR:
 	{
 		sector_t *sector = &sectors[READUINT16(*p)];
-		UINT16 id = READUINT16(*p);
+		uint16_t id = READUINT16(*p);
 		ffloor_t *rover = P_GetFFloorByID(sector, id);
 		if (rover)
 			LUA_PushUserdata(gL, rover, META_FFLOOR);
@@ -1479,11 +1479,11 @@ static UINT8 UnArchiveValue(UINT8 **p, int TABLESINDEX)
 	return 0;
 }
 
-static void UnArchiveExtVars(UINT8 **p, void *pointer)
+static void UnArchiveExtVars(uint8_t **p, void *pointer)
 {
 	int TABLESINDEX;
-	UINT16 field_count = READUINT16(*p);
-	UINT16 i;
+	uint16_t field_count = READUINT16(*p);
+	uint16_t i;
 	char field[1024];
 
 	if (field_count == 0)
@@ -1518,18 +1518,18 @@ static int NetUnArchive(lua_State *L)
 	return n;
 }
 
-static void UnArchiveTables(UINT8 **p)
+static void UnArchiveTables(uint8_t **p)
 {
 	int TABLESINDEX;
-	UINT16 i, n;
-	UINT16 metatableid;
+	uint16_t i, n;
+	uint16_t metatableid;
 
 	if (!gL)
 		return;
 
 	TABLESINDEX = lua_gettop(gL);
 
-	n = (UINT16)lua_objlen(gL, TABLESINDEX);
+	n = (uint16_t)lua_objlen(gL, TABLESINDEX);
 	for (i = 1; i <= n; i++)
 	{
 		lua_rawgeti(gL, TABLESINDEX, i);
@@ -1574,7 +1574,7 @@ void LUA_Step(void)
 
 void LUA_Archive(savebuffer_t *save, dboolean network)
 {
-	INT32 i;
+	int32_t i;
 	thinker_t *th;
 
 	if (gL)
@@ -1616,8 +1616,8 @@ void LUA_Archive(savebuffer_t *save, dboolean network)
 
 void LUA_UnArchive(savebuffer_t *save, dboolean network)
 {
-	UINT32 mobjnum;
-	INT32 i;
+	uint32_t mobjnum;
+	int32_t i;
 	thinker_t *th;
 
 	if (gL)

@@ -38,9 +38,9 @@ menu_t OPTIONS_DataProfileEraseDef = {
 };
 
 // Check if we have any profile loaded.
-void M_CheckProfileData(INT32 choice)
+void M_CheckProfileData(int32_t choice)
 {
-	UINT8 np = PR_GetNumProfiles();
+	uint8_t np = PR_GetNumProfiles();
 	(void) choice;
 
 	if (np < 2)
@@ -54,7 +54,7 @@ void M_CheckProfileData(INT32 choice)
 	M_SetupNextMenu(&OPTIONS_DataProfileEraseDef, false);
 }
 
-static void M_EraseProfileResponse(INT32 choice)
+static void M_EraseProfileResponse(int32_t choice)
 {
 	if (choice == MA_YES)
 	{
@@ -75,10 +75,10 @@ static void M_EraseProfileResponse(INT32 choice)
 	}
 }
 
-void M_HandleProfileErase(INT32 choice)
+void M_HandleProfileErase(int32_t choice)
 {
-	const UINT8 pid = 0;
-	const UINT8 np = PR_GetNumProfiles()-1;
+	const uint8_t pid = 0;
+	const uint8_t np = PR_GetNumProfiles()-1;
 	(void) choice;
 
 	if (menucmd[pid].dpad_ud > 0)

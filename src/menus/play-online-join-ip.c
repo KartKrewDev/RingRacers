@@ -60,7 +60,7 @@ menu_t PLAY_MP_JoinIPDef = {
 	M_JoinIPInputs
 };
 
-void M_MPJoinIPInit(INT32 choice)
+void M_MPJoinIPInit(int32_t choice)
 {
 
 	(void)choice;
@@ -94,10 +94,10 @@ void M_JoinIP(const char *ipa)
 	M_PleaseWait();
 }
 
-dboolean M_JoinIPInputs(INT32 ch)
+dboolean M_JoinIPInputs(int32_t ch)
 {
 
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	(void) ch;
 
 	if (itemOn == 1)	// connect field
@@ -112,7 +112,7 @@ dboolean M_JoinIPInputs(INT32 ch)
 	}
 	else if (currentMenu->numitems - itemOn <= NUMLOGIP && M_MenuConfirmPressed(pid))	// On one of the last 3 options for IP rejoining
 	{
-		UINT8 index = NUMLOGIP - (currentMenu->numitems - itemOn);
+		uint8_t index = NUMLOGIP - (currentMenu->numitems - itemOn);
 		M_SetMenuDelay(pid);
 
 		// Is there an address at this part of the table?

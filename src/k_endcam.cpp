@@ -42,7 +42,7 @@ fixed_t interval(tic_t t, tic_t s, tic_t d)
 	return interval(std::max(t, s) - s, d);
 }
 
-INT32 lerp(fixed_t f, INT32 a, INT32 b)
+int32_t lerp(fixed_t f, int32_t a, int32_t b)
 {
 	return a + FixedMul(f, b - a);
 }

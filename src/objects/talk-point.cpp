@@ -75,7 +75,7 @@ struct TalkPoint : Mobj
 
 		angle += kSpinSpeed;
 
-		for (UINT8 i = 0; i < MAXPLAYERS; i++)
+		for (uint8_t i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i] == false || players[i].spectator == true)
 			{
@@ -136,7 +136,7 @@ struct Orb : Mobj
 
 	bool valid() const { return Mobj::valid(origin()) && origin()->valid(); }
 
-	static Orb* spawn(TalkPoint* origin, UINT8 index, angle_t angle)
+	static Orb* spawn(TalkPoint* origin, uint8_t index, angle_t angle)
 	{
 		Orb* orb = Mobj::spawn<Orb>({origin->pos2d() + radius_vector(origin, angle), origin->z}, MT_SCRIPT_THING_ORB);
 		orb->origin(origin);
@@ -198,7 +198,7 @@ void TalkPoint::init()
 	}
 
 	// Spawn more orbs within a larger radius
-	INT32 count = (Fixed {M_TAU_FIXED} * radius()) / orb_rad;
+	int32_t count = (Fixed {M_TAU_FIXED} * radius()) / orb_rad;
 	if (count == 0)
 	{
 		return;
@@ -206,7 +206,7 @@ void TalkPoint::init()
 
 	angle_t step = ANGLE_MAX / count;
 	angle_t angle = 0;
-	for (INT32 i = 0; i < count; ++i)
+	for (int32_t i = 0; i < count; ++i)
 	{
 		Orb::spawn(this, i, angle);
 		angle += step;

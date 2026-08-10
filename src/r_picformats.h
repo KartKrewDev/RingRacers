@@ -64,27 +64,27 @@ enum
 void *Picture_Convert(
 	pictureformat_t informat, void *picture, pictureformat_t outformat,
 	size_t insize, size_t *outsize,
-	INT32 inwidth, INT32 inheight, INT32 inleftoffset, INT32 intopoffset,
+	int32_t inwidth, int32_t inheight, int32_t inleftoffset, int32_t intopoffset,
 	pictureflags_t flags);
 
 void *Picture_PatchConvert(
 	pictureformat_t informat, void *picture, pictureformat_t outformat,
 	size_t insize, size_t *outsize,
-	INT16 inwidth, INT16 inheight, INT16 inleftoffset, INT16 intopoffset,
+	int16_t inwidth, int16_t inheight, int16_t inleftoffset, int16_t intopoffset,
 	pictureflags_t flags);
 void *Picture_FlatConvert(
 	pictureformat_t informat, void *picture, pictureformat_t outformat,
 	size_t insize, size_t *outsize,
-	INT16 inwidth, INT16 inheight, INT16 inleftoffset, INT16 intopoffset,
+	int16_t inwidth, int16_t inheight, int16_t inleftoffset, int16_t intopoffset,
 	pictureflags_t flags);
 void *Picture_GetPatchPixel(
 	patch_t *patch, pictureformat_t informat,
-	INT32 x, INT32 y,
+	int32_t x, int32_t y,
 	pictureflags_t flags);
 
 void *Picture_TextureToFlat(size_t trickytex);
 
-INT32 Picture_FormatBPP(pictureformat_t format);
+int32_t Picture_FormatBPP(pictureformat_t format);
 dboolean Picture_IsPatchFormat(pictureformat_t format);
 dboolean Picture_IsInternalPatchFormat(pictureformat_t format);
 dboolean Picture_IsDoomPatchFormat(pictureformat_t format);
@@ -101,7 +101,7 @@ typedef enum
 
 struct spriteframepivot_t
 {
-	INT32 x, y;
+	int32_t x, y;
 	rotaxis_t rotaxis;
 };
 
@@ -109,31 +109,31 @@ struct spriteinfo_t
 {
 	spriteframepivot_t pivot[64 + 1];
 #define SPRINFO_DEFAULT_PIVOT (64)
-	UINT8 available[BIT_ARRAY_SIZE(64 + 1)]; // 1 extra for default_pivot
+	uint8_t available[BIT_ARRAY_SIZE(64 + 1)]; // 1 extra for default_pivot
 	char *bright[64 + 1]; // brightmap lump name
 };
 
 // Portable Network Graphics
 #define PNG_HEADER_SIZE (8)
-dboolean Picture_IsLumpPNG(const UINT8 *d, size_t s);
+dboolean Picture_IsLumpPNG(const uint8_t *d, size_t s);
 #define Picture_ThrowPNGError(lumpname, wadfilename) I_Error("W_Wad: Lump \"%s\" in file \"%s\" is a .png - please convert to either Doom or Flat (raw) image format.", lumpname, wadfilename); // Fears Of LJ Sonic
 
 #ifndef NO_PNG_LUMPS
 void *Picture_PNGConvert(
-	const UINT8 *png, pictureformat_t outformat,
-	INT32 *w, INT32 *h,
-	INT16 *topoffset, INT16 *leftoffset,
+	const uint8_t *png, pictureformat_t outformat,
+	int32_t *w, int32_t *h,
+	int16_t *topoffset, int16_t *leftoffset,
 	size_t insize, size_t *outsize,
 	pictureflags_t flags);
-dboolean Picture_PNGDimensions(UINT8 *png, INT32 *width, INT32 *height, INT16 *topoffset, INT16 *leftoffset, size_t size);
+dboolean Picture_PNGDimensions(uint8_t *png, int32_t *width, int32_t *height, int16_t *topoffset, int16_t *leftoffset, size_t size);
 #endif
 
 #define PICTURE_PNG_USELOOKUP
 
 // SpriteInfo
 extern spriteinfo_t spriteinfo[NUMSPRITES];
-void R_LoadSpriteInfoLumps(UINT16 wadnum, UINT16 numlumps);
-void R_ParseSPRTINFOLump(UINT16 wadNum, UINT16 lumpNum);
+void R_LoadSpriteInfoLumps(uint16_t wadnum, uint16_t numlumps);
+void R_ParseSPRTINFOLump(uint16_t wadNum, uint16_t lumpNum);
 
 #ifdef __cplusplus
 } // extern "C"

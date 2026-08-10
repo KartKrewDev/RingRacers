@@ -61,8 +61,8 @@ void K_InitSpecialStage(void)
 --------------------------------------------------*/
 static void K_MoveExitBeam(void)
 {
-	UINT32 moveDist = 0;
-	INT32 i;
+	uint32_t moveDist = 0;
+	int32_t i;
 
 	if (leveltime <= 2)
 	{
@@ -121,8 +121,8 @@ void K_TickSpecialStage(void)
 	}
 
 	// Special stages: fade out music near the finish line
-	UINT8 i;
-	UINT32 lowestdistance = UINT32_MAX;
+	uint8_t i;
+	uint32_t lowestdistance = UINT32_MAX;
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (!playeringame[displayplayers[i]] || players[displayplayers[i]].spectator)
@@ -209,18 +209,18 @@ dboolean K_PlayerIsEmptyHandedInSpecial(player_t *player)
 }
 
 /*--------------------------------------------------
-	void K_FadeOutSpecialMusic(UINT32 distance)
+	void K_FadeOutSpecialMusic(uint32_t distance)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FadeOutSpecialMusic(UINT32 distance)
+void K_FadeOutSpecialMusic(uint32_t distance)
 {
 	if (specialstageinfo.valid == false)
 	{
 		return;
 	}
 
-	const UINT32 threshold = FixedMul(16000, mapobjectscale);
+	const uint32_t threshold = FixedMul(16000, mapobjectscale);
 
 	Music_LevelVolume(min(distance, threshold) * 100 / threshold);
 }

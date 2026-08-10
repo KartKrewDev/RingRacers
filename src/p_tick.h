@@ -36,11 +36,11 @@ void Command_CountMobjs_f(void);
 
 void P_RunChaseCameras(void);
 void P_Ticker(dboolean run);
-void P_PreTicker(INT32 frames);
+void P_PreTicker(int32_t frames);
 void P_DoTeamscrambling(void);
 void P_RemoveThinkerDelayed(thinker_t *thinker); //killed
 
-extern UINT32 thinker_era;
+extern uint32_t thinker_era;
 
 mobj_t *P_SetTarget2(mobj_t **mo, mobj_t *target
 #ifdef PARANOIA
@@ -55,7 +55,7 @@ mobj_t *P_SetTarget2(mobj_t **mo, mobj_t *target
 #endif
 
 // Negate the value for tics
-INT32 P_AltFlip(INT32 value, tic_t tics);
+int32_t P_AltFlip(int32_t value, tic_t tics);
 #define P_RandomFlip(value) P_AltFlip(value, 1)
 
 // Multiply value back and forth between -(tics) and +(tics).
@@ -64,7 +64,7 @@ INT32 P_AltFlip(INT32 value, tic_t tics);
 // Val: -4  -2   0   2   4   2   0  -2  -4
 // A half cycle (one direction) takes 2 * tics.
 // A full cycle takes 4 * tics.
-INT32 P_LerpFlip(INT32 value, tic_t tics);
+int32_t P_LerpFlip(int32_t value, tic_t tics);
 
 #ifdef __cplusplus
 } // extern "C"

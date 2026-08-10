@@ -29,11 +29,11 @@ extern "C" {
 
 /**	\brief Graphic system had started up
 */
-extern UINT8 graphics_started;
+extern uint8_t graphics_started;
 
 /**	\brief Keyboard system is up and run
 */
-extern UINT8 keyboard_started;
+extern uint8_t keyboard_started;
 
 /** \brief Set to true when inside a signal handler that will exit the program. */
 extern dboolean g_in_exiting_signal_handler;
@@ -44,7 +44,7 @@ extern dboolean g_in_exiting_signal_handler;
 
 	\return	free memory in the system
 */
-UINT64 I_GetFreeMem(UINT64 *total);
+uint64_t I_GetFreeMem(uint64_t *total);
 
 /**	\brief	Returns precise time value for performance measurement. The precise
             time should be a monotonically increasing counter, and will wrap.
@@ -56,7 +56,7 @@ precise_t I_GetPreciseTime(void);
 /** \brief  Get the precision of precise_t in units per second. Invocations of
             this function for the program's duration MUST return the same value.
   */
-UINT64 I_GetPrecisePrecision(void);
+uint64_t I_GetPrecisePrecision(void);
 
 /** \brief  Get the current time in rendering tics, including fractions.
 */
@@ -71,7 +71,7 @@ double I_GetFrameTime(void);
 
 	\return	void
 */
-void I_Sleep(UINT32 ms);
+void I_Sleep(uint32_t ms);
 
 dboolean I_CheckFrameCap(precise_t start, precise_t end);
 
@@ -113,20 +113,20 @@ typedef enum
 
 struct JoyFF_t
 {
-	INT32 ForceX; ///< The X of the Force's Vel
-	INT32 ForceY; ///< The Y of the Force's Vel
+	int32_t ForceX; ///< The X of the Force's Vel
+	int32_t ForceY; ///< The Y of the Force's Vel
 	//All
-	UINT32 Duration; ///< The total duration of the effect, in microseconds
-	INT32 Gain; //< /The gain to be applied to the effect, in the range from 0 through 10,000.
+	uint32_t Duration; ///< The total duration of the effect, in microseconds
+	int32_t Gain; //< /The gain to be applied to the effect, in the range from 0 through 10,000.
 	//All, CONSTANTFORCE -10,000 to 10,000
-	INT32 Magnitude; ///< Magnitude of the effect, in the range from 0 through 10,000.
+	int32_t Magnitude; ///< Magnitude of the effect, in the range from 0 through 10,000.
 	//RAMPFORCE
-	INT32 Start; ///< Magnitude at the start of the effect, in the range from -10,000 through 10,000.
-	INT32 End; ///< Magnitude at the end of the effect, in the range from -10,000 through 10,000.
+	int32_t Start; ///< Magnitude at the start of the effect, in the range from -10,000 through 10,000.
+	int32_t End; ///< Magnitude at the end of the effect, in the range from -10,000 through 10,000.
 	//PERIODIC
-	INT32 Offset; ///< Offset of the effect.
-	UINT32 Phase; ///< Position in the cycle of the periodic effect at which playback begins, in the range from 0 through 35,999
-	UINT32 Period; ///< Period of the effect, in microseconds.
+	int32_t Offset; ///< Offset of the effect.
+	uint32_t Phase; ///< Position in the cycle of the periodic effect at which playback begins, in the range from 0 through 35,999
+	uint32_t Period; ///< Period of the effect, in microseconds.
 };
 
 /**	\brief	Forcefeedback for the first joystick
@@ -205,7 +205,7 @@ void I_InitJoystick4(void);
 
 /**	\brief return the number of joystick on the system
 */
-INT32 I_NumJoys(void);
+int32_t I_NumJoys(void);
 
 /**	\brief	The *I_GetJoyName function
 
@@ -213,7 +213,7 @@ INT32 I_NumJoys(void);
 
 	\return	joystick name
 */
-const char *I_GetJoyName(INT32 joyindex);
+const char *I_GetJoyName(int32_t joyindex);
 
 #ifndef NOMUMBLE
 #include "p_mobj.h" // mobj_t
@@ -253,7 +253,7 @@ void I_RemoveExitFunc(void (*func)());
 
 /**	\brief Setup signal handler, plus stuff for trapping errors and cleanly exit.
 */
-INT32 I_StartupSystem(void);
+int32_t I_StartupSystem(void);
 
 /**	\brief Shutdown systems
 */
@@ -261,11 +261,11 @@ void I_ShutdownSystem(void);
 
 /**	\brief	The I_GetDiskFreeSpace function
 
-	\param	freespace	a INT64 pointer to hold the free space amount
+	\param	freespace	a int64_t pointer to hold the free space amount
 
 	\return	void
 */
-void I_GetDiskFreeSpace(INT64 *freespace);
+void I_GetDiskFreeSpace(int64_t *freespace);
 
 /**	\brief find out the user's name
 */
@@ -278,14 +278,14 @@ char *I_GetUserName(void);
 
 	\return status of new folder
 */
-INT32 I_mkdir(const char *dirname, INT32 unixright);
+int32_t I_mkdir(const char *dirname, int32_t unixright);
 
 /**	\brief Change current working directory
 
 	\param path directory path
 	\return 0 on success, -1 on error
 */
-INT32 I_ChDir(const char *path);
+int32_t I_ChDir(const char *path);
 
 /**	\brief Get current working directory
 
@@ -302,7 +302,7 @@ const char *I_LocateWad(void);
 
 /**	\brief First Joystick's events
 */
-void I_GetJoystickEvents(UINT8 index);
+void I_GetJoystickEvents(uint8_t index);
 
 /**	\brief Checks if the mouse needs to be grabbed
 */
@@ -310,11 +310,11 @@ void I_UpdateMouseGrab(void);
 
 char *I_GetEnv(const char *name);
 
-INT32 I_PutEnv(char *variable);
+int32_t I_PutEnv(char *variable);
 
 /** \brief Put data in system clipboard
 */
-INT32 I_ClipboardCopy(const char *data, size_t size);
+int32_t I_ClipboardCopy(const char *data, size_t size);
 
 /** \brief Retrieve data from system clipboard
 */

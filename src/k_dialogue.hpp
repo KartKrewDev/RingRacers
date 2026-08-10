@@ -34,7 +34,7 @@ public:
 
 	void SetSpeaker(void);
 	void SetSpeaker(srb2::String skinName, int portraitID);
-	void SetSpeaker(srb2::String name, patch_t *patch, UINT8 *colormap, sfxenum_t voice);
+	void SetSpeaker(srb2::String name, patch_t *patch, uint8_t *colormap, sfxenum_t voice);
 
 	void NewText(std::string_view newText);
 
@@ -46,14 +46,14 @@ public:
 	void Tick(void);
 	void Draw(void);
 
-	INT32 SlideAmount(fixed_t multiplier);
-	INT32 FadeAmount(void);
+	int32_t SlideAmount(fixed_t multiplier);
+	int32_t FadeAmount(void);
 
 	void Dismiss(void);
 	void Unset(void);
 
-	UINT32 GetNewEra(void);
-	bool EraIsValid(INT32 comparison);
+	uint32_t GetNewEra(void);
+	bool EraIsValid(int32_t comparison);
 
 	class Typewriter
 	{
@@ -82,20 +82,20 @@ public:
 private:
 	Typewriter typewriter;
 
-	INT32 current_era;
+	int32_t current_era;
 
 	patch_t *bgPatch;
 	patch_t *confirmPatch;
 
 	srb2::String speaker;
 	patch_t *portrait;
-	UINT8 *portraitColormap;
+	uint8_t *portraitColormap;
 
 	srb2::HashMap<std::string_view, patch_t*> patchCache;
 
 	bool active;
 	fixed_t slide;
-	INT32 fade;
+	int32_t fade;
 
 	bool dismissable;
 	bool freeze;

@@ -335,7 +335,7 @@ void Command_Savecheckpoint_f(void)
 // Devmode
 //
 
-UINT32 cht_debug;
+uint32_t cht_debug;
 
 struct debugFlagNames_s const debug_flag_names[] =
 {
@@ -373,7 +373,7 @@ void Command_Devmode_f(void)
 	argc = COM_Argc();
 	if (argc > 1)
 	{
-		UINT32 flags = 0;
+		uint32_t flags = 0;
 		size_t i;
 
 		for (i = 1; i < argc; i++)
@@ -466,7 +466,7 @@ void Command_Grayscale_f(void)
 
 void Command_Goto_f(void)
 {
-	const INT32 id = atoi(COM_Argv(1));
+	const int32_t id = atoi(COM_Argv(1));
 	const waypoint_t *wayp = K_GetWaypointFromID(id);
 
 	REQUIRE_CHEATS;
@@ -536,23 +536,23 @@ void Command_GotoSkybox_f(void)
 
 dboolean objectplacing = false;
 mobjtype_t op_currentthing = 0; // For the object placement mode
-UINT16 op_currentdoomednum = 0; // For display, etc
-UINT32 op_displayflags = 0; // for display in ST_stuff
+uint16_t op_currentdoomednum = 0; // For display, etc
+uint32_t op_displayflags = 0; // for display in ST_stuff
 
 static pflags_t op_oldpflags = 0;
 static mobjflag_t op_oldflags1 = 0;
 static mobjflag2_t op_oldflags2 = 0;
-static UINT32 op_oldeflags = 0;
+static uint32_t op_oldeflags = 0;
 static fixed_t op_oldmomx = 0, op_oldmomy = 0, op_oldmomz = 0, op_oldheight = 0;
 static statenum_t op_oldstate = 0;
-static UINT16 op_oldcolor = 0;
+static uint16_t op_oldcolor = 0;
 
 //
 // Static calculation / common output help
 //
-static void OP_CycleThings(INT32 amt)
+static void OP_CycleThings(int32_t amt)
 {
-	INT32 add = (amt > 0 ? 1 : -1);
+	int32_t add = (amt > 0 ? 1 : -1);
 
 	while (amt)
 	{
@@ -591,7 +591,7 @@ static void OP_CycleThings(INT32 amt)
 	op_currentdoomednum = mobjinfo[op_currentthing].doomednum;
 }
 
-static dboolean OP_HeightOkay(player_t *player, UINT8 ceiling)
+static dboolean OP_HeightOkay(player_t *player, uint8_t ceiling)
 {
 	sector_t *sec = player->mo->subsector->sector;
 
@@ -621,7 +621,7 @@ static dboolean OP_HeightOkay(player_t *player, UINT8 ceiling)
 	return true;
 }
 
-static mapthing_t *OP_CreateNewMapThing(player_t *player, UINT16 type, dboolean ceiling)
+static mapthing_t *OP_CreateNewMapThing(player_t *player, uint16_t type, dboolean ceiling)
 {
 	mapthing_t *mt = mapthings;
 	sector_t *sec = player->mo->subsector->sector;
@@ -653,21 +653,21 @@ static mapthing_t *OP_CreateNewMapThing(player_t *player, UINT16 type, dboolean 
 	mt = (mapthings+nummapthings-1);
 
 	mt->type = type;
-	mt->x = (INT16)(player->mo->x>>FRACBITS);
-	mt->y = (INT16)(player->mo->y>>FRACBITS);
+	mt->x = (int16_t)(player->mo->x>>FRACBITS);
+	mt->y = (int16_t)(player->mo->y>>FRACBITS);
 	if (ceiling)
 	{
 		fixed_t cheight = P_GetSectorCeilingZAt(sec, mt->x << FRACBITS, mt->y << FRACBITS);
-		mt->z = (UINT16)((cheight - player->mo->z - player->mo->height)>>FRACBITS);
+		mt->z = (uint16_t)((cheight - player->mo->z - player->mo->height)>>FRACBITS);
 	}
 	else
 	{
 		fixed_t fheight = P_GetSectorFloorZAt(sec, mt->x << FRACBITS, mt->y << FRACBITS);
-		mt->z = (UINT16)((player->mo->z - fheight)>>FRACBITS);
+		mt->z = (uint16_t)((player->mo->z - fheight)>>FRACBITS);
 	}
-	mt->angle = (INT16)(FixedInt(AngleFixed(player->mo->angle)));
+	mt->angle = (int16_t)(FixedInt(AngleFixed(player->mo->angle)));
 
-	mt->options = (mt->z << ZSHIFT) | (UINT16)cv_opflags.value;
+	mt->options = (mt->z << ZSHIFT) | (uint16_t)cv_opflags.value;
 	mt->scale = FixedDiv(player->mo->scale, mapobjectscale);
 	mt->spritexscale = FRACUNIT;
 	mt->spriteyscale = FRACUNIT;
@@ -750,15 +750,15 @@ void OP_ObjectplaceMovement(player_t *player)
 		if (!!(mobjinfo[op_currentthing].flags & MF_SPAWNCEILING) ^ !!(cv_opflags.value & MTF_OBJECTFLIP))
 		{
 			fixed_t cheight = P_GetSectorCeilingZAt(sec, player->mo->x & 0xFFFF0000, player->mo->y & 0xFFFF0000);
-			op_displayflags = (UINT16)((cheight - player->mo->z - mobjinfo[op_currentthing].height)>>FRACBITS);
+			op_displayflags = (uint16_t)((cheight - player->mo->z - mobjinfo[op_currentthing].height)>>FRACBITS);
 		}
 		else
 		{
 			fixed_t fheight = P_GetSectorFloorZAt(sec, player->mo->x & 0xFFFF0000, player->mo->y & 0xFFFF0000);
-			op_displayflags = (UINT16)((player->mo->z - fheight)>>FRACBITS);
+			op_displayflags = (uint16_t)((player->mo->z - fheight)>>FRACBITS);
 		}
 		op_displayflags <<= ZSHIFT;
-		op_displayflags |= (UINT16)cv_opflags.value;
+		op_displayflags |= (uint16_t)cv_opflags.value;
 	}
 
 
@@ -812,7 +812,7 @@ void OP_ObjectplaceMovement(player_t *player)
 		if (!OP_HeightOkay(player, ceiling))
 			return;
 
-		mt = OP_CreateNewMapThing(player, (UINT16)spawnthing, ceiling);
+		mt = OP_CreateNewMapThing(player, (uint16_t)spawnthing, ceiling);
 		if (mt->type >= 600 && mt->type <= 611) // Placement patterns
 			P_SpawnItemPattern(mt);
 		else if (mt->type == 1713) // NiGHTS Hoops
@@ -907,7 +907,7 @@ void Command_ObjectPlace_f(void)
 
 		if (thingarg < COM_Argc())
 		{
-			UINT16 mapthingnum = atoi(COM_Argv(thingarg));
+			uint16_t mapthingnum = atoi(COM_Argv(thingarg));
 			mobjtype_t type = P_GetMobjtype(mapthingnum);
 			if (type == MT_UNKNOWN)
 				CONS_Printf(M_GetText("No mobj type delegated to thing type %d.\n"), mapthingnum);

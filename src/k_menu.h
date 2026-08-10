@@ -74,7 +74,7 @@ extern "C" {
 #define IT_CALL_NORMAL          0
 #define IT_CALL_NOTMODIFIED   512
 
-// in INT16 for some common use
+// in int16_t for some common use
 #define IT_BIGSPACE    (IT_SPACE  +IT_DYBIGSPACE)
 #define IT_LITLSPACE   (IT_SPACE  +IT_DYLITLSPACE)
 #define IT_CONTROL     (IT_STRING2+IT_CALL)
@@ -107,34 +107,34 @@ typedef union
 {
 	menu_t *submenu;      // IT_SUBMENU
 	consvar_t *cvar;             // IT_CVAR
-	void (*routine)(INT32 choice); // IT_CALL, IT_KEYHANDLER, IT_ARROWS
+	void (*routine)(int32_t choice); // IT_CALL, IT_KEYHANDLER, IT_ARROWS
 } itemaction_t;
 
 // Player Setup menu colors linked list
 struct menucolor_t {
 	menucolor_t *next;
 	menucolor_t *prev;
-	UINT16 color;
+	uint16_t color;
 };
 
 extern menucolor_t *menucolorhead, *menucolortail;
 
-extern INT16 menugametype;
-void M_NextMenuGametype(UINT32 forbidden);
-void M_PrevMenuGametype(UINT32 forbidden);
-void M_HandleHostMenuGametype(INT32 choice);
-void M_HandlePauseMenuGametype(INT32 choice);
-void M_HandlePauseMenuAddons(INT32 choice);
+extern int16_t menugametype;
+void M_NextMenuGametype(uint32_t forbidden);
+void M_PrevMenuGametype(uint32_t forbidden);
+void M_HandleHostMenuGametype(int32_t choice);
+void M_HandlePauseMenuGametype(int32_t choice);
+void M_HandlePauseMenuAddons(int32_t choice);
 
-extern UINT32 menucallvote; // not midVoteType_e to prevent #include k_zvote
-extern UINT32 menuaddonoptions;
-void M_HandlePauseMenuCallVote(INT32 choice);
+extern uint32_t menucallvote; // not midVoteType_e to prevent #include k_zvote
+extern uint32_t menuaddonoptions;
+void M_HandlePauseMenuCallVote(int32_t choice);
 
 //
 // MENU TYPEDEFS
 //
 
-typedef INT32 menubehaviourflags_t;
+typedef int32_t menubehaviourflags_t;
 #define MBF_UD_LR_FLIPPED		(1)    // flip up-down and left-right axes
 #define MBF_SOUNDLESS		 	(1<<1) // do not play base menu sounds
 #define MBF_NOLOOPENTRIES		(1<<2) // do not loop M_NextOpt/M_PrevOpt
@@ -143,7 +143,7 @@ typedef INT32 menubehaviourflags_t;
 
 struct menuitem_t
 {
-	UINT16 status; // show IT_xxx
+	uint16_t status; // show IT_xxx
 
 	const char *text; // option title
 	const char *tooltip; // description of option used by K_MenuTooltips
@@ -152,38 +152,38 @@ struct menuitem_t
 	itemaction_t itemaction;
 
 	// extra variables
-	INT32 mvar1;
-	INT32 mvar2;
+	int32_t mvar1;
+	int32_t mvar2;
 };
 
 struct menu_t
 {
-	INT16          numitems;           // # of menu items
+	int16_t          numitems;           // # of menu items
 	menu_t        *prevMenu;           // previous menu
 
-	INT16          lastOn;             // last item user was on in menu
+	int16_t          lastOn;             // last item user was on in menu
 	menuitem_t    *menuitems;          // menu items
 
-	INT16          x, y;               // x, y of menu
-	INT16 		   extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
-	INT16          behaviourflags;     // menubehaviourflags_t
+	int16_t          x, y;               // x, y of menu
+	int16_t 		   extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
+	int16_t          behaviourflags;     // menubehaviourflags_t
 	const char    *music;              // Track to play in M_PlayMenuJam. NULL for default, "." to stop
 
-	INT16          transitionID;       // only transition if IDs match
-	INT16          transitionTics;     // tics for transitions out
+	int16_t          transitionID;       // only transition if IDs match
+	int16_t          transitionTics;     // tics for transitions out
 
 	void         (*drawroutine)(void); // draw routine
 	void           (*bgroutine)(void); // draw routine, but, like, for the background
 	void         (*tickroutine)(void); // ticker routine
 	void         (*initroutine)(void); // called when starting a new menu
 	dboolean      (*quitroutine)(void); // called before quit a menu return true if we can
-	dboolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
+	dboolean		 (*inputroutine)(int32_t); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
 };
 
 struct menu_anim_t
 {
 	tic_t start;
-	INT16 dist;
+	int16_t dist;
 };
 
 fixed_t M_TimeFrac(tic_t tics, tic_t duration);
@@ -227,10 +227,10 @@ void M_GonerTick(void);
 void M_GonerBGTick(void);
 void M_GonerBGImplyPassageOfTime(void);
 void M_DrawGonerBack(void);
-void M_GonerProfile(INT32 choice);
-void M_GonerChoice(INT32 choice);
-void M_GonerTutorial(INT32 choice);
-void M_GonerPlayground(INT32 choice);
+void M_GonerProfile(int32_t choice);
+void M_GonerChoice(int32_t choice);
+void M_GonerTutorial(int32_t choice);
+void M_GonerPlayground(int32_t choice);
 void M_GonerResetLooking(int type);
 void M_GonerCheckLooking(void);
 void M_GonerResetText(dboolean completely);
@@ -452,7 +452,7 @@ typedef enum
 extern menuitem_t OPTIONS_EditProfile[];
 extern menu_t OPTIONS_EditProfileDef;
 
-void M_StartEditProfile(INT32 c);
+void M_StartEditProfile(int32_t c);
 
 extern menuitem_t OPTIONS_ProfileControls[];
 extern menu_t OPTIONS_ProfileControlsDef;
@@ -622,14 +622,14 @@ extern menu_t *restoreMenu;
 
 extern consvar_t cv_dummystaff;
 
-extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
-extern INT16 skullAnimCounter; // skull animation counter
+extern int16_t itemOn; // menu item skull is on, Hack by Tails 09-18-2002
+extern int16_t skullAnimCounter; // skull animation counter
 
-extern INT32 menuKey; // keyboard key pressed for menu
+extern int32_t menuKey; // keyboard key pressed for menu
 
 #define NUMVIRTUALKEYSINROW (10+2) // 1-9, 0, and a right-side gutter of two keys' width
-extern INT16 virtualKeyboard[5][NUMVIRTUALKEYSINROW];
-extern INT16 shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW];
+extern int16_t virtualKeyboard[5][NUMVIRTUALKEYSINROW];
+extern int16_t shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW];
 
 typedef const char *(*vkb_query_fn_t)(const char *replace);
 extern struct menutyping_s
@@ -637,10 +637,10 @@ extern struct menutyping_s
 	dboolean active;				// Active
 	dboolean menutypingclose;	// Closing
 	dboolean keyboardtyping;		// If true, all keystrokes are treated as typing (ignores MBT_A etc). This is unset if you try moving the cursor on the virtual keyboard or use your controller
-	SINT8 menutypingfade;		// fade in and out
+	int8_t menutypingfade;		// fade in and out
 
-	SINT8 keyboardx;
-	SINT8 keyboardy;
+	int8_t keyboardx;
+	int8_t keyboardy;
 	dboolean keyboardcapslock;
 	dboolean keyboardshift;
 
@@ -664,35 +664,35 @@ typedef enum
 extern struct menumessage_s
 {
 	dboolean active;
-	UINT8 closing;
+	uint8_t closing;
 
-	INT32 flags;		// MM_
+	int32_t flags;		// MM_
 	const char *header;
 	char message[MAXMENUMESSAGE];	// message to display
 
-	SINT8 fadetimer;	// opening
-	INT32 x;
-	INT32 y;
-	INT16 timer;
+	int8_t fadetimer;	// opening
+	int32_t x;
+	int32_t y;
+	int16_t timer;
 
-	void (*routine)(INT32 choice);	// Normal routine
+	void (*routine)(int32_t choice);	// Normal routine
 	//void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
-	INT32 answer;
+	int32_t answer;
 
 	const char *defaultstr;
 	const char *confirmstr;
 } menumessage;
 
-void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
+void M_StartMessage(const char *header, const char *string, void (*routine)(int32_t), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
 dboolean M_MenuMessageTick(void);
 void M_HandleMenuMessage(void);
-void M_StopMessage(INT32 choice);
+void M_StopMessage(int32_t choice);
 void M_DrawMenuMessage(void);
 
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2
 
-typedef INT32 menuButtonCode_t;
+typedef int32_t menuButtonCode_t;
 #define MBT_A (1)
 #define MBT_B (1<<1)
 #define MBT_C (1<<2)
@@ -709,24 +709,24 @@ typedef INT32 menuButtonCode_t;
 struct menucmd_t
 {
 	// Current frame's data
-	SINT8 dpad_ud; // up / down dpad
-	SINT8 dpad_lr; // left / right
-	UINT32 buttons; // buttons
+	int8_t dpad_ud; // up / down dpad
+	int8_t dpad_lr; // left / right
+	uint32_t buttons; // buttons
 
 	// Previous frame's data
-	SINT8 prev_dpad_ud;
-	SINT8 prev_dpad_lr;
-	UINT32 buttonsHeld;
+	int8_t prev_dpad_ud;
+	int8_t prev_dpad_lr;
+	uint32_t buttonsHeld;
 
-	UINT16 delay; // menu wait
-	UINT32 delayCount; // num times ya did menu wait (to make the wait shorter each time)
+	uint16_t delay; // menu wait
+	uint32_t delayCount; // num times ya did menu wait (to make the wait shorter each time)
 };
 
 extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 extern struct menutransition_s {
-	INT16 tics;
-	INT16 dest;
+	int16_t tics;
+	int16_t dest;
 	menu_t *startmenu;
 	menu_t *endmenu;
 	dboolean in;
@@ -740,35 +740,35 @@ extern consvar_t cv_autorecord;
 
 extern consvar_t cv_racesplits, cv_attacksplits;
 
-void M_SetMenuDelay(UINT8 i);
+void M_SetMenuDelay(uint8_t i);
 
 void M_SortServerList(void);
 
-void M_UpdateMenuCMD(UINT8 i, dboolean bailrequired, dboolean chat_open);
+void M_UpdateMenuCMD(uint8_t i, dboolean bailrequired, dboolean chat_open);
 dboolean M_Responder(event_t *ev);
-dboolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
-dboolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
+dboolean M_MenuButtonPressed(uint8_t pid, uint32_t bt);
+dboolean M_MenuButtonHeld(uint8_t pid, uint32_t bt);
 
-dboolean M_ChangeStringCvar(INT32 choice);
-void M_ChangeCvarDirect(INT32 choice, consvar_t *cv);
+dboolean M_ChangeStringCvar(int32_t choice);
+void M_ChangeCvarDirect(int32_t choice, consvar_t *cv);
 dboolean M_NextOpt(void);
 dboolean M_PrevOpt(void);
 
-dboolean M_MenuConfirmPressed(UINT8 pid);
-dboolean M_MenuConfirmHeld(UINT8 pid);
-dboolean M_MenuBackPressed(UINT8 pid);
-dboolean M_MenuBackHeld(UINT8 pid);
-dboolean M_MenuExtraPressed(UINT8 pid);
-dboolean M_MenuExtraHeld(UINT8 pid);
+dboolean M_MenuConfirmPressed(uint8_t pid);
+dboolean M_MenuConfirmHeld(uint8_t pid);
+dboolean M_MenuBackPressed(uint8_t pid);
+dboolean M_MenuBackHeld(uint8_t pid);
+dboolean M_MenuExtraPressed(uint8_t pid);
+dboolean M_MenuExtraHeld(uint8_t pid);
 
 void M_StartControlPanel(void);
 void M_ValidateRestoreMenu(void);
 menu_t *M_SpecificMenuRestore(menu_t *torestore);
 void M_ClearMenus(dboolean callexitmenufunc);
 void M_ClearMenusNoTitle(dboolean callexitmenufunc);
-void M_SelectableClearMenus(INT32 choice);
+void M_SelectableClearMenus(int32_t choice);
 void M_SetupNextMenu(menu_t *menudef, dboolean nofade);
-void M_GoBack(INT32 choice);
+void M_GoBack(int32_t choice);
 void M_Ticker(void);
 void M_Init(void);
 
@@ -778,13 +778,13 @@ dboolean M_ConsiderSealedSwapAlert(void);
 
 void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
 void M_AbortVirtualKeyboard(void);
-void M_MenuTypingInput(INT32 key);
+void M_MenuTypingInput(int32_t key);
 void M_SwitchVirtualKeyboard(dboolean gamepad);
 
-void M_QuitResponse(INT32 ch);
-void M_QuitSRB2(INT32 choice);
+void M_QuitResponse(int32_t ch);
+void M_QuitSRB2(int32_t choice);
 
-UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount);
+uint16_t M_GetColorAfter(setup_player_colors_t *colors, uint16_t value, int32_t amount);
 #define M_GetColorBefore(a, b, c) M_GetColorAfter(a, b, -c)
 
 // If you want to waste a bunch of memory for a limit no one will hit, feel free to boost this to MAXSKINS :P
@@ -793,12 +793,12 @@ UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount
 #define MAXCLONES MAXSKINS/8
 
 extern struct setup_chargrid_s {
-	INT16 skinlist[MAXCLONES];
-	UINT16 numskins;
+	int16_t skinlist[MAXCLONES];
+	uint16_t numskins;
 } setup_chargrid[9][9];
 
-extern UINT8 setup_followercategories[MAXFOLLOWERCATEGORIES][2];
-extern UINT8 setup_numfollowercategories;
+extern uint8_t setup_followercategories[MAXFOLLOWERCATEGORIES][2];
+extern uint8_t setup_numfollowercategories;
 
 typedef enum
 {
@@ -816,38 +816,38 @@ typedef enum
 
 struct setup_player_colors_t
 {
-	UINT16 *list;
+	uint16_t *list;
 	size_t listLen;
 	size_t listCap;
 };
 
 struct setup_player_t
 {
-	SINT8 gridx, gridy;
-	UINT8 profilen;
+	int8_t gridx, gridy;
+	uint8_t profilen;
 	menu_anim_t profilen_slide;
-	INT16 skin;
-	SINT8 clonenum;
-	SINT8 rotate;
-	UINT8 delay;
-	UINT16 color;
-	UINT8 mdepth;
+	int16_t skin;
+	int8_t clonenum;
+	int8_t rotate;
+	uint8_t delay;
+	uint16_t color;
+	uint8_t mdepth;
 	dboolean hitlag;
 	dboolean showextra;
 
 	// Hack, save player 1's original device even if they init charsel with keyboard.
 	// If they play ALONE, allow them to retain that original device, otherwise, ignore this.
 	// We can allow them to retain the device with no consequence as when P1 is alone, they have exclusive keyboard fallback options.
-	UINT8 ponedevice;
+	uint8_t ponedevice;
 
-	UINT8 changeselect;
+	uint8_t changeselect;
 
-	INT16 followercategory;
-	INT16 followern;
-	UINT16 followercolor;
+	int16_t followercategory;
+	int16_t followern;
+	uint16_t followercolor;
 	tic_t follower_tics;
 	tic_t follower_timer;
-	UINT8 follower_frame;
+	uint8_t follower_frame;
 	state_t *follower_state;
 
 	setup_player_colors_t colors;
@@ -855,12 +855,12 @@ struct setup_player_t
 
 extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 
-extern UINT8 setup_numplayers;
+extern uint8_t setup_numplayers;
 extern tic_t setup_animcounter;
 
 // for charsel pages.
-extern UINT8 setup_page;
-extern UINT8 setup_maxpage;
+extern uint8_t setup_page;
+extern uint8_t setup_maxpage;
 
 #define CSROTATETICS 6
 
@@ -868,9 +868,9 @@ extern UINT8 setup_maxpage;
 #define CSEXPLOSIONS 48
 
 extern struct setup_explosions_s {
-	INT16 x, y;
-	UINT8 tics;
-	UINT16 color;
+	int16_t x, y;
+	uint8_t tics;
+	uint16_t color;
 } setup_explosions[CSEXPLOSIONS];
 
 typedef enum
@@ -883,22 +883,22 @@ typedef enum
 extern consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
 void M_CharacterSelectInit(void);
-void M_CharacterSelect(INT32 choice);
-void M_SetupReadyExplosions(dboolean charsel, UINT16 basex, UINT16 basey, UINT16 color);
+void M_CharacterSelect(int32_t choice);
+void M_SetupReadyExplosions(dboolean charsel, uint16_t basex, uint16_t basey, uint16_t color);
 dboolean M_CharacterSelectForceInAction(void);
-dboolean M_CharacterSelectHandler(INT32 choice);
+dboolean M_CharacterSelectHandler(int32_t choice);
 void M_CharacterSelectTick(void);
 dboolean M_CharacterSelectQuit(void);
 
-void M_SetupPlayMenu(INT32 choice);
-void M_SetupGametypeMenu(INT32 choice);
-void M_SetupRaceMenu(INT32 choice);
+void M_SetupPlayMenu(int32_t choice);
+void M_SetupGametypeMenu(int32_t choice);
+void M_SetupRaceMenu(int32_t choice);
 
 #define CUPMENU_CURSORID (cupgrid.x + (cupgrid.y * CUPMENU_COLUMNS) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS)))
 #define CUPMENU_SLIDETIME 3
 
 extern struct cupgrid_s {
-	SINT8 x, y;
+	int8_t x, y;
 	menu_anim_t xslide, yslide;
 	size_t pageno;
 	cupheader_t **builtgrid;
@@ -909,7 +909,7 @@ extern struct cupgrid_s {
 } cupgrid;
 
 typedef struct levelsearch_s {
-	UINT32 typeoflevel;
+	uint32_t typeoflevel;
 	cupheader_t *cup;
 	dboolean timeattack;
 	dboolean tutorial;
@@ -921,13 +921,13 @@ typedef struct levelsearch_s {
 #define M_LEVELLIST_SLIDETIME 4
 
 typedef struct levellist_s {
-	SINT8 cursor;
+	int8_t cursor;
 	menu_anim_t slide;
-	UINT16 y;
-	UINT16 choosemap;
-	UINT16 mapcount;
-	UINT8 newgametype;
-	UINT8 guessgt;
+	uint16_t y;
+	uint16_t choosemap;
+	uint16_t mapcount;
+	uint8_t newgametype;
+	uint8_t guessgt;
 	levelsearch_t levelsearch;
 	dboolean netgame;	// Start the game in an actual server
 	dboolean canqueue;
@@ -939,22 +939,22 @@ extern levellist_t restorelevellist;
 
 extern cupheader_t dummy_lostandfound;
 
-dboolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
-UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch);
-UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch);
-UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch);
+dboolean M_CanShowLevelInList(int16_t mapnum, levelsearch_t *levelsearch);
+uint16_t M_CountLevelsToShowInList(levelsearch_t *levelsearch);
+uint16_t M_GetFirstLevelInList(uint8_t *i, levelsearch_t *levelsearch);
+uint16_t M_GetNextLevelInList(uint16_t mapnum, uint8_t *i, levelsearch_t *levelsearch);
 void M_LevelSelectScrollDest(void);
-dboolean M_LevelListFromGametype(INT16 gt);
+dboolean M_LevelListFromGametype(int16_t gt);
 
-void M_LevelSelectInit(INT32 choice);
-void M_CupSelectHandler(INT32 choice);
+void M_LevelSelectInit(int32_t choice);
+void M_CupSelectHandler(int32_t choice);
 void M_CupSelectTick(void);
-void M_LevelSelectHandler(INT32 choice);
+void M_LevelSelectHandler(int32_t choice);
 void M_LevelSelectTick(void);
 
-INT16 M_LevelFromScrolledList(INT16 add);
-void M_MenuToLevelPreamble(UINT8 ssplayers, dboolean nowipe);
-void M_LevelSelected(INT16 add, dboolean menuupdate);
+int16_t M_LevelFromScrolledList(int16_t add);
+void M_MenuToLevelPreamble(uint8_t ssplayers, dboolean nowipe);
+void M_LevelSelected(int16_t add, dboolean menuupdate);
 dboolean M_LevelSelectCupSwitch(dboolean next, dboolean skipones);
 
 void M_LevelConfirmHandler(void);
@@ -969,9 +969,9 @@ extern consvar_t cv_dummymatchbots;
 
 extern consvar_t cv_dummyspbattack;
 
-void M_SetupDifficultyOptions(INT32 choice);
-void M_SetupDifficultySelect(INT32 choice);
-void M_DifficultySelectInputs(INT32 choice);
+void M_SetupDifficultyOptions(int32_t choice);
+void M_SetupDifficultySelect(int32_t choice);
+void M_DifficultySelectInputs(int32_t choice);
 
 // Multiplayer menu stuff
 
@@ -982,19 +982,19 @@ void M_DifficultySelectInputs(INT32 choice);
 #define SERVERSPACE 18
 
 extern struct mpmenu_s {
-	UINT8 modechoice;
-	INT16 modewinextend[3][3];	// Used to "extend" the options in the mode select screen.
+	uint8_t modechoice;
+	int16_t modewinextend[3][3];	// Used to "extend" the options in the mode select screen.
 								// format for each option: {extended?, max extension, # lines extended}
 								// See M_OptSelectTick, it'll make more sense there. Sorry if this is a bit of a mess!
 
-	UINT8 room;
+	uint8_t room;
 	tic_t ticker;
 
-	UINT8 servernum;
-	UINT8 scrolln;
+	uint8_t servernum;
+	uint8_t scrolln;
 	// max scrolln is always going to be serverlistcount-4 as we can display 8 servers at any time and we start scrolling at half.
 
-	INT16 slide;
+	int16_t slide;
 
 } mpmenu;
 
@@ -1003,42 +1003,42 @@ void M_PopupMasterServerRules(void);
 
 // Time Attack
 void M_PrepareTimeAttack(dboolean menuupdate);
-void M_StartTimeAttack(INT32 choice);
-void M_ReplayTimeAttack(INT32 choice);
-void M_HandleStaffReplay(INT32 choice);
-void M_SetGuestReplay(INT32 choice);
+void M_StartTimeAttack(int32_t choice);
+void M_ReplayTimeAttack(int32_t choice);
+void M_HandleStaffReplay(int32_t choice);
+void M_SetGuestReplay(int32_t choice);
 void M_TimeAttackTick(void);
 dboolean M_EncoreAttackTogglePermitted(void);
-dboolean M_TimeAttackInputs (INT32 choice);
+dboolean M_TimeAttackInputs (int32_t choice);
 
 // MP selection
-void M_MPOptSelect(INT32 choice);
-void M_MPOptSelectInit(INT32 choice);
+void M_MPOptSelect(int32_t choice);
+void M_MPOptSelectInit(int32_t choice);
 void M_MPOptSelectTick(void);
 dboolean M_MPResetOpts(void);
 extern consvar_t cv_dummyip;			// I HAVE
 								// HAVE YOUR IP ADDRESS (This just the hack Cvar we'll type into and then it apends itself to "connect" in the console for IP join)
 
 // MP Host
-void M_MPHostInit(INT32 choice);
-void M_MPSetupNetgameMapSelect(INT32 choice);
+void M_MPHostInit(int32_t choice);
+void M_MPSetupNetgameMapSelect(int32_t choice);
 
 // MP join by IP
-void M_MPJoinIPInit(INT32 choice);
-dboolean M_JoinIPInputs(INT32 ch);
+void M_MPJoinIPInit(int32_t choice);
+dboolean M_JoinIPInputs(int32_t ch);
 void M_JoinIP(const char *ipa);
 
 // Server browser room selection
-void M_MPRoomSelect(INT32 choice);
+void M_MPRoomSelect(int32_t choice);
 void M_MPRoomSelectTick(void);
-void M_MPRoomSelectInit(INT32 choice);
+void M_MPRoomSelectInit(int32_t choice);
 
 // Server browser hell with threads...
 void M_SetWaitingMode(int mode);
 int M_GetWaitingMode(void);
 
 void M_MPServerBrowserTick(void);
-dboolean M_ServerBrowserInputs(INT32 ch);
+dboolean M_ServerBrowserInputs(int32_t ch);
 
 #ifdef MASTERSERVER
 #ifdef HAVE_THREADS
@@ -1052,17 +1052,17 @@ void Fetch_servers_thread (int *id);
 
 #endif /*MASTERSERVER*/
 
-void M_RefreshServers(INT32 choice);
-void M_ServersMenu(INT32 choice);
+void M_RefreshServers(int32_t choice);
+void M_ServersMenu(int32_t choice);
 
 // Options menu:
 
 // mode descriptions for video mode menu
 struct modedesc_t
 {
-	INT32 modenum; // video mode number in the vidmodes list
+	int32_t modenum; // video mode number in the vidmodes list
 	const char *desc;  // XXXxYYY
-	UINT8 goodratio; // aspect correct if 1
+	uint8_t goodratio; // aspect correct if 1
 };
 
 
@@ -1081,63 +1081,63 @@ extern struct optionsmenu_s {
 	// this is only used during menu transitions.
 
 	// For profiles specifically, this moves the card around since we don't have the rest of the menu displayed in that case.
-	INT16 optx;
-	INT16 opty;
-	INT16 toptx;
-	INT16 topty;
+	int16_t optx;
+	int16_t opty;
+	int16_t toptx;
+	int16_t topty;
 	tic_t topt_start;
 
 	// profile garbage
 	dboolean profilemenu;		// In profile menu. (Used to know when to get the "PROFILE SETUP" button away....
 	dboolean resetprofilemenu;	// Reset button behaviour when exiting
-	SINT8 profilen;				// # of the selected profile.
+	int8_t profilen;				// # of the selected profile.
 
 	dboolean resetprofile;		// After going back from the edit menu, this tells the profile select menu to kill the profile data after the transition.
 	profile_t *profile;			// Pointer to the profile we're editing
 
-	INT32 tempcontrols[num_gamecontrols][MAXINPUTMAPPING];
+	int32_t tempcontrols[num_gamecontrols][MAXINPUTMAPPING];
 	// Temporary buffer where we're gonna store game controls.
 	// This is only applied to the profile when you exit out of the controls menu.
 
-	INT16 controlscroll;		// scrolling for the control menu....
-	INT16 bindtimer;			// Timer until binding is cancelled (5s)
-	UINT16 bindben;				// Hold right timer
-	UINT8 bindben_swallow;		// (bool) control is about to be cleared; (int) swallow/pose animation timer
-	INT32 bindinputs[MAXINPUTMAPPING]; // Set while binding
+	int16_t controlscroll;		// scrolling for the control menu....
+	int16_t bindtimer;			// Timer until binding is cancelled (5s)
+	uint16_t bindben;				// Hold right timer
+	uint8_t bindben_swallow;		// (bool) control is about to be cleared; (int) swallow/pose animation timer
+	int32_t bindinputs[MAXINPUTMAPPING]; // Set while binding
 
-	INT16 trycontroller;		// Starts at 3*TICRATE, holding B lowers this, when at 0, cancel controller try mode.
+	int16_t trycontroller;		// Starts at 3*TICRATE, holding B lowers this, when at 0, cancel controller try mode.
 
 	// Used for horrible axis shenanigans
-	INT32 lastkey;
+	int32_t lastkey;
 	tic_t keyheldfor;
 
 	// controller coords...
 	// Works the same as (t)opt
-	INT16 contx;
-	INT16 conty;
-	INT16 tcontx;
-	INT16 tconty;
+	int16_t contx;
+	int16_t conty;
+	int16_t tcontx;
+	int16_t tconty;
 
 	// for video mode testing:
-	INT32 vidm_testingmode;
-	INT32 vidm_previousmode;
-	INT32 vidm_selected;
-	INT32 vidm_nummodes;
-	INT32 vidm_column_size;
+	int32_t vidm_testingmode;
+	int32_t vidm_previousmode;
+	int32_t vidm_selected;
+	int32_t vidm_nummodes;
+	int32_t vidm_column_size;
 
 	modedesc_t modedescs[MAXMODEDESCS];
 
-	UINT8 erasecontext;
+	uint8_t erasecontext;
 
-	UINT8 eraseprofilen;
+	uint8_t eraseprofilen;
 
 	// background:
-	INT16 currcolour;
-	INT16 lastcolour;
+	int16_t currcolour;
+	int16_t lastcolour;
 	tic_t fade;
 } optionsmenu;
 
-extern INT16 controlleroffsets[][2];
+extern int16_t controlleroffsets[][2];
 
 extern consvar_t cv_dummyprofilename;
 extern consvar_t cv_dummyprofileplayername;
@@ -1151,50 +1151,50 @@ extern consvar_t cv_dummyprofilerumble;
 extern consvar_t cv_dummyprofilefov;
 
 void M_ResetOptions(void);
-void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
+void M_InitOptions(int32_t choice); // necessary for multiplayer since there's some options we won't want to access
 void M_OptionsTick(void);
-dboolean M_OptionsInputs(INT32 ch);
+dboolean M_OptionsInputs(int32_t ch);
 dboolean M_OptionsQuit(void);	// resets buttons when you quit the options.
-void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour for options
+void M_OptionsChangeBGColour(int16_t newcolour);	// changes the background colour for options
 
-void M_VideoOptions(INT32 choice);
-void M_SoundOptions(INT32 choice);
-void M_GameplayOptions(INT32 choice);
-void M_ServerOptions(INT32 choice);
+void M_VideoOptions(int32_t choice);
+void M_SoundOptions(int32_t choice);
+void M_GameplayOptions(int32_t choice);
+void M_ServerOptions(int32_t choice);
 
 void M_RefreshAdvancedVideoOptions(void);
 
-void M_HandleItemToggles(INT32 choice);	// For item toggling
-void M_EraseData(INT32 choice);	// For data erasing
-void M_CheckProfileData(INT32 choice);	// check if we have profiles.
-void M_ColorProfileDefault(INT32 choice); // For the reset button in the color profile menu.
+void M_HandleItemToggles(int32_t choice);	// For item toggling
+void M_EraseData(int32_t choice);	// For data erasing
+void M_CheckProfileData(int32_t choice);	// check if we have profiles.
+void M_ColorProfileDefault(int32_t choice); // For the reset button in the color profile menu.
 
 // profile selection menu
-void M_ProfileSelectInit(INT32 choice);
-void M_FirstPickProfile(INT32 c);
-void M_HandleProfileSelect(INT32 ch);
+void M_ProfileSelectInit(int32_t choice);
+void M_FirstPickProfile(int32_t c);
+void M_HandleProfileSelect(int32_t ch);
 
 // profile edition
 void M_HandleProfileEdit(void);
-void M_ProfileDeviceSelect(INT32 choice);
-void M_ConfirmProfile(INT32 choice);
-dboolean M_ProfileEditInputs(INT32 ch);
+void M_ProfileDeviceSelect(int32_t choice);
+void M_ConfirmProfile(int32_t choice);
+dboolean M_ProfileEditInputs(int32_t ch);
 
 void M_HandleProfileControls(void);
-dboolean M_ProfileControlsInputs(INT32 ch);
-void M_ProfileSetControl(INT32 ch);
-void M_ProfileDefaultControls(INT32 ch);
-void M_ProfileClearControls(INT32 ch);
+dboolean M_ProfileControlsInputs(int32_t ch);
+void M_ProfileSetControl(int32_t ch);
+void M_ProfileDefaultControls(int32_t ch);
+void M_ProfileClearControls(int32_t ch);
 
 void M_MapProfileControl(event_t *ev);
-void M_ProfileTryController(INT32 choice);
-void M_ProfileControlsConfirm(INT32 choice);
+void M_ProfileTryController(int32_t choice);
+void M_ProfileControlsConfirm(int32_t choice);
 
 // video modes menu (resolution)
-void M_HandleVideoModes(INT32 ch);
+void M_HandleVideoModes(int32_t ch);
 
 // data stuff
-void M_HandleProfileErase(INT32 choice);
+void M_HandleProfileErase(int32_t choice);
 
 // Draws "List via" at the bottom of the screen.
 void M_DrawMasterServerReminder(void);
@@ -1216,18 +1216,18 @@ extern struct extrasmenu_s {
 
 	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
 	// this is only used during menu transitions. (and will probably remain unused until we get the statistics menu
-	INT16 extx;
-	INT16 exty;
-	INT16 textx;
-	INT16 texty;
+	int16_t extx;
+	int16_t exty;
+	int16_t textx;
+	int16_t texty;
 
 
 	// The replay vars...... oh no......
 	menudemo_t *demolist;
 
-	INT16 replayScrollTitle;
-	SINT8 replayScrollDelay;
-	SINT8 replayScrollDir;
+	int16_t replayScrollTitle;
+	int8_t replayScrollDelay;
+	int8_t replayScrollDir;
 
 
 
@@ -1246,14 +1246,14 @@ typedef enum
 	extras_credits,
 } extras_e;
 
-void M_InitExtras(INT32 choice); // init for the struct
+void M_InitExtras(int32_t choice); // init for the struct
 void M_ExtrasTick(void);
-dboolean M_ExtrasInputs(INT32 ch);
+dboolean M_ExtrasInputs(int32_t ch);
 dboolean M_ExtrasQuit(void);	// resets buttons when you quit
 
 
 // Extras: Egg TV
-void M_EggTV(INT32 choice);
+void M_EggTV(int32_t choice);
 void M_EggTV_RefreshButtonLabels(void);
 
 
@@ -1268,32 +1268,32 @@ extern struct pausemenu_s {
 	menu_anim_t openoffset;	// Used when you open / close the menu to slide everything in.
 	dboolean closing;		// When this is set, the open offset goes backwards to close the menu smoothly.
 
-	UINT8 splitscreenfocusid; // This is not exclusively visual, but thog dont care. For selecting splitscreen players to individually change their spectator state.
+	uint8_t splitscreenfocusid; // This is not exclusively visual, but thog dont care. For selecting splitscreen players to individually change their spectator state.
 } pausemenu;
 
 void M_OpenPauseMenu(void);
-void M_QuitPauseMenu(INT32 choice);
-dboolean M_PauseInputs(INT32 ch);
+void M_QuitPauseMenu(int32_t choice);
+dboolean M_PauseInputs(int32_t ch);
 void M_PauseTick(void);
 
 extern struct playerkickmenu_s {
 	tic_t ticker;
-	UINT8 player;
-	UINT8 poke;
+	uint8_t player;
+	uint8_t poke;
 	dboolean adminpowered;
 } playerkickmenu;
 
-void M_KickHandler(INT32 choice);
+void M_KickHandler(int32_t choice);
 
 extern consvar_t cv_dummymenuplayer;
 extern consvar_t cv_dummyspectator;
 
 // Bunch of funny functions for the pause menu...~
-void M_RestartMap(INT32 choice);				// Restart level (MP)
-void M_TryAgain(INT32 choice);					// Try again (SP)
-void M_GiveUp(INT32 choice);					// Give up (SP)
-void M_HandleSpectateToggle(INT32 choice);		// Spectate confirm
-void M_EndGame(INT32 choice);					// Quitting to title
+void M_RestartMap(int32_t choice);				// Restart level (MP)
+void M_TryAgain(int32_t choice);					// Try again (SP)
+void M_GiveUp(int32_t choice);					// Give up (SP)
+void M_HandleSpectateToggle(int32_t choice);		// Spectate confirm
+void M_EndGame(int32_t choice);					// Quitting to title
 
 // Replay Playback
 
@@ -1301,28 +1301,28 @@ extern tic_t playback_last_menu_interaction_leveltime;
 
 void M_EndModeAttackRun(void);
 void M_SetPlaybackMenuPointer(void);
-void M_PlaybackRewind(INT32 choice);
-void M_PlaybackPause(INT32 choice);
-void M_PlaybackFastForward(INT32 choice);
-void M_PlaybackAdvance(INT32 choice);
-void M_PlaybackSetViews(INT32 choice);
-void M_PlaybackAdjustView(INT32 choice);
-void M_PlaybackToggleFreecam(INT32 choice);
-void M_PlaybackQuit(INT32 choice);
+void M_PlaybackRewind(int32_t choice);
+void M_PlaybackPause(int32_t choice);
+void M_PlaybackFastForward(int32_t choice);
+void M_PlaybackAdvance(int32_t choice);
+void M_PlaybackSetViews(int32_t choice);
+void M_PlaybackAdjustView(int32_t choice);
+void M_PlaybackToggleFreecam(int32_t choice);
+void M_PlaybackQuit(int32_t choice);
 
 // Misc menus:
 #define numaddonsshown 4
-void M_Addons(INT32 choice);
+void M_Addons(int32_t choice);
 void M_AddonsRefresh(void);
-void M_HandleAddons(INT32 choice);
+void M_HandleAddons(int32_t choice);
 char *M_AddonsHeaderPath(void);
 extern consvar_t cv_dummyaddonsearch;
 extern consvar_t cv_dummyextraspassword;
 
 #ifdef TODONEWMANUAL
-void M_Manual(INT32 choice);
+void M_Manual(int32_t choice);
 #endif
-void M_HandleImageDef(INT32 choice);
+void M_HandleImageDef(int32_t choice);
 
 // K_MENUDRAW.C
 
@@ -1333,11 +1333,11 @@ void M_HandleImageDef(INT32 choice);
 
 #define M_ALTCOLOR V_ORANGEMAP
 
-void M_DrawCursorHand(INT32 x, INT32 y);
-void M_DrawUnderline(INT32 left, INT32 right, INT32 y);
+void M_DrawCursorHand(int32_t x, int32_t y);
+void M_DrawUnderline(int32_t left, int32_t right, int32_t y);
 
 // For some menu highlights
-UINT16 M_GetCvPlayerColor(UINT8 pnum);
+uint16_t M_GetCvPlayerColor(uint8_t pnum);
 
 void M_PickMenuBGMap(void);
 void M_UpdateMenuBGImage(dboolean forceReset);
@@ -1348,14 +1348,14 @@ void M_DrawGenericMenu(void);
 void M_DrawKartGamemodeMenu(void);
 void M_FlipKartGamemodeMenu(dboolean slide);
 void M_DrawHorizontalMenu(void);
-void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines);
+void M_DrawTextBox(int32_t x, int32_t y, int32_t width, int32_t boxlines);
 void M_DrawMessageMenu(void);
 void M_DrawImageDef(void);
 
 void M_DrawCharacterSelect(void);
-dboolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap);
+dboolean M_DrawCharacterSprite(int16_t x, int16_t y, int16_t skin, uint8_t spr2, uint8_t rotation, uint32_t frame, int32_t addflags, uint8_t *colormap);
 
-void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, INT32 lockedTic, dboolean isTrophy, UINT8 placement);
+void M_DrawCup(cupheader_t *cup, fixed_t x, fixed_t y, int32_t lockedTic, dboolean isTrophy, uint8_t placement);
 void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);
 void M_DrawSealedBack(void);
@@ -1383,7 +1383,7 @@ void M_DrawOptionsColorProfile(void);
 void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
-void M_DrawProfileCard(INT32 x, INT32 y, dboolean greyedout, profile_t *p);
+void M_DrawProfileCard(int32_t x, int32_t y, dboolean greyedout, profile_t *p);
 void M_DrawProfileSelect(void);
 void M_DrawEditProfileTooltips(void);
 void M_DrawEditProfile(void);
@@ -1450,16 +1450,16 @@ extern struct timeattackmenu_s {
 extern struct challengesmenu_s {
 
 	tic_t ticker;		// How long the menu's been open for
-	INT16 offset;		// To make the icons move smoothly when we transition!
+	int16_t offset;		// To make the icons move smoothly when we transition!
 	menu_anim_t move;
 
-	UINT16 currentunlock;
+	uint16_t currentunlock;
 	char *unlockcondition;
 
 	tic_t unlockanim;
 
-	INT16 row, hilix, focusx;
-	UINT16 col, hiliy;
+	int16_t row, hilix, focusx;
+	uint16_t col, hiliy;
 
 	challengegridextradata_t *extradata;
 
@@ -1467,18 +1467,18 @@ extern struct challengesmenu_s {
 	dboolean requestnew;
 
 	dboolean chaokeyadd, keywasadded;
-	UINT8 chaokeyhold;
+	uint8_t chaokeyhold;
 
-	UINT16 tutorialfound;
+	uint16_t tutorialfound;
 
 	dboolean requestflip;
-	UINT16 nowplayingtile;
+	uint16_t nowplayingtile;
 
-	UINT16 unlockcount[CMC_MAX];
+	uint16_t unlockcount[CMC_MAX];
 
-	UINT8 fade;
+	uint8_t fade;
 
-	UINT8 hornposting;
+	uint8_t hornposting;
 
 	dboolean cache_secondrowlocked;
 
@@ -1486,10 +1486,10 @@ extern struct challengesmenu_s {
 } challengesmenu;
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);
-void M_Challenges(INT32 choice);
+void M_Challenges(int32_t choice);
 void M_DrawChallenges(void);
 void M_ChallengesTick(void);
-dboolean M_ChallengesInputs(INT32 ch);
+dboolean M_ChallengesInputs(int32_t ch);
 dboolean M_CanKeyHiliTile(void);
 
 typedef enum
@@ -1504,39 +1504,39 @@ typedef enum
 
 extern struct statisticsmenu_s {
 	statisticspage_t page;
-	INT32 location;
-	INT32 nummaps;
-	INT32 gotmedals;
-	INT32 nummedals;
-	INT32 numextramedals;
-	INT32 numcanbonus;
-	UINT32 statgridplayed[9][9];
-	INT32 maxscroll;
-	UINT16 *maplist;
+	int32_t location;
+	int32_t nummaps;
+	int32_t gotmedals;
+	int32_t nummedals;
+	int32_t numextramedals;
+	int32_t numcanbonus;
+	uint32_t statgridplayed[9][9];
+	int32_t maxscroll;
+	uint16_t *maplist;
 } statisticsmenu;
 
-void M_Statistics(INT32 choice);
+void M_Statistics(int32_t choice);
 void M_DrawStatistics(void);
-dboolean M_StatisticsInputs(INT32 ch);
+dboolean M_StatisticsInputs(int32_t ch);
 
-void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT16 skin, UINT8 *colormap, UINT16 baseskin);
-fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, dboolean flash, dboolean statsmode);
+void M_DrawCharacterIconAndEngine(int32_t x, int32_t y, uint16_t skin, uint8_t *colormap, uint16_t baseskin);
+fixed_t M_DrawCupWinData(int32_t rankx, int32_t ranky, cupheader_t *cup, uint8_t difficulty, dboolean flash, dboolean statsmode);
 
 #define MAXWRONGPLAYER MAXSPLITSCREENPLAYERS
 #define WRONGPLAYEROFFSCREEN 48
 
 extern struct wrongwarp_s {
-	INT32 ticker;
+	int32_t ticker;
 	tic_t delaytowrongplayer;
 	struct wrongplayer_s
 	{
-		UINT16 skin;
-		INT16 across;
+		uint16_t skin;
+		int16_t across;
 		dboolean spinout;
 	} wrongplayers[MAXWRONGPLAYER];
 } wrongwarp;
 
-void M_WrongWarp(INT32 choice);
+void M_WrongWarp(int32_t choice);
 void M_DrawWrongWarp(void);
 
 typedef enum
@@ -1551,7 +1551,7 @@ typedef enum
 	stereospecial_track,
 } stereospecial_e;
 
-void M_SoundTest(INT32 choice);
+void M_SoundTest(int32_t choice);
 void M_DrawSoundTest(void);
 consvar_t *M_GetSoundTestVolumeCvar(void);
 
@@ -1565,7 +1565,7 @@ extern struct discordrequestmenu_s {
 } discordrequestmenu;
 
 void M_DrawDiscordRequests(void);
-void M_DiscordRequests(INT32 choice);
+void M_DiscordRequests(int32_t choice);
 const char *M_GetDiscordName(discordRequest_t *r);
 #endif
 
@@ -1647,7 +1647,7 @@ constexpr inline itemaction_t itemaction(consvar_t* consvar)
 	ret.cvar = consvar;
 	return ret;
 }
-constexpr inline itemaction_t itemaction(void (*routine)(INT32 choice))
+constexpr inline itemaction_t itemaction(void (*routine)(int32_t choice))
 {
 	itemaction_t ret {};
 	ret.routine = routine;

@@ -144,7 +144,7 @@ unsigned char mapmd5[16];
 //
 
 dboolean udmf;
-INT32 udmf_version;
+int32_t udmf_version;
 size_t numvertexes, numsegs, numsectors, numsubsectors, numnodes, numlines, numsides, nummapthings;
 size_t num_orig_vertexes;
 vertex_t *vertexes;
@@ -158,11 +158,11 @@ mapthing_t *mapthings;
 sector_t *spawnsectors;
 line_t *spawnlines;
 side_t *spawnsides;
-INT32 numcheatchecks;
-UINT16 bossdisabled;
+int32_t numcheatchecks;
+uint16_t bossdisabled;
 dboolean stoppedclock;
 dboolean levelloading;
-UINT8 levelfadecol;
+uint8_t levelfadecol;
 
 tic_t oldbest;
 // I cannot fucking believe this is needed, but gamedata is updated at exactly
@@ -178,11 +178,11 @@ virtres_t *curmapvirt;
 // by spatial subdivision in 2D.
 //
 // Blockmap size.
-INT32 bmapwidth, bmapheight; // size in mapblocks
+int32_t bmapwidth, bmapheight; // size in mapblocks
 
-INT32 *blockmap; // INT32 for large maps
+int32_t *blockmap; // int32_t for large maps
 // offsets in blockmap are from here
-INT32 *blockmaplump; // Big blockmap
+int32_t *blockmaplump; // Big blockmap
 
 // origin of block map
 fixed_t bmaporgx, bmaporgy;
@@ -195,11 +195,11 @@ precipmobj_t **precipblocklinks;
 // Speeds up enemy AI by skipping detailed LineOf Sight calculation.
 // Without special effect, this could be used as a PVS lookup as well.
 //
-UINT8 *rejectmatrix;
+uint8_t *rejectmatrix;
 
 // Maintain single and multi player starting spots.
-INT32 numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX];
-INT32 numfaultstarts;
+int32_t numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX];
+int32_t numfaultstarts;
 
 mapthing_t *deathmatchstarts[MAX_DM_STARTS];
 mapthing_t *playerstarts[MAXPLAYERS];
@@ -208,17 +208,17 @@ mapthing_t *faultstart;
 
 // Global state for PartialAddWadFile/MultiSetupWadFiles
 // Might be replacable with parameters, but non-trivial when the functions are called on separate tics
-static SINT8 partadd_stage = -1;
+static int8_t partadd_stage = -1;
 static dboolean partadd_important = false;
-UINT16 partadd_earliestfile = UINT16_MAX;
+uint16_t partadd_earliestfile = UINT16_MAX;
 
 
 // Maintain *ZOOM TUBE* waypoints
 // Renamed because SRB2Kart owns real waypoints.
 mobj_t *tubewaypoints[NUMTUBEWAYPOINTSEQUENCES][TUBEWAYPOINTSEQUENCESIZE];
-UINT16 numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
+uint16_t numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
 
-void P_AddTubeWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint)
+void P_AddTubeWaypoint(uint8_t sequence, uint8_t id, mobj_t *waypoint)
 {
 	P_SetTarget(&tubewaypoints[sequence][id], waypoint);
 	if (id >= numtubewaypoints[sequence])
@@ -227,7 +227,7 @@ void P_AddTubeWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint)
 
 static void P_ResetTubeWaypoints(void)
 {
-	UINT16 sequence, id;
+	uint16_t sequence, id;
 	for (sequence = 0; sequence < NUMTUBEWAYPOINTSEQUENCES; sequence++)
 	{
 		for (id = 0; id < numtubewaypoints[sequence]; id++)
@@ -237,20 +237,20 @@ static void P_ResetTubeWaypoints(void)
 	}
 }
 
-mobj_t *P_GetFirstTubeWaypoint(UINT8 sequence)
+mobj_t *P_GetFirstTubeWaypoint(uint8_t sequence)
 {
 	return tubewaypoints[sequence][0];
 }
 
-mobj_t *P_GetLastTubeWaypoint(UINT8 sequence)
+mobj_t *P_GetLastTubeWaypoint(uint8_t sequence)
 {
 	return tubewaypoints[sequence][numtubewaypoints[sequence] - 1];
 }
 
 mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, dboolean wrap)
 {
-	UINT8 sequence = current->threshold;
-	UINT8 id = current->health;
+	uint8_t sequence = current->threshold;
+	uint8_t id = current->health;
 
 	if (id == 0)
 	{
@@ -267,8 +267,8 @@ mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, dboolean wrap)
 
 mobj_t *P_GetNextTubeWaypoint(mobj_t *current, dboolean wrap)
 {
-	UINT8 sequence = current->threshold;
-	UINT8 id = current->health;
+	uint8_t sequence = current->threshold;
+	uint8_t id = current->health;
 
 	if (id == numtubewaypoints[sequence] - 1)
 	{
@@ -283,9 +283,9 @@ mobj_t *P_GetNextTubeWaypoint(mobj_t *current, dboolean wrap)
 	return tubewaypoints[sequence][id];
 }
 
-mobj_t *P_GetClosestTubeWaypoint(UINT8 sequence, mobj_t *mo)
+mobj_t *P_GetClosestTubeWaypoint(uint8_t sequence, mobj_t *mo)
 {
-	UINT8 wp;
+	uint8_t wp;
 	mobj_t *mo2, *result = NULL;
 	fixed_t bestdist = 0;
 	fixed_t curdist;
@@ -310,10 +310,10 @@ mobj_t *P_GetClosestTubeWaypoint(UINT8 sequence, mobj_t *mo)
 }
 
 // Return true if all waypoints are in the same location
-dboolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence)
+dboolean P_IsDegeneratedTubeWaypointSequence(uint8_t sequence)
 {
 	mobj_t *first, *waypoint;
-	UINT8 wp;
+	uint8_t wp;
 
 	if (numtubewaypoints[sequence] <= 1)
 		return true;
@@ -380,10 +380,10 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
   *
   * \param i The header to set followers for
   */
-void P_SetDefaultHeaderFollowers(UINT16 i)
+void P_SetDefaultHeaderFollowers(uint16_t i)
 {
-	static INT16 defaultfollowers[MAXHEADERFOLLOWERS];
-	static UINT8 validdefaultfollowers = 0;
+	static int16_t defaultfollowers[MAXHEADERFOLLOWERS];
+	static uint8_t validdefaultfollowers = 0;
 
 	if (validdefaultfollowers == 0)
 	{
@@ -403,7 +403,7 @@ void P_SetDefaultHeaderFollowers(UINT16 i)
 		I_Assert(validdefaultfollowers != 0);
 	}
 
-	mapheaderinfo[i]->followers = static_cast<INT16*>(Z_Realloc(mapheaderinfo[i]->followers, sizeof(INT16) * validdefaultfollowers, PU_STATIC, NULL));
+	mapheaderinfo[i]->followers = static_cast<int16_t*>(Z_Realloc(mapheaderinfo[i]->followers, sizeof(int16_t) * validdefaultfollowers, PU_STATIC, NULL));
 
 	for (mapheaderinfo[i]->numFollowers = 0; mapheaderinfo[i]->numFollowers < validdefaultfollowers; mapheaderinfo[i]->numFollowers++)
 	{
@@ -415,7 +415,7 @@ void P_SetDefaultHeaderFollowers(UINT16 i)
   *
   * \param i The header to clear followers for
   */
-void P_DeleteHeaderFollowers(UINT16 i)
+void P_DeleteHeaderFollowers(uint16_t i)
 {
 	if (mapheaderinfo[i]->followers)
 		Z_Free(mapheaderinfo[i]->followers);
@@ -438,7 +438,7 @@ static void P_ClearMapHeaderLighting(mapheader_lighting_t *lighting)
   * \param i Map number to clear header for.
   * \sa P_ClearMapHeaderInfo
   */
-static void P_ClearSingleMapHeaderInfo(INT16 num)
+static void P_ClearSingleMapHeaderInfo(int16_t num)
 {
 	int i;
 
@@ -533,7 +533,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
   *
   * \param i Index of header to allocate.
   */
-void P_AllocMapHeader(INT16 i)
+void P_AllocMapHeader(int16_t i)
 {
 	if (i > nummapheaders)
 		I_Error("P_AllocMapHeader: Called on %d, should be %d", i, nummapheaders);
@@ -620,7 +620,7 @@ size_t P_PrecacheLevelFlats(void)
 levelflat refers to an array of level flats,
 or NULL if we want to allocate it now.
 */
-static INT32
+static int32_t
 Ploadflat (levelflat_t *levelflat, const char *flatname, dboolean resize)
 {
 	int       texturenum;
@@ -680,7 +680,7 @@ texturefound:
 
 // Auxiliary function. Find a flat in the active wad files,
 // allocate an id for it, and set the levelflat (to speedup search)
-INT32 P_AddLevelFlat(const char *flatname, levelflat_t *levelflat)
+int32_t P_AddLevelFlat(const char *flatname, levelflat_t *levelflat)
 {
 	return Ploadflat(levelflat, flatname, false);
 }
@@ -689,7 +689,7 @@ INT32 P_AddLevelFlat(const char *flatname, levelflat_t *levelflat)
 // same as P_AddLevelFlat, except this is not setup so we must realloc levelflats to fit in the new flat
 // no longer a static func in lua_maplib.c because p_saveg.c also needs it
 //
-INT32 P_AddLevelFlatRuntime(const char *flatname)
+int32_t P_AddLevelFlatRuntime(const char *flatname)
 {
 	return Ploadflat(levelflats, flatname, true);
 }
@@ -697,7 +697,7 @@ INT32 P_AddLevelFlatRuntime(const char *flatname)
 // help function for $$$.sav checking
 // this simply returns the flat # for the name given
 //
-INT32 P_CheckLevelFlat(const char *flatname)
+int32_t P_CheckLevelFlat(const char *flatname)
 {
 	size_t i;
 	levelflat_t *levelflat = levelflats;
@@ -713,7 +713,7 @@ INT32 P_CheckLevelFlat(const char *flatname)
 		return 0; // ??? flat was not found, this should not happen!
 
 	// level flat id
-	return (INT32)i;
+	return (int32_t)i;
 }
 
 //
@@ -892,7 +892,7 @@ static void P_SpawnMapThings(dboolean spawnemblems)
 		&& !modeattacking
 		&& !(tutorialchallenge == TUTORIALSKIP_INPROGRESS && gamedata->gotspraycans == 0))
 	{
-		const UINT8 recommendedcans =
+		const uint8_t recommendedcans =
 #ifdef DEVELOP
 			!(mapheaderinfo[gamemap-1]->typeoflevel & TOL_RACE) ? 0 :
 #endif
@@ -915,7 +915,7 @@ void P_WriteThings(void)
 	size_t i, length;
 	mapthing_t *mt;
 	savebuffer_t save = {0};
-	INT16 temp;
+	int16_t temp;
 
 	if (P_SaveBufferAlloc(&save, nummapthings * sizeof (mapthing_t)) == false)
 	{
@@ -933,7 +933,7 @@ void P_WriteThings(void)
 
 		WRITEINT16(save.p, mt->angle);
 
-		temp = (INT16)(mt->type + ((INT16)mt->extrainfo << 12));
+		temp = (int16_t)(mt->type + ((int16_t)mt->extrainfo << 12));
 		WRITEINT16(save.p, temp);
 		WRITEUINT16(save.p, mt->options);
 	}
@@ -953,7 +953,7 @@ void P_WriteThings(void)
 // MAP LOADING FUNCTIONS
 //
 
-static void P_LoadVertices(UINT8 *data)
+static void P_LoadVertices(uint8_t *data)
 {
 	mapvertex_t *mv = (mapvertex_t *)data;
 	vertex_t *v = vertexes;
@@ -1023,7 +1023,7 @@ static void P_InitializeSector(sector_t *ss)
 	memset(&ss->botController, 0, sizeof(ss->botController));
 }
 
-static void P_LoadSectors(UINT8 *data)
+static void P_LoadSectors(uint8_t *data)
 {
 	mapsector_t *ms = (mapsector_t *)data;
 	sector_t *ss = sectors;
@@ -1075,7 +1075,7 @@ static void P_InitializeLinedef(line_t *ld)
 {
 	vertex_t *v1 = ld->v1;
 	vertex_t *v2 = ld->v2;
-	UINT8 j;
+	uint8_t j;
 
 	ld->dx = v2->x - v1->x;
 	ld->dy = v2->y - v1->y;
@@ -1108,7 +1108,7 @@ static void P_InitializeLinedef(line_t *ld)
 	// cph 2006/09/30 - fix sidedef errors right away.
 	// cph 2002/07/20 - these errors are fatal if not fixed, so apply them
 	for (j = 0; j < 2; j++)
-		if (ld->sidenum[j] != 0xffff && ld->sidenum[j] >= (UINT16)numsides)
+		if (ld->sidenum[j] != 0xffff && ld->sidenum[j] >= (uint16_t)numsides)
 		{
 			ld->sidenum[j] = 0xffff;
 			CONS_Debug(DBG_SETUP, "P_InitializeLinedef: Linedef %s has out-of-range sidedef number\n", sizeu1((size_t)(ld - lines)));
@@ -1141,7 +1141,7 @@ static void P_InitializeLinedef(line_t *ld)
 	}
 }
 
-static void P_SetLinedefV1(size_t i, UINT16 vertex_num)
+static void P_SetLinedefV1(size_t i, uint16_t vertex_num)
 {
 	if (vertex_num >= numvertexes)
 	{
@@ -1151,7 +1151,7 @@ static void P_SetLinedefV1(size_t i, UINT16 vertex_num)
 	lines[i].v1 = &vertexes[vertex_num];
 }
 
-static void P_SetLinedefV2(size_t i, UINT16 vertex_num)
+static void P_SetLinedefV2(size_t i, uint16_t vertex_num)
 {
 	if (vertex_num >= numvertexes)
 	{
@@ -1161,7 +1161,7 @@ static void P_SetLinedefV2(size_t i, UINT16 vertex_num)
 	lines[i].v2 = &vertexes[vertex_num];
 }
 
-static void P_LoadLinedefs(UINT8 *data)
+static void P_LoadLinedefs(uint8_t *data)
 {
 	maplinedef_t *mld = (maplinedef_t *)data;
 	line_t *ld = lines;
@@ -1169,7 +1169,7 @@ static void P_LoadLinedefs(UINT8 *data)
 
 	for (i = 0; i < numlines; i++, mld++, ld++)
 	{
-		ld->flags = (UINT32)(LSBF_SHORT(mld->flags));
+		ld->flags = (uint32_t)(LSBF_SHORT(mld->flags));
 		ld->special = LSBF_SHORT(mld->special);
 		Tag_FSet(&ld->tags, LSBF_SHORT(mld->tag));
 		memset(ld->args, 0, NUM_SCRIPT_ARGS*sizeof(*ld->args));
@@ -1187,7 +1187,7 @@ static void P_LoadLinedefs(UINT8 *data)
 	}
 }
 
-static void P_SetSidedefSector(size_t i, UINT16 sector_num)
+static void P_SetSidedefSector(size_t i, uint16_t sector_num)
 {
 	// cph 2006/09/30 - catch out-of-range sector numbers; use sector 0 instead
 	if (sector_num >= numsectors)
@@ -1211,7 +1211,7 @@ static void P_InitializeSidedef(side_t *sd)
 }
 
 /* -- Reference implementation
-static void P_WriteConstant(INT32 constant, char **target)
+static void P_WriteConstant(int32_t constant, char **target)
 {
 	char buffer[12];
 	size_t len;
@@ -1232,10 +1232,10 @@ static void P_WriteDuplicateText(const char *text, char **target)
 	M_Memcpy(*target, text, len);
 }
 
-static void P_WriteSkincolor(INT32 constant, char **target)
+static void P_WriteSkincolor(int32_t constant, char **target)
 {
 	if (constant <= SKINCOLOR_NONE
-	|| constant >= (INT32)numskincolors)
+	|| constant >= (int32_t)numskincolors)
 		return;
 
 	P_WriteDuplicateText(
@@ -1244,10 +1244,10 @@ static void P_WriteSkincolor(INT32 constant, char **target)
 	);
 }
 
-static void P_WriteSfx(INT32 constant, char **target)
+static void P_WriteSfx(int32_t constant, char **target)
 {
 	if (constant <= sfx_None
-	|| constant >= (INT32)sfxfree)
+	|| constant >= (int32_t)sfxfree)
 		return;
 
 	P_WriteDuplicateText(
@@ -1256,7 +1256,7 @@ static void P_WriteSfx(INT32 constant, char **target)
 	);
 }
 
-static void P_LoadSidedefs(UINT8 *data)
+static void P_LoadSidedefs(uint8_t *data)
 {
 	mapsidedef_t *msd = (mapsidedef_t*)data;
 	side_t *sd = sides;
@@ -1264,7 +1264,7 @@ static void P_LoadSidedefs(UINT8 *data)
 
 	for (i = 0; i < numsides; i++, sd++, msd++)
 	{
-		INT16 textureoffset = LSBF_SHORT(msd->textureoffset);
+		int16_t textureoffset = LSBF_SHORT(msd->textureoffset);
 		dboolean isfrontside;
 
 		P_InitializeSidedef(sd);
@@ -1275,8 +1275,8 @@ static void P_LoadSidedefs(UINT8 *data)
 		if (((sd->line->flags & (ML_TWOSIDED|ML_WRAPMIDTEX)) == (ML_TWOSIDED|ML_WRAPMIDTEX))
 			&& !(sd->special >= 300 && sd->special < 500)) // exempt linedef exec specials
 		{
-			sd->repeatcnt = (INT16)(((UINT16)textureoffset) >> 12);
-			sd->textureoffset = (((UINT16)textureoffset) & 2047) << FRACBITS;
+			sd->repeatcnt = (int16_t)(((uint16_t)textureoffset) >> 12);
+			sd->textureoffset = (((uint16_t)textureoffset) & 2047) << FRACBITS;
 		}
 		else
 		{
@@ -1399,7 +1399,7 @@ static void P_LoadSidedefs(UINT8 *data)
 	}
 }
 
-static void P_LoadThings(UINT8 *data)
+static void P_LoadThings(uint8_t *data)
 {
 	mapthing_t *mt;
 	size_t i;
@@ -1412,7 +1412,7 @@ static void P_LoadThings(UINT8 *data)
 		mt->angle = READINT16(data);
 		mt->type = READUINT16(data);
 		mt->options = READUINT16(data);
-		mt->extrainfo = (UINT8)(mt->type >> 12);
+		mt->extrainfo = (uint8_t)(mt->type >> 12);
 		mt->tid = 0;
 		mt->scale = FRACUNIT;
 		mt->spritexscale = mt->spriteyscale = FRACUNIT;
@@ -1438,11 +1438,11 @@ static void P_LoadThings(UINT8 *data)
 }
 
 // Stores positions for relevant map data spread through a TEXTMAP.
-UINT32 mapthingsPos[UINT16_MAX];
-UINT32 linesPos[UINT16_MAX];
-UINT32 sidesPos[UINT16_MAX];
-UINT32 vertexesPos[UINT16_MAX];
-UINT32 sectorsPos[UINT16_MAX];
+uint32_t mapthingsPos[UINT16_MAX];
+uint32_t linesPos[UINT16_MAX];
+uint32_t sidesPos[UINT16_MAX];
+uint32_t vertexesPos[UINT16_MAX];
+uint32_t sectorsPos[UINT16_MAX];
 
 // Determine total amount of map data in TEXTMAP.
 static dboolean TextmapCount(size_t size)
@@ -1450,7 +1450,7 @@ static dboolean TextmapCount(size_t size)
 	TracyCZone(__zone, true);
 
 	const char *tkn = M_TokenizerRead(0);
-	UINT8 brackets = 0;
+	uint8_t brackets = 0;
 
 	nummapthings = 0;
 	numlines = 0;
@@ -1528,7 +1528,7 @@ static void ParseUserProperty(mapUserProperties_t *user, const char *param, cons
 		const dboolean valIsString = M_TokenizerJustReadString();
 		const char *key = param + 5;
 		const size_t valLen = strlen(val);
-		UINT8 numberType = PROP_NUM_TYPE_INT;
+		uint8_t numberType = PROP_NUM_TYPE_INT;
 		size_t i = 0;
 
 		if (valIsString == true)
@@ -1556,7 +1556,7 @@ static void ParseUserProperty(mapUserProperties_t *user, const char *param, cons
 			case PROP_NUM_TYPE_INT:
 			{
 				// Value is an integer.
-				INT32 vInt = atol(val);
+				int32_t vInt = atol(val);
 				K_UserPropertyPush(user, key, USER_PROP_INT, &vInt);
 				break;
 			}
@@ -1590,7 +1590,7 @@ static void ParseUserProperty(mapUserProperties_t *user, const char *param, cons
 	}
 }
 
-static void ParseTextmapVertexParameter(UINT32 i, const char *param, const char *val)
+static void ParseTextmapVertexParameter(uint32_t i, const char *param, const char *val)
 {
 	if (fastcmp(param, "x"))
 		vertexes[i].x = FLOAT_TO_FIXED(atof(val));
@@ -1610,13 +1610,13 @@ static void ParseTextmapVertexParameter(UINT32 i, const char *param, const char 
 
 typedef struct textmap_colormap_s {
 	dboolean used;
-	INT32 lightcolor;
-	UINT8 lightalpha;
-	INT32 fadecolor;
-	UINT8 fadealpha;
-	UINT8 fadestart;
-	UINT8 fadeend;
-	UINT8 flags;
+	int32_t lightcolor;
+	uint8_t lightalpha;
+	int32_t fadecolor;
+	uint8_t fadealpha;
+	uint8_t fadestart;
+	uint8_t fadeend;
+	uint8_t flags;
 } textmap_colormap_t;
 
 textmap_colormap_t textmap_colormap = { false, 0, 25, 0, 25, 0, 31, 0 };
@@ -1630,14 +1630,14 @@ typedef enum
 } planedef_t;
 
 typedef struct textmap_plane_s {
-    UINT8 defined;
+    uint8_t defined;
     fixed_t a, b, c, d;
 } textmap_plane_t;
 
 textmap_plane_t textmap_planefloor = {0, 0, 0, 0, 0};
 textmap_plane_t textmap_planeceiling = {0, 0, 0, 0, 0};
 
-static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char *val)
+static void ParseTextmapSectorParameter(uint32_t i, const char *param, const char *val)
 {
 	if (fastcmp(param, "heightfloor"))
 		sectors[i].floorheight = atol(val) << FRACBITS;
@@ -1867,7 +1867,7 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		ParseUserProperty(&sectors[i].user, param, val);
 }
 
-static void ParseTextmapSidedefParameter(UINT32 i, const char *param, const char *val)
+static void ParseTextmapSidedefParameter(uint32_t i, const char *param, const char *val)
 {
 	if (fastcmp(param, "offsetx"))
 		sides[i].textureoffset = atol(val)<<FRACBITS;
@@ -1887,7 +1887,7 @@ static void ParseTextmapSidedefParameter(UINT32 i, const char *param, const char
 		ParseUserProperty(&sides[i].user, param, val);
 }
 
-static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char *val)
+static void ParseTextmapLinedefParameter(uint32_t i, const char *param, const char *val)
 {
 	if (fastcmp(param, "id"))
 		Tag_FSet(&lines[i].tags, atol(val));
@@ -1998,7 +1998,7 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		ParseUserProperty(&lines[i].user, param, val);
 }
 
-static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *val)
+static void ParseTextmapThingParameter(uint32_t i, const char *param, const char *val)
 {
 	if (fastcmp(param, "id"))
 		mapthings[i].tid = atol(val);
@@ -2126,7 +2126,7 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
   * \param Structure number (mapthings, sectors, ...).
   * \param Parser function pointer.
   */
-static void TextmapParse(UINT32 dataPos, size_t num, void (*parser)(UINT32, const char *, const char *))
+static void TextmapParse(uint32_t dataPos, size_t num, void (*parser)(uint32_t, const char *, const char *))
 {
 	const char *param, *val;
 
@@ -2196,19 +2196,19 @@ static void TextmapUnfixFlatOffsets(sector_t *sec)
 	}
 }
 
-static INT32 P_ColorToRGBA(INT32 color, UINT8 alpha)
+static int32_t P_ColorToRGBA(int32_t color, uint8_t alpha)
 {
-	UINT8 r = (color >> 16) & 0xFF;
-	UINT8 g = (color >> 8) & 0xFF;
-	UINT8 b = color & 0xFF;
+	uint8_t r = (color >> 16) & 0xFF;
+	uint8_t g = (color >> 8) & 0xFF;
+	uint8_t b = color & 0xFF;
 	return R_PutRgbaRGBA(r, g, b, alpha);
 }
 
-static INT32 P_RGBAToColor(INT32 rgba)
+static int32_t P_RGBAToColor(int32_t rgba)
 {
-	UINT8 r = R_GetRgbaR(rgba);
-	UINT8 g = R_GetRgbaG(rgba);
-	UINT8 b = R_GetRgbaB(rgba);
+	uint8_t r = R_GetRgbaR(rgba);
+	uint8_t g = R_GetRgbaG(rgba);
+	uint8_t b = R_GetRgbaB(rgba);
 	return (r << 16) | (g << 8) | b;
 }
 
@@ -2430,7 +2430,7 @@ static void P_WriteTextmap(void)
 		for (i = 0; i < nummapthings; i++)
 		{
 			subsector_t *ss;
-			INT32 s;
+			int32_t s;
 
 			if (wmapthings[i].type != 751 && wmapthings[i].type != 752 && wmapthings[i].type != 758)
 				continue;
@@ -2463,7 +2463,7 @@ static void P_WriteTextmap(void)
 
 		for (i = 0; i < numlines; i++)
 		{
-			INT32 s;
+			int32_t s;
 
 			switch (wlines[i].special)
 			{
@@ -2923,10 +2923,10 @@ static void P_WriteTextmap(void)
 			fprintf(f, "rotationceiling = %f;\n", FIXED_TO_FLOAT(AngleFixed(wsectors[i].ceilingpic_angle)));
 		if (wsectors[i].extra_colormap)
 		{
-			INT32 lightcolor = P_RGBAToColor(wsectors[i].extra_colormap->rgba);
-			UINT8 lightalpha = R_GetRgbaA(wsectors[i].extra_colormap->rgba);
-			INT32 fadecolor = P_RGBAToColor(wsectors[i].extra_colormap->fadergba);
-			UINT8 fadealpha = R_GetRgbaA(wsectors[i].extra_colormap->fadergba);
+			int32_t lightcolor = P_RGBAToColor(wsectors[i].extra_colormap->rgba);
+			uint8_t lightalpha = R_GetRgbaA(wsectors[i].extra_colormap->rgba);
+			int32_t fadecolor = P_RGBAToColor(wsectors[i].extra_colormap->fadergba);
+			uint8_t fadealpha = R_GetRgbaA(wsectors[i].extra_colormap->fadergba);
 
 			if (lightcolor != 0)
 				fprintf(f, "lightcolor = %d;\n", lightcolor);
@@ -3150,7 +3150,7 @@ static void P_LoadTextmap(void)
 {
 	TracyCZone(__zone, true);
 
-	UINT32 i;
+	uint32_t i;
 
 	vertex_t   *vt;
 	sector_t   *sc;
@@ -3236,8 +3236,8 @@ static void P_LoadTextmap(void)
 		P_InitializeSector(sc);
 		if (textmap_colormap.used)
 		{
-			INT32 rgba = P_ColorToRGBA(textmap_colormap.lightcolor, textmap_colormap.lightalpha);
-			INT32 fadergba = P_ColorToRGBA(textmap_colormap.fadecolor, textmap_colormap.fadealpha);
+			int32_t rgba = P_ColorToRGBA(textmap_colormap.lightcolor, textmap_colormap.lightalpha);
+			int32_t fadergba = P_ColorToRGBA(textmap_colormap.fadecolor, textmap_colormap.fadealpha);
 			sc->extra_colormap = sc->spawn_extra_colormap = R_CreateColormap(rgba, fadergba, textmap_colormap.fadestart, textmap_colormap.fadeend, textmap_colormap.flags);
 		}
 
@@ -3356,7 +3356,7 @@ P_MirrorTextureOffset
 
 static dboolean P_CheckLineSideTripWire(line_t *ld, int p)
 {
-	INT32 n;
+	int32_t n;
 
 	side_t *sda;
 	side_t *sdb;
@@ -3471,8 +3471,8 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 			if (ld->flags & ML_DONTPEGBOTTOM) // alternate alpha (by texture offsets)
 			{
 				extracolormap_t *exc = R_CopyColormap(sides[ld->sidenum[0]].colormap_data, false);
-				INT16 alpha = std::max<fixed_t>(std::min<fixed_t>(sides[ld->sidenum[0]].textureoffset >> FRACBITS, 25), -25);
-				INT16 fadealpha = std::max<fixed_t>(std::min<fixed_t>(sides[ld->sidenum[0]].rowoffset >> FRACBITS, 25), -25);
+				int16_t alpha = std::max<fixed_t>(std::min<fixed_t>(sides[ld->sidenum[0]].textureoffset >> FRACBITS, 25), -25);
+				int16_t fadealpha = std::max<fixed_t>(std::min<fixed_t>(sides[ld->sidenum[0]].rowoffset >> FRACBITS, 25), -25);
 
 				// If alpha is negative, set "subtract alpha" flag and store absolute value
 				if (alpha < 0)
@@ -3545,7 +3545,7 @@ static dboolean P_LoadMapData(const virtres_t *virt)
 		numsectors   = virtsectors->size  / sizeof (mapsector_t);
 		numsides     = virtsidedefs->size / sizeof (mapsidedef_t);
 		numlines     = virtlinedefs->size / sizeof (maplinedef_t);
-		nummapthings = virtthings->size   / (5 * sizeof (INT16));
+		nummapthings = virtthings->size   / (5 * sizeof (int16_t));
 	}
 
 	if (numvertexes <= 0)
@@ -3614,7 +3614,7 @@ static void P_InitializeSubsector(subsector_t *ss)
 	ss->validcount = 0;
 }
 
-static inline void P_LoadSubsectors(UINT8 *data)
+static inline void P_LoadSubsectors(uint8_t *data)
 {
 	mapsubsector_t *ms = (mapsubsector_t*)data;
 	subsector_t *ss = subsectors;
@@ -3628,9 +3628,9 @@ static inline void P_LoadSubsectors(UINT8 *data)
 	}
 }
 
-static void P_LoadNodes(UINT8 *data)
+static void P_LoadNodes(uint8_t *data)
 {
-	UINT8 j, k;
+	uint8_t j, k;
 	mapnode_t *mn = (mapnode_t*)data;
 	node_t *no = nodes;
 	size_t i;
@@ -3657,8 +3657,8 @@ static void P_LoadNodes(UINT8 *data)
   */
 static fixed_t P_SegLength(seg_t *seg)
 {
-	INT64 dx = (seg->v2->x - seg->v1->x)>>1;
-	INT64 dy = (seg->v2->y - seg->v1->y)>>1;
+	int64_t dx = (seg->v2->x - seg->v1->x)>>1;
+	int64_t dy = (seg->v2->y - seg->v1->y)>>1;
 	return FixedHypot(dx, dy)<<1;
 }
 
@@ -3687,7 +3687,7 @@ static inline float P_SegLengthFloat(seg_t *seg)
   */
 void P_UpdateSegLightOffset(seg_t *li)
 {
-	const UINT8 contrast = maplighting.contrast;
+	const uint8_t contrast = maplighting.contrast;
 	const fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
 	fixed_t light = FRACUNIT;
 	fixed_t extralight = 0;
@@ -3740,7 +3740,7 @@ dboolean P_SectorUsesDirectionalLighting(const sector_t *sector)
 	return false;
 }
 
-dboolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector)
+dboolean P_ApplyLightOffset(uint8_t baselightnum, const sector_t *sector)
 {
 	if (!P_SectorUsesDirectionalLighting(sector))
 	{
@@ -3752,7 +3752,7 @@ dboolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector)
 	return (baselightnum < LIGHTLEVELS-1 && baselightnum > 0);
 }
 
-dboolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector)
+dboolean P_ApplyLightOffsetFine(uint8_t baselightlevel, const sector_t *sector)
 {
 	if (!P_SectorUsesDirectionalLighting(sector))
 	{
@@ -3768,7 +3768,7 @@ static void P_InitializeSeg(seg_t *seg)
 {
 	if (seg->linedef)
 	{
-		UINT16 side = seg->linedef->sidenum[seg->side];
+		uint16_t side = seg->linedef->sidenum[seg->side];
 
 		if (side == 0xffff)
 			I_Error("P_InitializeSeg: Seg %s refers to side %d of linedef %s, which doesn't exist!\n", sizeu1((size_t)(seg - segs)), seg->side, sizeu1((size_t)(seg->linedef - lines)));
@@ -3794,7 +3794,7 @@ static void P_InitializeSeg(seg_t *seg)
 	P_UpdateSegLightOffset(seg);
 }
 
-static void P_LoadSegs(UINT8 *data)
+static void P_LoadSegs(uint8_t *data)
 {
 	mapseg_t *ms = (mapseg_t*)data;
 	seg_t *seg = segs;
@@ -3836,7 +3836,7 @@ typedef enum {
 } nodetype_t;
 
 // Find out the BSP format.
-static nodetype_t P_GetNodetype(const virtres_t *virt, UINT8 **nodedata)
+static nodetype_t P_GetNodetype(const virtres_t *virt, uint8_t **nodedata)
 {
 	dboolean supported[NUMNODETYPES] = {0};
 	nodetype_t nodetype = NT_UNSUPPORTED;
@@ -3913,10 +3913,10 @@ static nodetype_t P_GetNodetype(const virtres_t *virt, UINT8 **nodedata)
 }
 
 // Extended node formats feature additional vertices; useful for OpenGL, but totally useless in gamelogic.
-static dboolean P_LoadExtraVertices(UINT8 **data)
+static dboolean P_LoadExtraVertices(uint8_t **data)
 {
-	UINT32 origvrtx = READUINT32((*data));
-	UINT32 xtrvrtx = READUINT32((*data));
+	uint32_t origvrtx = READUINT32((*data));
+	uint32_t xtrvrtx = READUINT32((*data));
 	line_t* ld = lines;
 	vertex_t *oldpos = vertexes;
 	size_t i;
@@ -3950,10 +3950,10 @@ static dboolean P_LoadExtraVertices(UINT8 **data)
 	return true;
 }
 
-static dboolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype)
+static dboolean P_LoadExtendedSubsectorsAndSegs(uint8_t **data, nodetype_t nodetype)
 {
 	size_t i, k;
-	INT16 m;
+	int16_t m;
 	seg_t *seg;
 
 	// Subsectors
@@ -3978,15 +3978,15 @@ static dboolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetyp
 		case NT_XGL3:
 			for (m = 0; m < subsectors[i].numlines; m++, k++)
 			{
-				UINT32 vertexnum = READUINT32((*data));
-				UINT16 linenum;
+				uint32_t vertexnum = READUINT32((*data));
+				uint16_t linenum;
 
 				if (vertexnum >= numvertexes)
 					I_Error("P_LoadExtendedSubsectorsAndSegs: Seg %s in subsector %d has invalid vertex %d!\n", sizeu1(k), m, vertexnum);
 
 				segs[k - 1 + ((m == 0) ? subsectors[i].numlines : 0)].v2 = segs[k].v1 = &vertexes[vertexnum];
 
-				*data += sizeof (UINT32); // partner, can be ignored by software renderer
+				*data += sizeof (uint32_t); // partner, can be ignored by software renderer
 
 				linenum = (nodetype == NT_XGL3) ? READUINT32((*data)) : READUINT16((*data));
 				if (linenum != 0xFFFF && linenum >= numlines)
@@ -4015,9 +4015,9 @@ static dboolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetyp
 		case NT_XNOD:
 			for (m = 0; m < subsectors[i].numlines; m++, k++)
 			{
-				UINT32 v1num = READUINT32((*data));
-				UINT32 v2num = READUINT32((*data));
-				UINT16 linenum = READUINT16((*data));
+				uint32_t v1num = READUINT32((*data));
+				uint32_t v2num = READUINT32((*data));
+				uint16_t linenum = READUINT16((*data));
 
 				if (v1num >= numvertexes)
 					I_Error("P_LoadExtendedSubsectorsAndSegs: Seg %s in subsector %d has invalid v1 %d!\n", sizeu1(k), m, v1num);
@@ -4058,13 +4058,13 @@ static dboolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetyp
 }
 
 // Auxiliary function: Shrink node ID from 32-bit to 16-bit.
-static UINT16 ShrinkNodeID(UINT32 x) {
-	UINT16 mask = (x >> 16) & 0xC000;
-	UINT16 result = x;
+static uint16_t ShrinkNodeID(uint32_t x) {
+	uint16_t mask = (x >> 16) & 0xC000;
+	uint16_t result = x;
 	return result | mask;
 }
 
-static void P_LoadExtendedNodes(UINT8 **data, nodetype_t nodetype)
+static void P_LoadExtendedNodes(uint8_t **data, nodetype_t nodetype)
 {
 	node_t *mn;
 	size_t i, j, k;
@@ -4087,14 +4087,14 @@ static void P_LoadExtendedNodes(UINT8 **data, nodetype_t nodetype)
 				mn->bbox[j][k] = READINT16((*data)) << FRACBITS;
 
 		//Children
-		mn->children[0] = ShrinkNodeID(READUINT32((*data))); /// \todo Use UINT32 for node children in a future, instead?
+		mn->children[0] = ShrinkNodeID(READUINT32((*data))); /// \todo Use uint32_t for node children in a future, instead?
 		mn->children[1] = ShrinkNodeID(READUINT32((*data)));
 	}
 }
 
 static void P_LoadMapBSP(const virtres_t *virt)
 {
-	UINT8 *nodedata = NULL;
+	uint8_t *nodedata = NULL;
 	nodetype_t nodetype = P_GetNodetype(virt, &nodedata);
 
 	switch (nodetype)
@@ -4143,10 +4143,10 @@ static void P_LoadMapBSP(const virtres_t *virt)
 
 // Split from P_LoadBlockMap for convenience
 // -- Monster Iestyn 08/01/18
-static void P_ReadBlockMapLump(INT16 *wadblockmaplump, size_t count)
+static void P_ReadBlockMapLump(int16_t *wadblockmaplump, size_t count)
 {
 	size_t i;
-	blockmaplump = static_cast<INT32*>(Z_Calloc(sizeof (*blockmaplump) * count, PU_LEVEL, NULL));
+	blockmaplump = static_cast<int32_t*>(Z_Calloc(sizeof (*blockmaplump) * count, PU_LEVEL, NULL));
 
 	// killough 3/1/98: Expand wad blockmap into larger internal one,
 	// by treating all offsets except -1 as unsigned and zero-extending
@@ -4155,13 +4155,13 @@ static void P_ReadBlockMapLump(INT16 *wadblockmaplump, size_t count)
 
 	blockmaplump[0] = LSBF_SHORT(wadblockmaplump[0]);
 	blockmaplump[1] = LSBF_SHORT(wadblockmaplump[1]);
-	blockmaplump[2] = (INT32)(LSBF_SHORT(wadblockmaplump[2])) & 0xffff;
-	blockmaplump[3] = (INT32)(LSBF_SHORT(wadblockmaplump[3])) & 0xffff;
+	blockmaplump[2] = (int32_t)(LSBF_SHORT(wadblockmaplump[2])) & 0xffff;
+	blockmaplump[3] = (int32_t)(LSBF_SHORT(wadblockmaplump[3])) & 0xffff;
 
 	for (i = 4; i < count; i++)
 	{
-		INT16 t = LSBF_SHORT(wadblockmaplump[i]);          // killough 3/1/98
-		blockmaplump[i] = t == -1 ? (INT32)-1 : (INT32) t & 0xffff;
+		int16_t t = LSBF_SHORT(wadblockmaplump[i]);          // killough 3/1/98
+		blockmaplump[i] = t == -1 ? (int32_t)-1 : (int32_t) t & 0xffff;
 	}
 }
 
@@ -4169,7 +4169,7 @@ static void P_ReadBlockMapLump(INT16 *wadblockmaplump, size_t count)
 // because making both the WAD and PK3 loading code use
 // the same functions is trickier than it looks for blockmap
 // -- Monster Iestyn 09/01/18
-static dboolean P_LoadBlockMap(UINT8 *data, size_t count)
+static dboolean P_LoadBlockMap(uint8_t *data, size_t count)
 {
 	if (!count || count >= 0x20000)
 		return false;
@@ -4178,7 +4178,7 @@ static dboolean P_LoadBlockMap(UINT8 *data, size_t count)
 
 	// no need to malloc anything, assume the data is uncompressed for now
 	count /= 2;
-	P_ReadBlockMapLump((INT16 *)data, count);
+	P_ReadBlockMapLump((int16_t *)data, count);
 
 	bmaporgx = blockmaplump[0]<<FRACBITS;
 	bmaporgy = blockmaplump[1]<<FRACBITS;
@@ -4306,8 +4306,8 @@ static void P_CreateBlockMap(void)
 	{
 		typedef struct
 		{
-			INT32 n, nalloc;
-			INT32 *list;
+			int32_t n, nalloc;
+			int32_t *list;
 		} bmap_t; // blocklist structure
 
 		size_t tot = bmapwidth * bmapheight; // size of blockmap
@@ -4319,9 +4319,9 @@ static void P_CreateBlockMap(void)
 		for (i = 0; i < numlines; i++)
 		{
 			// starting coordinates
-			INT32 x = (lines[i].v1->x>>FRACBITS) - minx;
-			INT32 y = (lines[i].v1->y>>FRACBITS) - miny;
-			INT32 bxstart, bxend, bystart, byend, v2x, v2y, curblockx, curblocky;
+			int32_t x = (lines[i].v1->x>>FRACBITS) - minx;
+			int32_t y = (lines[i].v1->y>>FRACBITS) - miny;
+			int32_t bxstart, bxend, bystart, byend, v2x, v2y, curblockx, curblocky;
 
 			v2x = lines[i].v2->x>>FRACBITS;
 			v2y = lines[i].v2->y>>FRACBITS;
@@ -4338,14 +4338,14 @@ static void P_CreateBlockMap(void)
 
 			if (bxend < bxstart)
 			{
-				INT32 temp = bxstart;
+				int32_t temp = bxstart;
 				bxstart = bxend;
 				bxend = temp;
 			}
 
 			if (byend < bystart)
 			{
-				INT32 temp = bystart;
+				int32_t temp = bystart;
 				bystart = byend;
 				byend = temp;
 			}
@@ -4390,13 +4390,13 @@ static void P_CreateBlockMap(void)
 						bmap[b].nalloc = 8;
 					else
 						bmap[b].nalloc *= 2;
-					bmap[b].list = static_cast<INT32*>(Z_Realloc(bmap[b].list, bmap[b].nalloc * sizeof (*bmap->list), PU_CACHE, &bmap[b].list));
+					bmap[b].list = static_cast<int32_t*>(Z_Realloc(bmap[b].list, bmap[b].nalloc * sizeof (*bmap->list), PU_CACHE, &bmap[b].list));
 					if (!bmap[b].list)
 						I_Error("Out of Memory in P_CreateBlockMap");
 				}
 
 				// Add linedef to end of list
-				bmap[b].list[bmap[b].n++] = (INT32)i;
+				bmap[b].list[bmap[b].n++] = (int32_t)i;
 			}
 		}
 
@@ -4414,7 +4414,7 @@ static void P_CreateBlockMap(void)
 					count += bmap[i].n + 2; // 1 header word + 1 trailer word + blocklist
 
 			// Allocate blockmap lump with computed count
-			blockmaplump = static_cast<INT32*>(Z_Calloc(sizeof (*blockmaplump) * count, PU_LEVEL, NULL));
+			blockmaplump = static_cast<int32_t*>(Z_Calloc(sizeof (*blockmaplump) * count, PU_LEVEL, NULL));
 		}
 
 		// Now compress the blockmap.
@@ -4428,7 +4428,7 @@ static void P_CreateBlockMap(void)
 			for (i = 4; i < tot; i++, bp++)
 				if (bp->n) // Non-empty blocklist
 				{
-					blockmaplump[blockmaplump[i] = (INT32)(ndx++)] = 0; // Store index & header
+					blockmaplump[blockmaplump[i] = (int32_t)(ndx++)] = 0; // Store index & header
 					do
 						blockmaplump[ndx++] = bp->list[--bp->n]; // Copy linedef list
 					while (bp->n);
@@ -4436,7 +4436,7 @@ static void P_CreateBlockMap(void)
 					Z_Free(bp->list); // Free linedef list
 				}
 				else // Empty blocklist: point to reserved empty blocklist
-					blockmaplump[i] = (INT32)tot;
+					blockmaplump[i] = (int32_t)tot;
 
 			free(bmap); // Free uncompressed blockmap
 		}
@@ -4458,7 +4458,7 @@ static void P_CreateBlockMap(void)
 
 // PK3 version
 // -- Monster Iestyn 09/01/18
-static void P_LoadReject(UINT8 *data, size_t count)
+static void P_LoadReject(uint8_t *data, size_t count)
 {
 	if (!count) // zero length, someone probably used ZDBSP
 	{
@@ -4467,7 +4467,7 @@ static void P_LoadReject(UINT8 *data, size_t count)
 	}
 	else
 	{
-		rejectmatrix = static_cast<UINT8*>(Z_Malloc(count, PU_LEVEL, NULL)); // allocate memory for the reject matrix
+		rejectmatrix = static_cast<uint8_t*>(Z_Malloc(count, PU_LEVEL, NULL)); // allocate memory for the reject matrix
 		M_Memcpy(rejectmatrix, data, count); // copy the data into it
 	}
 }
@@ -4514,7 +4514,7 @@ static void P_LinkMapData(void)
 		if (!seg->sidedef)
 			CorruptMapError(va("P_LinkMapData: seg->sidedef is NULL "
 				"(subsector %s, firstline is %d)", sizeu1(i), ss->firstline));
-		if (seg->sidedef - sides < 0 || seg->sidedef - sides > (UINT16)numsides)
+		if (seg->sidedef - sides < 0 || seg->sidedef - sides > (uint16_t)numsides)
 			CorruptMapError(va("P_LinkMapData: seg->sidedef refers to sidedef %s of %s "
 				"(subsector %s, firstline is %d)", sizeu1(sidei), sizeu2(numsides),
 				sizeu3(i), ss->firstline));
@@ -4590,15 +4590,15 @@ static void P_AddBinaryMapTagsFromLine(sector_t *sector, line_t *line)
 	Tag_Add(&sector->tags, Tag_FGet(&line->tags));
 	if (line->flags & ML_BLOCKMONSTERS) {
 		if (sides[line->sidenum[0]].textureoffset)
-			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[0]].textureoffset / FRACUNIT);
+			Tag_Add(&sector->tags, (int32_t)sides[line->sidenum[0]].textureoffset / FRACUNIT);
 		if (sides[line->sidenum[0]].rowoffset)
-			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[0]].rowoffset / FRACUNIT);
+			Tag_Add(&sector->tags, (int32_t)sides[line->sidenum[0]].rowoffset / FRACUNIT);
 	}
 	if (line->flags & ML_TFERLINE) {
 		if (sides[line->sidenum[1]].textureoffset)
-			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[1]].textureoffset / FRACUNIT);
+			Tag_Add(&sector->tags, (int32_t)sides[line->sidenum[1]].textureoffset / FRACUNIT);
 		if (sides[line->sidenum[1]].rowoffset)
-			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[1]].rowoffset / FRACUNIT);
+			Tag_Add(&sector->tags, (int32_t)sides[line->sidenum[1]].rowoffset / FRACUNIT);
 	}
 }
 
@@ -4631,12 +4631,12 @@ static void P_AddBinaryMapTags(void)
 		target_tag = Tag_FGet(&lines[i].tags);
 		memset(offset_tags, 0, sizeof(mtag_t)*4);
 		if (lines[i].flags & ML_BLOCKMONSTERS) {
-			offset_tags[0] = (INT32)sides[lines[i].sidenum[0]].textureoffset / FRACUNIT;
-			offset_tags[1] = (INT32)sides[lines[i].sidenum[0]].rowoffset / FRACUNIT;
+			offset_tags[0] = (int32_t)sides[lines[i].sidenum[0]].textureoffset / FRACUNIT;
+			offset_tags[1] = (int32_t)sides[lines[i].sidenum[0]].rowoffset / FRACUNIT;
 		}
 		if (lines[i].flags & ML_TFERLINE) {
-			offset_tags[2] = (INT32)sides[lines[i].sidenum[1]].textureoffset / FRACUNIT;
-			offset_tags[3] = (INT32)sides[lines[i].sidenum[1]].rowoffset / FRACUNIT;
+			offset_tags[2] = (int32_t)sides[lines[i].sidenum[1]].textureoffset / FRACUNIT;
+			offset_tags[3] = (int32_t)sides[lines[i].sidenum[1]].rowoffset / FRACUNIT;
 		}
 
 		for (j = 0; j < numsectors; j++) {
@@ -4686,7 +4686,7 @@ static void P_AddBinaryMapTags(void)
 
 static line_t *P_FindPointPushLine(taglist_t *list)
 {
-	INT32 i, l;
+	int32_t i, l;
 
 	for (i = 0; i < list->count; i++)
 	{
@@ -4735,9 +4735,9 @@ static void P_SetBinaryFOFAlpha(line_t *line)
 	}
 }
 
-static INT32 P_GetFOFFlags(INT32 oldflags)
+static int32_t P_GetFOFFlags(int32_t oldflags)
 {
-	INT32 result = 0;
+	int32_t result = 0;
 	if (oldflags & FF_OLD_EXISTS)
 		result |= FOF_EXISTS;
 	if (oldflags & FF_OLD_BLOCKPLAYER)
@@ -4799,7 +4799,7 @@ static INT32 P_GetFOFFlags(INT32 oldflags)
 	return result;
 }
 
-static INT32 P_GetFOFBusttype(INT32 oldflags)
+static int32_t P_GetFOFBusttype(int32_t oldflags)
 {
 	if (oldflags & FF_OLD_SHATTER)
 		return TMFB_TOUCH;
@@ -4860,7 +4860,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 					P_ApplyFlatAlignment(lines[i].frontsector, flatangle, xoffs, yoffs, lines[i].args[1] != TMP_CEILING, lines[i].args[1] != TMP_FLOOR);
 				else
 				{
-					INT32 s;
+					int32_t s;
 					TAG_ITER_SECTORS(lines[i].args[0], s)
 						P_ApplyFlatAlignment(sectors + s, flatangle, xoffs, yoffs, lines[i].args[1] != TMP_CEILING, lines[i].args[1] != TMP_FLOOR);
 				}
@@ -4869,7 +4869,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 8: //Special sector properties
 		{
-			INT32 s;
+			int32_t s;
 
 			lines[i].args[0] = tag;
 			TAG_ITER_SECTORS(tag, s)
@@ -4912,7 +4912,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 13: //Heat wave effect
 		{
-			INT32 s;
+			int32_t s;
 
 			TAG_ITER_SECTORS(tag, s)
 				sectors[s].flags |= MSF_HEATWAVE;
@@ -4929,8 +4929,8 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 20: //PolyObject first line
 		{
-			INT32 check = -1;
-			INT32 paramline = -1;
+			int32_t check = -1;
+			int32_t paramline = -1;
 
 			TAG_ITER_LINES(tag, check)
 			{
@@ -6061,7 +6061,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 455: //Fade colormap
 		{
-			INT32 speed = (INT32)((((lines[i].flags & ML_DONTPEGBOTTOM) || !sides[lines[i].sidenum[0]].rowoffset) && lines[i].sidenum[1] != 0xFFFF) ?
+			int32_t speed = (int32_t)((((lines[i].flags & ML_DONTPEGBOTTOM) || !sides[lines[i].sidenum[0]].rowoffset) && lines[i].sidenum[1] != 0xFFFF) ?
 				abs(sides[lines[i].sidenum[1]].rowoffset >> FRACBITS)
 				: abs(sides[lines[i].sidenum[0]].rowoffset >> FRACBITS));
 
@@ -6326,7 +6326,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 540: //Floor friction
 		{
-			INT32 s;
+			int32_t s;
 			fixed_t strength; // friction value of sector
 			fixed_t friction; // friction value to be applied during movement
 
@@ -6423,7 +6423,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 
 			if (lines[i].flags & ML_BLOCKMONSTERS)
 			{
-				UINT8 side = lines[i].special >= 714;
+				uint8_t side = lines[i].special >= 714;
 
 				if (side == 1 && lines[i].sidenum[1] == 0xffff)
 					CONS_Debug(DBG_GAMELOGIC, "P_ConvertBinaryMap: Line special %d (line #%s) missing 2nd side!\n", lines[i].special, sizeu1(i));
@@ -6724,7 +6724,7 @@ static void P_ConvertBinaryThingTypes(void)
 		{
 			if (mobjinfo[mobjtype].flags & MF_BOSS)
 			{
-				INT32 paramoffset = mapthings[i].extrainfo*LE_PARAMWIDTH;
+				int32_t paramoffset = mapthings[i].extrainfo*LE_PARAMWIDTH;
 				mapthings[i].thing_args[0] = mapthings[i].extrainfo;
 				mapthings[i].thing_args[1] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
 				mapthings[i].thing_args[2] = LE_BOSSDEAD + paramoffset;
@@ -7017,7 +7017,7 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		case 757: //Fan particle generator
 		{
-			INT32 j = Tag_FindLineSpecial(15, mapthings[i].angle);
+			int32_t j = Tag_FindLineSpecial(15, mapthings[i].angle);
 
 			if (j == -1)
 			{
@@ -7035,8 +7035,8 @@ static void P_ConvertBinaryThingTypes(void)
 		}
 		case 762: //PolyObject spawn point (crush)
 		{
-			INT32 check = -1;
-			INT32 firstline = -1;
+			int32_t check = -1;
+			int32_t firstline = -1;
 
 			TAG_ITER_LINES(mapthings[i].tid, check)
 			{
@@ -7078,7 +7078,7 @@ static void P_ConvertBinaryThingTypes(void)
 		case 1110: //Custom mace spawnpoint
 		{
 			mtag_t tag = (mtag_t)mapthings[i].angle;
-			INT32 j = Tag_FindLineSpecial(9, tag);
+			int32_t j = Tag_FindLineSpecial(9, tag);
 
 			if (j == -1)
 			{
@@ -7149,7 +7149,7 @@ static void P_ConvertBinaryThingTypes(void)
 		case 1202: //Rock spawner
 		{
 			mtag_t tag = (mtag_t)mapthings[i].angle;
-			INT32 j = Tag_FindLineSpecial(12, tag);
+			int32_t j = Tag_FindLineSpecial(12, tag);
 
 			if (j == -1)
 			{
@@ -7160,7 +7160,7 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].thing_args[0] = P_AproxDistance(lines[j].dx, lines[j].dy) >> FRACBITS;
 			mapthings[i].thing_args[1] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
 			mapthings[i].thing_args[2] = !!(lines[j].flags & ML_NOCLIMB);
-			INT32 id = (sides[lines[j].sidenum[0]].rowoffset >> FRACBITS);
+			int32_t id = (sides[lines[j].sidenum[0]].rowoffset >> FRACBITS);
 			// Rather than introduce deh_tables.h as a dependency for literally one
 			// conversion, we just... recreate the string expected to be produced.
 			if (id > 0 && id < 16)
@@ -7232,7 +7232,7 @@ static void P_ConvertBinaryThingTypes(void)
 		case 1705: //Hoop
 		case 1713: //Hoop (Customizable)
 		{
-			UINT16 oldangle = mapthings[i].angle;
+			uint16_t oldangle = mapthings[i].angle;
 			mapthings[i].angle = ((oldangle >> 8)*360)/256;
 			mapthings[i].pitch = ((oldangle & 255)*360)/256;
 			mapthings[i].thing_args[0] = (mapthings[i].type == 1705) ? 96 : (mapthings[i].options & 0xF)*16 + 32;
@@ -7263,7 +7263,7 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		case 2001: // MT_WAYPOINT
 		{
-			INT32 firstline = Tag_FindLineSpecial(2000, (INT16)mapthings[i].angle);
+			int32_t firstline = Tag_FindLineSpecial(2000, (int16_t)mapthings[i].angle);
 
 			mapthings[i].tid = mapthings[i].angle;
 
@@ -7380,7 +7380,7 @@ static void P_ConvertBinaryThingTypes(void)
 		case 3400: // MT_WATERPALACETURBINE
 		{
 			mtag_t tag = (mtag_t)mapthings[i].angle;
-			INT32 j = Tag_FindLineSpecial(2009, tag);
+			int32_t j = Tag_FindLineSpecial(2009, tag);
 
 			if (j == -1)
 			{
@@ -7507,7 +7507,7 @@ static void P_ConvertBinaryMap(void)
   * \param resblock resulting MD5 checksum
   * \return 0 if MD5 checksum was made, and is at resblock, 1 if error was found
   */
-static INT32 P_MakeBufferMD5(const char *buffer, size_t len, void *resblock)
+static int32_t P_MakeBufferMD5(const char *buffer, size_t len, void *resblock)
 {
 #ifdef NOMD5
 	(void)buffer;
@@ -7539,7 +7539,7 @@ static void P_MakeMapMD5(virtres_t *virt, void *dest)
 		unsigned char sectormd5[16];
 		unsigned char thingmd5[16];
 		unsigned char sidedefmd5[16];
-		UINT8 i;
+		uint8_t i;
 
 		// Create a hash for the current map
 		// get the actual lumps!
@@ -7645,8 +7645,8 @@ extern "C" dboolean blockreset;
 //
 static void P_InitLevelSettings(void)
 {
-	INT32 i;
-	UINT8 p = 0;
+	int32_t i;
+	uint8_t p = 0;
 
 	leveltime = 0;
 	modulothing = 0;
@@ -7752,9 +7752,9 @@ static void P_InitLevelSettings(void)
 		if (multi_speed)
 		{
 			if (cv_kartspeed.value == KARTSPEED_AUTO)
-				gamespeed = ((speedscramble == -1) ? KARTSPEED_EASY : (UINT8)speedscramble);
+				gamespeed = ((speedscramble == -1) ? KARTSPEED_EASY : (uint8_t)speedscramble);
 			else
-				gamespeed = (UINT8)cv_kartspeed.value;
+				gamespeed = (uint8_t)cv_kartspeed.value;
 		}
 		franticitems = (dboolean)cv_kartfrantic.value;
 		g_teamplay = (dboolean)cv_teamplay.value; // we will overwrite this later if there is not enough players
@@ -7777,7 +7777,7 @@ void P_RespawnThings(void)
 {
 	// Search through all the thinkers.
 	thinker_t *think;
-	INT32 i, viewid = -1, centerid = -1; // for skyboxes
+	int32_t i, viewid = -1, centerid = -1; // for skyboxes
 
 	// check if these are any of the normal viewpoint/centerpoint mobjs in the level or not
 	if (skyboxmo[0] || skyboxmo[1])
@@ -7810,7 +7810,7 @@ void P_RespawnThings(void)
 
 static void P_ResetSpawnpoints(void)
 {
-	UINT8 i, j;
+	uint8_t i, j;
 
 	// reset the player starts
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -7868,7 +7868,7 @@ static void P_LoadRecordGhosts(void)
 	// see also /menus/play-local-race-time-attack.c's M_PrepareTimeAttack
 	char *gpath;
 	const char *modeprefix = M_GetRecordMode();
-	INT32 i;
+	int32_t i;
 
 	gpath = Z_StrDup(va("%s" PATHSEP "media" PATHSEP "replay" PATHSEP "%s" PATHSEP "%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
@@ -7881,7 +7881,7 @@ static void P_LoadRecordGhosts(void)
 
 	auto map_ghosts = [](int value)
 	{
-		auto map = [](const consvar_t& cvar, int value, UINT8 bit) { return cvar.value == value ? bit : 0; };
+		auto map = [](const consvar_t& cvar, int value, uint8_t bit) { return cvar.value == value ? bit : 0; };
 
 		return
 			// Best Time ghost
@@ -7894,7 +7894,7 @@ static void P_LoadRecordGhosts(void)
 			map(cv_ghost_last, value, kLast);
 	};
 
-	auto add_ghosts = [gpath](const srb2::String& base, UINT8 bits)
+	auto add_ghosts = [gpath](const srb2::String& base, uint8_t bits)
 	{
 		auto load = [base](const char* suffix) { P_TryAddExternalGhost(fmt::format("{}{}.lmp", base, suffix).c_str()); };
 
@@ -7908,8 +7908,8 @@ static void P_LoadRecordGhosts(void)
 			load("last");
 	};
 
-	UINT8 allGhosts = map_ghosts(2);
-	UINT8 sameGhosts = map_ghosts(1);
+	uint8_t allGhosts = map_ghosts(2);
+	uint8_t sameGhosts = map_ghosts(1);
 
 	if (allGhosts)
 	{
@@ -7919,7 +7919,7 @@ static void P_LoadRecordGhosts(void)
 
 	if (sameGhosts)
 	{
-		INT32 skin = R_SkinAvailableEx(cv_skin[0].string, false);
+		int32_t skin = R_SkinAvailableEx(cv_skin[0].string, false);
 		if (skin < 0 || !R_SkinUsable(-1, skin, false))
 			skin = 0; // use default skin
 		add_ghosts(fmt::format("{}-{}-{}", gpath, skins[skin]->name, modeprefix), sameGhosts);
@@ -7962,7 +7962,7 @@ static void P_LoadRecordGhosts(void)
 	Z_Free(gpath);
 }
 
-static void P_SetupCamera(UINT8 pnum, camera_t *cam)
+static void P_SetupCamera(uint8_t pnum, camera_t *cam)
 {
 	if (players[pnum].mo && (server || addedtogame))
 	{
@@ -7998,7 +7998,7 @@ static void P_InitCamera(void)
 {
 	if (!dedicated)
 	{
-		UINT8 i;
+		uint8_t i;
 
 		for (i = 0; i <= r_splitscreen; i++)
 		{
@@ -8031,7 +8031,7 @@ static void P_ShuffleTeams(void)
 
 	CONS_Debug(DBG_TEAMS, "Shuffling player teams...\n");
 
-	srb2::Vector<UINT8> player_shuffle;
+	srb2::Vector<uint8_t> player_shuffle;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false || players[i].spectator == true)
@@ -8079,7 +8079,7 @@ static void P_ShuffleTeams(void)
 
 static void P_InitPlayers(void)
 {
-	INT32 i, skin = -1, follower = -1, col = SKINCOLOR_NONE;
+	int32_t i, skin = -1, follower = -1, col = SKINCOLOR_NONE;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -8347,15 +8347,15 @@ static void P_InitMinimapInfo(void)
 
 void P_ResetLevelMusic(void)
 {
-	UINT8 idx = 0;
+	uint8_t idx = 0;
 
 	mapheader_t* mapheader = mapheaderinfo[gamemap - 1];
-	UINT8 truesize = (encoremode && mapheader->encoremusname_size)
+	uint8_t truesize = (encoremode && mapheader->encoremusname_size)
 		? mapheader->encoremusname_size
 		: mapheader->musname_size;
 
 	// To keep RNG in sync, we will always pull from RNG, even if unused
-	UINT32 random = P_Random(PR_MUSICSELECT);
+	uint32_t random = P_Random(PR_MUSICSELECT);
 
 	if (demo.playback)
 	{
@@ -8369,7 +8369,7 @@ void P_ResetLevelMusic(void)
 
 	if (truesize > 1)
 	{
-		UINT8 tempmapmus[MAXMUSNAMES], tempmapmus_size = 1, i;
+		uint8_t tempmapmus[MAXMUSNAMES], tempmapmus_size = 1, i;
 
 		tempmapmus[0] = 0;
 
@@ -8517,7 +8517,7 @@ dboolean P_LoadLevel(dboolean fromnetsave, dboolean reloadinggamestate)
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
-	INT32 i;
+	int32_t i;
 	virtlump_t *encoreLump = NULL;
 
 	dboolean fade_shortcircuit = false;
@@ -8985,7 +8985,7 @@ dboolean P_LoadLevel(dboolean fromnetsave, dboolean reloadinggamestate)
 
 	if (!fromnetsave)
 	{
-		INT32 buf = gametic % BACKUPTICS;
+		int32_t buf = gametic % BACKUPTICS;
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -9036,7 +9036,7 @@ dboolean P_LoadLevel(dboolean fromnetsave, dboolean reloadinggamestate)
 void P_PostLoadLevel(void)
 {
 	TracyCZone(__zone, true);
-	INT32 i;
+	int32_t i;
 
 	P_MapStart();
 
@@ -9154,7 +9154,7 @@ dboolean P_RunSOC(const char *socfilename)
 
 // Auxiliary function for PK3 loading - looks for sound replacements.
 // NOTE: it does not really add any new sound entry or anything.
-void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num)
+void P_LoadSoundsRange(uint16_t wadnum, uint16_t first, uint16_t num)
 {
 	size_t j;
 	lumpinfo_t *lumpinfo = wadfiles[wadnum]->lumpinfo + first;
@@ -9178,7 +9178,7 @@ void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num)
 
 // Auxiliary function for PK3 loading - looks for music and music replacements.
 // NOTE: does nothing but print debug messages. The code is handled somewhere else.
-void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num)
+void P_LoadMusicsRange(uint16_t wadnum, uint16_t first, uint16_t num)
 {
 	lumpinfo_t *lumpinfo = wadfiles[wadnum]->lumpinfo + first;
 	char *name;
@@ -9198,9 +9198,9 @@ void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num)
 }
 
 // Auxiliary function - input a folder name and gives us the resource markers positions.
-static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, lumpinfo_t *lumpinfo, UINT16 *pnumlumps, size_t *pi)
+static lumpinfo_t* FindFolder(const char *folName, uint16_t *start, uint16_t *end, lumpinfo_t *lumpinfo, uint16_t *pnumlumps, size_t *pi)
 {
-	UINT16 numlumps = *pnumlumps;
+	uint16_t numlumps = *pnumlumps;
 	size_t i = *pi;
 	if (!stricmp(lumpinfo->fullname, folName))
 	{
@@ -9282,13 +9282,13 @@ static void P_DeriveAutoMedalTimes(mapheader_t& map)
 }
 
 lumpnum_t wadnamelump = LUMPERROR;
-INT16 wadnamemap = 0; // gamemap based
+int16_t wadnamemap = 0; // gamemap based
 
 // Initialising map data (and catching replacements)...
-UINT8 P_InitMapData(void)
+uint8_t P_InitMapData(void)
 {
-	UINT8 ret = 0;
-	INT32 i, j;
+	uint8_t ret = 0;
+	int32_t i, j;
 	lumpnum_t maplump;
 	virtres_t *virtmap;
 	virtlump_t *minimap, *thumbnailPic;
@@ -9410,7 +9410,7 @@ UINT8 P_InitMapData(void)
 				mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] = NULL;
 			}
 
-			for (INT32 wadindex = 0; wadindex < numwadfiles; wadindex++)
+			for (int32_t wadindex = 0; wadindex < numwadfiles; wadindex++)
 			{
 				if (wadfiles[wadindex]->type != RET_PK3)
 				{
@@ -9418,18 +9418,18 @@ UINT8 P_InitMapData(void)
 				}
 				srb2::String ghostdirname = srb2::format("staffghosts/{}/", mapheaderinfo[i]->lumpname);
 
-				UINT16 lumpstart = W_CheckNumForFolderStartPK3(ghostdirname.c_str(), wadindex, 0);
+				uint16_t lumpstart = W_CheckNumForFolderStartPK3(ghostdirname.c_str(), wadindex, 0);
 				if (lumpstart == INT16_MAX)
 				{
 					continue;
 				}
-				UINT16 lumpend = W_CheckNumForFolderEndPK3(ghostdirname.c_str(), wadindex, lumpstart);
+				uint16_t lumpend = W_CheckNumForFolderEndPK3(ghostdirname.c_str(), wadindex, lumpstart);
 				if (lumpend == INT16_MAX)
 				{
 					continue;
 				}
 
-				for (UINT16 lumpnum = lumpstart; lumpnum < lumpend; lumpnum++)
+				for (uint16_t lumpnum = lumpstart; lumpnum < lumpend; lumpnum++)
 				{
 					if (W_IsLumpFolder(wadindex, lumpnum))
 					{
@@ -9437,7 +9437,7 @@ UINT8 P_InitMapData(void)
 					}
 
 					size_t lumplength = W_LumpLengthPwad(wadindex, lumpnum);
-					UINT8* ghostdata = static_cast<UINT8*>(Z_Malloc(lumplength, PU_STATIC, nullptr));
+					uint8_t* ghostdata = static_cast<uint8_t*>(Z_Malloc(lumplength, PU_STATIC, nullptr));
 					auto ghostdata_finalizer = srb2::finally([=]() { Z_Free(ghostdata); });
 
 					W_ReadLumpPwad(wadindex, lumpnum, ghostdata);
@@ -9450,9 +9450,9 @@ UINT8 P_InitMapData(void)
 					briefghost->lump = lumpnum;
 
 					// Resize ghostBrief if needed
-					if (mapheaderinfo[i]->ghostBriefSize < static_cast<UINT32>(mapheaderinfo[i]->ghostCount + 1))
+					if (mapheaderinfo[i]->ghostBriefSize < static_cast<uint32_t>(mapheaderinfo[i]->ghostCount + 1))
 					{
-						UINT32 newsize = mapheaderinfo[i]->ghostBriefSize + 4;
+						uint32_t newsize = mapheaderinfo[i]->ghostBriefSize + 4;
 						mapheaderinfo[i]->ghostBrief = static_cast<staffbrief_t**>(Z_Realloc(mapheaderinfo[i]->ghostBrief, sizeof(staffbrief_t*) * newsize, PU_STATIC, NULL));
 						mapheaderinfo[i]->ghostBriefSize = newsize;
 					}
@@ -9530,7 +9530,7 @@ void Command_Platinums(void)
 {
 	srb2::Vector<std::string> platinums;
 
-	for (INT32 j = 0; j < nummapheaders; j++)
+	for (int32_t j = 0; j < nummapheaders; j++)
 	{
 		mapheader_t *map = mapheaderinfo[j];
 
@@ -9603,7 +9603,7 @@ void Command_Platinums(void)
 	{
 		CONS_Printf("%s: %d - ", pair.first.c_str(), pair.second);
 
-		for (INT32 j = 0; j < nummapheaders; j++)
+		for (int32_t j = 0; j < nummapheaders; j++)
 		{
 			mapheader_t *map = mapheaderinfo[j];
 
@@ -9654,7 +9654,7 @@ void Command_Platinums(void)
 //
 dboolean P_AddWadFile(const char *wadfilename)
 {
-	UINT16 wadnum;
+	uint16_t wadnum;
 
 	if ((wadnum = P_PartialAddWadFile(wadfilename)) == UINT16_MAX)
 		return false;
@@ -9669,25 +9669,25 @@ dboolean P_AddWadFile(const char *wadfilename)
 // Add a WAD file and do the per-WAD setup stages.
 // Call P_MultiSetupWadFiles as soon as possible after any number of these.
 //
-UINT16 P_PartialAddWadFile(const char *wadfilename)
+uint16_t P_PartialAddWadFile(const char *wadfilename)
 {
 	size_t i, j, sreplaces = 0, mreplaces = 0, digmreplaces = 0;
-	UINT16 numlumps, wadnum;
+	uint16_t numlumps, wadnum;
 	char *name;
 	lumpinfo_t *lumpinfo;
 
 	// Vars to help us with the position start and amount of each resource type.
 	// Useful for PK3s since they use folders.
 	// WADs use markers for some resources, but others such as sounds are checked lump-by-lump anyway.
-//	UINT16 luaPos, luaNum = 0;
-//	UINT16 socPos, socNum = 0;
-	UINT16 sfxPos = 0, sfxNum = 0;
-	UINT16 musPos = 0, musNum = 0;
-//	UINT16 sprPos, sprNum = 0;
-	UINT16 texPos = 0, texNum = 0;
-//	UINT16 patPos, patNum = 0;
-//	UINT16 flaPos, flaNum = 0;
-//	UINT16 mapPos, mapNum = 0;
+//	uint16_t luaPos, luaNum = 0;
+//	uint16_t socPos, socNum = 0;
+	uint16_t sfxPos = 0, sfxNum = 0;
+	uint16_t musPos = 0, musNum = 0;
+//	uint16_t sprPos, sprNum = 0;
+	uint16_t texPos = 0, texNum = 0;
+//	uint16_t patPos, patNum = 0;
+//	uint16_t flaPos, flaNum = 0;
+//	uint16_t mapPos, mapNum = 0;
 
 	// Init file.
 	if ((numlumps = W_InitFile(wadfilename, false, false, nullptr)) == INT16_MAX)
@@ -9696,7 +9696,7 @@ UINT16 P_PartialAddWadFile(const char *wadfilename)
 		return false;
 	}
 
-	wadnum = (UINT16)(numwadfiles-1);
+	wadnum = (uint16_t)(numwadfiles-1);
 
 	// Init partadd.
 	if (wadfiles[wadnum]->important)
@@ -9833,7 +9833,7 @@ UINT16 P_PartialAddWadFile(const char *wadfilename)
 
 // Only exists to make sure there's no way to overwrite partadd_stage externally
 // unless you really push yourself.
-SINT8 P_PartialAddGetStage(void)
+int8_t P_PartialAddGetStage(void)
 {
 	return partadd_stage;
 }
@@ -9885,7 +9885,7 @@ dboolean P_MultiSetupWadFiles(dboolean fullsetup)
 
 	if (partadd_stage == 2)
 	{
-		UINT8 mapsadded = P_InitMapData();
+		uint8_t mapsadded = P_InitMapData();
 
 		if (!mapsadded)
 			CONS_Printf(M_GetText("No maps added\n"));

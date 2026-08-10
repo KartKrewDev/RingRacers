@@ -30,11 +30,11 @@ extern unsigned char mapmd5[16];
 // Player spawn spots for deathmatch.
 #define MAX_DM_STARTS 64
 extern mapthing_t *deathmatchstarts[MAX_DM_STARTS];
-extern INT32 numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX], numfaultstarts;
+extern int32_t numdmstarts, numcoopstarts, numteamstarts[TEAM__MAX], numfaultstarts;
 
 extern dboolean levelloading;
 extern dboolean g_reloadinggamestate;
-extern UINT8 levelfadecol;
+extern uint8_t levelfadecol;
 
 extern tic_t oldbest;
 
@@ -58,7 +58,7 @@ struct levelflat_t
 {
 	char name[9]; // resource name from wad
 
-	UINT8  type;
+	uint8_t  type;
 	union
 	{
 		struct
@@ -70,26 +70,26 @@ struct levelflat_t
 		flat;
 		struct
 		{
-			INT32             num;
-			INT32         lastnum; // texture number of the flat
+			int32_t             num;
+			int32_t         lastnum; // texture number of the flat
 			// for flat animation
-			INT32         basenum;
+			int32_t         basenum;
 		}
 		texture;
 	}
 	u;
 
-	UINT16 width, height;
+	uint16_t width, height;
 
 	terrain_t *terrain;
 
 	// for flat animation
-	INT32 animseq; // start pos. in the anim sequence
-	INT32 numpics;
-	INT32 speed;
+	int32_t animseq; // start pos. in the anim sequence
+	int32_t numpics;
+	int32_t speed;
 
 	// for textures
-	UINT8 *picture;
+	uint8_t *picture;
 #ifdef HWRENDER
 	void *mipmap;
 	void *mippic;
@@ -98,9 +98,9 @@ struct levelflat_t
 
 extern size_t numlevelflats;
 extern levelflat_t *levelflats;
-INT32 P_AddLevelFlat(const char *flatname, levelflat_t *levelflat);
-INT32 P_AddLevelFlatRuntime(const char *flatname);
-INT32 P_CheckLevelFlat(const char *flatname);
+int32_t P_AddLevelFlat(const char *flatname, levelflat_t *levelflat);
+int32_t P_AddLevelFlatRuntime(const char *flatname);
+int32_t P_CheckLevelFlat(const char *flatname);
 
 extern size_t nummapthings;
 extern mapthing_t *mapthings;
@@ -120,15 +120,15 @@ dboolean P_AddWadFile(const char *wadfilename);
 
 #define MAPRET_ADDED (1)
 #define MAPRET_CURRENTREPLACED (1<<1)
-UINT8 P_InitMapData(void);
+uint8_t P_InitMapData(void);
 extern lumpnum_t wadnamelump;
-extern INT16 wadnamemap;
+extern int16_t wadnamemap;
 #define WADNAMECHECK(name) (!strncmp(name, "WADNAME", 7))
 
 // WARNING: The following functions should be grouped as follows:
 // any amount of PartialAdds followed by MultiSetups until returned true,
 // as soon as possible.
-UINT16 P_PartialAddWadFile(const char *wadfilename);
+uint16_t P_PartialAddWadFile(const char *wadfilename);
 // Run a single stage of multisetup, or all of them if fullsetup set.
 //   fullsetup true: run everything
 //   otherwise multiple stages
@@ -139,24 +139,24 @@ dboolean P_MultiSetupWadFiles(dboolean fullsetup);
 //   if negative, no PartialAdds done since last MultiSetup
 //   if 0, partial adds done but MultiSetup not called yet
 //   if positive, setup's partway done
-SINT8 P_PartialAddGetStage(void);
-extern UINT16 partadd_earliestfile;
+int8_t P_PartialAddGetStage(void);
+extern uint16_t partadd_earliestfile;
 
 void P_ReduceVFXTextureReload(void);
 
 dboolean P_RunSOC(const char *socfilename);
-void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
-void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
+void P_LoadSoundsRange(uint16_t wadnum, uint16_t first, uint16_t num);
+void P_LoadMusicsRange(uint16_t wadnum, uint16_t first, uint16_t num);
 //void P_WriteThings(void);
 void P_UpdateSegLightOffset(seg_t *li);
-dboolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector);
-dboolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector);
+dboolean P_ApplyLightOffset(uint8_t baselightnum, const sector_t *sector);
+dboolean P_ApplyLightOffsetFine(uint8_t baselightlevel, const sector_t *sector);
 dboolean P_SectorUsesDirectionalLighting(const sector_t *sector);
 size_t P_PrecacheLevelFlats(void);
-void P_AllocMapHeader(INT16 i);
+void P_AllocMapHeader(int16_t i);
 
-void P_SetDefaultHeaderFollowers(UINT16 i);
-void P_DeleteHeaderFollowers(UINT16 i);
+void P_SetDefaultHeaderFollowers(uint16_t i);
+void P_DeleteHeaderFollowers(uint16_t i);
 
 // Needed for NiGHTS
 void P_ReloadRings(void);

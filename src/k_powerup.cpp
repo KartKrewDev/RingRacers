@@ -42,9 +42,9 @@ tic_t K_PowerUpRemaining(const player_t* player, kartitems_t powerup)
 	}
 }
 
-UINT32 K_AnyPowerUpRemaining(const player_t* player)
+uint32_t K_AnyPowerUpRemaining(const player_t* player)
 {
-	UINT32 mask = 0;
+	uint32_t mask = 0;
 
 	for (int k = FIRSTPOWERUP; k < ENDOFPOWERUPS; ++k)
 	{

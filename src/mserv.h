@@ -28,7 +28,7 @@ extern "C" {
 typedef union
 {
 	char buffer[16]; // information such as password
-	UINT32 signature;
+	uint32_t signature;
 } ATTRPACK msg_header_t;
 
 // Keep this structure 8 bytes aligned (current size is 80)
@@ -48,7 +48,7 @@ struct msg_ban_t
 	char ipend[16];
 	char endstamp[32];
 	char reason[255];
-	INT32 hostonly;
+	int32_t hostonly;
 } ATTRPACK;
 
 #if defined(_MSC_VER)

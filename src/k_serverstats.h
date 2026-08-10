@@ -29,11 +29,11 @@ extern "C" {
 struct serverplayer_t
 {
 	uint8_t public_key[PUBKEYLENGTH];
-	UINT32 lastseen;
-	UINT16 powerlevels[PWRLV_NUMTYPES];
-	UINT32 finishedrounds;
+	uint32_t lastseen;
+	uint16_t powerlevels[PWRLV_NUMTYPES];
+	uint32_t finishedrounds;
 
-	UINT32 hash; // Not persisted! Used for early outs during key comparisons
+	uint32_t hash; // Not persisted! Used for early outs during key comparisons
 };
 
 void SV_SaveStats(void);
@@ -41,7 +41,7 @@ void SV_SaveStats(void);
 void SV_LoadStats(void);
 
 serverplayer_t *SV_GetStatsByKey(uint8_t *key);
-serverplayer_t *SV_GetStatsByPlayerIndex(UINT8 p);
+serverplayer_t *SV_GetStatsByPlayerIndex(uint8_t p);
 serverplayer_t *SV_GetStats(player_t *player);
 
 void SV_UpdateStats(void);

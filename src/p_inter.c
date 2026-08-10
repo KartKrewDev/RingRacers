@@ -49,12 +49,12 @@
 #include "m_easing.h"
 #include "k_hud.h" // K_AddMessage
 
-void P_ForceFeed(const player_t *player, INT32 attack, INT32 fade, tic_t duration, INT32 period)
+void P_ForceFeed(const player_t *player, int32_t attack, int32_t fade, tic_t duration, int32_t period)
 {
 	BasicFF_t Basicfeed;
 	if (!player)
 		return;
-	Basicfeed.Duration = (UINT32)(duration * (100L/TICRATE));
+	Basicfeed.Duration = (uint32_t)(duration * (100L/TICRATE));
 	Basicfeed.ForceX = Basicfeed.ForceY = 1;
 	Basicfeed.Gain = 25000;
 	Basicfeed.Magnitude = period*10;
@@ -82,7 +82,7 @@ void P_ForceConstant(const BasicFF_t *FFInfo)
 	else if (splitscreen > 2 && FFInfo->player == &players[g_localplayers[3]])
 		I_Tactile4(ConstantForce, &ConstantQuake);
 }
-void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
+void P_RampConstant(const BasicFF_t *FFInfo, int32_t Start, int32_t End)
 {
 	JoyFF_t RampQuake;
 	if (!FFInfo || !FFInfo->player)
@@ -115,7 +115,7 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 //
 // Returns true if the player is in a state where they can pick up items.
 //
-dboolean P_CanPickupItem(player_t *player, UINT8 weapon)
+dboolean P_CanPickupItem(player_t *player, uint8_t weapon)
 {
 	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved)
 		return false;
@@ -183,7 +183,7 @@ dboolean P_CanPickupItem(player_t *player, UINT8 weapon)
 // Anticheese pickup types are different than-P_CanPickupItem weapon, because that system is
 // already slightly scary without introducing special cases for different types of the same pickup.
 // See p_local.h for cheese types.
-dboolean P_IsPickupCheesy(player_t *player, UINT8 type)
+dboolean P_IsPickupCheesy(player_t *player, uint8_t type)
 {
 	extern consvar_t cv_debugcheese;
 
@@ -199,20 +199,20 @@ dboolean P_IsPickupCheesy(player_t *player, UINT8 type)
 
 	if (player->lastpickupdistance && player->lastpickuptype == type)
 	{
-		UINT32 distancedelta = min(player->distancetofinish - player->lastpickupdistance, player->lastpickupdistance - player->distancetofinish);
+		uint32_t distancedelta = min(player->distancetofinish - player->lastpickupdistance, player->lastpickupdistance - player->distancetofinish);
 		if (distancedelta < 2500)
 			return true;
 	}
 	return false;
 }
 
-void P_UpdateLastPickup(player_t *player, UINT8 type)
+void P_UpdateLastPickup(player_t *player, uint8_t type)
 {
 	player->lastpickuptype = type;
 	player->lastpickupdistance = player->distancetofinish;
 }
 
-dboolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
+dboolean P_CanPickupEmblem(player_t *player, int32_t emblemID)
 {
 	if (emblemID < 0 || emblemID >= MAXEMBLEMS)
 	{
@@ -244,7 +244,7 @@ dboolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
 	return true;
 }
 
-dboolean P_EmblemWasCollected(INT32 emblemID)
+dboolean P_EmblemWasCollected(int32_t emblemID)
 {
 	if (emblemID < 0 || emblemID >= numemblems
 	|| emblemlocations[emblemID].type == ET_NONE)
@@ -259,7 +259,7 @@ dboolean P_EmblemWasCollected(INT32 emblemID)
 static void P_ItemPop(mobj_t *actor)
 {
 	/*
-	INT32 locvar1 = var1;
+	int32_t locvar1 = var1;
 
 	if (LUA_CallAction(A_ITEMPOP, actor))
 		return;
@@ -462,7 +462,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, dboolean heightcheck)
 						return;
 
 					player->itemtype = special->threshold;
-					if ((UINT16)(player->itemamount) + special->movecount > 255)
+					if ((uint16_t)(player->itemamount) + special->movecount > 255)
 						K_SetPlayerItemAmount(player, 255);
 					else
 						K_AdjustPlayerItemAmount(player, special->movecount);
@@ -479,7 +479,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, dboolean heightcheck)
 			special->flags &= ~MF_SPECIAL;
 			return;
 		case MT_RANDOMITEM: {
-			UINT8 cheesetype = (special->flags2 & MF2_BOSSDEAD) ? CHEESE_RINGBOX : CHEESE_ITEMBOX; // perma ring box
+			uint8_t cheesetype = (special->flags2 & MF2_BOSSDEAD) ? CHEESE_RINGBOX : CHEESE_ITEMBOX; // perma ring box
 
 			if (!P_CanPickupItem(player, PICKUP_ITEMBOX))
 				return;
@@ -827,7 +827,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, dboolean heightcheck)
 				}
 
 				// See also P_SprayCanInit
-				UINT16 can_id = mapheaderinfo[gamemap-1]->records.spraycan;
+				uint16_t can_id = mapheaderinfo[gamemap-1]->records.spraycan;
 
 				if (can_id < gamedata->numspraycans || can_id == MCAN_BONUS)
 				{
@@ -855,12 +855,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, dboolean heightcheck)
 					// Multiple cans in one map?
 					if (special->threshold != 0)
 					{
-						UINT16 ref_id = can_id + (special->threshold & UINT8_MAX);
+						uint16_t ref_id = can_id + (special->threshold & UINT8_MAX);
 						if (ref_id >= gamedata->numspraycans)
 							return;
 
 						// Swap this specific can to the head of the list.
-						UINT16 swapcol = gamedata->spraycans[ref_id].col;
+						uint16_t swapcol = gamedata->spraycans[ref_id].col;
 
 						gamedata->spraycans[ref_id].col =
 							gamedata->spraycans[can_id].col;
@@ -1202,7 +1202,7 @@ void P_TouchCheatcheck(mobj_t *post, player_t *player, dboolean snaptopost)
 
 void P_TrackRoundConditionTargetDamage(targetdamaging_t targetdamaging)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i <= splitscreen; i++)
 	{
 		if (!playeringame[g_localplayers[i]])
@@ -1224,7 +1224,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 
 	// Check to see if everyone's out.
 	{
-		UINT8 i = 0;
+		uint8_t i = 0;
 
 		for (; i < MAXPLAYERS; i++)
 		{
@@ -1304,9 +1304,9 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 		// Time limit recovery
 		if (timelimitintics)
 		{
-			UINT16 bonustime = 10*TICRATE;
-			INT16 clamptime = 0; // Don't allow reserve time past this value (by much)...
-			INT16 mintime = 5*TICRATE; // But give SOME reward for every hit. (This value used for Normal)
+			uint16_t bonustime = 10*TICRATE;
+			int16_t clamptime = 0; // Don't allow reserve time past this value (by much)...
+			int16_t mintime = 5*TICRATE; // But give SOME reward for every hit. (This value used for Normal)
 
 			if (grandprixinfo.gp)
 			{
@@ -1333,7 +1333,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				}
 			}
 
-			UINT16 effectivetime = timelimitintics + extratimeintics - leveltime + starttime;
+			uint16_t effectivetime = timelimitintics + extratimeintics - leveltime + starttime;
 
 			if (clamptime) // Lower bonus if you have more reserve, keep it tense.
 			{
@@ -1491,7 +1491,7 @@ void P_CheckTimeLimit(void)
 	if ((grandprixinfo.gp == false) && (cv_overtime.value) && (gametyperules & GTR_OVERTIME))
 	{
 #ifndef TESTOVERTIMEINFREEPLAY
-		UINT8 i;
+		uint8_t i;
 		dboolean foundone = false; // Overtime is used for closing off down to a specific item.
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -1580,7 +1580,7 @@ void P_CheckTimeLimit(void)
   */
 void P_CheckPointLimit(void)
 {
-	INT32 i;
+	int32_t i;
 
 	if (exitcountdown)
 		return;
@@ -1639,12 +1639,12 @@ dboolean P_CheckRacers(void)
 	dboolean allHumansDone = true;
 	//dboolean allBotsDone = true;
 
-	UINT8 numPlaying = 0;
-	UINT8 numExiting = 0;
-	UINT8 numHumans = 0;
-	UINT8 numBots = 0;
+	uint8_t numPlaying = 0;
+	uint8_t numExiting = 0;
+	uint8_t numHumans = 0;
+	uint8_t numBots = 0;
 
-	UINT8 i;
+	uint8_t i;
 
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1747,7 +1747,7 @@ dboolean P_CheckRacers(void)
 	if (racecountdown == 0 && K_Cooperative() == false)
 	{
 		// If the winners are all done, then start the death timer.
-		UINT8 winningPos = max(1, numPlaying / 2);
+		uint8_t winningPos = max(1, numPlaying / 2);
 
 		if (numPlaying % 2) // Any remainder? Then round up.
 		{
@@ -1798,7 +1798,7 @@ void P_UpdateRemovedOrbital(mobj_t *target, mobj_t *inflictor, mobj_t *source)
 				|| (target->type == MT_DROPTARGET_SHIELD && target->target->player->itemtype == KITEM_DROPTARGET)
 				|| (target->type == MT_SINK_SHIELD && target->target->player->itemtype == KITEM_KITCHENSINK))
 			{
-				if (target->movedir != 0 && target->movedir < (UINT16)target->target->player->itemamount)
+				if (target->movedir != 0 && target->movedir < (uint16_t)target->target->player->itemamount)
 				{
 					if (target->target->hnext && !P_MobjWasRemoved(target->target->hnext))
 						K_KillBananaChain(target->target->hnext, inflictor, source);
@@ -1837,7 +1837,7 @@ void P_UpdateRemovedOrbital(mobj_t *target, mobj_t *inflictor, mobj_t *source)
   * \todo Cleanup, refactor, split up.
   * \sa P_DamageMobj
   */
-void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype)
+void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, uint8_t damagetype)
 {
 	if (target->flags & (MF_ENEMY|MF_BOSS))
 		target->momx = target->momy = target->momz = 0;
@@ -1911,7 +1911,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// if a player avatar dies...
 	if (target->player)
 	{
-		UINT8 i;
+		uint8_t i;
 
 		target->flags &= ~(MF_SOLID|MF_SHOOTABLE); // does not block
 		P_UnsetThingPosition(target);
@@ -1947,7 +1947,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if (target->player->spectator == false)
 		{
-			UINT32 skinflags = (demo.playback)
+			uint32_t skinflags = (demo.playback)
 				? demo.skinlist[demo.currentskinid[(target->player-players)]].flags
 				: skins[target->player->skin]->flags;
 
@@ -2104,11 +2104,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		case MT_ITEMCAPSULE:
 		{
-			UINT8 i;
+			uint8_t i;
 			mobj_t *attacker = inflictor ? inflictor : source;
 			mobj_t *part = target->hnext;
 			angle_t angle = FixedAngle(360*P_RandomFixed(PR_ITEM_DEBRIS));
-			INT16 spacing = (target->radius >> 1) / target->scale;
+			int16_t spacing = (target->radius >> 1) / target->scale;
 
 			// set respawn fuse
 			if (damagetype == DMG_INSTAKILL)
@@ -2282,7 +2282,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					const fixed_t launchmomentum = 7 * mapobjectscale;
 					const fixed_t jaggedness = 4;
 					angle_t launchangle;
-					UINT8 i;
+					uint8_t i;
 					for (i = 0; i < 6; i++, dir += ANG60)
 					{
 						cur = P_SpawnMobj(
@@ -2397,9 +2397,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_BANANA:
 		case MT_BANANA_SHIELD:
 		{
-			const UINT8 numParticles = 8;
+			const uint8_t numParticles = 8;
 			const angle_t diff = ANGLE_MAX / numParticles;
-			UINT8 i;
+			uint8_t i;
 
 			for (i = 0; i < numParticles; i++)
 			{
@@ -2476,7 +2476,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		const angle_t ang = ((inflictor) ? inflictor->angle : 0) + ANGLE_90;
 		const fixed_t scale = target->scale;
 		const fixed_t xoffs = P_ReturnThrustX(target, ang, 8*scale), yoffs = P_ReturnThrustY(target, ang, 8*scale);
-		const UINT16 flip = (target->eflags & MFE_VERTICALFLIP);
+		const uint16_t flip = (target->eflags & MFE_VERTICALFLIP);
 		mobj_t *chunk;
 		fixed_t momz;
 
@@ -2543,7 +2543,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		const angle_t ang = (/*(inflictor) ? inflictor->angle : */target->angle) + ANGLE_90;
 		const fixed_t scale = target->scale;
 		const fixed_t xoffs = P_ReturnThrustX(target, ang, 8*scale), yoffs = P_ReturnThrustY(target, ang, 8*scale), forwardxoffs = P_ReturnThrustX(target, target->angle, 7*scale), forwardyoffs = P_ReturnThrustY(target, target->angle, 7*scale);
-		const UINT16 flip = (target->eflags & MFE_VERTICALFLIP);
+		const uint16_t flip = (target->eflags & MFE_VERTICALFLIP);
 		mobj_t *chunk;
 		dboolean sprflip;
 
@@ -2649,7 +2649,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	   Graue 12-22-2003 */
 }
 
-static dboolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+static dboolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *source, int32_t damage, uint8_t damagetype)
 {
 	(void)inflictor;
 	(void)damage;
@@ -2671,7 +2671,7 @@ static dboolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *so
 	return true;
 }
 
-static dboolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
+static dboolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, uint8_t type)
 {
 	(void)inflictor;
 	(void)source;
@@ -2785,7 +2785,7 @@ static dboolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source
 
 static void AddTimesHit(player_t *player)
 {
-	const INT32 oldtimeshit = player->timeshit;
+	const int32_t oldtimeshit = player->timeshit;
 
 	player->timeshit++;
 
@@ -2867,7 +2867,7 @@ static dboolean P_FlashingException(const player_t *player, const mobj_t *inflic
 
 // P_DamageMobj for 0x0010 compat.
 // I know this sucks ass, but this function is legitimately too complicated to add more behavior switches.
-static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *source, int32_t damage, uint8_t damagetype)
 {
 	player_t *player;
 	player_t *playerInflictor;
@@ -2875,7 +2875,7 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 	dboolean spbpop = false;
 	dboolean downgraded = false;
 
-	INT32 laglength = 6;
+	int32_t laglength = 6;
 
 	if (objectplacing)
 		return false;
@@ -2932,7 +2932,7 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 
 	// Everything above here can't be forced.
 	{
-		UINT8 shouldForce = LUA_HookShouldDamage(target, inflictor, source, damage, damagetype);
+		uint8_t shouldForce = LUA_HookShouldDamage(target, inflictor, source, damage, damagetype);
 		if (P_MobjWasRemoved(target))
 			return (shouldForce == 1); // mobj was removed
 		if (shouldForce == 1)
@@ -3064,7 +3064,7 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 			&& damagetype != DMG_DEATHPIT)
 		{
 			// laps will never increment outside of GTR_CIRCUIT, so this is still fine
-			const UINT8 requiredbit = 1<<(player->laps & 7);
+			const uint8_t requiredbit = 1<<(player->laps & 7);
 
 			if (!(player->roundconditions.hittrackhazard[player->laps/8] & requiredbit))
 			{
@@ -3085,9 +3085,9 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 		}
 		else
 		{
-			UINT8 type = (damagetype & DMG_TYPEMASK);
+			uint8_t type = (damagetype & DMG_TYPEMASK);
 			const dboolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
-			INT16 ringburst = 5;
+			int16_t ringburst = 5;
 
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
@@ -3156,8 +3156,8 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 
 				if (invincible && type != DMG_WHUMBLE)
 				{
-					const INT32 oldHitlag = target->hitlag;
-					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
+					const int32_t oldHitlag = target->hitlag;
+					const int32_t oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
 
 					// Damage during hitlag should be a no-op
 					// for invincibility states because there
@@ -3317,7 +3317,7 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 					}
 					else
 					{
-						for (UINT8 i = 0; i < MAXPLAYERS; i++)
+						for (uint8_t i = 0; i < MAXPLAYERS; i++)
 						{
 							if (!playeringame[i] || players[i].spectator || !players[i].mo || P_MobjWasRemoved(players[i].mo))
 								continue;
@@ -3414,7 +3414,7 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 			Obj_EndBungee(player);
 			K_BumperInflate(target->player);
 
-			UINT32 hurtskinflags = (demo.playback)
+			uint32_t hurtskinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags
 					: skins[player->skin]->flags;
 			if (hurtskinflags & SF_IRONMAN)
@@ -3429,7 +3429,7 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{
-				UINT32 skinflags = (demo.playback)
+				uint32_t skinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags
 					: skins[player->skin]->flags;
 
@@ -3631,7 +3631,7 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
 		target->health -= damage;
 
 	if (source && source->player && target)
-		G_GhostAddHit((INT32) (source->player - players), target);
+		G_GhostAddHit((int32_t) (source->player - players), target);
 
 	// Insta-Whip (DMG_WHUMBLE): do not reduce hitlag because
 	// this can leave room for double-damage.
@@ -3683,7 +3683,7 @@ static dboolean P_DamageMobjCompat(mobj_t *target, mobj_t *inflictor, mobj_t *so
   * \todo Clean up this mess, split into multiple functions.
   * \sa P_KillMobj
   */
-dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, int32_t damage, uint8_t damagetype)
 {
 	if (G_CompatLevel(0x0010))
 		return P_DamageMobjCompat(target, inflictor, source, damage, damagetype);
@@ -3695,7 +3695,7 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 	ATTRUNUSED dboolean downgraded = false;
 	dboolean truewhumble = false; // Invincibility-ignoring DMG_WHUMBLE from the Insta-Whip itself.
 
-	INT32 laglength = 6;
+	int32_t laglength = 6;
 
 	if (objectplacing)
 		return false;
@@ -3752,7 +3752,7 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 
 	// Everything above here can't be forced.
 	{
-		UINT8 shouldForce = LUA_HookShouldDamage(target, inflictor, source, damage, damagetype);
+		uint8_t shouldForce = LUA_HookShouldDamage(target, inflictor, source, damage, damagetype);
 		if (P_MobjWasRemoved(target))
 			return (shouldForce == 1); // mobj was removed
 		if (shouldForce == 1)
@@ -3884,7 +3884,7 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 			&& damagetype != DMG_DEATHPIT)
 		{
 			// laps will never increment outside of GTR_CIRCUIT, so this is still fine
-			const UINT8 requiredbit = 1<<(player->laps & 7);
+			const uint8_t requiredbit = 1<<(player->laps & 7);
 
 			if (!(player->roundconditions.hittrackhazard[player->laps/8] & requiredbit))
 			{
@@ -3905,9 +3905,9 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 		}
 		else
 		{
-			UINT8 type = (damagetype & DMG_TYPEMASK);
+			uint8_t type = (damagetype & DMG_TYPEMASK);
 			const dboolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
-			INT16 ringburst = 5;
+			int16_t ringburst = 5;
 
 			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_INSTAWHIP && type == DMG_WHUMBLE)
 				truewhumble = true;
@@ -3986,8 +3986,8 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 
 				if (invincible && !truewhumble)
 				{
-					const INT32 oldHitlag = target->hitlag;
-					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
+					const int32_t oldHitlag = target->hitlag;
+					const int32_t oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
 
 					// Damage during hitlag should be a no-op
 					// for invincibility states because there
@@ -4161,7 +4161,7 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 					}
 					else
 					{
-						for (UINT8 i = 0; i < MAXPLAYERS; i++)
+						for (uint8_t i = 0; i < MAXPLAYERS; i++)
 						{
 							if (!playeringame[i] || players[i].spectator || !players[i].mo || P_MobjWasRemoved(players[i].mo))
 								continue;
@@ -4258,7 +4258,7 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 			Obj_EndBungee(player);
 			K_BumperInflate(target->player);
 
-			UINT32 hurtskinflags = (demo.playback)
+			uint32_t hurtskinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags
 					: skins[player->skin]->flags;
 			if (hurtskinflags & SF_IRONMAN)
@@ -4273,7 +4273,7 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 
 			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{
-				UINT32 skinflags = (demo.playback)
+				uint32_t skinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags
 					: skins[player->skin]->flags;
 
@@ -4480,7 +4480,7 @@ dboolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 d
 		target->health -= damage;
 
 	if (source && source->player && target)
-		G_GhostAddHit((INT32) (source->player - players), target);
+		G_GhostAddHit((int32_t) (source->player - players), target);
 
 	// Insta-Whip (DMG_WHUMBLE): do not reduce hitlag because
 	// this can leave room for double-damage.
@@ -4528,7 +4528,7 @@ void P_FlingBurst
 		mobjtype_t objType,
 		tic_t objFuse,
 		fixed_t objScale,
-		INT32 i,
+		int32_t i,
 		fixed_t dampen)
 {
 	mobj_t *mo = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, objType);
@@ -4555,7 +4555,7 @@ void P_FlingBurst
 	angle_t offset = ANGLE_90 / (RING_LAYER_SIDE_SIZE + 2);
 	angle_t fp = offset + (((i / 2) % RING_LAYER_SIDE_SIZE) * (offset * 3 >> 1));
 
-	const UINT8 layer = i / RING_LAYER_SIZE;
+	const uint8_t layer = i / RING_LAYER_SIZE;
 	fixed_t thrust = (13 * mo->scale) + (7 * mo->scale * layer);
 	thrust = FixedDiv(thrust, dampen);
 	mo->momx = (player->mo->momx / 2) + FixedMul(FixedMul(thrust, FINECOSINE(fp >> ANGLETOFINESHIFT)), FINECOSINE(fa >> ANGLETOFINESHIFT));
@@ -4570,10 +4570,10 @@ void P_FlingBurst
   *                  spawned.
   * \sa P_PlayerFlagBurst
   */
-void P_PlayerRingBurst(player_t *player, INT32 num_rings)
+void P_PlayerRingBurst(player_t *player, int32_t num_rings)
 {
-	INT32 spill_total, num_fling_rings;
-	INT32 i;
+	int32_t spill_total, num_fling_rings;
+	int32_t i;
 	angle_t fa;
 
 	// Rings shouldn't be in Battle!

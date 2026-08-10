@@ -48,9 +48,9 @@ typedef struct
 // ==========================================================================
 
 //debug counters
-static INT32 nobackpoly = 0;
-static INT32 skipcut = 0;
-static INT32 totalsubsecpolys = 0;
+static int32_t nobackpoly = 0;
+static int32_t skipcut = 0;
+static int32_t totalsubsecpolys = 0;
 
 // --------------------------------------------------------------------------
 // Polygon fast alloc / free
@@ -63,8 +63,8 @@ static INT32 totalsubsecpolys = 0;
 /// \todo check out how much is used
 static size_t POLYPOOLSIZE = 1024000;
 
-static UINT8 *gl_polypool = NULL;
-static UINT8 *gl_ppcurrent;
+static uint8_t *gl_polypool = NULL;
+static uint8_t *gl_ppcurrent;
 static size_t gl_ppfree;
 #endif
 
@@ -81,14 +81,14 @@ static void HWR_ClearPolys(void)
 void HWR_InitPolyPool(void)
 {
 #ifndef ZPLANALLOC
-	INT32 pnum;
+	int32_t pnum;
 
 	//hurdler: quick fix for those who wants to play with larger wad
 	if ((pnum = M_CheckParm("-polypoolsize")))
 		POLYPOOLSIZE = atoi(myargv[pnum+1])*1024; // (in kb)
 
 	CONS_Debug(DBG_RENDER, "HWR_InitPolyPool(): allocating %d bytes\n", POLYPOOLSIZE);
-	gl_polypool = (UINT8 *)malloc(POLYPOOLSIZE);
+	gl_polypool = (uint8_t *)malloc(POLYPOOLSIZE);
 	if (!gl_polypool)
 		I_Error("HWR_InitPolyPool(): couldn't malloc polypool\n");
 	HWR_ClearPolys();
@@ -104,7 +104,7 @@ void HWR_FreePolyPool(void)
 #endif
 }
 
-static poly_t *HWR_AllocPoly(INT32 numpts)
+static poly_t *HWR_AllocPoly(int32_t numpts)
 {
 	poly_t *p;
 	size_t size = sizeof (poly_t) + sizeof (polyvertex_t) * numpts;
@@ -259,17 +259,17 @@ static void SplitPoly (fdivline_t *bsp,         //splitting parametric line
                        poly_t **frontpoly,      //return one poly here
                        poly_t **backpoly)       //return the other here
 {
-	INT32      i,j;
+	int32_t      i,j;
 	polyvertex_t *pv;
 
-	INT32          ps = -1,pe = -1;
-	INT32          nptfront,nptback;
+	int32_t          ps = -1,pe = -1;
+	int32_t          nptfront,nptback;
 	polyvertex_t vs = {0,0,0};
 	polyvertex_t ve = {0,0,0};
 	polyvertex_t lastpv = {0,0,0};
 	float        fracs = 0.0f,frace = 0.0f; //used to tell which poly is on
 	                                        // the front side of the bsp partition line
-	INT32         psonline = 0, peonline = 0;
+	int32_t         psonline = 0, peonline = 0;
 
 	for (i = 0; i < poly->numpts; i++)
 	{
@@ -426,13 +426,13 @@ static void SplitPoly (fdivline_t *bsp,         //splitting parametric line
 // the part inside the sector), the part behind the seg, is
 // the void space and is cut out
 //
-static poly_t *CutOutSubsecPoly(seg_t *lseg, INT32 count, poly_t *poly)
+static poly_t *CutOutSubsecPoly(seg_t *lseg, int32_t count, poly_t *poly)
 {
-	INT32 i, j;
+	int32_t i, j;
 
 	polyvertex_t *pv;
 
-	INT32 nump = 0, ps, pe;
+	int32_t nump = 0, ps, pe;
 	polyvertex_t vs = {0, 0, 0}, ve = {0, 0, 0},
 		p1 = {0, 0, 0}, p2 = {0, 0, 0};
 	float fracs = 0.0f;
@@ -547,9 +547,9 @@ static poly_t *CutOutSubsecPoly(seg_t *lseg, INT32 count, poly_t *poly)
 // so continue to cut off the poly into smaller parts with
 // each seg of the subsector.
 //
-static inline void HWR_SubsecPoly(INT32 num, poly_t *poly)
+static inline void HWR_SubsecPoly(int32_t num, poly_t *poly)
 {
-	INT16 count;
+	int16_t count;
 	subsector_t *sub;
 	seg_t *lseg;
 
@@ -579,7 +579,7 @@ static inline void SearchDivline(node_t *bsp, fdivline_t *divline)
 #ifdef HWR_LOADING_SCREEN
 //Hurdler: implement a loading status
 static size_t ls_count = 0;
-static UINT8 ls_percent = 0;
+static uint8_t ls_percent = 0;
 
 static void loading_status(void)
 {
@@ -612,13 +612,13 @@ static void loading_status(void)
 #endif
 
 // poly : the convex polygon that encloses all child subsectors
-static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *bbox)
+static void WalkBSPNode(int32_t bspnum, poly_t *poly, uint16_t *leafnode, fixed_t *bbox)
 {
 	node_t *bsp;
 	poly_t *backpoly, *frontpoly;
 	fdivline_t fdivline;
 	polyvertex_t *pt;
-	INT32 i;
+	int32_t i;
 
 	// Found a subsector?
 	if (bspnum & NF_SUBSECTOR)
@@ -627,7 +627,7 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 		{
 			// BP: i think this code is useless and wrong because
 			// - bspnum==-1 happens only when numsubsectors == 0
-			// - it can't happens in bsp recursive call since bspnum is a INT32 and children is UINT16
+			// - it can't happens in bsp recursive call since bspnum is a int32_t and children is uint16_t
 			// - the BSP is complet !! (there just can have subsector without segs) (i am not sure of this point)
 
 			// do we have a valid polygon ?
@@ -638,7 +638,7 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 					I_Error("WalkBSPNode: not enough addsubsectors\n");
 				else if (addsubsector > 0x7fff)
 					I_Error("WalkBSPNode: addsubsector > 0x7fff\n");
-				*leafnode = (UINT16)((UINT16)addsubsector | NF_SUBSECTOR);
+				*leafnode = (uint16_t)((uint16_t)addsubsector | NF_SUBSECTOR);
 				extrasubsectors[addsubsector].planepoly = poly;
 				addsubsector++;
 			}
@@ -769,12 +769,12 @@ static dboolean PointInSeg(polyvertex_t *a,polyvertex_t *v1,polyvertex_t *v2)
 #endif
 }
 
-static INT32 numsplitpoly;
+static int32_t numsplitpoly;
 
-static void SearchSegInBSP(INT32 bspnum,polyvertex_t *p,poly_t *poly)
+static void SearchSegInBSP(int32_t bspnum,polyvertex_t *p,poly_t *poly)
 {
 	poly_t  *q;
-	INT32     j,k;
+	int32_t     j,k;
 
 	if (bspnum & NF_SUBSECTOR)
 	{
@@ -794,7 +794,7 @@ static void SearchSegInBSP(INT32 bspnum,polyvertex_t *p,poly_t *poly)
 						&q->pts[k]))
 				{
 					poly_t *newpoly = HWR_AllocPoly(q->numpts+1);
-					INT32 n;
+					int32_t n;
 
 					for (n = 0; n <= j; n++)
 						newpoly->pts[n] = q->pts[n];
@@ -830,10 +830,10 @@ static void SearchSegInBSP(INT32 bspnum,polyvertex_t *p,poly_t *poly)
 // but we must use a different structure : polygone pointing on segs
 // segs pointing on polygone and on vertex (too mush complicated, well not
 // realy but i am soo lasy), the methode discibed is also better for segs presition
-static INT32 SolveTProblem(void)
+static int32_t SolveTProblem(void)
 {
 	poly_t *p;
-	INT32 i;
+	int32_t i;
 	size_t l;
 
 	if (cv_glsolvetjoin.value == 0)
@@ -852,7 +852,7 @@ static INT32 SolveTProblem(void)
 		p = extrasubsectors[l].planepoly;
 		if (p)
 			for (i = 0; i < p->numpts; i++)
-				SearchSegInBSP((INT32)numnodes-1, &p->pts[i], p);
+				SearchSegInBSP((int32_t)numnodes-1, &p->pts[i], p);
 	}
 	//CONS_Debug(DBG_RENDER, "numsplitpoly %d\n", numsplitpoly);
 	return numsplitpoly;
@@ -869,10 +869,10 @@ static INT32 SolveTProblem(void)
 static void AdjustSegs(void)
 {
 	size_t i, count;
-	INT32 j;
+	int32_t j;
 	seg_t *lseg;
 	poly_t *p;
-	INT32 v1found = 0, v2found = 0;
+	int32_t v1found = 0, v2found = 0;
 	float nearv1, nearv2;
 
 	for (i = 0; i < numsubsectors; i++)
@@ -958,7 +958,7 @@ static void AdjustSegs(void)
 
 // call this routine after the BSP of a Doom wad file is loaded,
 // and it will generate all the convex polys for the hardware renderer
-void HWR_CreatePlanePolygons(INT32 bspnum)
+void HWR_CreatePlanePolygons(int32_t bspnum)
 {
 	poly_t *rootp;
 	polyvertex_t *rootpv;
@@ -990,7 +990,7 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 		I_Error("couldn't malloc extrasubsectors totsubsectors %s\n", sizeu1(totsubsectors));
 
 	// allocate table for back to front drawing of subsectors
-	/*gl_drawsubsectors = (INT16 *)malloc(sizeof (*gl_drawsubsectors) * totsubsectors);
+	/*gl_drawsubsectors = (int16_t *)malloc(sizeof (*gl_drawsubsectors) * totsubsectors);
 	if (!gl_drawsubsectors)
 		I_Error("couldn't malloc gl_drawsubsectors\n");*/
 

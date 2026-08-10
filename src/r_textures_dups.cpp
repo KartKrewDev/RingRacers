@@ -85,7 +85,7 @@ void print_dup(const texture_t* tex)
 
 }; // namespace
 
-void R_CheckTextureDuplicates(INT32 start, INT32 end)
+void R_CheckTextureDuplicates(int32_t start, int32_t end)
 {
 	SRB2_ASSERT(start >= 0);
 	SRB2_ASSERT(end <= numtextures);

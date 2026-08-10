@@ -271,7 +271,7 @@ static int luaB_ipairs (lua_State *L) {
 static int luaB_dofile (lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
 	char fullfilename[256];
-	UINT16 lumpnum;
+	uint16_t lumpnum;
 	int n = lua_gettop(L);
 
 	if (wadfiles[numwadfiles - 1]->type != RET_PK3)

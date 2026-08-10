@@ -17,9 +17,9 @@
 
 struct discordrequestmenu_s discordrequestmenu;
 
-static void M_DiscordRequestHandler(INT32 choice)
+static void M_DiscordRequestHandler(int32_t choice)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	(void)choice;
 
 	if (discordrequestmenu.confirmDelay > 0)
@@ -100,7 +100,7 @@ menu_t MISC_DiscordRequestsDef = {
 	NULL,
 };
 
-void M_DiscordRequests(INT32 choice)
+void M_DiscordRequests(int32_t choice)
 {
 	(void)choice;
 	static const tic_t confirmLength = 3*TICRATE/4;

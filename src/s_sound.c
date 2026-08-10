@@ -43,12 +43,12 @@
 
 extern consvar_t cv_mastervolume;
 
-static dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
+static dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, int32_t *vol, int32_t *sep, int32_t *pitch, sfxinfo_t *sfxinfo);
 
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
 static void Command_PlaySound(void);
-static void Got_PlaySound(const UINT8 **p, INT32 playernum);
+static void Got_PlaySound(const uint8_t **p, int32_t playernum);
 static void Command_MusicDef_f(void);
 
 void Captioning_OnChange(void);
@@ -95,13 +95,13 @@ void Captioning_OnChange(void)
 
 // the set of channels available
 static channel_t *channels = NULL;
-static INT32 numofchannels = 0;
+static int32_t numofchannels = 0;
 
 caption_t closedcaptions[NUMCAPTIONS];
 
 void S_ResetCaptions(void)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < NUMCAPTIONS; i++)
 	{
 		closedcaptions[i].c = NULL;
@@ -114,17 +114,17 @@ void S_ResetCaptions(void)
 //
 // Internals.
 //
-static void S_StopChannel(INT32 cnum);
+static void S_StopChannel(int32_t cnum);
 
 //
 // S_getChannel
 //
 // If none available, return -1. Otherwise channel #.
 //
-static INT32 S_getChannel(const void *origin, sfxinfo_t *sfxinfo)
+static int32_t S_getChannel(const void *origin, sfxinfo_t *sfxinfo)
 {
 	// channel number to use
-	INT32 cnum;
+	int32_t cnum;
 
 	// Find an open channel
 	for (cnum = 0; cnum < numofchannels; cnum++)
@@ -269,7 +269,7 @@ dboolean S_VoiceDisabled(void)
 // Stop all sounds, load level info, THEN start sounds.
 void S_StopSounds(void)
 {
-	INT32 cnum;
+	int32_t cnum;
 
 	// kill all playing sounds at start of level
 	for (cnum = 0; cnum < numofchannels; cnum++)
@@ -281,7 +281,7 @@ void S_StopSounds(void)
 
 void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 {
-	INT32 cnum;
+	int32_t cnum;
 
 	// Sounds without origin can have multiple sources, they shouldn't
 	// be stopped by new sounds.
@@ -302,7 +302,7 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 
 void S_StopSoundByNum(sfxenum_t sfxnum)
 {
-	INT32 cnum;
+	int32_t cnum;
 
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
@@ -313,9 +313,9 @@ void S_StopSoundByNum(sfxenum_t sfxnum)
 	}
 }
 
-void S_StartCaption(sfxenum_t sfx_id, INT32 cnum, UINT16 lifespan)
+void S_StartCaption(sfxenum_t sfx_id, int32_t cnum, uint16_t lifespan)
 {
-	UINT8 i, set, moveup, start;
+	uint8_t i, set, moveup, start;
 	dboolean same = false;
 	sfxinfo_t *sfx;
 
@@ -399,7 +399,7 @@ void S_StartCaption(sfxenum_t sfx_id, INT32 cnum, UINT16 lifespan)
 	closedcaptions[set].b = 2; // bob
 }
 
-static INT32 S_ScaleVolumeWithSplitscreen(INT32 volume)
+static int32_t S_ScaleVolumeWithSplitscreen(int32_t volume)
 {
 	fixed_t root = INT32_MAX;
 
@@ -416,18 +416,18 @@ static INT32 S_ScaleVolumeWithSplitscreen(INT32 volume)
 	) / FRACUNIT;
 }
 
-void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
+void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, int32_t volume)
 {
 	const mobj_t *origin = (const mobj_t *)origin_p;
 	const sfxenum_t actual_id = sfx_id;
 	const dboolean reverse = (stereoreverse.value ^ encoremode);
-	const INT32 initial_volume = (origin ? S_ScaleVolumeWithSplitscreen(volume) : volume);
+	const int32_t initial_volume = (origin ? S_ScaleVolumeWithSplitscreen(volume) : volume);
 
 	sfxinfo_t *sfx;
-	INT32 sep, pitch, priority, cnum;
+	int32_t sep, pitch, priority, cnum;
 	dboolean anyListeners = false;
 	dboolean itsUs = false;
-	INT32 i;
+	int32_t i;
 
 	listener_t listener[MAXSPLITSCREENPLAYERS];
 	mobj_t *listenmobj[MAXSPLITSCREENPLAYERS];
@@ -534,7 +534,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 			if (r_splitscreen > 0)
 			{
 				fixed_t recdist = INT32_MAX;
-				UINT8 j = 0;
+				uint8_t j = 0;
 
 				for (; j <= r_splitscreen; j++)
 				{
@@ -631,7 +631,7 @@ void S_StartSound(const void *origin, sfxenum_t sfx_id)
 	S_StartSoundAtVolume(origin, sfx_id, 255);
 }
 
-void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volume, const player_t *owner)
+void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, int32_t volume, const player_t *owner)
 {
 	if (S_SoundDisabled())
 		return;
@@ -654,7 +654,7 @@ void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volum
 
 void S_StopSound(void *origin)
 {
-	INT32 cnum;
+	int32_t cnum;
 
 	// Sounds without origin can have multiple sources, they shouldn't
 	// be stopped by new sounds.
@@ -673,10 +673,10 @@ void S_StopSound(void *origin)
 //
 // Updates music & sounds
 //
-static INT32 actualsfxvolume; // check for change through console
-static INT32 actualdigmusicvolume;
-static INT32 actualmastervolume;
-static INT32 actualvoicevolume;
+static int32_t actualsfxvolume; // check for change through console
+static int32_t actualdigmusicvolume;
+static int32_t actualmastervolume;
+static int32_t actualvoicevolume;
 
 static dboolean PointIsLeft(float ax, float ay, float bx, float by)
 {
@@ -686,10 +686,10 @@ static dboolean PointIsLeft(float ax, float ay, float bx, float by)
 
 void S_UpdateSounds(void)
 {
-	INT32 cnum, volume, sep, pitch;
+	int32_t cnum, volume, sep, pitch;
 	dboolean audible = false;
 	channel_t *c;
-	INT32 i;
+	int32_t i;
 
 	listener_t listener[MAXSPLITSCREENPLAYERS];
 	mobj_t *listenmobj[MAXSPLITSCREENPLAYERS];
@@ -811,7 +811,7 @@ void S_UpdateSounds(void)
 						if (r_splitscreen > 0)
 						{
 							fixed_t recdist = INT32_MAX;
-							UINT8 j = 0;
+							uint8_t j = 0;
 
 							for (; j <= r_splitscreen; j++)
 							{
@@ -1030,7 +1030,7 @@ void S_UpdateVoicePositionalProperties(void)
 
 void S_UpdateClosedCaptions(void)
 {
-	UINT8 i;
+	uint8_t i;
 	dboolean gamestopped = (paused || P_AutoPause());
 	for (i = 0; i < NUMCAPTIONS; i++) // update captions
 	{
@@ -1083,7 +1083,7 @@ void S_ClearSfx(void)
 		I_FreeSfx(S_sfx + i);
 }
 
-static void S_StopChannel(INT32 cnum)
+static void S_StopChannel(int32_t cnum)
 {
 	channel_t *c = &channels[cnum];
 
@@ -1129,7 +1129,7 @@ fixed_t S_CalculateSoundDistance(fixed_t sx1, fixed_t sy1, fixed_t sz1, fixed_t 
 	return FixedDiv(approx_dist, mapobjectscale); // approx_dist
 }
 
-INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume)
+int32_t S_GetSoundVolume(sfxinfo_t *sfx, int32_t volume)
 {
 	if (sfx->volume > 0)
 		return (volume * sfx->volume) / 100;
@@ -1143,7 +1143,7 @@ INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume)
 // If the sound is not audible, returns a 0.
 // Otherwise, modifies parameters and returns 1.
 //
-dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch,
+dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, int32_t *vol, int32_t *sep, int32_t *pitch,
 	sfxinfo_t *sfxinfo)
 {
 	const dboolean reverse = (stereoreverse.value ^ encoremode);
@@ -1151,7 +1151,7 @@ dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32
 	fixed_t approx_dist;
 
 	listener_t listensource;
-	INT32 i;
+	int32_t i;
 
 	(void)pitch;
 
@@ -1182,7 +1182,7 @@ dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32
 
 	if (sfxinfo->pitch & SF_OUTSIDESOUND) // Rain special case
 	{
-		INT64 x, y, yl, yh, xl, xh;
+		int64_t x, y, yl, yh, xl, xh;
 		fixed_t newdist;
 
 		if (R_PointInSubsector(listensource.x, listensource.y)->sector->ceilingpic == skyflatnum)
@@ -1260,7 +1260,7 @@ dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32
 	if (approx_dist >= S_CLOSE_DIST)
 	{
 		// distance effect
-		INT32 n = (15 * ((S_CLIPPING_DIST - approx_dist)>>FRACBITS));
+		int32_t n = (15 * ((S_CLIPPING_DIST - approx_dist)>>FRACBITS));
 		*vol = FixedMul(*vol * FRACUNIT / 255, n) / S_ATTENUATOR;
 	}
 
@@ -1269,9 +1269,9 @@ dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32
 
 // Searches through the channels and checks if a sound is playing
 // on the given origin.
-INT32 S_OriginPlaying(void *origin)
+int32_t S_OriginPlaying(void *origin)
 {
-	INT32 cnum;
+	int32_t cnum;
 	if (!origin)
 		return false;
 
@@ -1283,9 +1283,9 @@ INT32 S_OriginPlaying(void *origin)
 
 // Searches through the channels and checks if a given id
 // is playing anywhere.
-INT32 S_IdPlaying(sfxenum_t id)
+int32_t S_IdPlaying(sfxenum_t id)
 {
-	INT32 cnum;
+	int32_t cnum;
 
 	for (cnum = 0; cnum < numofchannels; cnum++)
 		if ((size_t)(channels[cnum].sfxinfo - S_sfx) == (size_t)id)
@@ -1295,9 +1295,9 @@ INT32 S_IdPlaying(sfxenum_t id)
 
 // Searches through the channels and checks for
 // origin x playing sound id y.
-INT32 S_SoundPlaying(const void *origin, sfxenum_t id)
+int32_t S_SoundPlaying(const void *origin, sfxenum_t id)
 {
-	INT32 cnum;
+	int32_t cnum;
 	if (!origin)
 		return 0;
 
@@ -1318,7 +1318,7 @@ static sfxenum_t newsounds[MAXNEWSOUNDS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 void S_StartSoundName(void *mo, const char *soundname)
 {
-	INT32 i, soundnum = 0;
+	int32_t i, soundnum = 0;
 	// Search existing sounds...
 	for (i = sfx_None + 1; i < NUMSFX; i++)
 	{
@@ -1366,7 +1366,7 @@ void S_InitSfxChannels(void)
 {
 	extern consvar_t precachesound;
 
-	INT32 i;
+	int32_t i;
 
 	if (dedicated)
 		return;
@@ -1442,9 +1442,9 @@ struct cursongcredit cursongcredit; // Currently displayed song credit info
 char *g_realsongcredit;
 struct soundtest soundtest; // Sound Test (sound test)
 
-static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map, UINT8 altref, musicdef_t ***tail)
+static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, uint16_t map, uint8_t altref, musicdef_t ***tail)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 	musicdef_t *def = S_FindMusicDef(musname, &i);
 
 	if (def == NULL)
@@ -1468,9 +1468,9 @@ static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map
 	*tail = &def->sequence.next;
 }
 
-static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
+static void S_InsertMapIntoSoundTestSequence(uint16_t map, musicdef_t ***tail)
 {
-	UINT8 i;
+	uint8_t i;
 
 	if (mapheaderinfo[map]->positionmus[0])
 	{
@@ -1495,7 +1495,7 @@ static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
 
 void S_PopulateSoundTestSequence(void)
 {
-	UINT16 i;
+	uint16_t i;
 	musicdef_t **tail;
 
 	// First, increment the sequence and wipe the HEAD.
@@ -1898,7 +1898,7 @@ updatetrackonly:
 	}
 }
 
-const char *S_SoundTestTune(UINT8 invert)
+const char *S_SoundTestTune(uint8_t invert)
 {
 	return soundtest.tune ^ invert ? "stereo_fade" : "stereo";
 }
@@ -1916,7 +1916,7 @@ static void S_SoundTestReconfigure(const char *tune)
 
 void S_SoundTestPlay(void)
 {
-	UINT32 sequencemaxtime = 0;
+	uint32_t sequencemaxtime = 0;
 
 	if (soundtest.current == NULL)
 	{
@@ -1945,8 +1945,8 @@ void S_SoundTestPlay(void)
 		// I'd personally like songs in sequence to last between 3 and 6 minutes.
 		if (sequencemaxtime < 3*60*1000)
 		{
-			const UINT32 looppoint = I_GetSongLoopPoint();
-			const UINT32 loopduration =
+			const uint32_t looppoint = I_GetSongLoopPoint();
+			const uint32_t loopduration =
 				(looppoint < sequencemaxtime)
 				? sequencemaxtime - looppoint
 				: 0;
@@ -2053,9 +2053,9 @@ handlenextsong:
 //
 // Find music def by 6 char name
 //
-musicdef_t *S_FindMusicDef(const char *name, UINT8 *i)
+musicdef_t *S_FindMusicDef(const char *name, uint8_t *i)
 {
-	UINT32 hash;
+	uint32_t hash;
 	musicdef_t *def;
 
 	if (!name || !name[0])
@@ -2128,7 +2128,7 @@ ReadMusicDefFields
 		}
 		else
 		{
-			UINT8 i = 0;
+			uint8_t i = 0;
 
 			def = S_FindMusicDef(value, &i);
 
@@ -2316,11 +2316,11 @@ static void S_LoadMusicDefLump(lumpnum_t lumpnum)
 	free(musdeftext);
 }
 
-void S_LoadMusicDefs(UINT16 wad)
+void S_LoadMusicDefs(uint16_t wad)
 {
 	const lumpnum_t wadnum = wad << 16;
 
-	UINT16 lump = 0;
+	uint16_t lump = 0;
 
 	while (( lump = W_CheckNumForNamePwad("MUSICDEF", wad, lump) ) != INT16_MAX)
 	{
@@ -2337,7 +2337,7 @@ void S_LoadMusicDefs(UINT16 wad)
 //
 void S_InitMusicDefs(void)
 {
-	UINT16 i;
+	uint16_t i;
 	for (i = 0; i < numwadfiles; i++)
 		S_LoadMusicDefs(i);
 	S_PopulateSoundTestSequence();
@@ -2350,13 +2350,13 @@ void S_InitMusicDefs(void)
 //
 void S_LoadMusicCredit(void)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 	musicdef_t *def = S_FindMusicDef(Music_CurrentSong(), &i);
 
 	char credittext[128] = "";
 	char *work = NULL;
 	size_t len = 128, worklen;
-	INT32 widthused = (3*BASEVIDWIDTH/4) - 7, workwidth;
+	int32_t widthused = (3*BASEVIDWIDTH/4) - 7, workwidth;
 
 	S_UnloadMusicCredit();
 
@@ -2506,7 +2506,7 @@ static inline void PrintMusicDefField(const char *label, const char *field)
 	}
 }
 
-static void PrintSongAuthors(const musicdef_t *def, UINT8 i)
+static void PrintSongAuthors(const musicdef_t *def, uint8_t i)
 {
 	if (def->numtracks > 1)
 	{
@@ -2526,7 +2526,7 @@ static void PrintSongAuthors(const musicdef_t *def, UINT8 i)
 
 static void PrintMusicDef(const char *song)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 	const musicdef_t *def = S_FindMusicDef(song, &i);
 
 	if (def != NULL)
@@ -2624,8 +2624,8 @@ static void Command_PlaySound(void)
 	const char *sound;
 	const size_t argc = COM_Argc();
 	sfxenum_t sfx = NUMSFX;
-	UINT8 buf[4];
-	UINT8 *buf_p = buf;
+	uint8_t buf[4];
+	uint8_t *buf_p = buf;
 
 	if (argc < 2)
 	{
@@ -2663,9 +2663,9 @@ static void Command_PlaySound(void)
 	SendNetXCmd(XD_PLAYSOUND, buf, buf_p - buf);
 }
 
-static void Got_PlaySound(const UINT8 **cp, INT32 playernum)
+static void Got_PlaySound(const uint8_t **cp, int32_t playernum)
 {
-	INT32 sound_id = READINT32(*cp);
+	int32_t sound_id = READINT32(*cp);
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum)) // hacked client, or disasterous bug
 	{
@@ -2728,7 +2728,7 @@ static void Command_MusicDef_f(void)
 
 			// This command uses the current musicdef
 			{
-				UINT8 i = 0;
+				uint8_t i = 0;
 
 				def = S_FindMusicDef(Music_CurrentSong(), &i);
 				def->debug_volume = atoi(arg2);
@@ -2750,7 +2750,7 @@ static void Command_MusicDef_f(void)
 			{
 				if (def->debug_volume != 0)
 				{
-					UINT8 i;
+					uint8_t i;
 
 					CONS_Printf("Lump %s", def->name[0]);
 
@@ -2823,7 +2823,7 @@ void GameDigiMusic_OnChange(void)
 }
 
 void VoiceSelfDeafen_OnChange(void);
-void weaponPrefChange(INT32 ssplayer);
+void weaponPrefChange(int32_t ssplayer);
 void VoiceSelfDeafen_OnChange(void)
 {
 	if (M_CheckParm("-novoice") || M_CheckParm("-noaudio"))
@@ -2866,19 +2866,19 @@ dboolean S_SoundInputSetEnabled(dboolean enabled)
 	return I_SoundInputSetEnabled(enabled);
 }
 
-UINT32 S_SoundInputDequeueSamples(void *data, UINT32 len)
+uint32_t S_SoundInputDequeueSamples(void *data, uint32_t len)
 {
 	return I_SoundInputDequeueSamples(data, len);
 }
 
-UINT32 S_SoundInputRemainingSamples(void)
+uint32_t S_SoundInputRemainingSamples(void)
 {
 	return I_SoundInputRemainingSamples();
 }
 
-static INT32 g_playerlastvoiceactive[MAXPLAYERS];
+static int32_t g_playerlastvoiceactive[MAXPLAYERS];
 
-void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, dboolean terminal)
+void S_QueueVoiceFrameFromPlayer(int32_t playernum, void *data, uint32_t len, dboolean terminal)
 {
 	if (dedicated)
 	{
@@ -2890,17 +2890,17 @@ void S_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, dboole
 	}
 }
 
-void S_SetPlayerVoiceActive(INT32 playernum)
+void S_SetPlayerVoiceActive(int32_t playernum)
 {
 	g_playerlastvoiceactive[playernum] = I_GetTime();
 }
 
-dboolean S_IsPlayerVoiceActive(INT32 playernum)
+dboolean S_IsPlayerVoiceActive(int32_t playernum)
 {
 	return I_GetTime() - g_playerlastvoiceactive[playernum] < 5;
 }
 
-void S_ResetVoiceQueue(INT32 playernum)
+void S_ResetVoiceQueue(int32_t playernum)
 {
 	if (dedicated)
 	{

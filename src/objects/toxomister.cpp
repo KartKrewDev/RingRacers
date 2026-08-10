@@ -45,7 +45,7 @@ Vec2<Fixed> angle_vector(angle_t x)
 static void
 sine_bob
 (		mobj_t * hyu,
-		INT32 height,
+		int32_t height,
 		angle_t a,
 		fixed_t sineofs)
 {
@@ -56,8 +56,8 @@ sine_bob
 static void
 bob_in_place
 (		mobj_t * hyu,
-		INT32 height,
-		INT32 bob_speed)
+		int32_t height,
+		int32_t bob_speed)
 {
 	sine_bob(hyu,
 			height,
@@ -71,7 +71,7 @@ struct Cloud;
 
 struct Eye : Mobj
 {
-	static constexpr INT32 kOrbitRadius = 24;
+	static constexpr int32_t kOrbitRadius = 24;
 
 	bool valid() const { return Mobj::valid(owner()) && owner()->health > 0; }
 
@@ -178,7 +178,7 @@ struct Pole : Mobj
 		Mobj* targ = find_nearest_eyeball_target();
 		if (targ)
 		{
-			INT32 angle_to_targ = angle_to2d(targ);
+			int32_t angle_to_targ = angle_to2d(targ);
 			Vec2<Fixed> v = angle_vector(angle_to_targ) * Fixed {Eye::kOrbitRadius * mapobjectscale};
 
 			p.x += v.x;
@@ -199,7 +199,7 @@ struct Pole : Mobj
 	{
 		srb2::StaticVec<Mobj*, MAXPLAYERS> targets;
 
-		for (INT32 i = 0; i < MAXPLAYERS; ++i)
+		for (int32_t i = 0; i < MAXPLAYERS; ++i)
 		{
 			if (!playeringame[i])
 				continue;
@@ -243,7 +243,7 @@ struct Pole : Mobj
 
 	bool touch_cooldown
 	(	Mobj* toucher,
-		UINT8 k)
+		uint8_t k)
 	{
 		tic_t cooldown = leveltime - last_touch0();
 
@@ -259,7 +259,7 @@ struct Pole : Mobj
 
 struct Cloud : Mobj
 {
-	static constexpr INT32 kMaxFuse = 5*TICRATE;
+	static constexpr int32_t kMaxFuse = 5*TICRATE;
 
 	void hnext() = delete;
 	Mobj* follow() const { return Mobj::hnext<Mobj>(); }
@@ -398,22 +398,22 @@ struct Cloud : Mobj
 
 void Pole::spawn_clouds_in_orbit()
 {
-	constexpr INT32 kNumClouds = 6;
-	std::array<UINT32, kNumClouds> weights;
-	std::array<INT32, kNumClouds> order;
+	constexpr int32_t kNumClouds = 6;
+	std::array<uint32_t, kNumClouds> weights;
+	std::array<int32_t, kNumClouds> order;
 
 	angle_t a = 0;
 	angle_t a_incr = ANGLE_MAX / kNumClouds;
 
-	for (INT32 i = 0; i < kNumClouds; ++i)
+	for (int32_t i = 0; i < kNumClouds; ++i)
 	{
 		weights[i] = P_Random(PR_TRACKHAZARD);
 		order[i] = i;
 	}
 
-	std::stable_sort(order.begin(), order.end(), [&](INT32 a, INT32 b) { return weights[a] < weights[b]; });
+	std::stable_sort(order.begin(), order.end(), [&](int32_t a, int32_t b) { return weights[a] < weights[b]; });
 
-	for (INT32 i : order)
+	for (int32_t i : order)
 	{
 		Cloud* cloud = spawn_from<Cloud>({}, MT_TOXOMISTER_CLOUD);
 

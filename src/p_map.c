@@ -264,7 +264,7 @@ P_DoSpringEx
 		fixed_t vertispeed,
 		fixed_t horizspeed,
 		angle_t finalAngle,
-		UINT16 starcolor)
+		uint16_t starcolor)
 {
 	if (object->eflags & MFE_SPRUNG)
 	{
@@ -347,7 +347,7 @@ dboolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
-	UINT16 starcolor = (spring->info->painchance % numskincolors);
+	uint16_t starcolor = (spring->info->painchance % numskincolors);
 	fixed_t savemomx = object->momx;
 	fixed_t savemomy = object->momy;
 	statenum_t raisestate = spring->info->raisestate;
@@ -471,7 +471,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 	player_t *p = object->player; // will be NULL if not a player
 	fixed_t zdist; // distance between bottoms
 	fixed_t speed = spring->info->mass; // conveniently, both fans and gas jets use this for the vertical thrust
-	SINT8 flipval = P_MobjFlip(spring); // virtually everything here centers around the thruster's gravity, not the object's!
+	int8_t flipval = P_MobjFlip(spring); // virtually everything here centers around the thruster's gravity, not the object's!
 
 	if (p && object->state == &states[object->info->painstate]) // can't use fans and gas jets when player is in pain!
 		return;
@@ -580,7 +580,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 		if (g_tm.thing->flags & MF_PAPERCOLLISION) // more strenuous checking to prevent clipping issues
 		{
-			INT32 check1, check2, check3, check4;
+			int32_t check1, check2, check3, check4;
 			fixed_t tmcosradius = FixedMul(g_tm.thing->radius, FINECOSINE(g_tm.thing->angle>>ANGLETOFINESHIFT));
 			fixed_t tmsinradius = FixedMul(g_tm.thing->radius, FINESINE(g_tm.thing->angle>>ANGLETOFINESHIFT));
 			if (abs(thing->x - g_tm.x) >= (abs(tmcosradius) + abs(cosradius)) || abs(thing->y - g_tm.y) >= (abs(tmsinradius) + abs(sinradius)))
@@ -634,7 +634,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	{
-		UINT8 shouldCollide = LUA_Hook2Mobj(thing, g_tm.thing, MOBJ_HOOK(MobjCollide)); // checks hook for thing's type
+		uint8_t shouldCollide = LUA_Hook2Mobj(thing, g_tm.thing, MOBJ_HOOK(MobjCollide)); // checks hook for thing's type
 		if (P_MobjWasRemoved(g_tm.thing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -672,7 +672,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // underneath
 		if (g_tm.thing->flags & MF_SHOOTABLE && thing->health > 0)
 		{
-			UINT32 damagetype = (thing->info->mass & 0xFF);
+			uint32_t damagetype = (thing->info->mass & 0xFF);
 
 			P_DamageMobj(g_tm.thing, thing, thing, 1, damagetype);
 
@@ -691,7 +691,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE; // underneath
 		if (thing->flags & MF_SHOOTABLE && g_tm.thing->health > 0)
 		{
-			UINT32 damagetype = (g_tm.thing->info->mass & 0xFF);
+			uint32_t damagetype = (g_tm.thing->info->mass & 0xFF);
 
 			P_DamageMobj(thing, g_tm.thing, g_tm.thing, 1, damagetype);
 
@@ -1219,7 +1219,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	// missiles can hit other things
 	if ((g_tm.thing->flags & MF_MISSILE) && !damage) // if something was already damaged, don't run this
 	{
-		UINT8 damagetype = (g_tm.thing->info->mass ^ DMG_WOMBO);
+		uint8_t damagetype = (g_tm.thing->info->mass ^ DMG_WOMBO);
 
 		// see if it went over / under
 		if (g_tm.thing->z > thing->z + thing->height)
@@ -1933,7 +1933,7 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	// this line is out of the if so upper and lower textures can be hit by a splat
 
 	{
-		UINT8 shouldCollide = LUA_HookMobjLineCollide(g_tm.thing, ld); // checks hook for thing's type
+		uint8_t shouldCollide = LUA_HookMobjLineCollide(g_tm.thing, ld); // checks hook for thing's type
 		if (P_MobjWasRemoved(g_tm.thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -2096,8 +2096,8 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 //
 dboolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *result)
 {
-	INT32 thingtop = thing->z + thing->height;
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t thingtop = thing->z + thing->height;
+	int32_t xl, xh, yl, yh, bx, by;
 	subsector_t *newsubsec;
 	dboolean blockval = true;
 
@@ -2277,7 +2277,7 @@ dboolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *r
 		{
 			for (bx = xl; bx <= xh; bx++)
 			{
-				INT32 offset;
+				int32_t offset;
 				polymaplink_t *plink; // haleyjd 02/22/06
 
 				if (bx < 0 || by < 0 || bx >= bmapwidth || by >= bmapheight)
@@ -2429,7 +2429,7 @@ static const fixed_t hoophalfheight = (56*FRACUNIT)/2;
 // P_CheckPosition optimized for the MT_HOOPCOLLIDE object. This needs to be as fast as possible!
 void P_CheckHoopPosition(mobj_t *hoopthing, fixed_t x, fixed_t y, fixed_t z, fixed_t radius)
 {
-	INT32 i;
+	int32_t i;
 
 	(void)radius; //unused
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2455,7 +2455,7 @@ void P_CheckHoopPosition(mobj_t *hoopthing, fixed_t x, fixed_t y, fixed_t z, fix
 //
 dboolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 {
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t xl, xh, yl, yh, bx, by;
 	subsector_t *newsubsec;
 
 	g_tm.x = x;
@@ -2506,7 +2506,7 @@ dboolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 	{
 		ffloor_t *rover;
 		fixed_t delta1, delta2;
-		INT32 thingtop = thiscam->z + thiscam->height;
+		int32_t thingtop = thiscam->z + thiscam->height;
 
 		for (rover = newsubsec->sector->ffloors; rover; rover = rover->next)
 		{
@@ -2551,7 +2551,7 @@ dboolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 		for (by = yl; by <= yh; by++)
 			for (bx = xl; bx <= xh; bx++)
 			{
-				INT32 offset;
+				int32_t offset;
 				polymaplink_t *plink; // haleyjd 02/22/06
 
 				if (bx < 0 || by < 0 || bx >= bmapwidth || by >= bmapheight)
@@ -2639,7 +2639,7 @@ dboolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 	subsector_t *s = R_PointInSubsector(x, y);
 	dboolean retval = true;
 
-	UINT8 i;
+	uint8_t i;
 
 	g_tm.floatok = false;
 
@@ -3109,7 +3109,7 @@ dboolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, dboolean allowdropoff, T
 	// standing on top and move it, too.
 	if (thing->flags & MF_PUSHABLE)
 	{
-		INT32 bx, by, xl, xh, yl, yh;
+		int32_t bx, by, xl, xh, yl, yh;
 
 		yh = (unsigned)(thing->y + MAXRADIUS - bmaporgy)>>MAPBLOCKSHIFT;
 		yl = (unsigned)(thing->y - MAXRADIUS - bmaporgy)>>MAPBLOCKSHIFT;
@@ -3240,7 +3240,7 @@ dboolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, dboolean allowdropoff, T
 	if (!(thing->flags & (MF_NOCLIP)))
 	{
 		line_t *ld = NULL;
-		INT32 side = 0, oldside = 0;
+		int32_t side = 0, oldside = 0;
 		while (numspechitint--)
 		{
 			ld = &lines[spechitint[numspechitint]];
@@ -3383,7 +3383,7 @@ void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_
 	fixed_t leadx, leady;
 	fixed_t trailx, traily;
 	line_t *ld = NULL;
-	INT32 side = 0, oldside = 0;
+	int32_t side = 0, oldside = 0;
 
 	I_Assert(thing != NULL);
 #ifdef PARANOIA
@@ -3545,7 +3545,7 @@ static fixed_t tmxmove, tmymove;
 //
 static void P_HitCameraSlideLine(line_t *ld, camera_t *thiscam)
 {
-	INT32 side;
+	int32_t side;
 	angle_t lineangle, moveangle, deltaangle;
 	fixed_t movelen, newlen;
 
@@ -3590,7 +3590,7 @@ static void P_HitCameraSlideLine(line_t *ld, camera_t *thiscam)
 //
 static void P_HitSlideLine(line_t *ld)
 {
-	INT32 side;
+	int32_t side;
 	angle_t lineangle;
 	fixed_t nx, ny;
 	fixed_t d;
@@ -3809,8 +3809,8 @@ static dboolean PTR_SlideTraverse(intercept_t *in)
 void P_SlideCameraMove(camera_t *thiscam)
 {
 	fixed_t leadx, leady, trailx, traily, newx, newy;
-	INT32 hitcount = 0;
-	INT32 retval = 0;
+	int32_t hitcount = 0;
+	int32_t retval = 0;
 
 	bestslideline = NULL;
 
@@ -4277,7 +4277,7 @@ void P_BounceMove(mobj_t *mo, TryMoveResult_t *result)
 static fixed_t bombdamage;
 static mobj_t *bombsource;
 static mobj_t *bombspot;
-static UINT8 bombdamagetype;
+static uint8_t bombdamagetype;
 static dboolean bombsightcheck;
 
 //
@@ -4329,10 +4329,10 @@ static BlockItReturn_t PIT_RadiusAttack(mobj_t *thing)
 // P_RadiusAttack
 // Source is the creature that caused the explosion at spot.
 //
-void P_RadiusAttack(mobj_t *spot, mobj_t *source, fixed_t damagedist, UINT8 damagetype, dboolean sightcheck)
+void P_RadiusAttack(mobj_t *spot, mobj_t *source, fixed_t damagedist, uint8_t damagetype, dboolean sightcheck)
 {
-	INT32 x, y;
-	INT32 xl, xh, yl, yh;
+	int32_t x, y;
+	int32_t xl, xh, yl, yh;
 	fixed_t dist;
 
 	dist = FixedMul(damagedist, spot->scale) + MAXRADIUS;
@@ -4409,7 +4409,7 @@ static dboolean PIT_ChangeSector(mobj_t *thing, dboolean realcrush)
 			ffloor_t *rover;
 			fixed_t topheight, bottomheight;
 			fixed_t delta1, delta2;
-			INT32 thingtop = thing->z + thing->height;
+			int32_t thingtop = thing->z + thing->height;
 
 			for (rover = thing->subsector->sector->ffloors; rover; rover = rover->next)
 			{
@@ -4513,7 +4513,7 @@ dboolean P_CheckSector(sector_t *sector, dboolean crunch)
 				continue;
 			if (po->lines[0]->backsector == sector) // Make sure you're currently checking the control sector
 			{
-				INT32 x, y;
+				int32_t x, y;
 				po->validcount = validcount;
 
 				for (y = po->blockbox[BOXBOTTOM]; y <= po->blockbox[BOXTOP]; ++y)
@@ -4623,7 +4623,7 @@ dboolean P_CheckSector(sector_t *sector, dboolean crunch)
 				continue;
 			if (po->lines[0]->backsector == sector) // Make sure you're currently checking the control sector
 			{
-				INT32 x, y;
+				int32_t x, y;
 				po->validcount = validcount;
 
 				for (y = po->blockbox[BOXBOTTOM]; y <= po->blockbox[BOXTOP]; ++y)
@@ -5005,7 +5005,7 @@ static inline BlockItReturn_t PIT_GetPrecipSectors(line_t *ld)
 
 void P_CreateSecNodeList(mobj_t *thing, fixed_t x, fixed_t y)
 {
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t xl, xh, yl, yh, bx, by;
 	msecnode_t *node = sector_list;
 	tm_t ptm = g_tm; /* cph - see comment at func end */
 
@@ -5076,7 +5076,7 @@ void P_CreateSecNodeList(mobj_t *thing, fixed_t x, fixed_t y)
 // More crazy crap Tails 08-25-2002
 void P_CreatePrecipSecNodeList(precipmobj_t *thing,fixed_t x,fixed_t y)
 {
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t xl, xh, yl, yh, bx, by;
 	mprecipsecnode_t *node = precipsector_list;
 	tm_t ptm = g_tm; /* cph - see comment at func end */
 

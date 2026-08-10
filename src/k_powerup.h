@@ -21,7 +21,7 @@ extern "C" {
 #define BATTLE_POWERUP_VFX_TIME (40)
 
 tic_t K_PowerUpRemaining(const player_t *player, kartitems_t powerup);
-UINT32 K_AnyPowerUpRemaining(const player_t *player); // returns POWERUP_BIT mask
+uint32_t K_AnyPowerUpRemaining(const player_t *player); // returns POWERUP_BIT mask
 void K_GivePowerUp(player_t *player, kartitems_t powerup, tic_t timer);
 void K_DropPowerUps(player_t *player);
 

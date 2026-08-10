@@ -34,7 +34,7 @@ class SaveBuffer : public std::streambuf
 {
 public:
 	savebuffer_t *save;
-	UINT8 buf[1];
+	uint8_t buf[1];
 
 	explicit SaveBuffer(savebuffer_t *save_);
 

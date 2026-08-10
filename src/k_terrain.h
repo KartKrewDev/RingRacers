@@ -32,19 +32,19 @@ struct t_splash_t
 	// These are particles spawned when hitting the floor.
 
 	char name[TERRAIN_NAME_LEN+1];	// Lookup name.
-	UINT32 hash;					// Lookup name's hash.
+	uint32_t hash;					// Lookup name's hash.
 
-	UINT16 mobjType;		// Thing type. MT_NULL to not spawn anything.
-	UINT16 sfx;				// Sound to play.
+	uint16_t mobjType;		// Thing type. MT_NULL to not spawn anything.
+	uint16_t sfx;				// Sound to play.
 	fixed_t scale;			// Thing scale multiplier.
-	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
+	uint16_t color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
 
 	fixed_t pushH;			// Push-out horizontal multiplier.
 	fixed_t pushV;			// Push-out vertical multiplier.
 	fixed_t spread;			// Randomized spread distance.
 	angle_t cone;			// Randomized angle of the push-out.
 
-	UINT8 numParticles;		// Number of particles to spawn.
+	uint8_t numParticles;		// Number of particles to spawn.
 };
 
 struct t_footstep_t
@@ -53,12 +53,12 @@ struct t_footstep_t
 	// These are particles spawned when moving fast enough on a floor.
 
 	char name[TERRAIN_NAME_LEN+1];	// Lookup name.
-	UINT32 hash;					// Lookup name's hash.
+	uint32_t hash;					// Lookup name's hash.
 
-	UINT16 mobjType;		// Thing type. MT_NULL to not spawn anything.
-	UINT16 sfx;				// Sound to play.
+	uint16_t mobjType;		// Thing type. MT_NULL to not spawn anything.
+	uint16_t sfx;				// Sound to play.
 	fixed_t scale;			// Thing scale multiplier.
-	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
+	uint16_t color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
 
 	fixed_t pushH;			// Push-out horizontal multiplier.
 	fixed_t pushV;			// Push-out vertical multiplier.
@@ -85,15 +85,15 @@ struct t_overlay_t
 	// These are sprites displayed on top of the base object.
 
 	char name[TERRAIN_NAME_LEN+1];	// Lookup name.
-	UINT32 hash;					// Lookup name's hash.
+	uint32_t hash;					// Lookup name's hash.
 
-	UINT16 states[TOV__MAX]; // State to use when the object is still.
+	uint16_t states[TOV__MAX]; // State to use when the object is still.
 	fixed_t scale;			// Thing scale multiplier.
-	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
+	uint16_t color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
 	fixed_t speed;			// Speed-up based on object speed. 0 plays the animation at a constant rate.
 };
 
-typedef INT32 terrain_flags_t;
+typedef int32_t terrain_flags_t;
 // Terrain flag values.
 #define TRF_LIQUID (1) // Texture has water properties (wavy, slippery, etc)
 #define TRF_SNEAKERPANEL (1<<1) // Texture is a booster
@@ -107,7 +107,7 @@ struct terrain_t
 	// These are all of the properties that the floor gets.
 
 	char name[TERRAIN_NAME_LEN+1];	// Lookup name.
-	UINT32 hash;					// Lookup name's hash.
+	uint32_t hash;					// Lookup name's hash.
 
 	size_t splashID;		// Splash defintion ID.
 	size_t footstepID;		// Footstep defintion ID.
@@ -115,15 +115,15 @@ struct terrain_t
 
 	fixed_t friction;		// The default friction of this texture.
 	fixed_t offroad;		// The default offroad level of this texture.
-	INT16 damageType;		// The default damage type of this texture. (Negative means no damage).
+	int16_t damageType;		// The default damage type of this texture. (Negative means no damage).
 	fixed_t trickPanel;		// Trick panel strength
 	fixed_t speedPad;		// Speed pad strength
 	angle_t speedPadAngle;	// Speed pad angle
 	fixed_t springStrength;	// Spring strength
-	UINT16 springStarColor;	// Spring star color
+	uint16_t springStarColor;	// Spring star color
 	fixed_t outrun;			// Raise top speed by this amount, for super fast road.
 	fixed_t floorClip;		// Offset for sprites on this ground
-	UINT32 flags;			// Flag values (see: terrain_flags_t)
+	uint32_t flags;			// Flag values (see: terrain_flags_t)
 };
 
 struct t_floor_t
@@ -132,7 +132,7 @@ struct t_floor_t
 	// Ties a texture name to a terrain definition.
 
 	char textureName[9];	// Floor texture name.
-	UINT32 textureHash;		// Floor texture hash.
+	uint32_t textureHash;		// Floor texture hash.
 	size_t terrainID;		// Terrain definition ID.
 };
 
@@ -445,7 +445,7 @@ terrain_t *K_GetTerrainForTextureName(const char *checkName);
 size_t K_GetTerrainIDForTextureName(const char *checkName);
 
 /*--------------------------------------------------
-	terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
+	terrain_t *K_GetTerrainForTextureNum(int32_t textureNum);
 
 		Returns the terrain definition applied to
 		the texture ID inputted.
@@ -459,11 +459,11 @@ size_t K_GetTerrainIDForTextureName(const char *checkName);
 		otherwise NULL.
 --------------------------------------------------*/
 
-terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
+terrain_t *K_GetTerrainForTextureNum(int32_t textureNum);
 
 
 /*--------------------------------------------------
-	terrain_t *K_GetTerrainForFlatNum(INT32 flatID);
+	terrain_t *K_GetTerrainForFlatNum(int32_t flatID);
 
 		Returns the terrain definition applied to
 		the level flat ID.
@@ -477,11 +477,11 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
 		otherwise NULL.
 --------------------------------------------------*/
 
-terrain_t *K_GetTerrainForFlatNum(INT32 flatID);
+terrain_t *K_GetTerrainForFlatNum(int32_t flatID);
 
 
 /*--------------------------------------------------
-	void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID);
+	void K_UpdateMobjTerrain(mobj_t *mo, int32_t flatID);
 
 		Updates an object's terrain pointer, based on
 		the level flat ID supplied. Intended to be called
@@ -495,7 +495,7 @@ terrain_t *K_GetTerrainForFlatNum(INT32 flatID);
 		None
 --------------------------------------------------*/
 
-void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID);
+void K_UpdateMobjTerrain(mobj_t *mo, int32_t flatID);
 
 
 /*--------------------------------------------------
@@ -584,7 +584,7 @@ void K_UpdateTerrainOverlay(mobj_t *mo);
 
 
 /*--------------------------------------------------
-	void K_InitTerrain(UINT16 wadNum);
+	void K_InitTerrain(uint16_t wadNum);
 
 		Finds the TERRAIN lumps in a WAD/PK3, and
 		processes all of them.
@@ -596,7 +596,7 @@ void K_UpdateTerrainOverlay(mobj_t *mo);
 		None
 --------------------------------------------------*/
 
-void K_InitTerrain(UINT16 wadNum);
+void K_InitTerrain(uint16_t wadNum);
 
 /*--------------------------------------------------
 	dboolean K_TerrainHasAffect(terrain_t *terrain, dboolean badonly)

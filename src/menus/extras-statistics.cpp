@@ -21,7 +21,7 @@
 
 struct statisticsmenu_s statisticsmenu;
 
-static dboolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, dboolean *headerexists, dboolean tutorial)
+static dboolean M_StatisticsAddMap(uint16_t map, cupheader_t *cup, dboolean *headerexists, dboolean tutorial)
 {
 	if (!mapheaderinfo[map])
 		return false;
@@ -80,10 +80,10 @@ static dboolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, dboolean *heade
 static void M_StatisticsMaps(void)
 {
 	cupheader_t *cup;
-	UINT16 i;
+	uint16_t i;
 	dboolean headerexists;
 
-	statisticsmenu.maplist = static_cast<UINT16*>(Z_Malloc(sizeof(UINT16) * (nummapheaders+1 + numkartcupheaders), PU_STATIC, NULL));
+	statisticsmenu.maplist = static_cast<uint16_t*>(Z_Malloc(sizeof(uint16_t) * (nummapheaders+1 + numkartcupheaders), PU_STATIC, NULL));
 	statisticsmenu.nummaps = 0;
 
 	// Cups
@@ -132,12 +132,12 @@ static void M_StatisticsMaps(void)
 
 static void M_StatisticsChars(void)
 {
-	UINT16 i;
+	uint16_t i;
 
-	statisticsmenu.maplist = static_cast<UINT16*>(Z_Malloc(sizeof(UINT16) * (1 + numskins), PU_STATIC, NULL));
+	statisticsmenu.maplist = static_cast<uint16_t*>(Z_Malloc(sizeof(uint16_t) * (1 + numskins), PU_STATIC, NULL));
 	statisticsmenu.nummaps = 0;
 
-	UINT32 beststat = 0;
+	uint32_t beststat = 0;
 
 	for (i = 0; i < numskins; i++)
 	{
@@ -154,8 +154,8 @@ static void M_StatisticsChars(void)
 			if (skins[i]->flags & SF_IRONMAN)
 				continue; // does not add to any engine class
 
-			INT32 s = (skins[i]->kartspeed - 1);
-			INT32 w = (skins[i]->kartweight - 1);
+			int32_t s = (skins[i]->kartspeed - 1);
+			int32_t w = (skins[i]->kartweight - 1);
 
 			#define LOCKSTAT(stat) \
 				if (stat < 0) { continue; } \
@@ -184,7 +184,7 @@ static void M_StatisticsChars(void)
 	std::sort(
 		statisticsmenu.maplist,
 		statisticsmenu.maplist + statisticsmenu.nummaps,
-		[](UINT16 a, UINT16 b) {
+		[](uint16_t a, uint16_t b) {
 			if (skins[a]->records.rounds > skins[b]->records.rounds)
 				return true;
 			if (skins[a]->records.rounds != skins[b]->records.rounds)
@@ -204,8 +204,8 @@ static void M_StatisticsChars(void)
 
 	if (beststat != 0)
 	{
-		UINT16 j;
-		UINT8 shif = 0;
+		uint16_t j;
+		uint8_t shif = 0;
 
 		// Done this way to ensure ample precision but also prevent overflow
 		while (beststat < FRACUNIT)
@@ -236,7 +236,7 @@ static void M_StatisticsChars(void)
 
 static void M_StatisticsGP(void)
 {
-	statisticsmenu.maplist = static_cast<UINT16*>(Z_Malloc(sizeof(UINT16) * (1 + numkartcupheaders), PU_STATIC, NULL));
+	statisticsmenu.maplist = static_cast<uint16_t*>(Z_Malloc(sizeof(uint16_t) * (1 + numkartcupheaders), PU_STATIC, NULL));
 	statisticsmenu.nummaps = 0;
 
 	cupheader_t *cup;
@@ -299,11 +299,11 @@ static void M_StatisticsPageClear(void)
 	}
 }
 
-void M_Statistics(INT32 choice)
+void M_Statistics(int32_t choice)
 {
 	(void)choice;
 
-	UINT16 i;
+	uint16_t i;
 
 	statisticsmenu.gotmedals = M_CountMedals(false, false);
 	statisticsmenu.nummedals = M_CountMedals(true, false);
@@ -325,9 +325,9 @@ void M_Statistics(INT32 choice)
 	M_SetupNextMenu(&MISC_StatisticsDef, false);
 }
 
-dboolean M_StatisticsInputs(INT32 ch)
+dboolean M_StatisticsInputs(int32_t ch)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
 	(void)ch;
 

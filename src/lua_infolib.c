@@ -33,7 +33,7 @@
 #include "lua_profile.h"
 
 extern CV_PossibleValue_t Color_cons_t[];
-extern UINT8 skincolor_modified[];
+extern uint8_t skincolor_modified[];
 
 dboolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
 state_t *astate;
@@ -83,7 +83,7 @@ dboolean actionsoverridden[NUMACTIONS] = {false};
 // push sprite name
 static int lib_getSprname(lua_State *L)
 {
-	UINT32 i;
+	uint32_t i;
 
 	lua_remove(L, 1); // don't care about sprnames[] dummy userdata.
 
@@ -175,7 +175,7 @@ static int lib_getSpr2default(lua_State *L)
 static int lib_setSpr2default(lua_State *L)
 {
 	playersprite_t i;
-	UINT8 j = 0;
+	uint8_t j = 0;
 
 	if (hud_running)
 		return luaL_error(L, "Do not alter spr2defaults[] in HUD rendering code!");
@@ -248,13 +248,13 @@ static int lib_spr2namelen(lua_State *L)
 
 struct PivotFrame {
 	spriteinfo_t *sprinfo;
-	UINT8 frame;
+	uint8_t frame;
 };
 
-static UINT8 GetPivotFrame(lua_State *L, int idx)
+static uint8_t GetPivotFrame(lua_State *L, int idx)
 {
 	const char *field = luaL_checkstring(L, idx);
-	UINT8 frame;
+	uint8_t frame;
 
 	if (fastcmp("default", field))
 	{
@@ -287,13 +287,13 @@ static int PushCast(lua_State *L, const char *meta)
 // spriteinfo[]
 static int lib_getSpriteInfo(lua_State *L)
 {
-	UINT32 i = NUMSPRITES;
+	uint32_t i = NUMSPRITES;
 	lua_remove(L, 1);
 
 	if (lua_isstring(L, 1))
 	{
 		const char *name = lua_tostring(L, 1);
-		INT32 spr;
+		int32_t spr;
 		for (spr = 0; spr < NUMSPRITES; spr++)
 		{
 			if (fastcmp(name, sprnames[spr]))
@@ -354,16 +354,16 @@ static int PopPivotSubTable(spriteframepivot_t *pivot, lua_State *L, int stk, in
 						value = lua_tonumber(L, stk+2);
 						break;
 					case LUA_TBOOLEAN:
-						value = (UINT8)lua_toboolean(L, stk+2);
+						value = (uint8_t)lua_toboolean(L, stk+2);
 						break;
 					default:
 						TYPEERROR("pivot value", LUA_TNUMBER, lua_type(L, stk+2))
 				}
 				// finally set omg!!!!!!!!!!!!!!!!!!
 				if (ikey == 1 || (key && fastcmp(key, "x")))
-					pivot[idx].x = (INT32)value;
+					pivot[idx].x = (int32_t)value;
 				else if (ikey == 2 || (key && fastcmp(key, "y")))
-					pivot[idx].y = (INT32)value;
+					pivot[idx].y = (int32_t)value;
 				else if (ikey == -1 && (key != NULL))
 					FIELDERROR("pivot key", va("invalid option %s", key));
 				okcool = 1;
@@ -427,7 +427,7 @@ static int lib_setSpriteInfo(lua_State *L)
 
 	lua_remove(L, 1);
 	{
-		UINT32 i = luaL_checkinteger(L, 1);
+		uint32_t i = luaL_checkinteger(L, 1);
 		if (i == 0 || i >= NUMSPRITES)
 			return luaL_error(L, "spriteinfo[] index %d out of range (1 - %d)", i, NUMSPRITES-1);
 		info = &spriteinfo[i]; // get the spriteinfo to assign to.
@@ -530,7 +530,7 @@ static int spriteinfo_num(lua_State *L)
 	I_Assert(sprinfo != NULL);
 	I_Assert(sprinfo >= spriteinfo);
 
-	lua_pushinteger(L, (UINT32)(sprinfo-spriteinfo));
+	lua_pushinteger(L, (uint32_t)(sprinfo-spriteinfo));
 	return 1;
 }
 
@@ -539,7 +539,7 @@ static int pivotlist_get(lua_State *L)
 {
 	struct PivotFrame *container;
 	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
-	UINT8 frame = GetPivotFrame(L, 2);
+	uint8_t frame = GetPivotFrame(L, 2);
 
 	// bypass LUA_PushUserdata
 	container = lua_newuserdata(L, sizeof *container);
@@ -555,7 +555,7 @@ static int pivotlist_get(lua_State *L)
 static int pivotlist_set(lua_State *L)
 {
 	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
-	UINT8 frame;
+	uint8_t frame;
 	int okcool = 0;
 
 	if (!lua_lumploading)
@@ -612,7 +612,7 @@ static int framepivot_set(lua_State *L)
 {
 	struct PivotFrame *container = luaL_checkudata(L, 1, META_FRAMEPIVOT);
 	spriteframepivot_t *framepivot = &container->sprinfo->pivot[container->frame];
-	UINT8 *available = container->sprinfo->available;
+	uint8_t *available = container->sprinfo->available;
 	const char *field = luaL_checkstring(L, 2);
 
 	if (!lua_lumploading)
@@ -649,7 +649,7 @@ static int framepivot_num(lua_State *L)
 static int brightlist_get(lua_State *L)
 {
 	const spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_SPRITEBRIGHTLIST));
-	const UINT8 frame = GetPivotFrame(L, 2);
+	const uint8_t frame = GetPivotFrame(L, 2);
 
 	lua_pushstring(L, sprinfo->bright[frame]);
 
@@ -660,7 +660,7 @@ static int brightlist_set(lua_State *L)
 {
 	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_SPRITEBRIGHTLIST));
 
-	const UINT8 frame = GetPivotFrame(L, 2);
+	const uint8_t frame = GetPivotFrame(L, 2);
 	const char *val = luaL_checkstring(L, 3);
 
 	Z_Free(sprinfo->bright[frame]);
@@ -726,7 +726,7 @@ static void A_Lua(mobj_t *actor)
 // Arbitrary states[] table index -> state_t *
 static int lib_getState(lua_State *L)
 {
-	UINT32 i;
+	uint32_t i;
 	lua_remove(L, 1);
 
 	i = luaL_checkinteger(L, 1);
@@ -742,7 +742,7 @@ static int lib_setState(lua_State *L)
 	state_t *state;
 	lua_remove(L, 1); // don't care about states[] userdata.
 	{
-		UINT32 i = luaL_checkinteger(L, 1);
+		uint32_t i = luaL_checkinteger(L, 1);
 		if (i == 0 || i >= NUMSTATES)
 			return luaL_error(L, "states[] index %d out of range (1 - %d)", i, NUMSTATES-1);
 		state = &states[i]; // get the state to assign to.
@@ -776,9 +776,9 @@ static int lib_setState(lua_State *L)
 				return luaL_error(L, "sprite number %d is invalid.", value);
 			state->sprite = (spritenum_t)value;
 		} else if (i == 2 || (str && fastcmp(str, "frame"))) {
-			state->frame = (UINT32)luaL_checkinteger(L, 3);
+			state->frame = (uint32_t)luaL_checkinteger(L, 3);
 		} else if (i == 3 || (str && fastcmp(str, "tics"))) {
-			state->tics = (INT32)luaL_checkinteger(L, 3);
+			state->tics = (int32_t)luaL_checkinteger(L, 3);
 		} else if (i == 4 || (str && fastcmp(str, "action"))) {
 			switch(lua_type(L, 3))
 			{
@@ -813,9 +813,9 @@ static int lib_setState(lua_State *L)
 				return luaL_typerror(L, 3, "function");
 			}
 		} else if (i == 5 || (str && fastcmp(str, "var1"))) {
-			state->var1 = (INT32)luaL_checkinteger(L, 3);
+			state->var1 = (int32_t)luaL_checkinteger(L, 3);
 		} else if (i == 6 || (str && fastcmp(str, "var2"))) {
-			state->var2 = (INT32)luaL_checkinteger(L, 3);
+			state->var2 = (int32_t)luaL_checkinteger(L, 3);
 		} else if (i == 7 || (str && fastcmp(str, "nextstate"))) {
 			value = luaL_checkinteger(L, 3);
 			if (value < S_NULL || value >= NUMSTATES)
@@ -1022,9 +1022,9 @@ static int state_set(lua_State *L)
 			return luaL_error(L, "sprite number %d is invalid.", value);
 		st->sprite = (spritenum_t)value;
 	} else if (fastcmp(field,"frame"))
-		st->frame = (UINT32)luaL_checknumber(L, 3);
+		st->frame = (uint32_t)luaL_checknumber(L, 3);
 	else if (fastcmp(field,"tics"))
-		st->tics = (INT32)luaL_checknumber(L, 3);
+		st->tics = (int32_t)luaL_checknumber(L, 3);
 	else if (fastcmp(field,"action")) {
 		switch(lua_type(L, 3))
 		{
@@ -1059,9 +1059,9 @@ static int state_set(lua_State *L)
 			return luaL_typerror(L, 3, "function");
 		}
 	} else if (fastcmp(field,"var1"))
-		st->var1 = (INT32)luaL_checknumber(L, 3);
+		st->var1 = (int32_t)luaL_checknumber(L, 3);
 	else if (fastcmp(field,"var2"))
-		st->var2 = (INT32)luaL_checknumber(L, 3);
+		st->var2 = (int32_t)luaL_checknumber(L, 3);
 	else if (fastcmp(field,"nextstate")) {
 		value = luaL_checkinteger(L, 3);
 		if (value < S_NULL || value >= NUMSTATES)
@@ -1088,7 +1088,7 @@ static int state_num(lua_State *L)
 // Arbitrary mobjinfo[] table index -> mobjinfo_t *
 static int lib_getMobjInfo(lua_State *L)
 {
-	UINT32 i;
+	uint32_t i;
 	lua_remove(L, 1);
 
 	i = luaL_checkinteger(L, 1);
@@ -1104,7 +1104,7 @@ static int lib_setMobjInfo(lua_State *L)
 	mobjinfo_t *info;
 	lua_remove(L, 1); // don't care about mobjinfo[] userdata.
 	{
-		UINT32 i = luaL_checkinteger(L, 1);
+		uint32_t i = luaL_checkinteger(L, 1);
 		if (i == 0 || i >= NUMMOBJTYPES)
 			return luaL_error(L, "mobjinfo[] index %d out of range (1 - %d)", i, NUMMOBJTYPES-1);
 		info = &mobjinfo[i]; // get the mobjinfo to assign to.
@@ -1134,14 +1134,14 @@ static int lib_setMobjInfo(lua_State *L)
 			str = luaL_checkstring(L, 2);
 
 		if (i == 1 || (str && fastcmp(str,"doomednum")))
-			info->doomednum = (INT32)luaL_checkinteger(L, 3);
+			info->doomednum = (int32_t)luaL_checkinteger(L, 3);
 		else if (i == 2 || (str && fastcmp(str,"spawnstate"))) {
 			value = luaL_checkinteger(L, 3);
 			if (value < S_NULL || value >= NUMSTATES)
 				return luaL_error(L, "spawnstate number %d is invalid.", value);
 			info->spawnstate = (statenum_t)value;
 		} else if (i == 3 || (str && fastcmp(str,"spawnhealth")))
-			info->spawnhealth = (INT32)luaL_checkinteger(L, 3);
+			info->spawnhealth = (int32_t)luaL_checkinteger(L, 3);
 		else if (i == 4 || (str && fastcmp(str,"seestate"))) {
 			value = luaL_checkinteger(L, 3);
 			if (value < S_NULL || value >= NUMSTATES)
@@ -1153,13 +1153,13 @@ static int lib_setMobjInfo(lua_State *L)
 				return luaL_error(L, "seesound number %d is invalid.", value);
 			info->seesound = (sfxenum_t)value;
 		} else if (i == 6 || (str && fastcmp(str,"reactiontime")))
-			info->reactiontime = (INT32)luaL_checkinteger(L, 3);
+			info->reactiontime = (int32_t)luaL_checkinteger(L, 3);
 		else if (i == 7 || (str && fastcmp(str,"attacksound")))
 			info->attacksound = luaL_checkinteger(L, 3);
 		else if (i == 8 || (str && fastcmp(str,"painstate")))
 			info->painstate = luaL_checkinteger(L, 3);
 		else if (i == 9 || (str && fastcmp(str,"painchance")))
-			info->painchance = (INT32)luaL_checkinteger(L, 3);
+			info->painchance = (int32_t)luaL_checkinteger(L, 3);
 		else if (i == 10 || (str && fastcmp(str,"painsound")))
 			info->painsound = luaL_checkinteger(L, 3);
 		else if (i == 11 || (str && fastcmp(str,"meleestate")))
@@ -1179,15 +1179,15 @@ static int lib_setMobjInfo(lua_State *L)
 		else if (i == 18 || (str && fastcmp(str,"height")))
 			info->height = luaL_checkfixed(L, 3);
 		else if (i == 19 || (str && fastcmp(str,"dispoffset")))
-			info->dispoffset = (INT32)luaL_checkinteger(L, 3);
+			info->dispoffset = (int32_t)luaL_checkinteger(L, 3);
 		else if (i == 20 || (str && fastcmp(str,"mass")))
-			info->mass = (INT32)luaL_checkinteger(L, 3);
+			info->mass = (int32_t)luaL_checkinteger(L, 3);
 		else if (i == 21 || (str && fastcmp(str,"damage")))
-			info->damage = (INT32)luaL_checkinteger(L, 3);
+			info->damage = (int32_t)luaL_checkinteger(L, 3);
 		else if (i == 22 || (str && fastcmp(str,"activesound")))
 			info->activesound = luaL_checkinteger(L, 3);
 		else if (i == 23 || (str && fastcmp(str,"flags")))
-			info->flags = (INT32)luaL_checkinteger(L, 3);
+			info->flags = (int32_t)luaL_checkinteger(L, 3);
 		else if (i == 24 || (str && fastcmp(str,"raisestate"))) {
 			info->raisestate = luaL_checkinteger(L, 3);
 		}
@@ -1308,23 +1308,23 @@ static int mobjinfo_set(lua_State *L)
 	I_Assert(info >= mobjinfo);
 
 	if (fastcmp(field,"doomednum"))
-		info->doomednum = (INT32)luaL_checkinteger(L, 3);
+		info->doomednum = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spawnstate"))
 		info->spawnstate = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spawnhealth"))
-		info->spawnhealth = (INT32)luaL_checkinteger(L, 3);
+		info->spawnhealth = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"seestate"))
 		info->seestate = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"seesound"))
 		info->seesound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"reactiontime"))
-		info->reactiontime = (INT32)luaL_checkinteger(L, 3);
+		info->reactiontime = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"attacksound"))
 		info->attacksound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"painstate"))
 		info->painstate = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"painchance"))
-		info->painchance = (INT32)luaL_checkinteger(L, 3);
+		info->painchance = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"painsound"))
 		info->painsound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"meleestate"))
@@ -1344,15 +1344,15 @@ static int mobjinfo_set(lua_State *L)
 	else if (fastcmp(field,"height"))
 		info->height = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"dispoffset"))
-		info->dispoffset = (INT32)luaL_checkinteger(L, 3);
+		info->dispoffset = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"mass"))
-		info->mass = (INT32)luaL_checkinteger(L, 3);
+		info->mass = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"damage"))
-		info->damage = (INT32)luaL_checkinteger(L, 3);
+		info->damage = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"activesound"))
 		info->activesound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flags"))
-		info->flags = (INT32)luaL_checkinteger(L, 3);
+		info->flags = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"raisestate"))
 		info->raisestate = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"string"))
@@ -1399,7 +1399,7 @@ static int mobjinfo_num(lua_State *L)
 // Arbitrary S_sfx[] table index -> sfxinfo_t *
 static int lib_getSfxInfo(lua_State *L)
 {
-	UINT32 i;
+	uint32_t i;
 	lua_remove(L, 1);
 
 	i = luaL_checkinteger(L, 1);
@@ -1416,7 +1416,7 @@ static int lib_setSfxInfo(lua_State *L)
 
 	lua_remove(L, 1);
 	{
-		UINT32 i = luaL_checkinteger(L, 1);
+		uint32_t i = luaL_checkinteger(L, 1);
 		if (i == 0 || i >= NUMSFX)
 			return luaL_error(L, "sfxinfo[] index %d out of range (1 - %d)", i, NUMSFX-1);
 		info = &S_sfx[i]; // get the sfxinfo to assign to.
@@ -1445,13 +1445,13 @@ static int lib_setSfxInfo(lua_State *L)
 			info->singularity = luaL_checkboolean(L, 3);
 			break;
 		case sfxinfow_priority:
-			info->priority = (INT32)luaL_checkinteger(L, 3);
+			info->priority = (int32_t)luaL_checkinteger(L, 3);
 			break;
 		case sfxinfow_flags:
-			info->pitch = (INT32)luaL_checkinteger(L, 3);
+			info->pitch = (int32_t)luaL_checkinteger(L, 3);
 			break;
 		case sfxinfow_volume:
-			info->volume = (INT32)luaL_checkinteger(L, 3);
+			info->volume = (int32_t)luaL_checkinteger(L, 3);
 			break;
 		case sfxinfow_caption:
 			strlcpy(info->caption, luaL_checkstring(L, 3), sizeof(info->caption));
@@ -1559,7 +1559,7 @@ static int sfxinfo_num(lua_State *L)
 	I_Assert(sfx != NULL);
 	I_Assert(sfx >= S_sfx);
 
-	lua_pushinteger(L, (UINT32)(sfx-S_sfx));
+	lua_pushinteger(L, (uint32_t)(sfx-S_sfx));
 	return 1;
 }
 
@@ -1569,7 +1569,7 @@ static int sfxinfo_num(lua_State *L)
 
 static int lib_getluabanks(lua_State *L)
 {
-	UINT8 i;
+	uint8_t i;
 
 	lua_remove(L, 1); // don't care about luabanks[] dummy userdata.
 
@@ -1587,8 +1587,8 @@ static int lib_getluabanks(lua_State *L)
 
 static int lib_setluabanks(lua_State *L)
 {
-	UINT8 i;
-	INT32 j = 0;
+	uint8_t i;
+	int32_t j = 0;
 
 	if (hud_running)
 		return luaL_error(L, "Do not alter luabanks[] in HUD rendering code!");
@@ -1627,7 +1627,7 @@ static int lib_luabankslen(lua_State *L)
 // Arbitrary skincolors[] table index -> skincolor_t *
 static int lib_getSkinColor(lua_State *L)
 {
-	UINT32 i;
+	uint32_t i;
 	lua_remove(L, 1);
 
 	i = luaL_checkinteger(L, 1);
@@ -1639,7 +1639,7 @@ static int lib_getSkinColor(lua_State *L)
 
 //Set the entire c->ramp array
 static void setRamp(lua_State *L, skincolor_t* c) {
-	UINT32 i;
+	uint32_t i;
 	lua_pushnil(L);
 	for (i=0; i<COLORRAMPSIZE; i++) {
 		if (lua_objlen(L,-2)!=COLORRAMPSIZE) {
@@ -1647,7 +1647,7 @@ static void setRamp(lua_State *L, skincolor_t* c) {
 			break;
 		}
 		if (lua_next(L, -2) != 0) {
-			c->ramp[i] = lua_isnumber(L,-1) ? (UINT8)luaL_checkinteger(L,-1) : 120;
+			c->ramp[i] = lua_isnumber(L,-1) ? (uint8_t)luaL_checkinteger(L,-1) : 120;
 			lua_pop(L, 1);
 		} else
 			c->ramp[i] = 120;
@@ -1658,12 +1658,12 @@ static void setRamp(lua_State *L, skincolor_t* c) {
 // Lua table full of data -> skincolors[]
 static int lib_setSkinColor(lua_State *L)
 {
-	UINT32 j;
+	uint32_t j;
 	skincolor_t *info;
-	UINT16 cnum; //skincolor num
+	uint16_t cnum; //skincolor num
 	lua_remove(L, 1); // don't care about skincolors[] userdata.
 	{
-		cnum = (UINT16)luaL_checkinteger(L, 1);
+		cnum = (uint16_t)luaL_checkinteger(L, 1);
 		if (!cnum || cnum >= numskincolors)
 			return luaL_error(L, "skincolors[] index %d out of range (1 - %d)", cnum, numskincolors-1);
 		info = &skincolors[cnum]; // get the skincolor to assign to.
@@ -1702,7 +1702,7 @@ static int lib_setSkinColor(lua_State *L)
 
 			if (info->name[0] != '\0') // don't check empty string for dupe
 			{
-				UINT16 dupecheck = R_GetColorByName(info->name);
+				uint16_t dupecheck = R_GetColorByName(info->name);
 				if (!stricmp(info->name, skincolors[SKINCOLOR_NONE].name) || (dupecheck && (dupecheck != info-skincolors)))
 					CONS_Alert(CONS_WARNING, "skincolor_t field 'name' ('%s') is a duplicate of another skincolor's name.\n", info->name);
 			}
@@ -1713,17 +1713,17 @@ static int lib_setSkinColor(lua_State *L)
 				setRamp(L, info);
 			else
 				for (j=0; j<COLORRAMPSIZE; j++)
-					info->ramp[j] = (*((UINT8 **)luaL_checkudata(L, 3, META_COLORRAMP)))[j];
+					info->ramp[j] = (*((uint8_t **)luaL_checkudata(L, 3, META_COLORRAMP)))[j];
 			skincolor_modified[cnum] = true;
 		} else if (i == 3 || (str && fastcmp(str,"invcolor"))) {
-			UINT16 v = (UINT16)luaL_checkinteger(L, 3);
+			uint16_t v = (uint16_t)luaL_checkinteger(L, 3);
 			if (v >= numskincolors)
 				return luaL_error(L, "skincolor_t field 'invcolor' out of range (1 - %d)", numskincolors-1);
 			info->invcolor = v;
 		} else if (i == 4 || (str && fastcmp(str,"invshade")))
-			info->invshade = (UINT8)luaL_checkinteger(L, 3)%COLORRAMPSIZE;
+			info->invshade = (uint8_t)luaL_checkinteger(L, 3)%COLORRAMPSIZE;
 		else if (i == 5 || (str && fastcmp(str,"chatcolor")))
-			info->chatcolor = (UINT16)luaL_checkinteger(L, 3);
+			info->chatcolor = (uint16_t)luaL_checkinteger(L, 3);
 		else if (i == 6 || (str && fastcmp(str,"accessible"))) {
 			dboolean v = lua_toboolean(L, 3);
 			if (cnum < FIRSTSUPERCOLOR && v != skincolors[cnum].accessible)
@@ -1774,10 +1774,10 @@ static int skincolor_get(lua_State *L)
 // skincolor_t *, field, number -> skincolors[]
 static int skincolor_set(lua_State *L)
 {
-	UINT32 i;
+	uint32_t i;
 	skincolor_t *info = *((skincolor_t **)luaL_checkudata(L, 1, META_SKINCOLOR));
 	const char *field = luaL_checkstring(L, 2);
-	UINT16 cnum = (UINT16)(info-skincolors);
+	uint16_t cnum = (uint16_t)(info-skincolors);
 
 	I_Assert(info != NULL);
 	I_Assert(info >= skincolors);
@@ -1797,7 +1797,7 @@ static int skincolor_set(lua_State *L)
 
 		if (info->name[0] != '\0') // don't check empty string for dupe
 		{
-			UINT16 dupecheck = R_GetColorByName(info->name);
+			uint16_t dupecheck = R_GetColorByName(info->name);
 			if (!stricmp(info->name, skincolors[SKINCOLOR_NONE].name) || (dupecheck && (dupecheck != cnum)))
 				CONS_Alert(CONS_WARNING, "skincolor_t field 'name' ('%s') is a duplicate of another skincolor's name.\n", info->name);
 		}
@@ -1808,17 +1808,17 @@ static int skincolor_set(lua_State *L)
 			setRamp(L, info);
 		else
 			for (i=0; i<COLORRAMPSIZE; i++)
-				info->ramp[i] = (*((UINT8 **)luaL_checkudata(L, 3, META_COLORRAMP)))[i];
+				info->ramp[i] = (*((uint8_t **)luaL_checkudata(L, 3, META_COLORRAMP)))[i];
 		skincolor_modified[cnum] = true;
 	} else if (fastcmp(field,"invcolor")) {
-		UINT16 v = (UINT16)luaL_checkinteger(L, 3);
+		uint16_t v = (uint16_t)luaL_checkinteger(L, 3);
 		if (v >= numskincolors)
 			return luaL_error(L, "skincolor_t field 'invcolor' out of range (1 - %d)", numskincolors-1);
 		info->invcolor = v;
 	} else if (fastcmp(field,"invshade"))
-		info->invshade = (UINT8)luaL_checkinteger(L, 3)%COLORRAMPSIZE;
+		info->invshade = (uint8_t)luaL_checkinteger(L, 3)%COLORRAMPSIZE;
 	else if (fastcmp(field,"chatcolor"))
-		info->chatcolor = (UINT16)luaL_checkinteger(L, 3);
+		info->chatcolor = (uint16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"accessible")) {
 		dboolean v = lua_toboolean(L, 3);
 		if (cnum < FIRSTSUPERCOLOR && v != skincolors[cnum].accessible)
@@ -1845,8 +1845,8 @@ static int skincolor_num(lua_State *L)
 // ramp, n -> ramp[n]
 static int colorramp_get(lua_State *L)
 {
-	UINT8 *colorramp = *((UINT8 **)luaL_checkudata(L, 1, META_COLORRAMP));
-	UINT32 n = luaL_checkinteger(L, 2);
+	uint8_t *colorramp = *((uint8_t **)luaL_checkudata(L, 1, META_COLORRAMP));
+	uint32_t n = luaL_checkinteger(L, 2);
 	if (n >= COLORRAMPSIZE)
 		return luaL_error(L, LUA_QL("skincolor_t") " field 'ramp' index %d out of range (0 - %d)", n, COLORRAMPSIZE-1);
 	lua_pushinteger(L, colorramp[n]);
@@ -1856,10 +1856,10 @@ static int colorramp_get(lua_State *L)
 // ramp, n, value -> ramp[n] = value
 static int colorramp_set(lua_State *L)
 {
-	UINT8 *colorramp = *((UINT8 **)luaL_checkudata(L, 1, META_COLORRAMP));
-	UINT16 cnum = (UINT16)(((UINT8*)colorramp - (UINT8*)(skincolors[0].ramp))/sizeof(skincolor_t));
-	UINT32 n = luaL_checkinteger(L, 2);
-	UINT8 i = (UINT8)luaL_checkinteger(L, 3);
+	uint8_t *colorramp = *((uint8_t **)luaL_checkudata(L, 1, META_COLORRAMP));
+	uint16_t cnum = (uint16_t)(((uint8_t*)colorramp - (uint8_t*)(skincolors[0].ramp))/sizeof(skincolor_t));
+	uint32_t n = luaL_checkinteger(L, 2);
+	uint8_t i = (uint8_t)luaL_checkinteger(L, 3);
 	if (!cnum || cnum >= numskincolors)
 		return luaL_error(L, "skincolors[] index %d out of range (1 - %d)", cnum, numskincolors-1);
 	if (n >= COLORRAMPSIZE)
@@ -1887,7 +1887,7 @@ static int colorramp_len(lua_State *L)
 // Arbitrary precipprops[] table index -> precipprops_t *
 static int lib_getPrecipProps(lua_State *L)
 {
-	INT32 i;
+	int32_t i;
 	lua_remove(L, 1);
 
 	i = luaL_checkinteger(L, 1);
@@ -1903,7 +1903,7 @@ static int lib_setPrecipProps(lua_State *L)
 	precipprops_t *props;
 	lua_remove(L, 1); // don't care about precipprops[] userdata.
 	{
-		INT32 i = luaL_checkinteger(L, 1);
+		int32_t i = luaL_checkinteger(L, 1);
 		if (i <= 0 || i >= MAXPRECIP)
 			return luaL_error(L, "precipprops[] index %d out of range (1 - %d)", i, MAXPRECIP-1);
 		props = &precipprops[i]; // get the precipprops to assign to.

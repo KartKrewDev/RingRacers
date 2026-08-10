@@ -26,7 +26,7 @@ extern "C" {
 
 extern consvar_t cv_fpscap;
 
-UINT32 R_GetFramerateCap(void);
+uint32_t R_GetFramerateCap(void);
 dboolean R_UsingFrameInterpolation(void);
 
 enum viewcontext_e
@@ -130,9 +130,9 @@ void R_InterpolateViewRollAngle(fixed_t frac);
 // Buffer the current new views into the old views. Call once after each real tic.
 void R_UpdateViewInterpolation(void);
 // Reset the view states (e.g. after level load) so R_InterpolateView doesn't interpolate invalid data
-void R_ResetViewInterpolation(UINT8 p);
+void R_ResetViewInterpolation(uint8_t p);
 // Update old view for seamless relative teleport
-void R_RelativeTeleportViewInterpolation(UINT8 p, fixed_t xdiff, fixed_t ydiff, fixed_t zdiff, angle_t angdiff);
+void R_RelativeTeleportViewInterpolation(uint8_t p, fixed_t xdiff, fixed_t ydiff, fixed_t zdiff, angle_t angdiff);
 // Set the current view context (the viewvars pointed to by newview)
 void R_SetViewContext(enum viewcontext_e _viewcontext);
 

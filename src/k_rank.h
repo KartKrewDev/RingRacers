@@ -19,64 +19,64 @@
 // Please also see P_ArchiveMisc
 struct gpRank_level_perplayer_t
 {
-	UINT8 position;
-	UINT8 rings;
-	UINT16 exp;
-	UINT16 prisons;
+	uint8_t position;
+	uint8_t rings;
+	uint16_t exp;
+	uint16_t prisons;
 	dboolean gotSpecialPrize;
 	gp_rank_e grade;
 };
 
 struct gpRank_level_t
 {
-	UINT16 id;
-	INT32 event;
-	UINT32 time;
-	UINT16 totalExp;
-	UINT16 totalPrisons;
-	UINT16 continues;
+	uint16_t id;
+	int32_t event;
+	uint32_t time;
+	uint16_t totalExp;
+	uint16_t totalPrisons;
+	uint16_t continues;
 	gpRank_level_perplayer_t perPlayer[MAXSPLITSCREENPLAYERS];
 };
 
 // Please remember to update P_ArchiveMisc
 struct gpRank_t
 {
-	UINT8 numPlayers;
-	UINT8 totalPlayers;
+	uint8_t numPlayers;
+	uint8_t totalPlayers;
 
-	UINT8 position;
-	UINT16 skin;
+	uint8_t position;
+	uint16_t skin;
 
-	UINT32 winPoints;
-	UINT32 totalPoints;
+	uint32_t winPoints;
+	uint32_t totalPoints;
 
-	UINT32 exp;
-	UINT32 totalExp;
+	uint32_t exp;
+	uint32_t totalExp;
 
-	UINT32 continuesUsed;
+	uint32_t continuesUsed;
 
-	UINT32 prisons;
-	UINT32 totalPrisons;
+	uint32_t prisons;
+	uint32_t totalPrisons;
 
-	UINT32 rings;
-	UINT32 totalRings;
+	uint32_t rings;
+	uint32_t totalRings;
 
 	dboolean specialWon;
 
-	INT32 scorePosition;
-	INT32 scoreGPPoints;
-	INT32 scoreExp;
-	INT32 scorePrisons;
-	INT32 scoreRings;
-	INT32 scoreContinues;
-	INT32 scoreTotal;
+	int32_t scorePosition;
+	int32_t scoreGPPoints;
+	int32_t scoreExp;
+	int32_t scorePrisons;
+	int32_t scoreRings;
+	int32_t scoreContinues;
+	int32_t scoreTotal;
 
-	UINT8 numLevels;
+	uint8_t numLevels;
 	gpRank_level_t levels[ROUNDQUEUE_MAX];
 
 #ifdef __cplusplus
 	void Init(void);
-	void Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt);
+	void Rejigger(uint16_t removedmap, uint16_t removedgt, uint16_t addedmap, uint16_t addedgt);
 	void Update(void);
 #endif
 };
@@ -116,7 +116,7 @@ void K_InitGrandPrixRank(gpRank_t *rankData);
 
 
 /*--------------------------------------------------
-	void K_RejiggerGPRankData(gpRank_t *rankData, UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt)
+	void K_RejiggerGPRankData(gpRank_t *rankData, uint16_t removedmap, uint16_t removedgt, uint16_t addedmap, uint16_t addedgt)
 
 		Recalculates rank requirements for overriden round.
 
@@ -132,7 +132,7 @@ void K_InitGrandPrixRank(gpRank_t *rankData);
 		N/A
 --------------------------------------------------*/
 
-void K_RejiggerGPRankData(gpRank_t *rankData, UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt);
+void K_RejiggerGPRankData(gpRank_t *rankData, uint16_t removedmap, uint16_t removedgt, uint16_t addedmap, uint16_t addedgt);
 
 
 /*--------------------------------------------------
@@ -164,7 +164,7 @@ fixed_t K_CalculateGPPercent(gpRank_t *rankData);
 
 
 /*--------------------------------------------------
-	UINT16 K_GetGradeColor(gp_rank_e grade)
+	uint16_t K_GetGradeColor(gp_rank_e grade)
 
 		Maps grades to skincolors for HUD purposes.
 
@@ -175,7 +175,7 @@ fixed_t K_CalculateGPPercent(gpRank_t *rankData);
 		skincolor ID representing the achieved grade.
 --------------------------------------------------*/
 
-UINT16 K_GetGradeColor(gp_rank_e grade);
+uint16_t K_GetGradeColor(gp_rank_e grade);
 
 
 /*--------------------------------------------------

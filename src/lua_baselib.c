@@ -262,7 +262,7 @@ static const struct {
 // returns "unknown" instead if we couldn't find the right userdata type
 static const char *GetUserdataUType(lua_State *L)
 {
-	UINT8 i;
+	uint8_t i;
 	lua_getmetatable(L, -1);
 
 	for (i = 0; meta2utype[i].meta; i++)
@@ -295,7 +295,7 @@ static int lib_userdataType(lua_State *L)
 // Only callable during script loading
 static int lib_registerMetatable(lua_State *L)
 {
-	static UINT16 nextid = 1;
+	static uint16_t nextid = 1;
 
 	if (!lua_lumploading)
 		return luaL_error(L, "This function cannot be called from within a hook or coroutine!");
@@ -326,7 +326,7 @@ static int lib_registerMetatable(lua_State *L)
 // Returns nil if the string does not refer to a valid userdata type
 static int lib_userdataMetatable(lua_State *L)
 {
-	UINT32 i;
+	uint32_t i;
 	const char *udname = luaL_checkstring(L, 1);
 
 	// Find internal metatable name
@@ -368,15 +368,15 @@ static int lib_reserveLuabanks(lua_State *L)
 
 static int lib_mMusicAddTune(lua_State *L)
 {
-	UINT32 priority, tuneflags;
+	uint32_t priority, tuneflags;
 
 	if (!lua_lumploading)
 		return luaL_error(L, "Tunes cannot be added from within a hook or coroutine!");
 
 	//NOHUD
 	const char *tune_id = luaL_checkstring(L, 1);
-	priority = (UINT32)luaL_optinteger(L, 2, 0);
-	tuneflags = (UINT32)luaL_optinteger(L, 3, 0);
+	priority = (uint32_t)luaL_optinteger(L, 2, 0);
+	tuneflags = (uint32_t)luaL_optinteger(L, 3, 0);
 
 	if (!Music_TuneExists(tune_id))
 	{
@@ -516,10 +516,10 @@ static int lib_mMusicDim(lua_State *L)
 
 static int lib_mMusicSetFadeOut(lua_State *L)
 {
-	UINT32 fadeoutms;
+	uint32_t fadeoutms;
 
 	const char *tune_id = luaL_checkstring(L, 1);
-	fadeoutms = (UINT32)luaL_optinteger(L, 2, 0);
+	fadeoutms = (uint32_t)luaL_optinteger(L, 2, 0);
 	player_t *player = NULL;
 
 	//NOHUD
@@ -542,10 +542,10 @@ static int lib_mMusicSetFadeOut(lua_State *L)
 
 static int lib_mMusicSetFadeIn(lua_State *L)
 {
-	UINT32 fadeinms;
+	uint32_t fadeinms;
 
 	const char *tune_id = luaL_checkstring(L, 1);
-	fadeinms = (UINT32)luaL_optinteger(L, 2, 0);
+	fadeinms = (uint32_t)luaL_optinteger(L, 2, 0);
 	dboolean resumefade = lua_optboolean(L, 3);
 
 	player_t *player = NULL;
@@ -596,10 +596,10 @@ static int lib_mMusicDelayEnd(lua_State *L)
 
 static int lib_mMusicSeek(lua_State *L)
 {
-	UINT32 seekms;
+	uint32_t seekms;
 
 	const char *tune_id = luaL_checkstring(L, 1);
-	seekms = (UINT32)luaL_optinteger(L, 2, 0);
+	seekms = (uint32_t)luaL_optinteger(L, 2, 0);
 	player_t *player = NULL;
 
 	//NOHUD
@@ -787,8 +787,8 @@ static int lib_mMusicBatchExempt(lua_State *L)
 
 static int lib_pGetEffectiveFollowerColor(lua_State *L)
 {
-	UINT16 followercolor = (UINT16)luaL_checkinteger(L, 1);
-	UINT16 playercolor = (UINT16)luaL_checkinteger(L, 2);
+	uint16_t followercolor = (uint16_t)luaL_checkinteger(L, 1);
+	uint16_t playercolor = (uint16_t)luaL_checkinteger(L, 2);
 	lua_pushinteger(L, K_GetEffectiveFollowerColor(followercolor, NULL, playercolor, NULL)); // FIXME: follower / skin
 	return 1;
 }
@@ -817,7 +817,7 @@ static int lib_pRandomByte(lua_State *L)
 
 static int lib_pRandomKey(lua_State *L)
 {
-	INT32 a = (INT32)luaL_checkinteger(L, 1);
+	int32_t a = (int32_t)luaL_checkinteger(L, 1);
 	NOHUD
 	lua_pushinteger(L, P_RandomKey(PR_UNDEFINED, a));
 	demo_writerng = 2;
@@ -826,12 +826,12 @@ static int lib_pRandomKey(lua_State *L)
 
 static int lib_pRandomRange(lua_State *L)
 {
-	INT32 a = (INT32)luaL_checkinteger(L, 1);
-	INT32 b = (INT32)luaL_checkinteger(L, 2);
+	int32_t a = (int32_t)luaL_checkinteger(L, 1);
+	int32_t b = (int32_t)luaL_checkinteger(L, 2);
 	NOHUD
 	if (b < a)
 	{
-		INT32 c = a;
+		int32_t c = a;
 		a = b;
 		b = c;
 	}
@@ -1096,7 +1096,7 @@ static int lib_pRemoveMobj(lua_State *L)
 static int lib_pIsValidSprite2(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	UINT8 spr2 = (UINT8)luaL_checkinteger(L, 2);
+	uint8_t spr2 = (uint8_t)luaL_checkinteger(L, 2);
 	//HUDSAFE
 	INLEVEL
 	if (!mobj)
@@ -1194,7 +1194,7 @@ static int lib_pSpawnAlteredDirectionMissile(lua_State *L)
 	fixed_t x = luaL_checkfixed(L, 3);
 	fixed_t y = luaL_checkfixed(L, 4);
 	fixed_t z = luaL_checkfixed(L, 5);
-	INT32 shiftingAngle = (INT32)luaL_checkinteger(L, 5);
+	int32_t shiftingAngle = (int32_t)luaL_checkinteger(L, 5);
 	NOHUD
 	INLEVEL
 	if (!source)
@@ -1224,8 +1224,8 @@ static int lib_pSPMAngle(lua_State *L)
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	mobjtype_t type = luaL_checkinteger(L, 2);
 	angle_t angle = luaL_checkangle(L, 3);
-	UINT8 allowaim = (UINT8)luaL_optinteger(L, 4, 0);
-	UINT32 flags2 = (UINT32)luaL_optinteger(L, 5, 0);
+	uint8_t allowaim = (uint8_t)luaL_optinteger(L, 4, 0);
+	uint32_t flags2 = (uint32_t)luaL_optinteger(L, 5, 0);
 	NOHUD
 	INLEVEL
 	if (!source)
@@ -1240,7 +1240,7 @@ static int lib_pSpawnPlayerMissile(lua_State *L)
 {
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	mobjtype_t type = luaL_checkinteger(L, 2);
-	UINT32 flags2 = (UINT32)luaL_optinteger(L, 3, 0);
+	uint32_t flags2 = (uint32_t)luaL_optinteger(L, 3, 0);
 	NOHUD
 	INLEVEL
 	if (!source)
@@ -1276,8 +1276,8 @@ static int lib_pGetMobjGravity(lua_State *L)
 static int lib_pFlashPal(lua_State *L)
 {
 	player_t *pl = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT16 type = (UINT16)luaL_checkinteger(L, 2);
-	UINT16 duration = (UINT16)luaL_checkinteger(L, 3);
+	uint16_t type = (uint16_t)luaL_checkinteger(L, 2);
+	uint16_t duration = (uint16_t)luaL_checkinteger(L, 3);
 	NOHUD
 	INLEVEL
 	if (!pl)
@@ -1303,7 +1303,7 @@ static int lib_pSpawnParaloop(lua_State *L)
 	fixed_t y = luaL_checkfixed(L, 2);
 	fixed_t z = luaL_checkfixed(L, 3);
 	fixed_t radius = luaL_checkfixed(L, 4);
-	INT32 number = (INT32)luaL_checkinteger(L, 5);
+	int32_t number = (int32_t)luaL_checkinteger(L, 5);
 	mobjtype_t type = luaL_checkinteger(L, 6);
 	angle_t rotangle = luaL_checkangle(L, 7);
 	statenum_t nstate = luaL_optinteger(L, 8, S_NULL);
@@ -1397,8 +1397,8 @@ static int lib_pCheckSolidLava(lua_State *L)
 static int lib_pMaceRotate(lua_State *L)
 {
 	mobj_t *center = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	INT32 baserot = luaL_checkinteger(L, 2);
-	INT32 baseprevrot = luaL_checkinteger(L, 3);
+	int32_t baserot = luaL_checkinteger(L, 2);
+	int32_t baseprevrot = luaL_checkinteger(L, 3);
 	NOHUD
 	INLEVEL
 	if (!center)
@@ -1574,7 +1574,7 @@ static int lib_pMobjIsFrozen(lua_State *L)
 static int lib_pAddPlayerScore(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 amount = (UINT32)luaL_checkinteger(L, 2);
+	int32_t amount = (uint32_t)luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -1676,7 +1676,7 @@ static int lib_pSpawnGhostMobj(lua_State *L)
 static int lib_pSpawnFakeShadow(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	UINT8 offset = (UINT8)luaL_checkinteger(L, 2);
+	uint8_t offset = (uint8_t)luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!mobj)
@@ -1688,7 +1688,7 @@ static int lib_pSpawnFakeShadow(lua_State *L)
 static int lib_pGivePlayerRings(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 num_rings = (INT32)luaL_checkinteger(L, 2);
+	int32_t num_rings = (int32_t)luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -1700,7 +1700,7 @@ static int lib_pGivePlayerRings(lua_State *L)
 static int lib_pGivePlayerSpheres(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 num_spheres = (INT32)luaL_checkinteger(L, 2);
+	int32_t num_spheres = (int32_t)luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -1712,7 +1712,7 @@ static int lib_pGivePlayerSpheres(lua_State *L)
 static int lib_pGivePlayerLives(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 numlives = (INT32)luaL_checkinteger(L, 2);
+	int32_t numlives = (int32_t)luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -2049,7 +2049,7 @@ static int lib_pRadiusAttack(lua_State *L)
 	mobj_t *spot = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	fixed_t damagedist = luaL_checkfixed(L, 3);
-	UINT8 damagetype = luaL_optinteger(L, 4, 0);
+	uint8_t damagetype = luaL_optinteger(L, 4, 0);
 	dboolean sightcheck = lua_opttrueboolean(L, 5);
 	NOHUD
 	INLEVEL
@@ -2101,8 +2101,8 @@ static int lib_pDoSpring(lua_State *L)
 static int lib_pDamageMobj(lua_State *L)
 {
 	mobj_t *target = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ)), *inflictor = NULL, *source = NULL;
-	INT32 damage;
-	UINT8 damagetype;
+	int32_t damage;
+	uint8_t damagetype;
 	NOHUD
 	INLEVEL
 	if (!target)
@@ -2111,8 +2111,8 @@ static int lib_pDamageMobj(lua_State *L)
 		inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 		source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
-	damage = (INT32)luaL_optinteger(L, 4, 1);
-	damagetype = (UINT8)luaL_optinteger(L, 5, 0);
+	damage = (int32_t)luaL_optinteger(L, 4, 1);
+	damagetype = (uint8_t)luaL_optinteger(L, 5, 0);
 	lua_pushboolean(L, P_DamageMobj(target, inflictor, source, damage, damagetype));
 	return 1;
 }
@@ -2120,7 +2120,7 @@ static int lib_pDamageMobj(lua_State *L)
 static int lib_pKillMobj(lua_State *L)
 {
 	mobj_t *target = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ)), *inflictor = NULL, *source = NULL;
-	UINT8 damagetype;
+	uint8_t damagetype;
 	NOHUD
 	INLEVEL
 	if (!target)
@@ -2129,7 +2129,7 @@ static int lib_pKillMobj(lua_State *L)
 		inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 		source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
-	damagetype = (UINT8)luaL_optinteger(L, 4, 0);
+	damagetype = (uint8_t)luaL_optinteger(L, 4, 0);
 	P_KillMobj(target, inflictor, source, damagetype);
 	return 0;
 }
@@ -2137,7 +2137,7 @@ static int lib_pKillMobj(lua_State *L)
 static int lib_pPlayerRingBurst(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 num_rings = (INT32)luaL_optinteger(L, 2, -1);
+	int32_t num_rings = (int32_t)luaL_optinteger(L, 2, -1);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -2208,7 +2208,7 @@ static int lib_pPlayVictorySound(lua_State *L)
 static int lib_pCanPickupItem(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT8 weapon = (UINT8)luaL_optinteger(L, 2, 0);
+	uint8_t weapon = (uint8_t)luaL_optinteger(L, 2, 0);
 	//HUDSAFE
 	INLEVEL
 	if (!player)
@@ -2263,8 +2263,8 @@ static int lib_pExplodeMissile(lua_State *L)
 static int lib_pMobjTouchingSectorSpecial(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t**)luaL_checkudata(L, 1, META_MOBJ));
-	INT32 section = (INT32)luaL_checkinteger(L, 2);
-	INT32 number = (INT32)luaL_checkinteger(L, 3);
+	int32_t section = (int32_t)luaL_checkinteger(L, 2);
+	int32_t number = (int32_t)luaL_checkinteger(L, 3);
 	//HUDSAFE
 	INLEVEL
 	if (!mo)
@@ -2276,7 +2276,7 @@ static int lib_pMobjTouchingSectorSpecial(lua_State *L)
 static int lib_pMobjTouchingSectorSpecialFlag(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t**)luaL_checkudata(L, 1, META_MOBJ));
-	sectorspecialflags_t flag = (INT32)luaL_checkinteger(L, 2);
+	sectorspecialflags_t flag = (int32_t)luaL_checkinteger(L, 2);
 	//HUDSAFE
 	INLEVEL
 	if (!mo)
@@ -2288,8 +2288,8 @@ static int lib_pMobjTouchingSectorSpecialFlag(lua_State *L)
 static int lib_pPlayerTouchingSectorSpecial(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 section = (INT32)luaL_checkinteger(L, 2);
-	INT32 number = (INT32)luaL_checkinteger(L, 3);
+	int32_t section = (int32_t)luaL_checkinteger(L, 2);
+	int32_t number = (int32_t)luaL_checkinteger(L, 3);
 	//HUDSAFE
 	INLEVEL
 	if (!player)
@@ -2301,7 +2301,7 @@ static int lib_pPlayerTouchingSectorSpecial(lua_State *L)
 static int lib_pPlayerTouchingSectorSpecialFlag(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	sectorspecialflags_t flag = (INT32)luaL_checkinteger(L, 2);
+	sectorspecialflags_t flag = (int32_t)luaL_checkinteger(L, 2);
 	//HUDSAFE
 	INLEVEL
 	if (!player)
@@ -2384,9 +2384,9 @@ static int lib_pFindHighestCeilingSurrounding(lua_State *L)
 
 static int lib_pFindSpecialLineFromTag(lua_State *L)
 {
-	INT16 special = (INT16)luaL_checkinteger(L, 1);
-	INT16 line = (INT16)luaL_checkinteger(L, 2);
-	INT32 start = (INT32)luaL_optinteger(L, 3, -1);
+	int16_t special = (int16_t)luaL_checkinteger(L, 1);
+	int16_t line = (int16_t)luaL_checkinteger(L, 2);
+	int32_t start = (int32_t)luaL_optinteger(L, 3, -1);
 	NOHUD
 	INLEVEL
 	lua_pushinteger(L, P_FindSpecialLineFromTag(special, line, start));
@@ -2395,7 +2395,7 @@ static int lib_pFindSpecialLineFromTag(lua_State *L)
 
 static int lib_pSwitchWeather(lua_State *L)
 {
-	INT32 weathernum = (INT32)luaL_checkinteger(L, 1);
+	int32_t weathernum = (int32_t)luaL_checkinteger(L, 1);
 	player_t *user = NULL;
 	NOHUD
 	INLEVEL
@@ -2410,7 +2410,7 @@ static int lib_pSwitchWeather(lua_State *L)
 
 static int lib_pLinedefExecute(lua_State *L)
 {
-	INT32 tag = (INT16)luaL_checkinteger(L, 1);
+	int32_t tag = (int16_t)luaL_checkinteger(L, 1);
 	mobj_t *actor = NULL;
 	sector_t *caller = NULL;
 	NOHUD
@@ -2436,9 +2436,9 @@ static int lib_pSpawnLightningFlash(lua_State *L)
 
 static int lib_pFadeLight(lua_State *L)
 {
-	INT16 tag = (INT16)luaL_checkinteger(L, 1);
-	INT32 destvalue = (INT32)luaL_checkinteger(L, 2);
-	INT32 speed = (INT32)luaL_checkinteger(L, 3);
+	int16_t tag = (int16_t)luaL_checkinteger(L, 1);
+	int32_t destvalue = (int32_t)luaL_checkinteger(L, 2);
+	int32_t speed = (int32_t)luaL_checkinteger(L, 3);
 	dboolean ticbased = lua_optboolean(L, 4);
 	dboolean force = lua_optboolean(L, 5);
 	dboolean relative = lua_optboolean(L, 6);
@@ -2761,7 +2761,7 @@ static int lib_rChar2Frame(lua_State *L)
 
 static int lib_rFrame2Char(lua_State *L)
 {
-	UINT8 ch = (UINT8)luaL_checkinteger(L, 1);
+	uint8_t ch = (uint8_t)luaL_checkinteger(L, 1);
 	char c[2] = "";
 	//HUDSAFE
 
@@ -2777,7 +2777,7 @@ static int lib_rFrame2Char(lua_State *L)
 static int lib_rSetPlayerSkin(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 i = -1, j = -1;
+	int32_t i = -1, j = -1;
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -2788,7 +2788,7 @@ static int lib_rSetPlayerSkin(lua_State *L)
 		return luaL_error(L, "argument #2 not given (expected number or string)");
 	else if (lua_type(L, 2) == LUA_TNUMBER) // skin number
 	{
-		INT32 skincount = (demo.playback ? demo.numskins : numskins);
+		int32_t skincount = (demo.playback ? demo.numskins : numskins);
 		i = luaL_checkinteger(L, 2);
 		if (i < 0 || i >= skincount)
 			return luaL_error(L, "skin %d (argument #2) out of range (0 - %d)", i, skincount-1);
@@ -2810,7 +2810,7 @@ static int lib_rSetPlayerSkin(lua_State *L)
 static int lib_rSkinUsable(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 i = -1, j = -1;
+	int32_t i = -1, j = -1;
 	if (player)
 		j = (player-players);
 	else if (netgame || multiplayer)
@@ -2876,7 +2876,7 @@ static int lib_rGetSuperColorByName(lua_State *L)
 // SKINCOLOR_GREEN > "Green" for example
 static int lib_rGetNameByColor(lua_State *L)
 {
-	UINT16 colornum = (UINT16)luaL_checkinteger(L, 1);
+	uint16_t colornum = (uint16_t)luaL_checkinteger(L, 1);
 	if (!colornum || colornum >= numskincolors)
 		return luaL_error(L, "skincolor %d out of range (1 - %d).", colornum, numskincolors-1);
 	lua_pushstring(L, skincolors[colornum].name);
@@ -2945,7 +2945,7 @@ static int lib_sStartSoundAtVolume(lua_State *L)
 {
 	void *origin = NULL;
 	sfxenum_t sound_id = luaL_checkinteger(L, 2);
-	INT32 volume = (INT32)luaL_checkinteger(L, 3);
+	int32_t volume = (int32_t)luaL_checkinteger(L, 3);
 	player_t *player = NULL;
 	//NOHUD
 
@@ -3035,7 +3035,7 @@ static int lib_sStartMusicCaption(lua_State *L)
 {
 	player_t *player = NULL;
 	const char *caption = luaL_checkstring(L, 1);
-	UINT16 lifespan = (UINT16)luaL_checkinteger(L, 2);
+	uint16_t lifespan = (uint16_t)luaL_checkinteger(L, 2);
 	//HUDSAFE
 	//INLEVEL
 
@@ -3084,13 +3084,13 @@ static int lib_gAddGametype(lua_State *L)
 	const char *gtconst = NULL;
 	const char *gppic = NULL;
 	const char *gppicmini = NULL;
-	UINT32 newgtrules = 0;
-	UINT32 newgttol = 0;
-	INT32 newgtpointlimit = 0;
-	INT32 newgttimelimit = 0;
-	UINT8 newgtinttype = 0;
-	SINT8 newgtspeed = KARTSPEED_AUTO;
-	INT16 j;
+	uint32_t newgtrules = 0;
+	uint32_t newgttol = 0;
+	int32_t newgtpointlimit = 0;
+	int32_t newgttimelimit = 0;
+	uint8_t newgtinttype = 0;
+	int8_t newgtspeed = KARTSPEED_AUTO;
+	int16_t j;
 
 	luaL_checktype(L, 1, LUA_TTABLE);
 	lua_settop(L, 1); // Clear out all other possible arguments, leaving only the first one.
@@ -3130,11 +3130,11 @@ static int lib_gAddGametype(lua_State *L)
 		} else if (i == 3 || (k && fasticmp(k, "rules"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("rules", LUA_TNUMBER)
-			newgtrules = (UINT32)lua_tointeger(L, 3);
+			newgtrules = (uint32_t)lua_tointeger(L, 3);
 		} else if (i == 4 || (k && fasticmp(k, "typeoflevel"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("typeoflevel", LUA_TNUMBER)
-			newgttol = (UINT32)lua_tointeger(L, 3);
+			newgttol = (uint32_t)lua_tointeger(L, 3);
 		} else if (i == 5 || (k && fasticmp(k, "intermissiontype"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("intermissiontype", LUA_TNUMBER)
@@ -3142,11 +3142,11 @@ static int lib_gAddGametype(lua_State *L)
 		} else if (i == 6 || (k && fasticmp(k, "defaultpointlimit"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("defaultpointlimit", LUA_TNUMBER)
-			newgtpointlimit = (INT32)lua_tointeger(L, 3);
+			newgtpointlimit = (int32_t)lua_tointeger(L, 3);
 		} else if (i == 7 || (k && fasticmp(k, "defaulttimelimit"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("defaulttimelimit", LUA_TNUMBER)
-			newgttimelimit = (INT32)lua_tointeger(L, 3);
+			newgttimelimit = (int32_t)lua_tointeger(L, 3);
 		} else if (i == 8 || (k && fasticmp(k, "gppic"))) {
 			if (!lua_isstring(L, 3))
 				TYPEERROR("gppic", LUA_TSTRING)
@@ -3158,7 +3158,7 @@ static int lib_gAddGametype(lua_State *L)
 		} else if (i == 10 || (k && fasticmp(k, "speed"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("speed", LUA_TNUMBER)
-			newgtspeed = (UINT32)lua_tointeger(L, 3);
+			newgtspeed = (uint32_t)lua_tointeger(L, 3);
 			if (newgtspeed < KARTSPEED_AUTO || newgtspeed > KARTSPEED_HARD)
 			{
 				newgtspeed = KARTSPEED_AUTO;
@@ -3244,7 +3244,7 @@ static int Lcheckmapnumber (lua_State *L, int idx, const char *fun)
 
 static int lib_gBuildMapName(lua_State *L)
 {
-	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapName");
+	int32_t map = Lcheckmapnumber(L, 1, "G_BuildMapName");
 	//HUDSAFE
 	lua_pushstring(L, G_BuildMapName(map));
 	return 1;
@@ -3252,7 +3252,7 @@ static int lib_gBuildMapName(lua_State *L)
 
 static int lib_gBuildMapTitle(lua_State *L)
 {
-	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapTitle");
+	int32_t map = Lcheckmapnumber(L, 1, "G_BuildMapTitle");
 	char *name;
 	if (map < 1 || map > nummapheaders)
 	{
@@ -3318,12 +3318,12 @@ static int lib_gFindMap(lua_State *L)
 {
 	const char *query = luaL_checkstring(L, 1);
 
-	INT32 map;
+	int32_t map;
 	char *realname;
-	INT32 frc;
+	int32_t frc;
 	mapsearchfreq_t *frv;
 
-	INT32 i;
+	int32_t i;
 
 	map = G_FindMap(query, &realname, &frv, &frc);
 
@@ -3365,7 +3365,7 @@ Returns:
 static int lib_gFindMapByNameOrCode(lua_State *L)
 {
 	const char *query = luaL_checkstring(L, 1);
-	INT32 map;
+	int32_t map;
 	char *realname;
 	map = G_FindMapByNameOrCode(query, &realname);
 	lua_pushnumber(L, map);
@@ -3381,7 +3381,7 @@ static int lib_gFindMapByNameOrCode(lua_State *L)
 
 static int lib_gDoReborn(lua_State *L)
 {
-	INT32 playernum = luaL_checkinteger(L, 1);
+	int32_t playernum = luaL_checkinteger(L, 1);
 	NOHUD
 	INLEVEL
 	if (playernum >= MAXPLAYERS)
@@ -3410,8 +3410,8 @@ static int lib_gSetCustomExitVars(lua_State *L)
 
 	if (n >= 1)
 	{
-		nextmapoverride = (INT16)luaL_optinteger(L, 1, 0);
-		skipstats = (INT16)luaL_optinteger(L, 2, 0);
+		nextmapoverride = (int16_t)luaL_optinteger(L, 1, 0);
+		skipstats = (int16_t)luaL_optinteger(L, 2, 0);
 	}
 
 	return 0;
@@ -3711,7 +3711,7 @@ static int lib_kIsDuelItem(lua_State *L)
 
 static int lib_kGetKartGameSpeedScalar(lua_State *L)
 {
-	SINT8 value = luaL_optinteger(L, 1, gamespeed);
+	int8_t value = luaL_optinteger(L, 1, gamespeed);
 	lua_pushfixed(L, K_GetKartGameSpeedScalar(value));
 	return 1;
 }
@@ -3866,7 +3866,7 @@ static int lib_kSpawnDashDustRelease(lua_State *L)
 static int lib_kAwardPlayerRings(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT16 rings = luaL_checkinteger(L, 2);
+	uint16_t rings = luaL_checkinteger(L, 2);
 	dboolean overload = lua_opttrueboolean(L, 3);
 	NOHUD
 	INLEVEL
@@ -3998,7 +3998,7 @@ static int lib_kMomentumAngle(lua_State *L)
 
 static int lib_kPvPAmpReward(lua_State *L)
 {
-	UINT32 award = luaL_checkinteger(L, 1);
+	uint32_t award = luaL_checkinteger(L, 1);
 	player_t *attacker = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
 	player_t *defender = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
 	NOHUD
@@ -4012,7 +4012,7 @@ static int lib_kPvPAmpReward(lua_State *L)
 static int lib_kSpawnAmps(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT8 amps = luaL_checkinteger(L, 2);
+	uint8_t amps = luaL_checkinteger(L, 2);
 	mobj_t *impact = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 	NOHUD
 	INLEVEL
@@ -4027,7 +4027,7 @@ static int lib_kSpawnAmps(lua_State *L)
 static int lib_kSpawnEXP(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT8 exp = luaL_checkinteger(L, 2);
+	uint8_t exp = luaL_checkinteger(L, 2);
 	mobj_t *impact = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 	NOHUD
 	INLEVEL
@@ -4042,7 +4042,7 @@ static int lib_kSpawnEXP(lua_State *L)
 static int lib_kAwardPlayerAmps(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT8 amps = luaL_checkinteger(L, 2);
+	uint8_t amps = luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -4114,7 +4114,7 @@ static int lib_kBattleAwardHit(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	player_t *victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));;
 	mobj_t *inflictor = NULL;
-	INT32 damage = (INT32)luaL_optinteger(L, 4, 0);
+	int32_t damage = (int32_t)luaL_optinteger(L, 4, 0);
 	NOHUD
 	INLEVEL
 	if (!player || !victim)
@@ -4129,7 +4129,7 @@ static int lib_kSpawnBattlePoints(lua_State *L)
 {
 	player_t *source = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	player_t *victim = NULL;
-	UINT8 amount = (UINT8)luaL_checkinteger(L, 3);
+	uint8_t amount = (uint8_t)luaL_checkinteger(L, 3);
 	NOHUD
 	if (!source)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4166,7 +4166,7 @@ static int lib_kSpinPlayer(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	mobj_t *inflictor = NULL;
 	mobj_t *source = NULL;
-	INT32 type = (INT32)luaL_optinteger(L, 3, 0);
+	int32_t type = (int32_t)luaL_optinteger(L, 3, 0);
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4274,7 +4274,7 @@ static int lib_kGiveBumpersToPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	player_t *victim = NULL;
-	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
+	uint8_t amount = (uint8_t)luaL_optinteger(L, 3, 1);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -4289,7 +4289,7 @@ static int lib_kTakeBumpersFromPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	player_t *victim = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
-	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
+	uint8_t amount = (uint8_t)luaL_optinteger(L, 3, 1);
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4314,7 +4314,7 @@ static int lib_kGivePointsToPlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	player_t *victim = NULL;
-	UINT8 amount = (UINT8)luaL_optinteger(L, 3, 1);
+	uint8_t amount = (uint8_t)luaL_optinteger(L, 3, 1);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -4353,7 +4353,7 @@ static int lib_kSpawnLandMineExplosion(lua_State *L)
 static int lib_kDriftSparkColor(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 charge = luaL_checkinteger(L, 2);
+	int32_t charge = luaL_checkinteger(L, 2);
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4405,7 +4405,7 @@ static int lib_kSpawnDraftDust(lua_State *L)
 static int lib_kSpawnMagicianParticles(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	INT32 spread = luaL_optinteger(L, 2, 5);
+	int32_t spread = luaL_optinteger(L, 2, 5);
 	NOHUD
 	INLEVEL
 	if (!mo)
@@ -4441,8 +4441,8 @@ static int lib_kThrowKartItem(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	dboolean missile = luaL_checkboolean(L, 2);
 	mobjtype_t mapthing = luaL_checkinteger(L, 3);
-	INT32 defaultDir = luaL_optinteger(L, 4, 0);
-	INT32 altthrow = luaL_optinteger(L, 5, 0);
+	int32_t defaultDir = luaL_optinteger(L, 4, 0);
+	int32_t altthrow = luaL_optinteger(L, 5, 0);
 	angle_t angleOffset = luaL_optinteger(L, 6, 0);
 	NOHUD
 	INLEVEL
@@ -4459,7 +4459,7 @@ static int lib_kThrowKartItem(lua_State *L)
 static int lib_kDoSneaker(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT32 type = luaL_optinteger(L, 2, 0);
+	int32_t type = luaL_optinteger(L, 2, 0);
 	NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4471,7 +4471,7 @@ static int lib_kDoPogoSpring(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t vertispeed = (fixed_t)luaL_optinteger(L, 2, 0);
-	UINT8 sound = (UINT8)luaL_optinteger(L, 3, 1);
+	uint8_t sound = (uint8_t)luaL_optinteger(L, 3, 1);
 	NOHUD
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
@@ -4565,7 +4565,7 @@ static int lib_kUpdateSteeringValue(lua_State *L)
 static int lib_kGetKartTurnValue(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	INT16 turnvalue = luaL_checkinteger(L, 2);
+	int16_t turnvalue = luaL_checkinteger(L, 2);
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4598,7 +4598,7 @@ static int lib_kGetKartDriftSparkValue(lua_State *L)
 
 static int lib_kStairJankFlip(lua_State *L)
 {
-	INT32 value = luaL_checkinteger(L, 1);
+	int32_t value = luaL_checkinteger(L, 1);
 	INLEVEL
 	lua_pushinteger(L, K_StairJankFlip(value));
 	return 1;
@@ -4607,7 +4607,7 @@ static int lib_kStairJankFlip(lua_State *L)
 static int lib_kSpawnDriftBoostExplosion(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT8 stage = luaL_checkinteger(L, 2);
+	uint8_t stage = luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -4632,7 +4632,7 @@ static int lib_kSpawnDriftElectricSparks(lua_State *L)
 static int lib_kGetKartDriftSparkValueForStage(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT8 stage = luaL_checkinteger(L, 2);
+	uint8_t stage = luaL_checkinteger(L, 2);
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
@@ -4653,8 +4653,8 @@ static int lib_kKartUpdatePosition(lua_State *L)
 static int lib_kDropPaperItem(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT8 itemtype = luaL_optinteger(L, 2, 0);
-	UINT16 itemamount = luaL_optinteger(L, 3, 1);
+	uint8_t itemtype = luaL_optinteger(L, 2, 0);
+	uint16_t itemamount = luaL_optinteger(L, 3, 1);
 	NOHUD
 	INLEVEL
 	if (!player)
@@ -4673,7 +4673,7 @@ static int lib_kUpdateAllPlayerPositions(lua_State *L)
 
 static int lib_kGetTotallyRandomResult(lua_State *L)
 {
-	UINT32 useodds = luaL_optinteger(L, 1, 0);
+	uint32_t useodds = luaL_optinteger(L, 1, 0);
 	NOHUD
 	INLEVEL
 	// useodds can't be higher than these values to prevent an assert:
@@ -4693,9 +4693,9 @@ static int lib_kCreatePaperItem(lua_State *L)
 	fixed_t y = luaL_checkfixed(L, 2);
 	fixed_t z = luaL_checkfixed(L, 3);
 	angle_t angle = luaL_optinteger(L, 4, 0);
-	SINT8 flip = luaL_optinteger(L, 5, 0);
-	UINT8 type = luaL_optinteger(L, 6, 0);
-	UINT16 amount = luaL_optinteger(L, 7, 1);
+	int8_t flip = luaL_optinteger(L, 5, 0);
+	uint8_t type = luaL_optinteger(L, 6, 0);
+	uint16_t amount = luaL_optinteger(L, 7, 1);
 	NOHUD
 	INLEVEL
 	LUA_PushUserdata(L, K_CreatePaperItem(x, y, z, angle, flip, type, amount), META_MOBJ);
@@ -4708,9 +4708,9 @@ static int lib_kFlingPaperItem(lua_State *L)
 	fixed_t y = luaL_checkfixed(L, 2);
 	fixed_t z = luaL_checkfixed(L, 3);
 	angle_t angle = luaL_optinteger(L, 4, 0);
-	SINT8 flip = luaL_optinteger(L, 5, 0);
-	UINT8 type = luaL_optinteger(L, 6, 0);
-	UINT16 amount = luaL_optinteger(L, 7, 1);
+	int8_t flip = luaL_optinteger(L, 5, 0);
+	uint8_t type = luaL_optinteger(L, 6, 0);
+	uint16_t amount = luaL_optinteger(L, 7, 1);
 	NOHUD
 	INLEVEL
 	LUA_PushUserdata(L, K_FlingPaperItem(x, y, z, angle, flip, type, amount), META_MOBJ);
@@ -4956,7 +4956,7 @@ static int lib_kGrowShrinkSpeedMul(lua_State *L)
 
 static int lib_kGetKartSpeedFromStat(lua_State *L)
 {
-	INT32 kartspeed = luaL_checkinteger(L, 1);
+	int32_t kartspeed = luaL_checkinteger(L, 1);
 	lua_pushfixed(L, K_GetKartSpeedFromStat(kartspeed));
 	return 1;
 }
@@ -5067,7 +5067,7 @@ static int lib_k3dKartMovement(lua_State *L)
 
 static int lib_kGetItemPatch(lua_State *L)
 {
-	UINT8 item = (UINT8)luaL_optinteger(L, 1, KITEM_NONE);
+	uint8_t item = (uint8_t)luaL_optinteger(L, 1, KITEM_NONE);
 	dboolean tiny = lua_optboolean(L, 2);
 	//HUDSAFE
 	lua_pushstring(L, K_GetItemPatch(item, tiny));
@@ -5144,7 +5144,7 @@ static int lib_kGetInvincibilityItemFrame(lua_State *L)
 
 static int lib_kGetOrbinautItemFrame(lua_State *L)
 {
-	UINT8 count = luaL_optinteger(L, 1, 1);
+	uint8_t count = luaL_optinteger(L, 1, 1);
 	lua_pushinteger(L, K_GetOrbinautItemFrame(count));
 	return 1;
 }
@@ -5152,8 +5152,8 @@ static int lib_kGetOrbinautItemFrame(lua_State *L)
 static int lib_kUpdateMobjItemOverlay(lua_State *L)
 {
 	mobj_t *part = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	SINT8 itemType = luaL_optinteger(L, 2, 0);
-	UINT8 itemCount = luaL_optinteger(L, 3, 0);
+	int8_t itemType = luaL_optinteger(L, 2, 0);
+	uint8_t itemCount = luaL_optinteger(L, 3, 0);
 	NOHUD
 	INLEVEL
 	if (!part)
@@ -5356,7 +5356,7 @@ static int lib_kPlayerCanUseItem(lua_State *L)
 static int lib_kGetGradingFactorAdjustment(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT32 gradingpoint = luaL_checkinteger(L, 2);
+	uint32_t gradingpoint = luaL_checkinteger(L, 2);
 	INLEVEL
 	NOHUD
 	if (!player)
@@ -5424,8 +5424,8 @@ static int lib_kApplyStun(lua_State *L)
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	mobj_t *inflictor = NULL;
 	mobj_t *source = NULL;
-	INT32 damage = luaL_optinteger(L, 4, 0);
-	UINT8 damagetype = luaL_optinteger(L, 5, 0);
+	int32_t damage = luaL_optinteger(L, 4, 0);
+	uint8_t damagetype = luaL_optinteger(L, 5, 0);
 	INLEVEL
 	NOHUD
 	if (!player)
@@ -5524,7 +5524,7 @@ static int lib_kInitBossHealthBar(lua_State *L)
 	const char *subtitle = luaL_checkstring(L, 2);
 	sfxenum_t titlesound = luaL_checkinteger(L, 3);
 	fixed_t pinchmagnitude = luaL_checkfixed(L, 4);
-	UINT8 divisions = (UINT8)luaL_checkinteger(L, 5);
+	uint8_t divisions = (uint8_t)luaL_checkinteger(L, 5);
 	NOHUD
 	K_InitBossHealthBar(enemyname, subtitle, titlesound, pinchmagnitude, divisions);
 	return 0;
@@ -5543,7 +5543,7 @@ static int lib_kDeclareWeakspot(lua_State *L)
 {
 	mobj_t *spot = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	spottype_t spottype = luaL_checkinteger(L, 2);
-	UINT16 color = luaL_checkinteger(L, 3);
+	uint16_t color = luaL_checkinteger(L, 3);
 	dboolean minimap = lua_optboolean(L, 4);
 	NOHUD
 	if (!spot)
@@ -5560,7 +5560,7 @@ static int lib_kCheckBossIntro(lua_State *L)
 
 static int lib_vsGetArena(lua_State *L)
 {
-	INT32 bossindex = luaL_checkinteger(L, 1);
+	int32_t bossindex = luaL_checkinteger(L, 1);
 	//HUDSAFE
 	LUA_PushUserdata(L, VS_GetArena(bossindex), META_MOBJ);
 	return 1;
@@ -5762,7 +5762,7 @@ static int lib_kKartGetItemResult(lua_State *L)
 static int lib_kGetItemRouletteDistance(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT8 numPlayers = luaL_checkinteger(L, 2);
+	uint8_t numPlayers = luaL_checkinteger(L, 2);
 	INLEVEL
 
 	if (!player)
@@ -5813,7 +5813,7 @@ static int lib_kGetRouletteOffset(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	fixed_t renderDelta = luaL_optnumber(L, 2, FRACUNIT);
-	UINT8 fudge = luaL_optnumber(L, 3, player ? player->cmd.latency : 0);
+	uint8_t fudge = luaL_optnumber(L, 3, player ? player->cmd.latency : 0);
 	INLEVEL
 
 	if (!player)
@@ -5827,7 +5827,7 @@ static int lib_kGetSlotOffset(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	fixed_t renderDelta = luaL_optnumber(L, 2, FRACUNIT);
-	UINT8 fudge = luaL_optnumber(L, 3, player ? player->cmd.latency : 0);
+	uint8_t fudge = luaL_optnumber(L, 3, player ? player->cmd.latency : 0);
 	INLEVEL
 
 	if (!player)
@@ -5852,15 +5852,15 @@ static int lib_kCalculateRouletteSpeed(lua_State *L)
 
 static int lib_kScaleItemDistance(lua_State *L)
 {
-	UINT32 distance = luaL_checkinteger(L, 1);
-	UINT8 numPlayers = luaL_checkinteger(L, 2);
+	uint32_t distance = luaL_checkinteger(L, 1);
+	uint8_t numPlayers = luaL_checkinteger(L, 2);
 	lua_pushfixed(L, K_ScaleItemDistance(distance, numPlayers));
 	return 1;
 }
 
 static int lib_kItemOddsScale(lua_State *L)
 {
-	UINT8 playerCount = luaL_checkinteger(L, 1);
+	uint8_t playerCount = luaL_checkinteger(L, 1);
 	lua_pushfixed(L, K_ItemOddsScale(playerCount));
 	return 1;
 }
@@ -6095,10 +6095,10 @@ static int lib_kDistanceOfLineFromPoint(lua_State *L)
 
 static int lib_kAddBot(lua_State *L)
 {
-	INT32 skinid = -1;
-	UINT8 difficulty = luaL_checkinteger(L, 2);
+	int32_t skinid = -1;
+	uint8_t difficulty = luaL_checkinteger(L, 2);
 	botStyle_e style = luaL_checkinteger(L, 3);
-	UINT8 newplayernum = 0;
+	uint8_t newplayernum = 0;
 
 	// Copypaste of libd_getSprite2Patch, but fails loudly on each fail state instead.
 	// get skin first!
@@ -6331,7 +6331,7 @@ static int lib_kGetWaypointID(lua_State *L)
 
 static int lib_kGetWaypointFromID(lua_State *L)
 {
-	INT32 waypointId = luaL_checkinteger(L, 1);
+	int32_t waypointId = luaL_checkinteger(L, 1);
 	INLEVEL
 
 	LUA_PushUserdata(L, K_GetWaypointFromID(waypointId), META_WAYPOINT);
@@ -6585,7 +6585,7 @@ static int lib_kGetTerrainForTextureName(lua_State *L)
 
 static int lib_kGetTerrainForTextureNum(lua_State *L)
 {
-	INT32 id = luaL_checkinteger(L, 1);
+	int32_t id = luaL_checkinteger(L, 1);
 	LUA_PushUserdata(L, K_GetTerrainForTextureNum(id), META_TERRAIN);
 	return 1;
 }

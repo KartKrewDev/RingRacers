@@ -27,7 +27,7 @@ struct bheapitem_t
 	updateindexfunc indexchanged; // A callback function that is called when this item changes index to alert data
 	bheap_t         *owner;       // The heap that owns this item
 	void            *data;        // data for this heap item
-	UINT32          value;        // The value of this item, the lowest value item is first in the array
+	uint32_t          value;        // The value of this item, the lowest value item is first in the array
 };
 
 struct bheap_t
@@ -70,7 +70,7 @@ dboolean K_BHeapValid(bheap_t *const heap);
 
 
 /*--------------------------------------------------
-	dboolean K_BHeapPush(bheap_t *const heap, void *const item, const UINT32 value, updateindexfunc changeindexcallback)
+	dboolean K_BHeapPush(bheap_t *const heap, void *const item, const uint32_t value, updateindexfunc changeindexcallback)
 
 		Adds a new item to a binary heap.
 
@@ -84,7 +84,7 @@ dboolean K_BHeapValid(bheap_t *const heap);
 		True if the push to the heap was successful, false if it wasn't due to invalid parameters
 --------------------------------------------------*/
 
-dboolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback);
+dboolean K_BHeapPush(bheap_t *const heap, void *const item, uint32_t value, updateindexfunc changeindexcallback);
 
 
 /*--------------------------------------------------
@@ -104,7 +104,7 @@ dboolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage);
 
 
 /*--------------------------------------------------
-	dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+	dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const uint32_t newvalue)
 
 		Updates the heap item's value, and reorders it in the array appropriately. Only works if the item is in a heap
 		validly. If it's a heapitem that is not currently in a heap (ie it's been popped off) just change the value
@@ -118,7 +118,7 @@ dboolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage);
 		true if the update was successful, false if it wasn't
 --------------------------------------------------*/
 
-dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue);
+dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const uint32_t newvalue);
 
 
 /*--------------------------------------------------

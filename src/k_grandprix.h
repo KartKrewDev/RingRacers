@@ -33,18 +33,18 @@ extern struct grandprixinfo
 {
 	dboolean gp;				///< If true, then we are in a Grand Prix.
 	cupheader_t *cup;		///< Which cup are we playing?
-	UINT8 gamespeed;		///< Copy of gamespeed, just to make sure you can't cheat it with cvars
+	uint8_t gamespeed;		///< Copy of gamespeed, just to make sure you can't cheat it with cvars
 	dboolean encore;			///< Ditto, but for encore mode
 	dboolean masterbots;		///< If true, all bots should be max difficulty (Master Mode)
 	dboolean initalize;		///< If true, we need to initialize a new session.
 	dboolean wonround;		///< If false, then we retry the map instead of going to the next.
 	gpEvent_e eventmode;	///< Special event mode, bots are set to spectate and a special gametype is played
-	UINT32 specialDamage;	///< Accumulated Sealed Star difficulty reduction
+	uint32_t specialDamage;	///< Accumulated Sealed Star difficulty reduction
 	gpRank_t rank;			///< Struct containing grading information. (See also: k_rank.h)
 } grandprixinfo;
 
 /*--------------------------------------------------
-	UINT8 K_BotStartingDifficulty(SINT8 value);
+	uint8_t K_BotStartingDifficulty(int8_t value);
 
 		Determines the starting difficulty of the bots
 		for a specific game speed.
@@ -56,11 +56,11 @@ extern struct grandprixinfo
 		Bot difficulty level.
 --------------------------------------------------*/
 
-UINT8 K_BotStartingDifficulty(SINT8 value);
+uint8_t K_BotStartingDifficulty(int8_t value);
 
 
 /*--------------------------------------------------
-	INT16 K_CalculateGPRankPoints(player_t* player, UINT8 numplayers);
+	int16_t K_CalculateGPRankPoints(player_t* player, uint8_t numplayers);
 
 		Calculates the number of points that a player would
 		recieve if they won the round.
@@ -73,11 +73,11 @@ UINT8 K_BotStartingDifficulty(SINT8 value);
 		Number of points to give.
 --------------------------------------------------*/
 
-INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers);
+int16_t K_CalculateGPRankPoints(uint16_t exp, uint8_t position, uint8_t numplayers);
 
 
 /*--------------------------------------------------
-	UINT8 K_GetGPPlayerCount(UINT8 humans)
+	uint8_t K_GetGPPlayerCount(uint8_t humans)
 
 		Counts the number of total players,
 		including humans and bots, to put into
@@ -90,7 +90,7 @@ INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers);
 		Number of both human players and CPU.
 --------------------------------------------------*/
 
-UINT8 K_GetGPPlayerCount(UINT8 humans);
+uint8_t K_GetGPPlayerCount(uint8_t humans);
 
 
 /*--------------------------------------------------

@@ -106,7 +106,7 @@ extern "C" {
 	#include "miniupnpc/miniupnpc.h"
 	#include "miniupnpc/upnpcommands.h"
 	#undef STATICLIB
-	static UINT8 UPNP_support = TRUE;
+	static uint8_t UPNP_support = TRUE;
 #endif // HAVE_MINIUPNC
 
 #include "i_tcp.h"
@@ -127,8 +127,8 @@ union mysockaddr_t
 extern mysockaddr_t clientaddress[MAXNETNODES+1];
 
 const char *SOCK_AddrToStr(mysockaddr_t *sk);
-mysockaddr_t SOCK_DirectNodeToAddr(UINT8 node);
-dboolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask);
+mysockaddr_t SOCK_DirectNodeToAddr(uint8_t node);
+dboolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, uint8_t mask);
 
 #ifdef __cplusplus
 } // extern "C"

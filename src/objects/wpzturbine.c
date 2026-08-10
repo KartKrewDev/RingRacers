@@ -39,7 +39,7 @@
 void Obj_WPZTurbineSpawn(mobj_t *mo)
 {
 	mobj_t *ptr = mo;
-	UINT8 i;
+	uint8_t i;
 
 	// spawn the visuals regardless of flags, make em invisible.
 	// we'll care about updating em if it's worth doing later.
@@ -67,7 +67,7 @@ static void Obj_WPZTurbineUpdate(mobj_t *mo)
 	// fans
 	if (!mt->thing_args[1])
 	{
-		UINT8 i;
+		uint8_t i;
 		mobj_t *ptr = mo;
 
 		for (i = 0; i < 8; i++)
@@ -99,8 +99,8 @@ static void Obj_WPZTurbineUpdate(mobj_t *mo)
 	if (mo->z < mo->watertop && leveltime%10 == 0)
 	{
 
-		INT32 dradius = TURBINE_SPIN;
-		INT32 bubbleradius;
+		int32_t dradius = TURBINE_SPIN;
+		int32_t bubbleradius;
 		angle_t bubbleang;
 		fixed_t bx, by, bz;
 		mobj_t *bubble;
@@ -127,15 +127,15 @@ static void Obj_WPZTurbineUpdate(mobj_t *mo)
 void Obj_WPZTurbineThinker(mobj_t *mo)
 {
 
-	UINT8 i;
+	uint8_t i;
 	mapthing_t *mt = mo->spawnpoint;
 	dboolean opt1 = mt->thing_args[0] != 0;
 	fixed_t baseheight = (mt->thing_args[2]) ? (mt->thing_args[2]*FRACUNIT) : (mo->z+mapobjectscale*1024);
 	fixed_t sneakerheight = (mt->thing_args[3]) ? (mt->thing_args[3]*FRACUNIT) : (mo->z+mapobjectscale*1768);
 	fixed_t range = (mt->thing_args[7]) ? (mt->thing_args[7]*FRACUNIT) : (FixedMul(mapobjectscale, TURBINE_RANGE));
-	INT32 rotspeed = (mt->thing_args[5]) ? (mt->thing_args[5]*ANG1/10) : (ANG1*3);	// not angle_t for negatives.
+	int32_t rotspeed = (mt->thing_args[5]) ? (mt->thing_args[5]*ANG1/10) : (ANG1*3);	// not angle_t for negatives.
 	tic_t turbinetime = (mt->thing_args[4]) ? (mt->thing_args[4]) : (TICRATE*3);
-	SINT8 mult = (opt1) ? (-1) : (1);
+	int8_t mult = (opt1) ? (-1) : (1);
 
 	mo->extravalue1 += rotspeed*mult;
 
@@ -183,7 +183,7 @@ void Obj_WPZTurbineThinker(mobj_t *mo)
 }
 
 // ported from my lua for convenience of not having to rewrite half the shit code.
-static INT32 angtoint(angle_t a)
+static int32_t angtoint(angle_t a)
 {
 	return a/ANG1;
 }
@@ -198,7 +198,7 @@ void Obj_playerWPZTurbine(player_t *p)
 	mapthing_t *mt;
 	dboolean opt1;
 	fixed_t dist = FixedMul(mapobjectscale, TURBINE_SPIN)*FRACUNIT;
-	INT32 speed = ANG1*3;
+	int32_t speed = ANG1*3;
 	dboolean mode = false;
 	dboolean distreached;
 
@@ -236,7 +236,7 @@ void Obj_playerWPZTurbine(player_t *p)
 	distreached = R_PointToDist2(t->x, t->y, pmo->x, pmo->y) <= dist+32*mapobjectscale;
 
 	if (mode && !distreached)
-		p->turbineangle = (INT32)R_PointToAngle2(t->x, t->y, pmo->x, pmo->y);
+		p->turbineangle = (int32_t)R_PointToAngle2(t->x, t->y, pmo->x, pmo->y);
 
 	pmo->pitch = 0;
 
@@ -310,10 +310,10 @@ void Obj_playerWPZTurbine(player_t *p)
 
 	if (pmo->momz < mapobjectscale*6)
 	{
-		INT32 myang = angtoint(pmo->angle);
+		int32_t myang = angtoint(pmo->angle);
 		angle_t exitangle = t->angle;
-		INT32 targetangle = angtoint(exitangle);
-		INT32 launchangle = myang-targetangle;
+		int32_t targetangle = angtoint(exitangle);
+		int32_t launchangle = myang-targetangle;
 
 		// WHAT WAS I SMOKING
 		if ( (opt1 && launchangle > -60 && launchangle < -45)

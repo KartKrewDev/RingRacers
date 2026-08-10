@@ -246,7 +246,7 @@ model_t *LoadModel(const char *filename, int ztag)
 void HWR_ReloadModels(void)
 {
 	size_t i;
-	INT32 s;
+	int32_t s;
 
 	for (s = 0; s < MAXSKINS; s++)
 	{
@@ -263,8 +263,8 @@ void HWR_ReloadModels(void)
 
 void LoadModelInterpolationSettings(model_t *model)
 {
-	INT32 i;
-	INT32 numframes = model->meshes[0].numFrames;
+	int32_t i;
+	int32_t numframes = model->meshes[0].numFrames;
 	char *framename = model->framenames;
 
 	if (!framename)
@@ -302,9 +302,9 @@ void LoadModelInterpolationSettings(model_t *model)
 
 void LoadModelSprite2(model_t *model)
 {
-	INT32 i;
+	int32_t i;
 	modelspr2frames_t *spr2frames = NULL;
-	INT32 numframes = model->meshes[0].numFrames;
+	int32_t numframes = model->meshes[0].numFrames;
 	char *framename = model->framenames;
 
 	if (!framename)
@@ -316,8 +316,8 @@ void LoadModelSprite2(model_t *model)
 		char name[5];
 		char interpolation_flag[3];
 		char framechars[4];
-		UINT8 frame = 0;
-		UINT8 spr2idx;
+		uint8_t frame = 0;
+		uint8_t spr2idx;
 		dboolean interpolate = false;
 
 		memset(&prefix, 0x00, 6);

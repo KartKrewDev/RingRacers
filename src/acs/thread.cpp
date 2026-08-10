@@ -67,7 +67,7 @@ void Thread::loadState(ACSVM::Serial &serial)
 {
 	ACSVM::Thread::loadState(serial);
 
-	UINT32 temp = static_cast<UINT32>(ACSVM::ReadVLN<size_t>(serial));
+	uint32_t temp = static_cast<uint32_t>(ACSVM::ReadVLN<size_t>(serial));
 
 	if (temp != 0)
 	{
@@ -82,7 +82,7 @@ void Thread::loadState(ACSVM::Serial &serial)
 	size_t lineIndex = ACSVM::ReadVLN<size_t>(serial);
 	info.line = (lineIndex != 0) ? (&lines[lineIndex - 1]) : nullptr;
 
-	info.side = static_cast<UINT8>(ACSVM::ReadVLN<size_t>(serial));
+	info.side = static_cast<uint8_t>(ACSVM::ReadVLN<size_t>(serial));
 
 	size_t sectorIndex = ACSVM::ReadVLN<size_t>(serial);
 	info.sector = (sectorIndex != 0) ? (&sectors[sectorIndex - 1]) : nullptr;

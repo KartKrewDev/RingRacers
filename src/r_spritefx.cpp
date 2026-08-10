@@ -15,9 +15,9 @@
 #include "r_splats.h"
 #include "r_things.h"
 
-INT32 R_ThingLightLevel(mobj_t* thing)
+int32_t R_ThingLightLevel(mobj_t* thing)
 {
-	INT32 lightlevel = thing->lightlevel;
+	int32_t lightlevel = thing->lightlevel;
 
 	player_t* player = thing->player;
 

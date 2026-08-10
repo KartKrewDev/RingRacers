@@ -24,7 +24,7 @@ extern "C" {
 
 struct fpoint_t
 {
-	INT32 x, y;
+	int32_t x, y;
 };
 
 struct fline_t
@@ -52,12 +52,12 @@ void AM_Stop(void);
 
 struct minigen_t
 {
-	INT32 w, h;
-	UINT8 *buf;
+	int32_t w, h;
+	uint8_t *buf;
 };
 
 // Minimap generation
-minigen_t *AM_MinimapGenerate(INT32 mul);
+minigen_t *AM_MinimapGenerate(int32_t mul);
 
 #ifdef __cplusplus
 } // extern "C"

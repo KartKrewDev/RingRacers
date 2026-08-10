@@ -21,15 +21,15 @@ extern "C" {
 
 #define VOTE_MOD_ENCORE (0x01)
 
-dboolean Y_PlayerIDCanVote(const UINT8 playerId);
-void Y_SetPlayersVote(const UINT8 playerId, SINT8 vote);
+dboolean Y_PlayerIDCanVote(const uint8_t playerId);
+void Y_SetPlayersVote(const uint8_t playerId, int8_t vote);
 
 void Y_VoteDrawer(void);
 void Y_VoteTicker(void);
 void Y_StartVote(void);
 void Y_EndVote(void);
-void Y_SetupVoteFinish(SINT8 pick, SINT8 level, SINT8 anger);
-UINT8 Y_VoteContext(void);
+void Y_SetupVoteFinish(int8_t pick, int8_t level, int8_t anger);
+uint8_t Y_VoteContext(void);
 
 #ifdef __cplusplus
 } // extern "C"

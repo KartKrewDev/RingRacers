@@ -554,7 +554,7 @@ static int sectorlines_num(lua_State *L)
 // args, i -> args[i]
 static int sectorargs_get(lua_State *L)
 {
-	INT32 *args = *((INT32**)luaL_checkudata(L, 1, META_SECTORARGS));
+	int32_t *args = *((int32_t**)luaL_checkudata(L, 1, META_SECTORARGS));
 	int i = luaL_checkinteger(L, 2);
 	if (i < 0 || i >= NUM_SCRIPT_ARGS)
 		return luaL_error(L, LUA_QL("sector_t.args") " index cannot be %d", i);
@@ -591,7 +591,7 @@ static int sector_get(lua_State *L)
 {
 	sector_t *sector = *((sector_t **)luaL_checkudata(L, 1, META_SECTOR));
 	enum sector_e field = luaL_checkoption(L, 2, sector_opt[0], sector_opt);
-	INT16 i;
+	int16_t i;
 
 	if (!sector)
 	{
@@ -650,7 +650,7 @@ static int sector_get(lua_State *L)
 		lua_pushinteger(L, sector->special);
 		return 1;
 	case sector_tag:
-		lua_pushinteger(L, (UINT16)Tag_FGet(&sector->tags));
+		lua_pushinteger(L, (uint16_t)Tag_FGet(&sector->tags));
 		return 1;
 	case sector_taglist:
 		LUA_PushUserdata(L, &sector->tags, META_SECTORTAGLIST);
@@ -691,13 +691,13 @@ static int sector_get(lua_State *L)
 		lua_pushinteger(L, sector->specialflags);
 		return 1;
 	case sector_damagetype: // damagetype
-		lua_pushinteger(L, (UINT8)sector->damagetype);
+		lua_pushinteger(L, (uint8_t)sector->damagetype);
 		return 1;
 	case sector_triggertag: // triggertag
-		lua_pushinteger(L, (INT16)sector->triggertag);
+		lua_pushinteger(L, (int16_t)sector->triggertag);
 		return 1;
 	case sector_triggerer: // triggerer
-		lua_pushinteger(L, (UINT8)sector->triggerer);
+		lua_pushinteger(L, (uint8_t)sector->triggerer);
 		return 1;
 	case sector_friction: // friction
 		lua_pushfixed(L, sector->friction);
@@ -709,7 +709,7 @@ static int sector_get(lua_State *L)
 		LUA_PushUserdata(L, &sector->botController, META_BOTCONTROLLER);
 		return 1;
 	case sector_action: // action
-		lua_pushinteger(L, (INT16)sector->action);
+		lua_pushinteger(L, (int16_t)sector->action);
 		return 1;
 	case sector_args:
 		LUA_PushUserdata(L, sector->args, META_SECTORARGS);
@@ -787,25 +787,25 @@ static int sector_set(lua_State *L)
 		sector->ceilingpic = P_AddLevelFlatRuntime(luaL_checkstring(L, 3));
 		break;
 	case sector_lightlevel:
-		sector->lightlevel = (INT16)luaL_checkinteger(L, 3);
+		sector->lightlevel = (int16_t)luaL_checkinteger(L, 3);
 		break;
 	case sector_floorlightlevel:
-		sector->floorlightlevel = (INT16)luaL_checkinteger(L, 3);
+		sector->floorlightlevel = (int16_t)luaL_checkinteger(L, 3);
 		break;
 	case sector_floorlightabsolute:
 		sector->floorlightabsolute = luaL_checkboolean(L, 3);
 		break;
 	case sector_ceilinglightlevel:
-		sector->ceilinglightlevel = (INT16)luaL_checkinteger(L, 3);
+		sector->ceilinglightlevel = (int16_t)luaL_checkinteger(L, 3);
 		break;
 	case sector_ceilinglightabsolute:
 		sector->ceilinglightabsolute = luaL_checkboolean(L, 3);
 		break;
 	case sector_special:
-		sector->special = (INT16)luaL_checkinteger(L, 3);
+		sector->special = (int16_t)luaL_checkinteger(L, 3);
 		break;
 	case sector_tag:
-		Tag_SectorFSet((UINT32)(sector - sectors), (INT16)luaL_checkinteger(L, 3));
+		Tag_SectorFSet((uint32_t)(sector - sectors), (int16_t)luaL_checkinteger(L, 3));
 		break;
 	case sector_taglist:
 		return LUA_ErrSetDirectly(L, "sector_t", "taglist");
@@ -817,19 +817,19 @@ static int sector_set(lua_State *L)
 		sector->specialflags = luaL_checkinteger(L, 3);
 		break;
 	case sector_damagetype:
-		sector->damagetype = (UINT8)luaL_checkinteger(L, 3);
+		sector->damagetype = (uint8_t)luaL_checkinteger(L, 3);
 		break;
 	case sector_triggertag:
-		sector->triggertag = (INT16)luaL_checkinteger(L, 3);
+		sector->triggertag = (int16_t)luaL_checkinteger(L, 3);
 		break;
 	case sector_triggerer:
-		sector->triggerer = (UINT8)luaL_checkinteger(L, 3);
+		sector->triggerer = (uint8_t)luaL_checkinteger(L, 3);
 		break;
 	case sector_gravity:
 		sector->gravity = luaL_checkfixed(L, 3);
 		break;
 	case sector_action:
-		sector->action = (INT16)luaL_checkinteger(L, 3);
+		sector->action = (int16_t)luaL_checkinteger(L, 3);
 		break;
 	case sector_activation:
 		sector->activation = luaL_checkinteger(L, 3);
@@ -900,7 +900,7 @@ static int subsector_num(lua_State *L)
 // args, i -> args[i]
 static int lineargs_get(lua_State *L)
 {
-	INT32 *args = *((INT32**)luaL_checkudata(L, 1, META_LINEARGS));
+	int32_t *args = *((int32_t**)luaL_checkudata(L, 1, META_LINEARGS));
 	int i = luaL_checkinteger(L, 2);
 	if (i < 0 || i >= NUM_SCRIPT_ARGS)
 		return luaL_error(L, LUA_QL("line_t.args") " index cannot be %d", i);
@@ -1062,7 +1062,7 @@ static int line_num(lua_State *L)
 
 static int sidenum_get(lua_State *L)
 {
-	UINT16 *sidenum = *((UINT16 **)luaL_checkudata(L, 1, META_SIDENUM));
+	uint16_t *sidenum = *((uint16_t **)luaL_checkudata(L, 1, META_SIDENUM));
 	int i;
 	lua_settop(L, 2);
 	if (!lua_isnumber(L, 2))
@@ -1530,9 +1530,9 @@ static int lib_numvertexes(lua_State *L)
 // ffloor_t //
 //////////////
 
-static INT32 P_GetOldFOFFlags(ffloor_t *fflr)
+static int32_t P_GetOldFOFFlags(ffloor_t *fflr)
 {
-	INT32 result = 0;
+	int32_t result = 0;
 	if (fflr->fofflags & FOF_EXISTS)
 		result |= FF_OLD_EXISTS;
 	if (fflr->fofflags & FOF_BLOCKPLAYER)
@@ -1608,7 +1608,7 @@ static int ffloor_get(lua_State *L)
 {
 	ffloor_t *ffloor = *((ffloor_t **)luaL_checkudata(L, 1, META_FFLOOR));
 	enum ffloor_e field = luaL_checkoption(L, 2, ffloor_opt[0], ffloor_opt);
-	INT16 i;
+	int16_t i;
 
 	if (!ffloor)
 	{
@@ -1830,7 +1830,7 @@ static int ffloor_set(lua_State *L)
 		*ffloor->toppic = P_AddLevelFlatRuntime(luaL_checkstring(L, 3));
 		break;
 	case ffloor_toplightlevel:
-		*ffloor->toplightlevel = (INT16)luaL_checkinteger(L, 3);
+		*ffloor->toplightlevel = (int16_t)luaL_checkinteger(L, 3);
 		break;
 	case ffloor_bottomheight: { // bottomheight
 		dboolean flag;
@@ -1868,10 +1868,10 @@ static int ffloor_set(lua_State *L)
 		break;
 	}
 	case ffloor_alpha:
-		ffloor->alpha = (INT32)luaL_checkinteger(L, 3);
+		ffloor->alpha = (int32_t)luaL_checkinteger(L, 3);
 		break;
 	case ffloor_blend:
-		ffloor->blend = (INT32)luaL_checkinteger(L, 3);
+		ffloor->blend = (int32_t)luaL_checkinteger(L, 3);
 		break;
 	}
 	return 0;
@@ -2065,7 +2065,7 @@ static int lib_getMapheaderinfo(lua_State *L)
 	lua_remove(L, 1); // dummy userdata table is unused.
 	if (lua_isnumber(L, 1))
 	{
-		INT32 i = lua_tointeger(L, 1)-1;
+		int32_t i = lua_tointeger(L, 1)-1;
 		if (i < 0 || i >= nummapheaders)
 			return 0;
 		LUA_PushUserdata(L, mapheaderinfo[i], META_MAPHEADER);
@@ -2110,7 +2110,7 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushstring(L, header->keywords);
 	else if (fastcmp(field,"musname")) // we create a table here because it saves us from a userdata nightmare
 	{
-		UINT8 i;
+		uint8_t i;
 		lua_createtable(L, header->musname_size, 0);
 		for (i = 0; i < header->musname_size; i++)
 		{
@@ -2120,7 +2120,7 @@ static int mapheaderinfo_get(lua_State *L)
 	}
 	else if (fastcmp(field,"encoremusname")) // we create a table here because it saves us from a userdata nightmare
 	{
-		UINT8 i;
+		uint8_t i;
 		lua_createtable(L, header->encoremusname_size, 0);
 		for (i = 0; i < header->encoremusname_size; i++)
 		{
@@ -2130,7 +2130,7 @@ static int mapheaderinfo_get(lua_State *L)
 	}
 	else if (fastcmp(field,"associatedmus")) // we create a table here because it saves us from a userdata nightmare
 	{
-		UINT8 i;
+		uint8_t i;
 		lua_createtable(L, header->associatedmus_size, 0);
 		for (i = 0; i < header->associatedmus_size; i++)
 		{
@@ -2187,7 +2187,7 @@ static int mapheaderinfo_get(lua_State *L)
 	else {
 		// Read custom vars now
 		// (note: don't include the "LUA." in your lua scripts!)
-		UINT8 j = 0;
+		uint8_t j = 0;
 		for (;j < header->numCustomOptions && !fastcmp(field, header->customopts[j].option); ++j);
 
 		if(j < header->numCustomOptions)

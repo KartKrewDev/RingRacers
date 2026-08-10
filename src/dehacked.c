@@ -24,7 +24,7 @@ dboolean titlechanged = false;
 dboolean introchanged = false;
 
 static int dbg_line;
-static INT32 deh_num_warning = 0;
+static int32_t deh_num_warning = 0;
 
 FUNCPRINTF void deh_warning(const char *first, ...)
 {
@@ -184,7 +184,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, dboolean mainfile)
 	char textline[MAXLINELEN];
 	char *word;
 	char *word2;
-	INT32 i;
+	int32_t i;
 
 	if (!deh_loaded)
 		initfreeslots();
@@ -290,7 +290,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, dboolean mainfile)
 				{
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
 						i = get_sprite2(word2); // find a sprite by name
-					if (i < (INT32)free_spr2 && i >= (INT32)SPR2_FIRSTFREESLOT)
+					if (i < (int32_t)free_spr2 && i >= (int32_t)SPR2_FIRSTFREESLOT)
 						readsprite2(f, i);
 					else
 					{
@@ -329,7 +329,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, dboolean mainfile)
 					// Get the gametype name from textline
 					// instead of word2, so that gametype names
 					// aren't allcaps
-					INT32 c;
+					int32_t c;
 					for (c = 0; c < MAXLINELEN; c++)
 					{
 						if (textline[c] == '\0')
@@ -340,7 +340,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, dboolean mainfile)
 							if (gtname)
 							{
 								// remove funny characters
-								INT32 j;
+								int32_t j;
 								for (j = 0; j < (MAXLINELEN - c); j++)
 								{
 									if (gtname[j] == '\0')
@@ -450,7 +450,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, dboolean mainfile)
 						ignorelines(f);
 					}
 					else if (i > 0 && i <= MAXCONDITIONSETS)
-						readconditionset(f, (UINT16)(i-1));
+						readconditionset(f, (uint16_t)(i-1));
 					else
 					{
 						deh_warning("Condition set number %d out of range (1 - %d)", i, MAXCONDITIONSETS);
@@ -467,7 +467,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, dboolean mainfile)
 					{
 						cupheader_t *cup = kartcupheaders;
 						cupheader_t *prev = NULL;
-						UINT32 hash = quickncasehash(word2, MAXCUPNAME);
+						uint32_t hash = quickncasehash(word2, MAXCUPNAME);
 
 						while (cup)
 						{
@@ -648,7 +648,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, dboolean mainfile)
 
 // read dehacked lump in a wad (there is special trick for for deh
 // file that are converted to wad in w_wad.c)
-void DEH_LoadDehackedLumpPwad(UINT16 wad, UINT16 lump, dboolean mainfile)
+void DEH_LoadDehackedLumpPwad(uint16_t wad, uint16_t lump, dboolean mainfile)
 {
 	MYFILE f;
 	f.wad = wad;

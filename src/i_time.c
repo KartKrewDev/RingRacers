@@ -103,15 +103,15 @@ void I_UpdateTime(void)
 
 void I_SleepDuration(precise_t duration)
 {
-	UINT64 precision = I_GetPrecisePrecision();
-	INT32 sleepvalue = cv_sleep.value;
-	UINT64 delaygranularity;
+	uint64_t precision = I_GetPrecisePrecision();
+	int32_t sleepvalue = cv_sleep.value;
+	uint64_t delaygranularity;
 	precise_t cur;
 	precise_t dest;
 
 	{
 		double gran = round(((double)(precision / 1000) * sleepvalue * MIN_SLEEP_DURATION_MS));
-		delaygranularity = (UINT64)gran;
+		delaygranularity = (uint64_t)gran;
 	}
 
 	cur = I_GetPreciseTime();
@@ -121,7 +121,7 @@ void I_SleepDuration(precise_t duration)
 	// two's complement arithmetic is our friend here, though!
 	// e.g. cur 0xFFFFFFFFFFFFFFFE = -2, dest 0x0000000000000001 = 1
 	// 0x0000000000000001 - 0xFFFFFFFFFFFFFFFE = 3
-	while ((INT64)(dest - cur) > 0)
+	while ((int64_t)(dest - cur) > 0)
 	{
 		// If our cv_sleep value exceeds the remaining sleep duration, use the
 		// hard sleep function.

@@ -15,11 +15,11 @@
 
 void Obj_WaterfallParticleThink(mobj_t *mo)
 {
-	const INT32 radius = 320;
-	const INT32 momz = (mo->spawnpoint->angle) ? mo->spawnpoint->angle : 8;
+	const int32_t radius = 320;
+	const int32_t momz = (mo->spawnpoint->angle) ? mo->spawnpoint->angle : 8;
 
-	INT32 x = P_RandomRange(PR_DECORATION, -radius, radius)*mapobjectscale;
-	INT32 y = P_RandomRange(PR_DECORATION, -radius, radius)*mapobjectscale;
+	int32_t x = P_RandomRange(PR_DECORATION, -radius, radius)*mapobjectscale;
+	int32_t y = P_RandomRange(PR_DECORATION, -radius, radius)*mapobjectscale;
 
 	mobj_t *particle = P_SpawnMobj(mo->x + x , mo->y + y , mo->z, MT_THOK);
 

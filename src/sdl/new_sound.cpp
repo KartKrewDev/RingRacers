@@ -180,7 +180,7 @@ public:
 } // namespace
 
 // extern in i_sound.h
-UINT8 sound_started = false;
+uint8_t sound_started = false;
 
 static unique_ptr<Gain<2>> master_gain;
 static shared_ptr<Mixer<2>> master;
@@ -454,7 +454,7 @@ void I_UpdateSound(void)
 //  SFX I/O
 //
 
-INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priority, INT32 channel)
+int32_t I_StartSound(sfxenum_t id, uint8_t vol, uint8_t sep, uint8_t pitch, uint8_t priority, int32_t channel)
 {
 	(void) pitch;
 	(void) priority;
@@ -498,7 +498,7 @@ INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priori
 	return channel;
 }
 
-void I_StopSound(INT32 handle)
+void I_StopSound(int32_t handle)
 {
 	SdlAudioLockHandle _;
 
@@ -516,7 +516,7 @@ void I_StopSound(INT32 handle)
 	sound_effect_channels[index]->reset();
 }
 
-dboolean I_SoundIsPlaying(INT32 handle)
+dboolean I_SoundIsPlaying(int32_t handle)
 {
 	SdlAudioLockHandle _;
 
@@ -535,7 +535,7 @@ dboolean I_SoundIsPlaying(INT32 handle)
 	return sound_effect_channels[index]->finished() ? 0 : 1;
 }
 
-void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch)
+void I_UpdateSoundParams(int32_t handle, uint8_t vol, uint8_t sep, uint8_t pitch)
 {
 	(void) pitch;
 
@@ -685,7 +685,7 @@ dboolean I_SetSongSpeed(float speed)
 //  MUSIC SEEKING
 /// ------------------------
 
-UINT32 I_GetSongLength(void)
+uint32_t I_GetSongLength(void)
 {
 	if (!music_player)
 		return 0;
@@ -697,10 +697,10 @@ UINT32 I_GetSongLength(void)
 	if (!duration)
 		return 0;
 
-	return static_cast<UINT32>(std::round(*duration * 1000.f));
+	return static_cast<uint32_t>(std::round(*duration * 1000.f));
 }
 
-dboolean I_SetSongLoopPoint(UINT32 looppoint)
+dboolean I_SetSongLoopPoint(uint32_t looppoint)
 {
 	if (!music_player)
 		return 0;
@@ -716,7 +716,7 @@ dboolean I_SetSongLoopPoint(UINT32 looppoint)
 	return false;
 }
 
-UINT32 I_GetSongLoopPoint(void)
+uint32_t I_GetSongLoopPoint(void)
 {
 	if (!music_player)
 		return 0;
@@ -728,10 +728,10 @@ UINT32 I_GetSongLoopPoint(void)
 	if (!loop_point_seconds)
 		return 0;
 
-	return static_cast<UINT32>(std::round(*loop_point_seconds * 1000.f));
+	return static_cast<uint32_t>(std::round(*loop_point_seconds * 1000.f));
 }
 
-dboolean I_SetSongPosition(UINT32 position)
+dboolean I_SetSongPosition(uint32_t position)
 {
 	if (!music_player)
 		return false;
@@ -742,7 +742,7 @@ dboolean I_SetSongPosition(UINT32 position)
 	return true;
 }
 
-UINT32 I_GetSongPosition(void)
+uint32_t I_GetSongPosition(void)
 {
 	if (!music_player)
 		return 0;
@@ -754,7 +754,7 @@ UINT32 I_GetSongPosition(void)
 	if (!position_seconds)
 		return 0;
 
-	return static_cast<UINT32>(std::round(*position_seconds * 1000.f));
+	return static_cast<uint32_t>(std::round(*position_seconds * 1000.f));
 }
 
 void I_UpdateSongLagThreshold(void)
@@ -935,7 +935,7 @@ dboolean I_SetSongTrack(int track)
 //  MUSIC FADING
 /// ------------------------
 
-void I_SetInternalMusicVolume(UINT8 volume)
+void I_SetInternalMusicVolume(uint8_t volume)
 {
 	if (!music_player)
 		return;
@@ -956,7 +956,7 @@ void I_StopFadingSong(void)
 	music_player->stop_fade();
 }
 
-dboolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void))
+dboolean I_FadeSongFromVolume(uint8_t target_volume, uint8_t source_volume, uint32_t ms, void (*callback)(void))
 {
 	if (!music_player)
 		return false;
@@ -976,7 +976,7 @@ dboolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 m
 	return true;
 }
 
-dboolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void))
+dboolean I_FadeSong(uint8_t target_volume, uint32_t ms, void (*callback)(void))
 {
 	if (!music_player)
 		return false;
@@ -1005,12 +1005,12 @@ static void stop_song_cb(void)
 	music_player->stop();
 }
 
-dboolean I_FadeOutStopSong(UINT32 ms)
+dboolean I_FadeOutStopSong(uint32_t ms)
 {
 	return I_FadeSong(0.f, ms, stop_song_cb);
 }
 
-dboolean I_FadeInPlaySong(UINT32 ms, dboolean looping)
+dboolean I_FadeInPlaySong(uint32_t ms, dboolean looping)
 {
 	if (I_PlaySong(looping))
 		return I_FadeSongFromVolume(100, 0, ms, nullptr);
@@ -1086,7 +1086,7 @@ dboolean I_SoundInputSetEnabled(dboolean enabled)
 	return enabled;
 }
 
-UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
+uint32_t I_SoundInputDequeueSamples(void *data, uint32_t len)
 {
 	SDL_LockMutex(microphone_mutex);
 	if (!g_input_stream)
@@ -1095,12 +1095,12 @@ UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len)
 		return 0;
 	}
 
-	UINT32 ret = SDL_GetAudioStreamData(g_input_stream, data, len);
+	uint32_t ret = SDL_GetAudioStreamData(g_input_stream, data, len);
 	SDL_UnlockMutex(microphone_mutex);
 	return ret;
 }
 
-UINT32 I_SoundInputRemainingSamples(void)
+uint32_t I_SoundInputRemainingSamples(void)
 {
 	SDL_LockMutex(microphone_mutex);
 	if (!g_input_stream)
@@ -1108,12 +1108,12 @@ UINT32 I_SoundInputRemainingSamples(void)
 		SDL_UnlockMutex(microphone_mutex);
 		return 0;
 	}
-	UINT32 avail = SDL_GetAudioStreamAvailable(g_input_stream);
+	uint32_t avail = SDL_GetAudioStreamAvailable(g_input_stream);
 	SDL_UnlockMutex(microphone_mutex);
 	return avail / sizeof(float);
 }
 
-void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, dboolean terminal)
+void I_QueueVoiceFrameFromPlayer(int32_t playernum, void *data, uint32_t len, dboolean terminal)
 {
 	if (!sound_started)
 	{
@@ -1125,7 +1125,7 @@ void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, dboole
 	player->stream().put(std::span((std::byte*)data, len));
 }
 
-void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep)
+void I_SetPlayerVoiceProperties(int32_t playernum, float volume, float sep)
 {
 	if (!sound_started)
 	{
@@ -1137,7 +1137,7 @@ void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep)
 	player->set_properties(volume * volume * volume, sep);
 }
 
-void I_ResetVoiceQueue(INT32 playernum)
+void I_ResetVoiceQueue(int32_t playernum)
 {
 	if (!sound_started)
 	{

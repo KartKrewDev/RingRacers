@@ -109,7 +109,7 @@ struct Slider
 		}
 	}
 
-	void input(INT32 c)
+	void input(int32_t c)
 	{
 		M_ChangeCvarDirect(c, &volume_);
 
@@ -179,12 +179,12 @@ std::array<Slider, Slider::kNumSliders> sliders{{
 	},
 }};
 
-void slider_routine(INT32 c)
+void slider_routine(int32_t c)
 {
 	sliders.at(currentMenu->menuitems[itemOn].mvar2).input(c);
 }
 
-void restartaudio_routine(INT32)
+void restartaudio_routine(int32_t)
 {
 	COM_ImmedExecute("restartaudio");
 }
@@ -238,7 +238,7 @@ void init_routine(void)
 	bool allow = M_SecretUnlocked(SECRET_ONLINE, true);
 	if (!allow)
 	{
-		UINT16 j;
+		uint16_t j;
 		for (j = 0; j < numfollowers; j++)
 		{
 			if (!K_FollowerUsable(j))
@@ -264,9 +264,9 @@ void init_routine(void)
 	}
 }
 
-dboolean input_routine(INT32)
+dboolean input_routine(int32_t)
 {
-	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+	uint8_t pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
 
 	const menuitem_t& it = currentMenu->menuitems[itemOn];
 

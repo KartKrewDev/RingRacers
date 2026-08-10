@@ -54,8 +54,8 @@ extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
 extern consvar_t cv_dueltimelimit, cv_duelscorelimit;
 extern consvar_t cv_numlaps;
-extern UINT32 timelimitintics, extratimeintics, secretextratime;
-extern UINT32 g_pointlimit;
+extern uint32_t timelimitintics, extratimeintics, secretextratime;
+extern uint32_t g_pointlimit;
 extern consvar_t cv_allowexitlevel;
 
 extern consvar_t cv_netstat;
@@ -199,40 +199,40 @@ extern const char *netxcmdnames[MAXNETXCMD - 1];
 // add game commands, needs cleanup
 void D_RegisterServerCommands(void);
 void D_RegisterClientCommands(void);
-void CleanupPlayerName(INT32 playernum, const char *newname);
-dboolean IsPlayerNameUnique(const char *name, INT32 playernum);
+void CleanupPlayerName(int32_t playernum, const char *newname);
+dboolean IsPlayerNameUnique(const char *name, int32_t playernum);
 dboolean IsPlayerNameGood(char *name);
-dboolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
-void D_FillPlayerSkinAndColor(const UINT8 n, const player_t *player, player_config_t *config);
-void D_PlayerChangeSkinAndColor(player_t *player, UINT16 skin, UINT16 color, INT16 follower, UINT16 followercolor);
-void D_FillPlayerWeaponPref(const UINT8 n, player_config_t *config);
-void WeaponPref_Send(UINT8 ssplayer);
-void WeaponPref_Set(INT32 playernum, UINT8 prefs);
-void WeaponPref_Save(UINT8 **cp, INT32 playernum);
-size_t WeaponPref_Parse(const UINT8 *p, INT32 playernum);
-void D_SendPlayerConfig(UINT8 n);
+dboolean EnsurePlayerNameIsGood(char *name, int32_t playernum);
+void D_FillPlayerSkinAndColor(const uint8_t n, const player_t *player, player_config_t *config);
+void D_PlayerChangeSkinAndColor(player_t *player, uint16_t skin, uint16_t color, int16_t follower, uint16_t followercolor);
+void D_FillPlayerWeaponPref(const uint8_t n, player_config_t *config);
+void WeaponPref_Send(uint8_t ssplayer);
+void WeaponPref_Set(int32_t playernum, uint8_t prefs);
+void WeaponPref_Save(uint8_t **cp, int32_t playernum);
+size_t WeaponPref_Parse(const uint8_t *p, int32_t playernum);
+void D_SendPlayerConfig(uint8_t n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
-void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, dboolean newencoremode);
+void Handle_MapQueueSend(uint16_t newmapnum, uint16_t newgametype, dboolean newencoremode);
 dboolean G_GamestateUsesExitLevel(void);
-void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
-void D_MapChange(UINT16 pmapnum, INT32 pgametype, dboolean pencoremode, dboolean presetplayers, INT32 pdelay, dboolean pskipprecutscene, dboolean pforcespecialstage);
-void D_SetupVote(INT16 newgametype);
-void D_ModifyClientVote(UINT8 player, SINT8 voted);
-void D_PickVote(SINT8 angry_map);
+void D_GameTypeChanged(int32_t lastgametype); // not a real _OnChange function anymore
+void D_MapChange(uint16_t pmapnum, int32_t pgametype, dboolean pencoremode, dboolean presetplayers, int32_t pdelay, dboolean pskipprecutscene, dboolean pforcespecialstage);
+void D_SetupVote(int16_t newgametype);
+void D_ModifyClientVote(uint8_t player, int8_t voted);
+void D_PickVote(int8_t angry_map);
 void ObjectPlace_OnChange(void);
-void P_SetPlayerSpectator(INT32 playernum);
-dboolean IsPlayerAdmin(INT32 playernum);
-void SetAdminPlayer(INT32 playernum);
+void P_SetPlayerSpectator(int32_t playernum);
+dboolean IsPlayerAdmin(int32_t playernum);
+void SetAdminPlayer(int32_t playernum);
 void ClearAdminPlayers(void);
-void RemoveAdminPlayer(INT32 playernum);
+void RemoveAdminPlayer(int32_t playernum);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
 
 struct scheduleTask_t
 {
-	UINT16 basetime;
-	UINT16 timer;
+	uint16_t basetime;
+	uint16_t timer;
 	char *command;
 };
 
@@ -242,7 +242,7 @@ extern size_t schedule_len;
 
 void Schedule_Run(void);
 void Schedule_Insert(scheduleTask_t *addTask);
-void Schedule_Add(INT16 basetime, INT16 timeleft, const char *command);
+void Schedule_Add(int16_t basetime, int16_t timeleft, const char *command);
 void Schedule_Clear(void);
 
 typedef enum
@@ -259,7 +259,7 @@ void Automate_Run(automateEvents_t type);
 void Automate_Set(automateEvents_t type, const char *command);
 void Automate_Clear(void);
 
-extern UINT32 livestudioaudience_timer;
+extern uint32_t livestudioaudience_timer;
 void LiveStudioAudience(void);
 
 typedef enum
@@ -273,10 +273,10 @@ typedef enum
 	SYNC__MAX
 } staffsync_reason_t;
 
-void D_Cheat(INT32 playernum, INT32 cheat, ...);
+void D_Cheat(int32_t playernum, int32_t cheat, ...);
 
 // used for the player setup menu
-dboolean CanChangeSkin(INT32 playernum);
+dboolean CanChangeSkin(int32_t playernum);
 
 #ifdef __cplusplus
 } // extern "C"

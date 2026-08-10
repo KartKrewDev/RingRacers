@@ -91,10 +91,10 @@ void Z_Init(void);
 #define Z_MallocAlign(s,t,u,a)    Z_Malloc2(s, t, u, a, __FILE__, __LINE__)
 #define Z_CallocAlign(s,t,u,a)    Z_Calloc2(s, t, u, a, __FILE__, __LINE__)
 #define Z_ReallocAlign(p,s,t,u,a) Z_Realloc2(p,s, t, u, a, __FILE__, __LINE__)
-void Z_Free2(void *ptr, const char *file, INT32 line);
-void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(1);
-void *Z_Calloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(1);
-void *Z_Realloc2(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(2);
+void Z_Free2(void *ptr, const char *file, int32_t line);
+void *Z_Malloc2(size_t size, int32_t tag, void *user, int32_t alignbits, const char *file, int32_t line) FUNCALLOC(1);
+void *Z_Calloc2(size_t size, int32_t tag, void *user, int32_t alignbits, const char *file, int32_t line) FUNCALLOC(1);
+void *Z_Realloc2(void *ptr, size_t size, int32_t tag, void *user, int32_t alignbits, const char *file, int32_t line) FUNCALLOC(2);
 
 // Alloc with standard alignment
 #define Z_Malloc(s,t,u)    Z_MallocAlign(s, t, u, sizeof(void *))
@@ -105,17 +105,17 @@ void *Z_Realloc2(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits,
 // these don't give line numbers currently though
 // (perhaps this should be changed in future?)
 #define Z_FreeTag(tagnum) Z_FreeTags(tagnum, tagnum)
-void Z_FreeTags(INT32 lowtag, INT32 hightag);
+void Z_FreeTags(int32_t lowtag, int32_t hightag);
 
 // Iterate memory by tag
 #define Z_IterateTag(tagnum, func) Z_IterateTags(tagnum, tagnum, func)
-void Z_IterateTags(INT32 lowtag, INT32 hightag, dboolean (*iterfunc)(void *));
+void Z_IterateTags(int32_t lowtag, int32_t hightag, dboolean (*iterfunc)(void *));
 
 //
 // Utility functions
 //
 void Z_CheckMemCleanup(void);
-void Z_CheckHeap(INT32 i);
+void Z_CheckHeap(int32_t i);
 
 //
 // Zone memory modification
@@ -125,10 +125,10 @@ void Z_CheckHeap(INT32 i);
 #ifdef PARANOIA
 #define Z_ChangeTag(p,t) Z_ChangeTag2(p, t, __FILE__, __LINE__)
 #define Z_SetUser(p,u)   Z_SetUser2(p, u, __FILE__, __LINE__)
-void Z_ChangeTag2(void *ptr, INT32 tag, const char *file, INT32 line);
-void Z_SetUser2(void *ptr, void **newuser, const char *file, INT32 line);
+void Z_ChangeTag2(void *ptr, int32_t tag, const char *file, int32_t line);
+void Z_SetUser2(void *ptr, void **newuser, const char *file, int32_t line);
 #else
-void Z_ChangeTag(void *ptr, INT32 tag);
+void Z_ChangeTag(void *ptr, int32_t tag);
 void Z_SetUser(void *ptr, void **newuser);
 #endif
 
@@ -139,7 +139,7 @@ void Z_SetUser(void *ptr, void **newuser);
 // shift down by 10 to convert to KB
 //
 #define Z_TagUsage(tagnum) Z_TagsUsage(tagnum, tagnum)
-size_t Z_TagsUsage(INT32 lowtag, INT32 hightag);
+size_t Z_TagsUsage(int32_t lowtag, int32_t hightag);
 #define Z_TotalUsage() Z_TagsUsage(0, INT32_MAX)
 
 //

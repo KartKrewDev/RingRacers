@@ -66,20 +66,20 @@ struct Shoe : Mobj
 	void follow(Player* n) { Mobj::target(n); }
 
 	void movedir() = delete;
-	INT32 dir() const { return Mobj::movedir; }
-	void dir(INT32 n) { Mobj::movedir = n; }
+	int32_t dir() const { return Mobj::movedir; }
+	void dir(int32_t n) { Mobj::movedir = n; }
 
 	void hnext() = delete;
 	Chain* chain() const { return Mobj::hnext<Chain>(); }
 	void chain(Chain* n) { Mobj::hnext(n); }
 
 	void extravalue1() = delete;
-	INT32 chainLength() const { return mobj_t::extravalue1; }
-	void chainLength(INT32 n) { mobj_t::extravalue1 = n; }
+	int32_t chainLength() const { return mobj_t::extravalue1; }
+	void chainLength(int32_t n) { mobj_t::extravalue1 = n; }
 
 	void extravalue2() = delete;
-	INT32 owner() const { return mobj_t::extravalue2; }
-	void owner(INT32 n) { mobj_t::extravalue2 = n; }
+	int32_t owner() const { return mobj_t::extravalue2; }
+	void owner(int32_t n) { mobj_t::extravalue2 = n; }
 
 	void threshold() = delete;
 	bool bouncing() const { return mobj_t::threshold; }
@@ -104,7 +104,7 @@ struct Shoe : Mobj
 	}
 
 	static Shoe* spawn
-	(	INT32 owner,
+	(	int32_t owner,
 		Player* victim)
 	{
 		Vec2<Fixed> P = followVector(victim->angle) * Fixed {-40 * mapobjectscale};
@@ -115,10 +115,10 @@ struct Shoe : Mobj
 		shoe->dir(0);
 		shoe->fuse = 15 * TICRATE;
 
-		INT32 numLinks = 5;
+		int32_t numLinks = 5;
 		Chain* link = nullptr;
 
-		for (INT32 i = 0; i < numLinks; ++i)
+		for (int32_t i = 0; i < numLinks; ++i)
 		{
 			Chain* node = shoe->spawn_from<Chain>(MT_STONESHOE_CHAIN);
 			node->next(link);
@@ -183,10 +183,10 @@ struct Shoe : Mobj
 private:
 	void animate()
 	{
-		INT32 speed = 20; // TODO
+		int32_t speed = 20; // TODO
 		tic_t t = leveltime / speed;
-		INT32 th = ANGLE_180 / speed * 2;
-		UINT32 ff = 0;
+		int32_t th = ANGLE_180 / speed * 2;
+		uint32_t ff = 0;
 
 		if (t % 8 > 3)
 		{
@@ -323,7 +323,7 @@ bool Chain::try_damage(Player* pmo)
 
 }; // namespace
 
-mobj_t *Obj_SpawnStoneShoe(INT32 owner, mobj_t *victim)
+mobj_t *Obj_SpawnStoneShoe(int32_t owner, mobj_t *victim)
 {
 	return Shoe::spawn(owner, static_cast<Player*>(victim));
 }

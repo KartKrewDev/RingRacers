@@ -43,7 +43,7 @@ typedef struct SDLJoyInfo_s
 	/// number of axies
 	int axises;
 	/// scale of axises
-	INT32 scale;
+	int32_t scale;
 	/// number of buttons
 	int buttons;
 	/// number of hats

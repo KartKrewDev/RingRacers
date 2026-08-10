@@ -176,7 +176,7 @@ Fetch_servers_thread (int *id)
 #endif/*MASTERSERVER*/
 
 // updates serverlist
-void M_RefreshServers(INT32 choice)
+void M_RefreshServers(int32_t choice)
 {
 	(void)choice;
 
@@ -235,7 +235,7 @@ Check_new_version_thread (int *id)
 
 
 // Initializes serverlist when entering the menu...
-void M_ServersMenu(INT32 choice)
+void M_ServersMenu(int32_t choice)
 {
 	(void)choice;
 	// modified game check: no longer handled
@@ -295,7 +295,7 @@ void M_ServersMenu(INT32 choice)
 // Fill serverlist with a bunch of garbage to make our life easier in debugging
 void M_ServerListFillDebug(void)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 
 	serverlistcount = 40;
 	memset(serverlist, 0, sizeof(serverlist));	// zero out the array for convenience...
@@ -304,7 +304,7 @@ void M_ServerListFillDebug(void)
 	{
 		// We don't really care about the server node for this, let's just fill in the info so that we have a visual...
 		serverlist[i].info.maxplayer = M_RandomRange(8, 16);
-		UINT8 val = i % 16;
+		uint8_t val = i % 16;
 		serverlist[i].info.numberofplayer = min(val, serverlist[i].info.maxplayer);
 
 		serverlist[i].info.avgpwrlv = M_RandomRange(500, 1500);
@@ -327,8 +327,8 @@ void M_ServerListFillDebug(void)
 
 		strcpy(serverlist[i].info.gametypename, tempgtname);
 
-		const INT32 gtidentifier = G_GetGametypeByName(tempgtname);
-		UINT8 gtcalc = GTCALC_RACE;
+		const int32_t gtidentifier = G_GetGametypeByName(tempgtname);
+		uint8_t gtcalc = GTCALC_RACE;
 		if (gtidentifier != GT_RACE)
 		{
 			gtcalc = (gtidentifier == GT_BATTLE) ? GTCALC_BATTLE : GTCALC_CUSTOM;
@@ -395,8 +395,8 @@ static int ServerListEntryComparator_recommended(const void *entry1, const void 
 {
 	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2;
 
-	INT32 saseedval = sa->info.numberofplayer;
-	INT32 sbseedval = sb->info.numberofplayer;
+	int32_t saseedval = sa->info.numberofplayer;
+	int32_t sbseedval = sb->info.numberofplayer;
 
 	// Tyron wrote the following on 25072022:
 	// "sort should be two parts
@@ -406,7 +406,7 @@ static int ServerListEntryComparator_recommended(const void *entry1, const void 
 	// "fixing server join flow" is saner to do near the end
 
 	{
-		const UINT8 SERVER_EMPTY = 1;
+		const uint8_t SERVER_EMPTY = 1;
 
 		// The intent with this nudge is to show you
 		// good games you could get a memorable Duel in,
@@ -477,7 +477,7 @@ void M_MPServerBrowserTick(void)
 	CL_TimeoutServerList();
 }
 
-static void M_ServerBrowserConfirm(INT32 choice)
+static void M_ServerBrowserConfirm(int32_t choice)
 {
 	if (choice != MA_YES)
 		return;
@@ -488,14 +488,14 @@ static void M_ServerBrowserConfirm(INT32 choice)
 }
 
 // Input handler for server browser.
-dboolean M_ServerBrowserInputs(INT32 ch)
+dboolean M_ServerBrowserInputs(int32_t ch)
 {
-	UINT8 pid = 0;
-	INT16 maxscroll = serverlistcount - (SERVERSPERPAGE/2) - 2; // Why? Because
+	uint8_t pid = 0;
+	int16_t maxscroll = serverlistcount - (SERVERSPERPAGE/2) - 2; // Why? Because
 	if (maxscroll < 0)
 		maxscroll = 0;
 
-	const INT16 serverbrowserOn = (currentMenu->numitems - 1);
+	const int16_t serverbrowserOn = (currentMenu->numitems - 1);
 
 	(void) ch;
 
@@ -504,11 +504,11 @@ dboolean M_ServerBrowserInputs(INT32 ch)
 		if (serverlistcount)
 		{
 			// Return the MS listing to the bottom.
-			INT32 prevscroll = mpmenu.scrolln;
+			int32_t prevscroll = mpmenu.scrolln;
 
 			mpmenu.servernum = serverlistcount-1;
 			mpmenu.scrolln = maxscroll;
-			mpmenu.slide = SERVERSPACE * (prevscroll - (INT32)mpmenu.scrolln);
+			mpmenu.slide = SERVERSPACE * (prevscroll - (int32_t)mpmenu.scrolln);
 		}
 		else
 		{
@@ -544,7 +544,7 @@ dboolean M_ServerBrowserInputs(INT32 ch)
 
 		if (menucmd[pid].dpad_ud > 0)	// down
 		{
-			if ((UINT32)(mpmenu.servernum+1) < serverlistcount)
+			if ((uint32_t)(mpmenu.servernum+1) < serverlistcount)
 			{
 				// Listing scroll down
 				mpmenu.servernum++;
@@ -561,18 +561,18 @@ dboolean M_ServerBrowserInputs(INT32 ch)
 			}
 
 			// Return the MS listing to the top.
-			INT32 prevscroll = mpmenu.scrolln;
+			int32_t prevscroll = mpmenu.scrolln;
 
 			mpmenu.servernum = 0;
 			mpmenu.scrolln = 0;
-			mpmenu.slide = SERVERSPACE * (prevscroll - (INT32)mpmenu.scrolln);
+			mpmenu.slide = SERVERSPACE * (prevscroll - (int32_t)mpmenu.scrolln);
 		}
 		else if (menucmd[pid].dpad_ud < 0)
 		{
 			if (mpmenu.servernum)
 			{
 				// Listing scroll up
-				if (mpmenu.servernum <= (INT16)maxscroll && mpmenu.scrolln)
+				if (mpmenu.servernum <= (int16_t)maxscroll && mpmenu.scrolln)
 				{
 					mpmenu.scrolln--;
 					mpmenu.slide -= SERVERSPACE;

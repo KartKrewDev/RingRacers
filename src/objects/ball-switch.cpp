@@ -70,8 +70,8 @@ struct BallSwitch_Ball : mobj_t
 		}
 	}
 
-	INT32 Cooldown() const { return ball_cooldown(this); }
-	void Cooldown(INT32 n) { ball_cooldown(this) = n; }
+	int32_t Cooldown() const { return ball_cooldown(this); }
+	void Cooldown(int32_t n) { ball_cooldown(this) = n; }
 	dboolean Active() const { return (ball_cooldown(this) != 0); }
 
 	dboolean DeferActivation() const { return ball_activedefer(this); }
@@ -83,7 +83,7 @@ struct BallSwitch_Ball : mobj_t
 		P_SetTarget(&ball_activator(this), src);
 	}
 
-	SINT8 IntSign(int value) const
+	int8_t IntSign(int value) const
 	{
 		if (value > 0)
 		{
@@ -129,7 +129,7 @@ struct BallSwitch_Ball : mobj_t
 		fixed_t dist = P_AproxDistance(P_AproxDistance(Pad()->x - this->x, Pad()->y - this->y), theirZ - ourZ);
 		fixed_t move = P_AproxDistance(P_AproxDistance(this->momx, this->momy), this->momz);
 
-		constexpr INT32 accelScale = 4;
+		constexpr int32_t accelScale = 4;
 
 		if (dist < accelScale * this->scale && move < accelScale * this->scale)
 		{
@@ -138,16 +138,16 @@ struct BallSwitch_Ball : mobj_t
 		}
 		else
 		{
-			static constexpr const INT32 accel[2] = { FRACUNIT*3/4, FRACUNIT*3/16 };
+			static constexpr const int32_t accel[2] = { FRACUNIT*3/4, FRACUNIT*3/16 };
 			constexpr fixed_t frict = FRACUNIT*99/100;
 
 			this->momx = FixedMul(this->momx, frict);
 			this->momy = FixedMul(this->momy, frict);
 			this->momz = FixedMul(this->momz, frict);
 
-			SINT8 xSign = IntSign(Pad()->x - this->x);
-			SINT8 ySign = IntSign(Pad()->y - this->y);
-			SINT8 zSign = IntSign(theirZ - ourZ);
+			int8_t xSign = IntSign(Pad()->x - this->x);
+			int8_t ySign = IntSign(Pad()->y - this->y);
+			int8_t zSign = IntSign(theirZ - ourZ);
 
 			dboolean xAway = (IntSign(this->momx) == xSign);
 			dboolean yAway = (IntSign(this->momy) == ySign);
@@ -166,7 +166,7 @@ struct BallSwitch_Ball : mobj_t
 
 		if (Active() == true)
 		{
-			INT32 cool = Cooldown();
+			int32_t cool = Cooldown();
 			if (cool > 0)
 			{
 				Cooldown(cool - 1);

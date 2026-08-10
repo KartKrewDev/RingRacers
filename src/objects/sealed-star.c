@@ -21,8 +21,8 @@
 #include "../r_main.h"
 #include "../s_sound.h"
 
-static const INT32 kMinTranslucency = 0;
-static const INT32 kMaxTranslucency = 10;
+static const int32_t kMinTranslucency = 0;
+static const int32_t kMaxTranslucency = 10;
 
 void Obj_SSCandleMobjThink(mobj_t* mo)
 {
@@ -36,15 +36,15 @@ void Obj_SSCandleMobjThink(mobj_t* mo)
 
 void Obj_SSHologramRotatorMapThingSpawn(mobj_t* mo, mapthing_t* mt)
 {
-	INT32 numStates = 0;
+	int32_t numStates = 0;
 	statenum_t mystates[32] = {0};
 	char stringarg[256];
 	char *token;
 	int i;
-	INT32 speed = 8;
-	INT32 radius = 256;
-	INT32 amplitude = mt->thing_args[2];
-	INT32 frequency = mt->thing_args[3];
+	int32_t speed = 8;
+	int32_t radius = 256;
+	int32_t amplitude = mt->thing_args[2];
+	int32_t frequency = mt->thing_args[3];
 	angle_t angDiff;
 	mobj_t* part;
 	fixed_t circumference;
@@ -224,7 +224,7 @@ void Obj_SSHologramMapThingSpawn(mobj_t* mo, mapthing_t* mt)
 
 void Obj_SSHologramMobjFuse(mobj_t* mo)
 {
-	INT32 trans = (mo->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
+	int32_t trans = (mo->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
 
 	if (trans >= kMaxTranslucency)
 	{
@@ -249,18 +249,18 @@ void Obj_SSHologramMobjFuse(mobj_t* mo)
 }
 
 static struct {
-	INT32 t;
-	INT32 x;
-	INT32 y;
-	INT32 z;
-	INT32 w;
-	INT32 xx;
-	INT32 yy;
-	INT32 zz;
-	INT32 ww;
+	int32_t t;
+	int32_t x;
+	int32_t y;
+	int32_t z;
+	int32_t w;
+	int32_t xx;
+	int32_t yy;
+	int32_t zz;
+	int32_t ww;
 } srng_state = {0, 5197528, 3154710, 9406548, 1028369, 0, 0, 0, 0};
 
-static void set_srng_seed(INT32 seed)
+static void set_srng_seed(int32_t seed)
 {
 	srng_state.t = seed;
 	srng_state.xx = srng_state.x;
@@ -269,7 +269,7 @@ static void set_srng_seed(INT32 seed)
 	srng_state.ww = srng_state.w;
 }
 
-static INT32 srng_random(void)
+static int32_t srng_random(void)
 {
 	srng_state.xx = srng_state.yy;
 	srng_state.yy = srng_state.zz;
@@ -279,7 +279,7 @@ static INT32 srng_random(void)
 	return srng_state.ww;
 }
 
-static INT32 srng_RandomRange(INT32 a, INT32 b)
+static int32_t srng_RandomRange(int32_t a, int32_t b)
 {
 	return a + abs(srng_random() % (b - a + 1));
 }
@@ -289,7 +289,7 @@ static fixed_t srng_RandomFixed(void)
 	return (fixed_t)(srng_RandomRange(0, FRACUNIT));
 }
 
-static dboolean srng_RandomChance(INT32 chance)
+static dboolean srng_RandomChance(int32_t chance)
 {
 	return srng_RandomFixed() < chance;
 }
@@ -310,7 +310,7 @@ static dboolean srng_RandomChance(INT32 chance)
 // with a statistical distribution instead of a linear search,
 // but this was hardcoded to copy the exact behavior of the Lua
 
-static dboolean cloud_CheckDistribution(mobj_t **coins, INT32 coin_count, fixed_t x, fixed_t y, fixed_t z, fixed_t scale)
+static dboolean cloud_CheckDistribution(mobj_t **coins, int32_t coin_count, fixed_t x, fixed_t y, fixed_t z, fixed_t scale)
 {
 	fixed_t spacing = FixedMul(MIN_SPACING, scale);
 	int i;
@@ -330,7 +330,7 @@ static dboolean cloud_CheckDistribution(mobj_t **coins, INT32 coin_count, fixed_
 	return true;
 }
 
-static void CoinCloudSpawn(mobj_t *mo, INT32 seed, mobjtype_t ty)
+static void CoinCloudSpawn(mobj_t *mo, int32_t seed, mobjtype_t ty)
 {
 	fixed_t x, y, z;
 	mobj_t *coins[SPAWNS_PER_MAPTHINGS];
@@ -393,7 +393,7 @@ void Obj_SSCoinMobjThink(mobj_t* mo)
 
 #define GOBLET_SEED_OFFSET (1267491679)				// I'm setting a garbage seed offset here so that seed 0 clouds are markedly different to their coin counterparts
 
-static void GobletCloudSpawn(mobj_t *mo, INT32 seed, mobjtype_t ty)
+static void GobletCloudSpawn(mobj_t *mo, int32_t seed, mobjtype_t ty)
 {
 	fixed_t x, y, z;
 	mobj_t *coins[GOBLET_SPAWNS_PER_MAPTHING];

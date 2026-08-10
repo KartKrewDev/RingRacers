@@ -114,7 +114,7 @@ extern char english_shiftxform[];
 #define CHAT_MUTE (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer))) // this still allows to open the chat but not to type. That's used for scrolling and whatnot.
 #define OLD_MUTE (OLDCHAT && cv_mute.value && !(server || IsPlayerAdmin(consoleplayer))) // this is used to prevent oldchat from opening when muted.
 
-typedef INT32 sayflags_t;
+typedef int32_t sayflags_t;
 #define HU_SHOUT		(1)			// Shout message
 #define HU_CSAY			(1<<1)		// Middle-of-screen server message
 #define HU_PRIVNOTICE	(1<<2)		// Special server sayto, we don't want to see it as the sender.
@@ -162,13 +162,13 @@ void HU_TickSongCredits(void);
 char HU_dequeueChatChar(void);
 void HU_Erase(void);
 void HU_clearChatChars(void);
-void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, UINT32 lag, UINT32 packetloss, INT32 flags, SINT8 toside); // Lat': Ping drawer for scoreboard.
-void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, UINT32 lag, INT32 flags);
+void HU_drawPing(fixed_t x, fixed_t y, uint32_t ping, uint32_t lag, uint32_t packetloss, int32_t flags, int8_t toside); // Lat': Ping drawer for scoreboard.
+void HU_drawMiniPing(int32_t x, int32_t y, uint32_t ping, uint32_t lag, int32_t flags);
 
 // CECHO interface.
 void HU_ClearCEcho(void);
-void HU_SetCEchoDuration(INT32 seconds);
-void HU_SetCEchoFlags(INT32 flags);
+void HU_SetCEchoDuration(int32_t seconds);
+void HU_SetCEchoFlags(int32_t flags);
 void HU_DoCEcho(const char *msg);
 
 // Titlecard CECHO shite
@@ -176,11 +176,11 @@ void HU_DoTitlecardCEcho(player_t *player, const char *msg, dboolean interrupt);
 void HU_DoTitlecardCEchoForDuration(player_t *player, const char *msg, dboolean interrupt, tic_t duration);
 void HU_ClearTitlecardCEcho(void);
 
-void DoSayCommand(char *message, SINT8 target, UINT8 flags, UINT8 source);
+void DoSayCommand(char *message, int8_t target, uint8_t flags, uint8_t source);
 
 // Demo playback info
-extern UINT32 hu_demotime;
-extern UINT32 hu_demolap;
+extern uint32_t hu_demotime;
+extern uint32_t hu_demolap;
 
 #ifdef __cplusplus
 } // extern "C"

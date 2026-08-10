@@ -65,7 +65,7 @@ static void K_MidVoteKick(void)
 --------------------------------------------------*/
 static void K_MidVoteMute(void)
 {
-	UINT8 buf[2];
+	uint8_t buf[2];
 
 	if (g_midVote.victim == NULL)
 	{
@@ -177,9 +177,9 @@ static void Command_CallVote(void)
 	midVoteType_e voteType = MVT__MAX;
 
 	const char *voteVariableStr = NULL;
-	INT32 voteVariable = 0;
+	int32_t voteVariable = 0;
 
-	INT32 i = INT32_MAX;
+	int32_t i = INT32_MAX;
 
 	if (netgame == false)
 	{
@@ -232,11 +232,11 @@ static void Command_CallVote(void)
 }
 
 /*--------------------------------------------------
-	void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
+	void K_SendCallMidVote(midVoteType_e voteType, int32_t voteVariable)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
+void K_SendCallMidVote(midVoteType_e voteType, int32_t voteVariable)
 {
 	player_t *victim = NULL;
 
@@ -254,8 +254,8 @@ void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
 		return;
 	}
 
-	UINT8 buf[MAXTEXTCMD];
-	UINT8 *buf_p = buf;
+	uint8_t buf[MAXTEXTCMD];
+	uint8_t *buf_p = buf;
 
 	WRITEUINT8(buf_p, voteType);
 	WRITEINT32(buf_p, voteVariable);
@@ -264,7 +264,7 @@ void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
 }
 
 /*--------------------------------------------------
-	static void Got_CallZVote(const UINT8 **cp, INT32 playernum)
+	static void Got_CallZVote(const uint8_t **cp, int32_t playernum)
 
 		Callback function for XD_CALLZVOTE NetXCmd.
 		Attempts to start a new vote using K_InitNewMidVote.
@@ -276,10 +276,10 @@ void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void Got_CallZVote(const UINT8 **cp, INT32 playernum)
+static void Got_CallZVote(const uint8_t **cp, int32_t playernum)
 {
 	midVoteType_e type = MVT__MAX;
-	INT32 variable = 0;
+	int32_t variable = 0;
 	player_t *victim = NULL;
 
 	type = READUINT8(*cp);
@@ -297,7 +297,7 @@ static void Got_CallZVote(const UINT8 **cp, INT32 playernum)
 }
 
 /*--------------------------------------------------
-	static void K_PlayerSendMidVote(const UINT8 id)
+	static void K_PlayerSendMidVote(const uint8_t id)
 
 		Sends a local player's confirmed vote to
 		the server.
@@ -308,7 +308,7 @@ static void Got_CallZVote(const UINT8 **cp, INT32 playernum)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void K_PlayerSendMidVote(const UINT8 id)
+static void K_PlayerSendMidVote(const uint8_t id)
 {
 	if (id >= MAXSPLITSCREENPLAYERS)
 	{
@@ -319,7 +319,7 @@ static void K_PlayerSendMidVote(const UINT8 id)
 }
 
 /*--------------------------------------------------
-	static void Got_SetZVote(const UINT8 **cp, INT32 playernum)
+	static void Got_SetZVote(const uint8_t **cp, int32_t playernum)
 
 		Callback function for XD_SETZVOTE NetXCmd.
 		Updates the vote table.
@@ -331,7 +331,7 @@ static void K_PlayerSendMidVote(const UINT8 id)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void Got_SetZVote(const UINT8 **cp, INT32 playernum)
+static void Got_SetZVote(const uint8_t **cp, int32_t playernum)
 {
 	(void)cp;
 
@@ -352,7 +352,7 @@ static void Got_SetZVote(const UINT8 **cp, INT32 playernum)
 --------------------------------------------------*/
 void K_RegisterMidVoteCVars(void)
 {
-	INT32 i = INT32_MAX;
+	int32_t i = INT32_MAX;
 
 	for (i = 0; i < MVT__MAX; i++)
 	{
@@ -382,7 +382,7 @@ void K_ResetMidVote(void)
 --------------------------------------------------*/
 dboolean K_AnyMidVotesAllowed(void)
 {
-	INT32 i = INT32_MAX;
+	int32_t i = INT32_MAX;
 
 	for (i = 0; i < MVT__MAX; i++)
 	{
@@ -396,7 +396,7 @@ dboolean K_AnyMidVotesAllowed(void)
 }
 
 /*--------------------------------------------------
-	midVoteType_e K_GetNextCallableMidVote(INT32 seed, dboolean backwards)
+	midVoteType_e K_GetNextCallableMidVote(int32_t seed, dboolean backwards)
 
 		See header file for description.
 --------------------------------------------------*/
@@ -441,11 +441,11 @@ midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, dboolean backwards)
 }
 
 /*--------------------------------------------------
-	dboolean K_PlayerIDAllowedInMidVote(const UINT8 id)
+	dboolean K_PlayerIDAllowedInMidVote(const uint8_t id)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean K_PlayerIDAllowedInMidVote(const UINT8 id)
+dboolean K_PlayerIDAllowedInMidVote(const uint8_t id)
 {
 	const player_t *player = &players[id];
 
@@ -471,14 +471,14 @@ dboolean K_PlayerIDAllowedInMidVote(const UINT8 id)
 }
 
 /*--------------------------------------------------
-	UINT8 K_RequiredMidVotes(void)
+	uint8_t K_RequiredMidVotes(void)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT8 K_RequiredMidVotes(void)
+uint8_t K_RequiredMidVotes(void)
 {
-	UINT8 allowedCount = 0;
-	INT32 i = INT32_MAX;
+	uint8_t allowedCount = 0;
+	int32_t i = INT32_MAX;
 
 	if (g_midVote.active == false)
 	{
@@ -512,11 +512,11 @@ UINT8 K_RequiredMidVotes(void)
 }
 
 /*--------------------------------------------------
-	dboolean K_PlayerIDMidVoted(const UINT8 id)
+	dboolean K_PlayerIDMidVoted(const uint8_t id)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean K_PlayerIDMidVoted(const UINT8 id)
+dboolean K_PlayerIDMidVoted(const uint8_t id)
 {
 	const player_t *player = &players[id];
 
@@ -541,14 +541,14 @@ dboolean K_PlayerIDMidVoted(const UINT8 id)
 }
 
 /*--------------------------------------------------
-	UINT8 K_CountMidVotes(void)
+	uint8_t K_CountMidVotes(void)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT8 K_CountMidVotes(void)
+uint8_t K_CountMidVotes(void)
 {
-	UINT8 voteCount = 0;
-	INT32 i = INT32_MAX;
+	uint8_t voteCount = 0;
+	int32_t i = INT32_MAX;
 
 	if (g_midVote.active == false)
 	{
@@ -608,11 +608,11 @@ dboolean K_MinimalCheckNewMidVote(midVoteType_e type)
 }
 
 /*--------------------------------------------------
-	dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+	dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, int32_t variable, player_t *victim)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, int32_t variable, player_t *victim)
 {
 	(void)variable;
 
@@ -714,13 +714,13 @@ dboolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable,
 }
 
 /*--------------------------------------------------
-	void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+	void K_InitNewMidVote(player_t *caller, midVoteType_e type, int32_t variable, player_t *victim)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+void K_InitNewMidVote(player_t *caller, midVoteType_e type, int32_t variable, player_t *victim)
 {
-	INT32 i = INT32_MAX;
+	int32_t i = INT32_MAX;
 
 	if (K_AllowNewMidVote(caller, type, variable, victim) == false)
 	{
@@ -808,7 +808,7 @@ void K_MidVoteFailure(void)
 --------------------------------------------------*/
 static void K_HandleMidVoteInput(void)
 {
-	INT32 i = INT32_MAX;
+	int32_t i = INT32_MAX;
 
 	for (i = 0; i <= splitscreen; i++)
 	{
@@ -879,8 +879,8 @@ static void K_HandleMidVoteInput(void)
 --------------------------------------------------*/
 void K_TickMidVote(void)
 {
-	UINT8 numVotes = 0;
-	UINT8 requiredVotes = 0;
+	uint8_t numVotes = 0;
+	uint8_t requiredVotes = 0;
 
 	if (g_midVote.active == false)
 	{
@@ -935,7 +935,7 @@ void K_TickMidVote(void)
 	// I hope we never change this timing again, but if we do, check the drawer as well.
 	const tic_t spd = 2;
 	const tic_t anim = (g_midVote.time - ZVOTE_GUI_SLIDE) / spd;
-	const UINT8 frame = anim % (ZVOTE_PATCH_EXC_LOOP + ZVOTE_GUI_SLIDE);
+	const uint8_t frame = anim % (ZVOTE_PATCH_EXC_LOOP + ZVOTE_GUI_SLIDE);
 
 	if (frame == 0 && g_midVote.time % spd == 0 && g_midVote.gui[R_GetViewNumber()].slide == 0)
 		S_StartSound(NULL, sfx_s3kd2s);
@@ -1006,7 +1006,7 @@ const char *K_GetMidVoteLabel(midVoteType_e i)
 }
 
 /*--------------------------------------------------
-	static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, dboolean flipped)
+	static void K_DrawMidVoteBar(fixed_t x, fixed_t y, int32_t flags, fixed_t fill, skincolornum_t color, dboolean flipped)
 
 		Draws a bar
 
@@ -1016,12 +1016,12 @@ const char *K_GetMidVoteLabel(midVoteType_e i)
 	Return:-
 		true if it uses a victim, otherwise false.
 --------------------------------------------------*/
-static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, dboolean flipped)
+static void K_DrawMidVoteBar(fixed_t x, fixed_t y, int32_t flags, fixed_t fill, skincolornum_t color, dboolean flipped)
 {
-	const SINT8 sign = (flipped == true) ? -1 : 1;
+	const int8_t sign = (flipped == true) ? -1 : 1;
 	patch_t *bar = g_zBar[0];
-	UINT8 *clm = NULL;
-	INT32 i = INT32_MAX;
+	uint8_t *clm = NULL;
+	int32_t i = INT32_MAX;
 
 	if (color > SKINCOLOR_NONE)
 	{
@@ -1055,7 +1055,7 @@ static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, sk
 
 	if (fill > 0)
 	{
-		const INT32 fillSegs = FixedMul(fill, ZVOTE_PATCH_BAR_SEGS);
+		const int32_t fillSegs = FixedMul(fill, ZVOTE_PATCH_BAR_SEGS);
 
 		for (i = 0; i < fillSegs; i++)
 		{
@@ -1088,7 +1088,7 @@ static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, sk
 --------------------------------------------------*/
 void K_DrawMidVote(void)
 {
-	const INT32 id = R_GetViewNumber();
+	const int32_t id = R_GetViewNumber();
 	midVoteGUI_t *gui = NULL;
 	dboolean pressed = false;
 	fixed_t x = INT32_MAX, y = INT32_MAX;
@@ -1113,7 +1113,7 @@ void K_DrawMidVote(void)
 		{
 			const tic_t spd = 2;
 			const tic_t anim = (g_midVote.time - ZVOTE_GUI_SLIDE) / spd;
-			const UINT8 frame = anim % (ZVOTE_PATCH_EXC_LOOP + ZVOTE_GUI_SLIDE);
+			const uint8_t frame = anim % (ZVOTE_PATCH_EXC_LOOP + ZVOTE_GUI_SLIDE);
 
 			if (frame < ZVOTE_PATCH_EXC_LOOP)
 			{
@@ -1286,8 +1286,8 @@ void K_DrawMidVote(void)
 			const fixed_t voteY = y + (2 * FRACUNIT);
 			fixed_t voteX = x + (8 * FRACUNIT);
 			fixed_t voteWidth = 0;
-			UINT8 votes = 0;
-			UINT8 require = 0;
+			uint8_t votes = 0;
+			uint8_t require = 0;
 
 			if (g_midVote.end > 0)
 			{

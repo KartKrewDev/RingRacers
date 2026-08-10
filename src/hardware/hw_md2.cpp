@@ -113,7 +113,7 @@ static model_t *md2_readModel(const char *filename)
 static inline void md2_printModelInfo (model_t *model)
 {
 #if 0
-	INT32 i;
+	int32_t i;
 
 	CONS_Debug(DBG_RENDER, "magic:\t\t\t%c%c%c%c\n", model->header.magic>>24,
 	            (model->header.magic>>16)&0xff,
@@ -270,24 +270,24 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 
 typedef struct
 {
-	UINT8 manufacturer;
-	UINT8 version;
-	UINT8 encoding;
-	UINT8 bitsPerPixel;
-	INT16 xmin;
-	INT16 ymin;
-	INT16 xmax;
-	INT16 ymax;
-	INT16 hDpi;
-	INT16 vDpi;
-	UINT8 colorMap[48];
-	UINT8 reserved;
-	UINT8 numPlanes;
-	INT16 bytesPerLine;
-	INT16 paletteInfo;
-	INT16 hScreenSize;
-	INT16 vScreenSize;
-	UINT8 filler[54];
+	uint8_t manufacturer;
+	uint8_t version;
+	uint8_t encoding;
+	uint8_t bitsPerPixel;
+	int16_t xmin;
+	int16_t ymin;
+	int16_t xmax;
+	int16_t ymax;
+	int16_t hDpi;
+	int16_t vDpi;
+	uint8_t colorMap[48];
+	uint8_t reserved;
+	uint8_t numPlanes;
+	int16_t bytesPerLine;
+	int16_t paletteInfo;
+	int16_t hScreenSize;
+	int16_t vScreenSize;
+	uint8_t filler[54];
 } PcxHeader;
 
 static GLTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
@@ -295,11 +295,11 @@ static GLTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
 {
 	PcxHeader header;
 #define PALSIZE 768
-	UINT8 palette[PALSIZE];
-	const UINT8 *pal;
+	uint8_t palette[PALSIZE];
+	const uint8_t *pal;
 	RGBA_t *image;
 	size_t pw, ph, size, ptr = 0;
-	INT32 ch, rep;
+	int32_t ch, rep;
 	FILE *file;
 	//Filename checking fixed ~Monster Iestyn and Golden
 	char *pcxfilename = va("%s" PATHSEP "models" PATHSEP "%s", srb2home, filename);
@@ -333,7 +333,7 @@ static GLTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
 	ph = *h = header.ymax - header.ymin + 1;
 	image = (RGBA_t *)Z_Malloc(pw*ph*4, PU_HWRMODELTEXTURE, &grpatch->mipmap->data);
 
-	if (fread(palette, sizeof (UINT8), PALSIZE, file) != PALSIZE)
+	if (fread(palette, sizeof (uint8_t), PALSIZE, file) != PALSIZE)
 	{
 		Z_Free(image);
 		fclose(file);
@@ -396,7 +396,7 @@ static void md2_loadTexture(md2_t *model)
 	if (!grPatch->mipmap->downloaded && !grPatch->mipmap->data)
 	{
 		int w = 0, h = 0;
-		UINT32 size;
+		uint32_t size;
 		RGBA_t *image;
 
 #ifdef HAVE_PNG
@@ -413,10 +413,10 @@ static void md2_loadTexture(md2_t *model)
 		grPatch->mipmap->downloaded = 0;
 		grPatch->mipmap->flags = 0;
 
-		patch->width = (INT16)w;
-		patch->height = (INT16)h;
-		grPatch->mipmap->width = (UINT16)w;
-		grPatch->mipmap->height = (UINT16)h;
+		patch->width = (int16_t)w;
+		patch->height = (int16_t)h;
+		grPatch->mipmap->width = (uint16_t)w;
+		grPatch->mipmap->height = (uint16_t)h;
 
 		// Lactozilla: Apply colour cube
 		image = (RGBA_t*)(grPatch->mipmap->data);
@@ -477,10 +477,10 @@ static void md2_loadBlendTexture(md2_t *model)
 		grPatch->mipmap->downloaded = 0;
 		grPatch->mipmap->flags = 0;
 
-		patch->width = (INT16)w;
-		patch->height = (INT16)h;
-		grPatch->mipmap->width = (UINT16)w;
-		grPatch->mipmap->height = (UINT16)h;
+		patch->width = (int16_t)w;
+		patch->height = (int16_t)h;
+		grPatch->mipmap->width = (uint16_t)w;
+		grPatch->mipmap->height = (uint16_t)h;
 	}
 
 	HWD.pfnSetTexture(grPatch->mipmap); // We do need to do this so that it can be cleared and knows to recreate it when necessary
@@ -494,7 +494,7 @@ static dboolean nomd2s = false;
 void HWR_InitModels(void)
 {
 	size_t i;
-	INT32 s;
+	int32_t s;
 	FILE *f;
 	char name[24], filename[32];
 	// name[24] is used to check for names in the models.dat file that match with sprites or player skins
@@ -596,7 +596,7 @@ modelfound:
 	fclose(f);
 }
 
-void HWR_AddPlayerModel(INT32 skin) // For skins that were added after startup
+void HWR_AddPlayerModel(int32_t skin) // For skins that were added after startup
 {
 	FILE *f;
 	char name[24], filename[32];
@@ -710,21 +710,21 @@ spritemodelfound:
 }
 
 //#define BlendLuminance (K_ColorRelativeLuminance(r, g, b))
-#define BlendLuminance(r, g, b) ((UINT8)((r * 0.2126) + (g * 0.7152) + (b * 0.0722)))
+#define BlendLuminance(r, g, b) ((uint8_t)((r * 0.2126) + (g * 0.7152) + (b * 0.0722)))
 
-static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMipmap_t *grMipmap, INT32 skinnum, skincolornum_t color)
+static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMipmap_t *grMipmap, int32_t skinnum, skincolornum_t color)
 {
 	GLPatch_t *hwrPatch = (GLPatch_t*)(gpatch->hardware);
 	GLPatch_t *hwrBlendPatch = (GLPatch_t*)(blendgpatch->hardware);
-	UINT16 w = gpatch->width, h = gpatch->height;
-	UINT32 size = w*h;
+	uint16_t w = gpatch->width, h = gpatch->height;
+	uint32_t size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
-	UINT8 translation[17]; // First the color index
-	UINT8 cutoff[17]; // Brightness cutoff before using the next color
-	UINT8 translen = 0;
-	UINT8 i;
-	UINT8 colorbrightnesses[17];
-	UINT8 color_match_lookup[256]; // optimization attempt
+	uint8_t translation[17]; // First the color index
+	uint8_t cutoff[17]; // Brightness cutoff before using the next color
+	uint8_t translen = 0;
+	uint8_t i;
+	uint8_t colorbrightnesses[17];
+	uint8_t color_match_lookup[256]; // optimization attempt
 
 	blendcolor = V_GetColor(0); // initialize
 	memset(translation, 0, sizeof(translation));
@@ -760,8 +760,8 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 
 	if (color != SKINCOLOR_NONE && color < numskincolors)
 	{
-		UINT8 numdupes = 1;
-		UINT8 prevdupes = numdupes;
+		uint8_t numdupes = 1;
+		uint8_t prevdupes = numdupes;
 
 		translation[translen] = skincolors[color].ramp[0];
 		cutoff[translen] = 255;
@@ -776,19 +776,19 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 
 			if (translen > 0)
 			{
-				INT16 newcutoff = cutoff[translen-1] - (255 / (16 / prevdupes));
+				int16_t newcutoff = cutoff[translen-1] - (255 / (16 / prevdupes));
 
 				if (newcutoff < 0)
 					newcutoff = 0;
 
-				cutoff[translen] = (UINT8)newcutoff;
+				cutoff[translen] = (uint8_t)newcutoff;
 			}
 
 			prevdupes = numdupes;
 			numdupes = 1;
 			translen++;
 
-			translation[translen] = (UINT8)skincolors[color].ramp[i];
+			translation[translen] = (uint8_t)skincolors[color].ramp[i];
 		}
 
 		translen++;
@@ -801,8 +801,8 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 
 	if (skinnum == TC_RAINBOW && translen > 0)
 	{
-		UINT16 b;
-		INT32 compare;
+		uint16_t b;
+		int32_t compare;
 
 		for (i = 0; i < translen; i++) // moved from inside the loop to here
 		{
@@ -813,7 +813,7 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		// generate lookup table for color brightness matching
 		for (b = 0; b < 256; b++)
 		{
-			UINT16 brightdif = 256;
+			uint16_t brightdif = 256;
 
 			color_match_lookup[b] = 0;
 			for (i = 0; i < translen; i++)
@@ -821,11 +821,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 				if (b > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
 					continue;
 
-				compare = abs((INT16)(colorbrightnesses[i]) - (INT16)(b));
+				compare = abs((int16_t)(colorbrightnesses[i]) - (int16_t)(b));
 
 				if (compare < brightdif)
 				{
-					brightdif = (UINT16)compare;
+					brightdif = (uint16_t)compare;
 					color_match_lookup[b] = i; // best matching color that's equal brightness or darker
 				}
 			}
@@ -891,7 +891,7 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 				}
 				else
 				{
-					UINT8 ialpha = 255 - blendimage->s.alpha, balpha = blendimage->s.alpha;
+					uint8_t ialpha = 255 - blendimage->s.alpha, balpha = blendimage->s.alpha;
 					RGBA_t icolor = *image, bcolor;
 
 					memset(&bcolor, 0x00, sizeof(RGBA_t));
@@ -918,7 +918,7 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 			else
 			{
 				// All settings that use skincolors!
-				UINT16 brightness;
+				uint16_t brightness;
 
 				if (translen <= 0)
 				{
@@ -936,7 +936,7 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 					}
 					else
 					{
-						UINT16 imagebright, blendbright;
+						uint16_t imagebright, blendbright;
 
 						imagebright = BlendLuminance(image->s.red, image->s.green, image->s.blue);
 						blendbright = BlendLuminance(blendimage->s.red, blendimage->s.green, blendimage->s.blue);
@@ -962,15 +962,15 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 				// (Me splitting this into a function didn't work, so I had to ruin this entire function's groove...)
 				{
 					RGBA_t nextcolor;
-					UINT8 firsti, secondi, mul, mulmax;
-					INT32 r, g, b;
+					uint8_t firsti, secondi, mul, mulmax;
+					int32_t r, g, b;
 
 					// Rainbow needs to find the closest match to the textures themselves, instead of matching brightnesses to other colors.
 					// Ensue horrible mess.
 					if (skinnum == TC_RAINBOW)
 					{
-						//UINT16 brightdif = 256;
-						INT32 /*compare,*/ m, d;
+						//uint16_t brightdif = 256;
+						int32_t /*compare,*/ m, d;
 
 						// Ignore pure white & pitch black
 						if (brightness > 253 || brightness < 2)
@@ -989,11 +989,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 							if (brightness > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
 								continue;
 
-							compare = abs((INT16)(colorbrightnesses[i]) - (INT16)(brightness));
+							compare = abs((int16_t)(colorbrightnesses[i]) - (int16_t)(brightness));
 
 							if (compare < brightdif)
 							{
-								brightdif = (UINT16)compare;
+								brightdif = (uint16_t)compare;
 								firsti = i; // best matching color that's equal brightness or darker
 							}
 						}*/
@@ -1001,8 +1001,8 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 
 						secondi = firsti+1; // next color in line
 
-						m = (INT16)brightness - (INT16)colorbrightnesses[secondi];
-						d = (INT16)colorbrightnesses[firsti] - (INT16)colorbrightnesses[secondi];
+						m = (int16_t)brightness - (int16_t)colorbrightnesses[secondi];
+						d = (int16_t)colorbrightnesses[firsti] - (int16_t)colorbrightnesses[secondi];
 
 						if (m >= d)
 							m = d-1;
@@ -1040,9 +1040,9 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 						nextcolor = V_GetColor(translation[secondi]);
 
 						// Find difference between points
-						r = (INT32)(nextcolor.s.red - blendcolor.s.red);
-						g = (INT32)(nextcolor.s.green - blendcolor.s.green);
-						b = (INT32)(nextcolor.s.blue - blendcolor.s.blue);
+						r = (int32_t)(nextcolor.s.red - blendcolor.s.red);
+						g = (int32_t)(nextcolor.s.green - blendcolor.s.green);
+						b = (int32_t)(nextcolor.s.blue - blendcolor.s.blue);
 
 						// Find the gradient of the two points
 						r = ((mul * r) / mulmax);
@@ -1058,8 +1058,8 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 
 				if (skinnum == TC_RAINBOW)
 				{
-					UINT32 tempcolor;
-					UINT16 colorbright;
+					uint32_t tempcolor;
+					uint16_t colorbright;
 
 					colorbright = BlendLuminance(blendcolor.s.red, blendcolor.s.green, blendcolor.s.blue);
 
@@ -1069,34 +1069,34 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 					}
 
 					tempcolor = (brightness * blendcolor.s.red) / colorbright;
-					tempcolor = std::min<UINT32>(255, tempcolor);
-					cur->s.red = (UINT8)tempcolor;
+					tempcolor = std::min<uint32_t>(255, tempcolor);
+					cur->s.red = (uint8_t)tempcolor;
 
 					tempcolor = (brightness * blendcolor.s.green) / colorbright;
-					tempcolor = std::min<UINT32>(255, tempcolor);
-					cur->s.green = (UINT8)tempcolor;
+					tempcolor = std::min<uint32_t>(255, tempcolor);
+					cur->s.green = (uint8_t)tempcolor;
 
 					tempcolor = (brightness * blendcolor.s.blue) / colorbright;
-					tempcolor = std::min<UINT32>(255, tempcolor);
-					cur->s.blue = (UINT8)tempcolor;
+					tempcolor = std::min<uint32_t>(255, tempcolor);
+					cur->s.blue = (uint8_t)tempcolor;
 					cur->s.alpha = image->s.alpha;
 				}
 				else
 				{
 					// Color strength depends on image alpha
-					INT32 tempcolor;
+					int32_t tempcolor;
 
 					tempcolor = ((image->s.red * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.red * blendimage->s.alpha) / 255);
 					tempcolor = std::min(255, tempcolor);
-					cur->s.red = (UINT8)tempcolor;
+					cur->s.red = (uint8_t)tempcolor;
 
 					tempcolor = ((image->s.green * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.green * blendimage->s.alpha) / 255);
 					tempcolor = std::min(255, tempcolor);
-					cur->s.green = (UINT8)tempcolor;
+					cur->s.green = (uint8_t)tempcolor;
 
 					tempcolor = ((image->s.blue * (255-blendimage->s.alpha)) / 255) + ((blendcolor.s.blue * blendimage->s.alpha) / 255);
 					tempcolor = std::min(255, tempcolor);
-					cur->s.blue = (UINT8)tempcolor;
+					cur->s.blue = (uint8_t)tempcolor;
 					cur->s.alpha = image->s.alpha;
 				}
 
@@ -1127,7 +1127,7 @@ skippixel:
 	return;
 }
 
-static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 skinnum, const UINT8 *colormap, skincolornum_t color)
+static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, int32_t skinnum, const uint8_t *colormap, skincolornum_t color)
 {
 	// mostly copied from HWR_GetMappedPatch, hence the similarities and comment
 	GLPatch_t *grPatch = (GLPatch_t*)(patch->hardware);
@@ -1158,9 +1158,9 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 		{
 			if (grMipmap->downloaded && grMipmap->data)
 			{
-				if (memcmp(grMipmap->colormap->data, colormap, 256 * sizeof(UINT8)))
+				if (memcmp(grMipmap->colormap->data, colormap, 256 * sizeof(uint8_t)))
 				{
-					M_Memcpy(grMipmap->colormap->data, colormap, 256 * sizeof(UINT8));
+					M_Memcpy(grMipmap->colormap->data, colormap, 256 * sizeof(uint8_t));
 					HWR_CreateBlendedTexture(patch, blendpatch, grMipmap, skinnum, color);
 					HWD.pfnUpdateTexture(grMipmap);
 				}
@@ -1187,7 +1187,7 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 
 	newMipmap->colormap = (GLColormap_t*) Z_Calloc(sizeof(*newMipmap->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
 	newMipmap->colormap->source = colormap;
-	M_Memcpy(newMipmap->colormap->data, colormap, 256 * sizeof(UINT8));
+	M_Memcpy(newMipmap->colormap->data, colormap, 256 * sizeof(uint8_t));
 
 	HWR_CreateBlendedTexture(patch, blendpatch, newMipmap, skinnum, color);
 
@@ -1230,9 +1230,9 @@ static dboolean HWR_CanInterpolateSprite2(modelspr2frames_t *spr2frame)
 // For super players, does the same as above - but tries the super equivalent for each sprite2 before the non-super version.
 //
 
-static UINT8 HWR_GetModelSprite2(md2_t *md2, skin_t *skin, UINT8 spr2, player_t *player)
+static uint8_t HWR_GetModelSprite2(md2_t *md2, skin_t *skin, uint8_t spr2, player_t *player)
 {
-	UINT8 super = 0, i = 0;
+	uint8_t super = 0, i = 0;
 
 	(void)player;
 
@@ -1324,9 +1324,9 @@ dboolean HWR_DrawModel(gl_vissprite_t *spr)
 	md2_t *md2;
 
 	char filename[64];
-	INT32 frame = 0;
-	INT32 nextFrame = -1;
-	UINT8 spr2 = 0;
+	int32_t frame = 0;
+	int32_t nextFrame = -1;
+	uint8_t spr2 = 0;
 	FTransform p;
 	FSurfaceInfo Surf;
 
@@ -1347,13 +1347,13 @@ dboolean HWR_DrawModel(gl_vissprite_t *spr)
 	if (spr->mobj->subsector)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		INT32 lightlevel = 255;
+		int32_t lightlevel = 255;
 		dboolean lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 		extracolormap_t *colormap = NULL;
 
 		if (sector->numlights)
 		{
-			INT32 light;
+			int32_t light;
 
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
@@ -1386,11 +1386,11 @@ dboolean HWR_DrawModel(gl_vissprite_t *spr)
 		float durs = (float)spr->mobj->state->tics;
 		float tics = (float)spr->mobj->tics;
 		const dboolean papersprite = (R_ThingIsPaperSprite(spr->mobj) && !R_ThingIsFloorSprite(spr->mobj));
-		const UINT8 flip = (UINT8)(!(spr->mobj->eflags & MFE_VERTICALFLIP) != !R_ThingVerticallyFlipped(spr->mobj));
-		const UINT8 hflip = (UINT8)(!(spr->mobj->mirrored) != !R_ThingHorizontallyFlipped(spr->mobj));
+		const uint8_t flip = (uint8_t)(!(spr->mobj->eflags & MFE_VERTICALFLIP) != !R_ThingVerticallyFlipped(spr->mobj));
+		const uint8_t hflip = (uint8_t)(!(spr->mobj->mirrored) != !R_ThingHorizontallyFlipped(spr->mobj));
 		spritedef_t *sprdef;
 		spriteframe_t *sprframe;
-		INT32 mod;
+		int32_t mod;
 		interpmobjstate_t interp;
 
 		if (R_UsingFrameInterpolation() && !paused)
@@ -1431,7 +1431,7 @@ dboolean HWR_DrawModel(gl_vissprite_t *spr)
 
 		// Determine the blendmode and translucency value
 		{
-			UINT32 blendmode, trans;
+			uint32_t blendmode, trans;
 			if (spr->mobj->renderflags & RF_BLENDMASK)
 				blendmode = (spr->mobj->renderflags & RF_BLENDMASK) >> RF_BLENDSHIFT;
 			else
@@ -1527,7 +1527,7 @@ dboolean HWR_DrawModel(gl_vissprite_t *spr)
 
 		if (gpatch && hwrPatch && hwrPatch->mipmap->format) // else if meant that if a texture couldn't be loaded, it would just end up using something else's texture
 		{
-			INT32 skinnum = TC_DEFAULT;
+			int32_t skinnum = TC_DEFAULT;
 
 			if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY) // This thing is a player!
 			{
@@ -1577,7 +1577,7 @@ dboolean HWR_DrawModel(gl_vissprite_t *spr)
 			spr2 = HWR_GetModelSprite2(md2, (skin_t*)spr->mobj->skin, spr->mobj->sprite2, spr->mobj->player);
 			mod = md2->model->spr2frames[spr2].numframes;
 #ifndef DONTHIDEDIFFANIMLENGTH // by default, different anim length is masked by the mod
-			if (mod > (INT32)((skin_t *)spr->mobj->skin)->sprites[spr2].numframes)
+			if (mod > (int32_t)((skin_t *)spr->mobj->skin)->sprites[spr2].numframes)
 				mod = ((skin_t *)spr->mobj->skin)->sprites[spr2].numframes;
 #endif
 			if (!mod)
@@ -1633,7 +1633,7 @@ dboolean HWR_DrawModel(gl_vissprite_t *spr)
 				if (spr->mobj->frame & FF_ANIMATE)
 				{
 					nextFrame = (spr->mobj->frame & FF_FRAMEMASK) + 1;
-					if (nextFrame >= (INT32)(spr->mobj->state->var1 + (spr->mobj->state->frame & FF_FRAMEMASK)))
+					if (nextFrame >= (int32_t)(spr->mobj->state->var1 + (spr->mobj->state->frame & FF_FRAMEMASK)))
 						nextFrame = (spr->mobj->state->frame & FF_FRAMEMASK) % mod;
 				}
 				else

@@ -80,9 +80,9 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing);
 static void HWR_ProjectBoundingBox(mobj_t *thing);
 static void HWR_RollTransform(FTransform *tr, angle_t roll);
 
-void HWR_AddTransparentFloor(levelflat_t *levelflat, extrasubsector_t *xsub, dboolean isceiling, fixed_t fixedheight, INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, dboolean fogplane, extracolormap_t *planecolormap);
+void HWR_AddTransparentFloor(levelflat_t *levelflat, extrasubsector_t *xsub, dboolean isceiling, fixed_t fixedheight, int32_t lightlevel, int32_t alpha, sector_t *FOFSector, FBITFIELD blend, dboolean fogplane, extracolormap_t *planecolormap);
 void HWR_AddTransparentPolyobjectFloor(levelflat_t *levelflat, polyobj_t *polysector, dboolean isceiling, fixed_t fixedheight,
-                             INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, extracolormap_t *planecolormap);
+                             int32_t lightlevel, int32_t alpha, sector_t *FOFSector, FBITFIELD blend, extracolormap_t *planecolormap);
 
 dboolean drawsky = true;
 
@@ -99,7 +99,7 @@ static angle_t gl_clipangle;
 // maps the visible view angles to screen X coordinates,
 // flattening the arc to a flat projection plane.
 // There will be many angles mapped to the same X.
-static INT32 gl_viewangletox[FINEANGLES/2];
+static int32_t gl_viewangletox[FINEANGLES/2];
 
 // The xtoviewangleangle[] table maps a screen pixel
 // to the lowest viewangle that maps back to x ranges
@@ -195,7 +195,7 @@ static dboolean HWR_UseShader(void)
 	return (cv_glshaders.value && gl_shadersavailable);
 }
 
-dboolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel)
+dboolean HWR_OverrideObjectLightLevel(mobj_t *thing, int32_t *lightlevel)
 {
 	if (R_ThingIsFullBright(thing))
 		*lightlevel = 255;
@@ -209,7 +209,7 @@ dboolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel)
 	return true;
 }
 
-void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32 *lightlevel, dboolean model)
+void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, int32_t *lightlevel, dboolean model)
 {
 	const dboolean semibright = R_ThingIsSemiBright(spr->mobj);
 	const dboolean papersprite = R_ThingIsPaperSprite(spr->mobj);
@@ -262,13 +262,13 @@ void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32
 	}
 }
 
-void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap, const dboolean directional)
+void HWR_Lighting(FSurfaceInfo *Surface, int32_t light_level, extracolormap_t *colormap, const dboolean directional)
 {
 	RGBA_t poly_color, tint_color, fade_color;
 
 	poly_color.rgba = 0xFFFFFFFF;
-	tint_color.rgba = (colormap != NULL) ? (UINT32)colormap->rgba : GL_DEFAULTMIX;
-	fade_color.rgba = (colormap != NULL) ? (UINT32)colormap->fadergba : GL_DEFAULTFOG;
+	tint_color.rgba = (colormap != NULL) ? (uint32_t)colormap->rgba : GL_DEFAULTMIX;
+	fade_color.rgba = (colormap != NULL) ? (uint32_t)colormap->fadergba : GL_DEFAULTFOG;
 
 	// Crappy backup coloring if you can't do shaders
 	if (!HWR_UseShader())
@@ -302,9 +302,9 @@ void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *col
 		green = (fade_color.s.green * fade_alpha) + (green * (1.0f - fade_alpha));
 		blue = (fade_color.s.blue * fade_alpha) + (blue * (1.0f - fade_alpha));
 
-		poly_color.s.red = (UINT8)red;
-		poly_color.s.green = (UINT8)green;
-		poly_color.s.blue = (UINT8)blue;
+		poly_color.s.red = (uint8_t)red;
+		poly_color.s.green = (uint8_t)green;
+		poly_color.s.blue = (uint8_t)blue;
 	}
 
 	// Clamp the light level, since it can sometimes go out of the 0-255 range from animations
@@ -321,10 +321,10 @@ void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *col
 	Surface->LightInfo.directional = (maplighting.directional == true && directional == true);
 }
 
-UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap) // Let's see if this can work
+uint8_t HWR_FogBlockAlpha(int32_t light, extracolormap_t *colormap) // Let's see if this can work
 {
 	RGBA_t realcolor, surfcolor;
-	INT32 alpha;
+	int32_t alpha;
 
 	realcolor.rgba = (colormap != NULL) ? colormap->rgba : GL_DEFAULTMIX;
 
@@ -353,7 +353,7 @@ UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap) // Let's see if 
 
 static FUINT HWR_CalcWallLight(FUINT lightnum, seg_t *seg)
 {
-	INT16 finallight = lightnum;
+	int16_t finallight = lightnum;
 
 	if (seg != NULL && P_ApplyLightOffsetFine(lightnum, seg->frontsector))
 	{
@@ -368,7 +368,7 @@ static FUINT HWR_CalcWallLight(FUINT lightnum, seg_t *seg)
 
 static FUINT HWR_CalcSlopeLight(FUINT lightnum, pslope_t *slope, const sector_t *sector, const dboolean fof)
 {
-	INT16 finallight = lightnum;
+	int16_t finallight = lightnum;
 
 	if (slope != NULL && sector != NULL && P_ApplyLightOffsetFine(lightnum, sector))
 	{
@@ -390,16 +390,16 @@ static FUINT HWR_CalcSlopeLight(FUINT lightnum, pslope_t *slope, const sector_t 
 // -----------------+
 // HWR_RenderPlane  : Render a floor or ceiling convex polygon
 // -----------------+
-static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, dboolean isceiling, fixed_t fixedheight, FBITFIELD PolyFlags, INT32 lightlevel, levelflat_t *levelflat, sector_t *FOFsector, UINT8 alpha, extracolormap_t *planecolormap)
+static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, dboolean isceiling, fixed_t fixedheight, FBITFIELD PolyFlags, int32_t lightlevel, levelflat_t *levelflat, sector_t *FOFsector, uint8_t alpha, extracolormap_t *planecolormap)
 {
 	polyvertex_t *  pv;
 	float           height; //constant y for all points on the convex flat polygon
 	FOutVector      *v3d;
-	INT32             nrPlaneVerts;   //verts original define of convex flat polygon
-	INT32             i;
+	int32_t             nrPlaneVerts;   //verts original define of convex flat polygon
+	int32_t             i;
 	float           flatxref,flatyref;
 	float fflatwidth = 64.0f, fflatheight = 64.0f;
-	INT32 flatflag = 63;
+	int32_t flatflag = 63;
 	dboolean texflat = false;
 	float scrollx = 0.0f, scrolly = 0.0f, anglef = 0.0f;
 	angle_t angle = 0;
@@ -408,9 +408,9 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, dboo
 	pslope_t *slope = NULL;
 
 	static FOutVector *planeVerts = NULL;
-	static UINT16 numAllocedPlaneVerts = 0;
+	static uint16_t numAllocedPlaneVerts = 0;
 
-	INT32 shader = SHADER_DEFAULT;
+	int32_t shader = SHADER_DEFAULT;
 
 	// no convex poly were generated for this subsector
 	if (!xsub->planepoly)
@@ -447,7 +447,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, dboo
 	// Allocate plane-vertex buffer if we need to
 	if (!planeVerts || nrPlaneVerts > numAllocedPlaneVerts)
 	{
-		numAllocedPlaneVerts = (UINT16)nrPlaneVerts;
+		numAllocedPlaneVerts = (uint16_t)nrPlaneVerts;
 		Z_Free(planeVerts);
 		Z_Malloc(numAllocedPlaneVerts * sizeof (FOutVector), PU_LEVEL, &planeVerts);
 	}
@@ -569,7 +569,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, dboo
 
 	if (PolyFlags & PF_EnvironmentTrans)
 	{
-		Surf.PolyColor.s.alpha = (UINT8)alpha;
+		Surf.PolyColor.s.alpha = (uint8_t)alpha;
 		PolyFlags |= PF_Modulated;
 	}
 	else
@@ -595,7 +595,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, dboo
 		FOutVector horizonpts[6];
 		float dist, vx, vy;
 		float x1, y1, xd, yd;
-		UINT8 numplanes, j;
+		uint8_t numplanes, j;
 		vertex_t v; // For determining the closest distance from the line to the camera, to split render planes for minimum distortion;
 
 		const float renderdist = 27000.0f; // How far out to properly render the plane
@@ -620,7 +620,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, dboo
 				if (dist > 100.0f)
 					numplanes = 100;
 				else
-					numplanes = (UINT8)dist + 1;
+					numplanes = (uint8_t)dist + 1;
 
 				for (j = 0; j < numplanes; j++)
 				{
@@ -676,8 +676,8 @@ static void HWR_RenderSkyPlane(extrasubsector_t *xsub, fixed_t fixedheight)
 	polyvertex_t *pv;
 	float height; //constant y for all points on the convex flat polygon
 	FOutVector *v3d;
-	INT32 nrPlaneVerts;   //verts original define of convex flat polygon
-	INT32 i;
+	int32_t nrPlaneVerts;   //verts original define of convex flat polygon
+	int32_t i;
 
 	// no convex poly were generated for this subsector
 	if (!xsub->planepoly)
@@ -714,7 +714,7 @@ static void HWR_RenderSkyPlane(extrasubsector_t *xsub, fixed_t fixedheight)
 
 #endif //doplanes
 
-FBITFIELD HWR_GetBlendModeFlag(INT32 ast)
+FBITFIELD HWR_GetBlendModeFlag(int32_t ast)
 {
 	switch (ast)
 	{
@@ -736,9 +736,9 @@ FBITFIELD HWR_GetBlendModeFlag(INT32 ast)
 	return 0;
 }
 
-UINT8 HWR_GetTranstableAlpha(INT32 transtablenum)
+uint8_t HWR_GetTranstableAlpha(int32_t transtablenum)
 {
-	transtablenum = std::max(std::min(transtablenum, (INT32)tr_trans90), 0);
+	transtablenum = std::max(std::min(transtablenum, (int32_t)tr_trans90), 0);
 
 	switch (transtablenum)
 	{
@@ -757,7 +757,7 @@ UINT8 HWR_GetTranstableAlpha(INT32 transtablenum)
 	return 0xff;
 }
 
-FBITFIELD HWR_SurfaceBlend(INT32 style, INT32 transtablenum, FSurfaceInfo *pSurf)
+FBITFIELD HWR_SurfaceBlend(int32_t style, int32_t transtablenum, FSurfaceInfo *pSurf)
 {
 	pSurf->PolyColor.s.alpha = 0xff;
 
@@ -771,7 +771,7 @@ FBITFIELD HWR_SurfaceBlend(INT32 style, INT32 transtablenum, FSurfaceInfo *pSurf
 	return HWR_GetBlendModeFlag(style);
 }
 
-FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf)
+FBITFIELD HWR_TranstableToAlpha(int32_t transtablenum, FSurfaceInfo *pSurf)
 {
 	if (!transtablenum)
 	{
@@ -783,7 +783,7 @@ FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf)
 	return PF_Translucent;
 }
 
-static void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, INT32 texnum, INT32 basetexnum, FBITFIELD blend, dboolean fogwall, INT32 lightlevel, extracolormap_t *wallcolormap);
+static void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, int32_t texnum, int32_t basetexnum, FBITFIELD blend, dboolean fogwall, int32_t lightlevel, extracolormap_t *wallcolormap);
 
 // ==========================================================================
 // Wall generation from subsector segs
@@ -800,9 +800,9 @@ static void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, I
 //
 // HWR_ProjectWall
 //
-static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blendmode, INT32 lightlevel, extracolormap_t *wallcolormap)
+static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blendmode, int32_t lightlevel, extracolormap_t *wallcolormap)
 {
-	INT32 shader = SHADER_DEFAULT;
+	int32_t shader = SHADER_DEFAULT;
 
 	HWR_Lighting(pSurf, lightlevel, wallcolormap, P_SectorUsesDirectionalLighting(gl_frontsector));
 
@@ -822,7 +822,7 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 //
 // HWR_SplitWall
 //
-static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum, INT32 basetexnum, FSurfaceInfo* Surf, INT32 cutflag, ffloor_t *pfloor, FBITFIELD polyflags)
+static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, int32_t texnum, int32_t basetexnum, FSurfaceInfo* Surf, int32_t cutflag, ffloor_t *pfloor, FBITFIELD polyflags)
 {
 	/* SoM: split up and light walls according to the
 	 lightlist. This may also include leaving out parts
@@ -845,9 +845,9 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 	fixed_t v2x = FLOAT_TO_FIXED(wallVerts[1].x);
 	fixed_t v2y = FLOAT_TO_FIXED(wallVerts[1].z); // not a typo
 
-	INT32 solid, i;
+	int32_t solid, i;
 	lightlist_t *  list = sector->lightlist;
-	const UINT8 alpha = Surf->PolyColor.s.alpha;
+	const uint8_t alpha = Surf->PolyColor.s.alpha;
 	FUINT lightnum = sector->lightlevel;
 	extracolormap_t *colormap = NULL;
 
@@ -1033,7 +1033,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 	GLMapTexture_t *grTex = NULL;
 	float cliplow = 0.0f, cliphigh = 0.0f;
-	INT32 gl_midtexture;
+	int32_t gl_midtexture;
 	fixed_t h, l; // 3D sides and 2s middle textures
 	fixed_t hS, lS;
 
@@ -1096,8 +1096,8 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 	if (gl_backsector)
 	{
-		INT32 gl_toptexture = 0, gl_bottomtexture = 0;
-		INT32 gl_basetoptexture = 0, gl_basebottomtexture = 0;
+		int32_t gl_toptexture = 0, gl_bottomtexture = 0;
+		int32_t gl_basetoptexture = 0, gl_basebottomtexture = 0;
 		// two sided line
 		dboolean bothceilingssky = false; // turned on if both back and front ceilings are sky
 		dboolean bothfloorssky = false; // likewise, but for floors
@@ -1281,7 +1281,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			sector_t *front, *back;
 			fixed_t  popentop, popenbottom, polytop, polybottom, lowcut, highcut;
 			fixed_t     texturevpeg = 0;
-			INT32 repeats;
+			int32_t repeats;
 
 			if (gl_linedef->frontsector->heightsec != -1)
 				front = &sectors[gl_linedef->frontsector->heightsec];
@@ -1641,7 +1641,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 		// Used for height comparisons and etc across FOFs and slopes
 		fixed_t high1, highslope1, low1, lowslope1;
 
-		INT32 texnum, basetexnum;
+		int32_t texnum, basetexnum;
 		line_t * newline = NULL; // Multi-Property FOF
 
 		lowcut = std::max(worldbottom, worldlow);
@@ -2126,7 +2126,7 @@ static void HWR_AddLine(seg_t * line)
 
 static dboolean HWR_CheckBBox(fixed_t *bspcoord)
 {
-	INT32 boxpos;
+	int32_t boxpos;
 	fixed_t px1, py1, px2, py2;
 	angle_t angle1, angle2;
 
@@ -2202,20 +2202,20 @@ static inline void HWR_AddPolyObjectSegs(void)
 }
 
 static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, dboolean isceiling, fixed_t fixedheight,
-									FBITFIELD blendmode, UINT8 lightlevel, levelflat_t *levelflat, sector_t *FOFsector,
-									UINT8 alpha, extracolormap_t *planecolormap)
+									FBITFIELD blendmode, uint8_t lightlevel, levelflat_t *levelflat, sector_t *FOFsector,
+									uint8_t alpha, extracolormap_t *planecolormap)
 {
 	FSurfaceInfo Surf;
 	FOutVector *v3d;
-	INT32 shader = SHADER_DEFAULT;
+	int32_t shader = SHADER_DEFAULT;
 
 	size_t nrPlaneVerts = polysector->numVertices;
-	INT32 i;
+	int32_t i;
 
 	float height = FIXED_TO_FLOAT(fixedheight); // constant y for all points on the convex flat polygon
 	float flatxref, flatyref;
 	float fflatwidth = 64.0f, fflatheight = 64.0f;
-	INT32 flatflag = 63;
+	int32_t flatflag = 63;
 
 	dboolean texflat = false;
 
@@ -2224,7 +2224,7 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, dboolean isceiling,
 	fixed_t tempxs, tempyt;
 
 	static FOutVector *planeVerts = NULL;
-	static UINT16 numAllocedPlaneVerts = 0;
+	static uint16_t numAllocedPlaneVerts = 0;
 
 	if (nrPlaneVerts < 3)   // Not even a triangle?
 		return;
@@ -2237,7 +2237,7 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, dboolean isceiling,
 	// Allocate plane-vertex buffer if we need to
 	if (!planeVerts || nrPlaneVerts > numAllocedPlaneVerts)
 	{
-		numAllocedPlaneVerts = (UINT16)nrPlaneVerts;
+		numAllocedPlaneVerts = (uint16_t)nrPlaneVerts;
 		Z_Free(planeVerts);
 		Z_Malloc(numAllocedPlaneVerts * sizeof (FOutVector), PU_LEVEL, &planeVerts);
 	}
@@ -2329,7 +2329,7 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, dboolean isceiling,
 		flatyref = (FIXED_TO_FLOAT(FixedMul(tempxs, FINESINE(angle)) + FixedMul(tempyt, FINECOSINE(angle))));
 	}
 
-	for (i = 0; i < (INT32)nrPlaneVerts; i++,v3d++)
+	for (i = 0; i < (int32_t)nrPlaneVerts; i++,v3d++)
 	{
 		// Go from the polysector's original vertex locations
 		// Means the flat is offset based on the original vertex locations
@@ -2362,7 +2362,7 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, dboolean isceiling,
 
 	if (blendmode & PF_Translucent)
 	{
-		Surf.PolyColor.s.alpha = (UINT8)alpha;
+		Surf.PolyColor.s.alpha = (uint8_t)alpha;
 		blendmode |= PF_Modulated|PF_Occlude;
 	}
 	else
@@ -2381,7 +2381,7 @@ static void HWR_AddPolyObjectPlanes(void)
 {
 	size_t i;
 	sector_t *polyobjsector;
-	INT32 light = 0;
+	int32_t light = 0;
 
 	// Polyobject Planes need their own function for drawing because they don't have extrasubsectors by themselves
 	// It should be okay because polyobjects should always be convex anyway
@@ -2457,15 +2457,15 @@ static FBITFIELD HWR_RippleBlend(sector_t *sector, ffloor_t *rover, dboolean cei
 // -----------------+
 static void HWR_Subsector(size_t num)
 {
-	INT16 count;
+	int16_t count;
 	seg_t *line;
 	subsector_t *sub;
 	static sector_t tempsec; //SoM: 4/7/2000
-	INT32 floorlightlevel;
-	INT32 ceilinglightlevel;
-	INT32 locFloorHeight, locCeilingHeight;
-	INT32 cullFloorHeight, cullCeilingHeight;
-	INT32 light = 0;
+	int32_t floorlightlevel;
+	int32_t ceilinglightlevel;
+	int32_t locFloorHeight, locCeilingHeight;
+	int32_t cullFloorHeight, cullCeilingHeight;
+	int32_t light = 0;
 	extracolormap_t *floorcolormap;
 	extracolormap_t *ceilingcolormap;
 	ffloor_t *rover;
@@ -2643,7 +2643,7 @@ static void HWR_Subsector(size_t num)
 			{
 				if (rover->fofflags & FOF_FOG)
 				{
-					UINT8 alpha;
+					uint8_t alpha;
 
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 					alpha = HWR_FogBlockAlpha(*gl_frontsector->lightlist[light].lightlevel, rover->master->frontsector->extra_colormap);
@@ -2691,7 +2691,7 @@ static void HWR_Subsector(size_t num)
 			{
 				if (rover->fofflags & FOF_FOG)
 				{
-					UINT8 alpha;
+					uint8_t alpha;
 
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 					alpha = HWR_FogBlockAlpha(*gl_frontsector->lightlist[light].lightlevel, rover->master->frontsector->extra_colormap);
@@ -2762,7 +2762,7 @@ static void HWR_Subsector(size_t num)
 		}
 	}
 
-// Hurder ici se passe les choses INT32�essantes!
+// Hurder ici se passe les choses int32_t�essantes!
 // on vient de tracer le sol et le plafond
 // on trace �pr�ent d'abord les sprites et ensuite les murs
 // hurdler: faux: on ajoute seulement les sprites, le murs sont trac� d'abord
@@ -2821,7 +2821,7 @@ static dboolean HWR_CheckHackBBox(fixed_t *bb)
 // BP: big hack for a test in lighning ref : 1249753487AB
 fixed_t *hwbbox;
 
-static void HWR_RenderBSPNode(INT32 bspnum)
+static void HWR_RenderBSPNode(int32_t bspnum)
 {
 	/*//GZDoom code
 	if(bspnum == -1)
@@ -2834,7 +2834,7 @@ static void HWR_RenderBSPNode(INT32 bspnum)
 		node_t *bsp = &nodes[bspnum];
 
 		// Decide which side the view point is on
-		INT32 side = R_PointOnSide(dup_viewx, dup_viewy, bsp);
+		int32_t side = R_PointOnSide(dup_viewx, dup_viewy, bsp);
 
 		// Recursively divide front space (toward the viewer)
 		HWR_RenderBSPNode(bsp->children[side]);
@@ -2853,7 +2853,7 @@ static void HWR_RenderBSPNode(INT32 bspnum)
 	node_t *bsp = &nodes[bspnum];
 
 	// Decide which side the view point is on
-	INT32 side;
+	int32_t side;
 
 	ps_numbspcalls++;
 
@@ -2921,12 +2921,12 @@ static void HWR_RenderSubsectors(void)
 void HWR_InitTextureMapping(void)
 {
 	angle_t i;
-	INT32 x;
-	INT32 t;
+	int32_t x;
+	int32_t t;
 	fixed_t focallength;
 	fixed_t grcenterx;
 	fixed_t grcenterxfrac;
-	INT32 grviewwidth;
+	int32_t grviewwidth;
 
 #define clipanglefov (FIELDOFVIEW>>ANGLETOFINESHIFT)
 
@@ -2992,7 +2992,7 @@ void HWR_InitTextureMapping(void)
 // sprites are drawn after all wall and planes are rendered, so that
 // sprite translucency effects apply on the rendered view (instead of the background sky!!)
 
-static UINT32 gl_visspritecount;
+static uint32_t gl_visspritecount;
 static gl_vissprite_t *gl_visspritechunks[MAXVISSPRITES >> VISSPRITECHUNKBITS] = {NULL};
 
 // --------------------------------------------------------------------------
@@ -3009,9 +3009,9 @@ static void HWR_ClearSprites(void)
 // --------------------------------------------------------------------------
 static gl_vissprite_t gl_overflowsprite;
 
-static gl_vissprite_t *HWR_GetVisSprite(UINT32 num)
+static gl_vissprite_t *HWR_GetVisSprite(uint32_t num)
 {
-		UINT32 chunk = num >> VISSPRITECHUNKBITS;
+		uint32_t chunk = num >> VISSPRITECHUNKBITS;
 
 		// Allocate chunk if necessary
 		if (!gl_visspritechunks[chunk])
@@ -3042,7 +3042,7 @@ typedef struct
 
 // this list is used to store data about linkdraw sprites
 zbuffersprite_t linkdrawlist[MAXVISSPRITES];
-UINT32 linkdrawcount = 0;
+uint32_t linkdrawcount = 0;
 
 // add the necessary data to the list for delayed z-buffer drawing
 static void HWR_LinkDrawHackAdd(FOutVector *verts, gl_vissprite_t *spr)
@@ -3058,7 +3058,7 @@ static void HWR_LinkDrawHackAdd(FOutVector *verts, gl_vissprite_t *spr)
 // process and clear the list of sprites for delayed z-buffer drawing
 static void HWR_LinkDrawHackFinish(void)
 {
-	UINT32 i;
+	uint32_t i;
 	FSurfaceInfo surf;
 	surf.PolyColor.rgba = 0xFFFFFFFF;
 	surf.TintColor.rgba = 0xFFFFFFFF;
@@ -3125,11 +3125,11 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	float ph;
 	extracolormap_t *colormap = NULL;
 	FBITFIELD blendmode = PF_ReverseSubtract;
-	INT32 shader = SHADER_DEFAULT;
-	UINT8 i;
-	SINT8 flip = P_MobjFlip(thing);
+	int32_t shader = SHADER_DEFAULT;
+	uint8_t i;
+	int8_t flip = P_MobjFlip(thing);
 
-	INT32 light;
+	int32_t light;
 	fixed_t scalemul;
 	fixed_t groundz;
 	fixed_t slopez;
@@ -3331,15 +3331,15 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	patch_t *gpatch;
 	FSurfaceInfo Surf;
 	extracolormap_t *colormap = NULL;
-	INT32 lightlevel;
+	int32_t lightlevel;
 	dboolean lightset = true;
 	FBITFIELD blend = 0;
 	FBITFIELD occlusion;
-	INT32 shader = SHADER_DEFAULT;
+	int32_t shader = SHADER_DEFAULT;
 	dboolean use_linkdraw_hack = false;
-	UINT8 alpha;
+	uint8_t alpha;
 
-	INT32 i;
+	int32_t i;
 	float realtop, realbot, top, bot;
 	float ttop, tbot, tmult;
 	float bheight;
@@ -3431,7 +3431,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	// Determine the blendmode and translucency value
 	{
-		UINT32 blendmode, trans;
+		uint32_t blendmode, trans;
 		if (spr->mobj->renderflags & RF_BLENDMASK)
 			blendmode = (spr->mobj->renderflags & RF_BLENDMASK) >> RF_BLENDSHIFT;
 		else
@@ -3722,7 +3722,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 		float scale = spr->scale;
 		float zoffset = (P_MobjFlip(spr->mobj) * 0.05f);
 		pslope_t *splatslope = NULL;
-		INT32 i;
+		int32_t i;
 
 		renderflags_t renderflags = spr->renderflags;
 		if (renderflags & RF_SHADOWEFFECTS)
@@ -3876,7 +3876,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	// colormap test
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		INT32 lightlevel = 0;
+		int32_t lightlevel = 0;
 		dboolean lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 		extracolormap_t *colormap = NULL;
 
@@ -3885,7 +3885,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 
 		if (splat && sector->numlights)
 		{
-			INT32 light = R_GetPlaneLight(sector, spr->mobj->z, false);
+			int32_t light = R_GetPlaneLight(sector, spr->mobj->z, false);
 
 			if (!lightset)
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
@@ -3903,7 +3903,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	}
 
 	{
-		INT32 shader = SHADER_DEFAULT;
+		int32_t shader = SHADER_DEFAULT;
 		FBITFIELD blend = 0;
 		FBITFIELD occlusion;
 		dboolean use_linkdraw_hack = false;
@@ -3917,7 +3917,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 
 		// Determine the blendmode and translucency value
 		{
-			UINT32 blendmode, trans;
+			uint32_t blendmode, trans;
 			if (spr->mobj->renderflags & RF_BLENDMASK)
 				blendmode = (spr->mobj->renderflags & RF_BLENDMASK) >> RF_BLENDSHIFT;
 			else
@@ -3951,12 +3951,12 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 
 		if (spr->renderflags & RF_SHADOWEFFECTS)
 		{
-			INT32 alpha = Surf.PolyColor.s.alpha;
-			alpha -= ((INT32)(spr->shadowheight / 4.0f)) + 75;
+			int32_t alpha = Surf.PolyColor.s.alpha;
+			alpha -= ((int32_t)(spr->shadowheight / 4.0f)) + 75;
 			if (alpha < 1)
 				return;
 
-			Surf.PolyColor.s.alpha = (UINT8)(alpha);
+			Surf.PolyColor.s.alpha = (uint8_t)(alpha);
 			blend = PF_Translucent|occlusion;
 			if (!occlusion) use_linkdraw_hack = true;
 		}
@@ -3981,7 +3981,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 // Sprite drawer for precipitation
 static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 {
-	INT32 shader = SHADER_DEFAULT;
+	int32_t shader = SHADER_DEFAULT;
 	FBITFIELD blend = 0;
 	FOutVector wallVerts[4];
 	patch_t *gpatch;
@@ -4029,13 +4029,13 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 	// colormap test
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 255;
+		uint8_t lightlevel = 255;
 		extracolormap_t *colormap = sector->extra_colormap;
 
 		if (sector->numlights)
 		{
 			// Always use the light at the top instead of whatever I was doing before
-			INT32 light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false);
+			int32_t light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false);
 
 			if (!R_ThingIsFullBright(spr->mobj))
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
@@ -4059,7 +4059,7 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 
 	// Determine the blendmode and translucency value
 	{
-		UINT32 blendmode, trans;
+		uint32_t blendmode, trans;
 		if (spr->mobj->renderflags & RF_BLENDMASK)
 			blendmode = (spr->mobj->renderflags & RF_BLENDMASK) >> RF_BLENDSHIFT;
 		else
@@ -4200,7 +4200,7 @@ static int CompareVisSprites(const void *p1, const void *p2)
 
 static void HWR_SortVisSprites(void)
 {
-	UINT32 i;
+	uint32_t i;
 	for (i = 0; i < gl_visspritecount; i++)
 	{
 		gl_vsprorder[i] = HWR_GetVisSprite(i);
@@ -4214,18 +4214,18 @@ typedef struct
 {
 	FOutVector    wallVerts[4];
 	FSurfaceInfo  Surf;
-	INT32         texnum, basetexnum;
+	int32_t         texnum, basetexnum;
 	FBITFIELD     blend;
-	INT32         drawcount;
+	int32_t         drawcount;
 	dboolean fogwall;
-	INT32 lightlevel;
+	int32_t lightlevel;
 	extracolormap_t *wallcolormap; // Doing the lighting in HWR_RenderWall now for correct fog after sorting
 } wallinfo_t;
 
 static wallinfo_t *wallinfo = NULL;
 static size_t numwalls = 0; // a list of transparent walls to be drawn
 
-void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend, dboolean fogwall, INT32 lightlevel, extracolormap_t *wallcolormap);
+void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend, dboolean fogwall, int32_t lightlevel, extracolormap_t *wallcolormap);
 
 #define MAX_TRANSPARENTWALL 256
 
@@ -4234,14 +4234,14 @@ typedef struct
 	extrasubsector_t *xsub;
 	dboolean isceiling;
 	fixed_t fixedheight;
-	INT32 lightlevel;
+	int32_t lightlevel;
 	levelflat_t *levelflat;
-	INT32 alpha;
+	int32_t alpha;
 	sector_t *FOFSector;
 	FBITFIELD blend;
 	dboolean fogplane;
 	extracolormap_t *planecolormap;
-	INT32 drawcount;
+	int32_t drawcount;
 } planeinfo_t;
 
 static size_t numplanes = 0; // a list of transparent floors to be drawn
@@ -4252,13 +4252,13 @@ typedef struct
 	polyobj_t *polysector;
 	dboolean isceiling;
 	fixed_t fixedheight;
-	INT32 lightlevel;
+	int32_t lightlevel;
 	levelflat_t *levelflat;
-	INT32 alpha;
+	int32_t alpha;
 	sector_t *FOFSector;
 	FBITFIELD blend;
 	extracolormap_t *planecolormap;
-	INT32 drawcount;
+	int32_t drawcount;
 } polyplaneinfo_t;
 
 static size_t numpolyplanes = 0; // a list of transparent poyobject floors to be drawn
@@ -4276,12 +4276,12 @@ typedef struct gl_drawnode_s
 //	struct gl_drawnode_s *prev;
 } gl_drawnode_t;
 
-static INT32 drawcount = 0;
+static int32_t drawcount = 0;
 
 #define MAX_TRANSPARENTFLOOR 512
 
 // This will likely turn into a copy of HWR_Add3DWater and replace it.
-void HWR_AddTransparentFloor(levelflat_t *levelflat, extrasubsector_t *xsub, dboolean isceiling, fixed_t fixedheight, INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, dboolean fogplane, extracolormap_t *planecolormap)
+void HWR_AddTransparentFloor(levelflat_t *levelflat, extrasubsector_t *xsub, dboolean isceiling, fixed_t fixedheight, int32_t lightlevel, int32_t alpha, sector_t *FOFSector, FBITFIELD blend, dboolean fogplane, extracolormap_t *planecolormap)
 {
 	static size_t allocedplanes = 0;
 
@@ -4312,7 +4312,7 @@ void HWR_AddTransparentFloor(levelflat_t *levelflat, extrasubsector_t *xsub, dbo
 
 // Adding this for now until I can create extrasubsector info for polyobjects
 // When that happens it'll just be done through HWR_AddTransparentFloor and HWR_RenderPlane
-void HWR_AddTransparentPolyobjectFloor(levelflat_t *levelflat, polyobj_t *polysector, dboolean isceiling, fixed_t fixedheight, INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, extracolormap_t *planecolormap)
+void HWR_AddTransparentPolyobjectFloor(levelflat_t *levelflat, polyobj_t *polysector, dboolean isceiling, fixed_t fixedheight, int32_t lightlevel, int32_t alpha, sector_t *FOFSector, FBITFIELD blend, extracolormap_t *planecolormap)
 {
 	static size_t allocedpolyplanes = 0;
 
@@ -4347,9 +4347,9 @@ static int CompareDrawNodes(const void *p1, const void *p2)
 {
 	size_t n1 = *(const size_t*)p1;
 	size_t n2 = *(const size_t*)p2;
-	INT32 v1 = 0;
-	INT32 v2 = 0;
-	INT32 diff;
+	int32_t v1 = 0;
+	int32_t v2 = 0;
+	int32_t diff;
 	if (sortnode[n1].plane)
 		v1 = sortnode[n1].plane->drawcount;
 	else if (sortnode[n1].polyplane)
@@ -4385,7 +4385,7 @@ static int CompareDrawNodePlanes(const void *p1, const void *p2)
 // Creates and sorts a list of drawnodes for the scene being rendered.
 static void HWR_CreateDrawNodes(void)
 {
-	UINT32 i = 0, p = 0;
+	uint32_t i = 0, p = 0;
 	size_t run_start = 0;
 
 	// Dump EVERYTHING into a huge drawnode list. Then we'll sort it!
@@ -4436,7 +4436,7 @@ static void HWR_CreateDrawNodes(void)
 		{
 			// found it, now look for run end
 			size_t run_end;// (inclusive)
-			for (i = run_start+1; i < p; i++)// size_t and UINT32 being used mixed here... shouldnt break anything though..
+			for (i = run_start+1; i < p; i++)// size_t and uint32_t being used mixed here... shouldnt break anything though..
 			{
 				if (!sortnode[sortindex[i]].plane) break;
 			}
@@ -4512,7 +4512,7 @@ static void HWR_CreateDrawNodes(void)
 // added the stransform so they can be switched as drawing happenes so MD2s and sprites are sorted correctly with each other
 static void HWR_DrawSprites(void)
 {
-	UINT32 i;
+	uint32_t i;
 	dboolean skipshadow = false; // skip shadow if it was drawn already for a linkdraw sprite encountered earlier in the list
 
 #ifdef BAD_MODEL_OPTIONS
@@ -4598,7 +4598,7 @@ static void HWR_DrawSprites(void)
 // HWR_AddSprites
 // During BSP traversal, this adds sprites by sector.
 // --------------------------------------------------------------------------
-static UINT8 sectorlight;
+static uint8_t sectorlight;
 static void HWR_AddSprites(sector_t *sec)
 {
 	mobj_t *thing;
@@ -4645,7 +4645,7 @@ static void HWR_AddPrecipitationSprites(void)
 {
 	const fixed_t drawdist = cv_drawdist_precip.value * mapobjectscale;
 
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t xl, xh, yl, yh, bx, by;
 	precipmobj_t *th;
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
@@ -4697,14 +4697,14 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	md2_t *md2;
 	size_t lumpoff;
 	unsigned rot;
-	UINT16 flip;
+	uint16_t flip;
 	dboolean vflip = (!(thing->eflags & MFE_VERTICALFLIP) != !R_ThingVerticallyFlipped(thing));
 	dboolean mirrored = thing->mirrored;
 	dboolean hflip = (!R_ThingHorizontallyFlipped(thing) != !mirrored);
-	INT32 dispoffset;
+	int32_t dispoffset;
 
 	angle_t ang;
-	INT32 heightsec, phs;
+	int32_t heightsec, phs;
 	const dboolean splat = R_ThingIsFloorSprite(thing);
 	const dboolean papersprite = (R_ThingIsPaperSprite(thing) && !splat);
 	float z1, z2;
@@ -4713,7 +4713,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	fixed_t spr_offset, spr_topoffset;
 #ifdef ROTSPRITE
 	patch_t *rotsprite = NULL;
-	INT32 rollangle = 0;
+	int32_t rollangle = 0;
 	angle_t spriterotangle = 0;
 	vector2_t visoffs;
 #endif
@@ -4943,7 +4943,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	}
 	else
 	{
-		SINT8 flipoffset = 1;
+		int8_t flipoffset = 1;
 
 		if ((thing->renderflags & RF_FLIPOFFSETS) && flip)
 			flipoffset = -1;
@@ -5166,7 +5166,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	vis->mobj = thing;
 
-	INT32 skinnum = TC_DEFAULT;
+	int32_t skinnum = TC_DEFAULT;
 
 	if (vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // This thing is a player!
 	{
@@ -5225,7 +5225,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	spriteframe_t *sprframe;
 	size_t lumpoff;
 	unsigned rot = 0;
-	UINT8 flip;
+	uint8_t flip;
 
 	if (!thing)
 		return;
@@ -5682,10 +5682,10 @@ static inline void HWR_ClearView(void)
 
 	/// \bug faB - enable depth mask, disable color mask
 
-	HWD.pfnGClipRect((INT32)gl_viewwindowx,
-	                 (INT32)gl_viewwindowy,
-	                 (INT32)(gl_viewwindowx + gl_viewwidth),
-	                 (INT32)(gl_viewwindowy + gl_viewheight),
+	HWD.pfnGClipRect((int32_t)gl_viewwindowx,
+	                 (int32_t)gl_viewwindowy,
+	                 (int32_t)(gl_viewwindowx + gl_viewwidth),
+	                 (int32_t)(gl_viewwindowy + gl_viewheight),
 	                 ZCLIP_PLANE);
 	HWD.pfnClearBuffer(false, true, 0);
 
@@ -5787,7 +5787,7 @@ static void HWR_SetShaderState(void)
 	if (!cv_glallowshaders.value)
 		state = (hwdshaderoption_t)(cv_glshaders.value == HWD_SHADEROPTION_ON ? HWD_SHADEROPTION_NOCUSTOM : cv_glshaders.value);
 
-	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (INT32)state);
+	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (int32_t)state);
 	HWD.pfnSetShader(SHADER_DEFAULT);
 }
 
@@ -5897,7 +5897,7 @@ static void HWR_RenderViewpoint(player_t *player, dboolean drawSkyTexture, dbool
 	if (cv_glbatching.value)
 		HWR_StartBatching();
 
-	HWR_RenderBSPNode((INT32)numnodes-1);
+	HWR_RenderBSPNode((int32_t)numnodes-1);
 
 #ifdef HWPRECIP
 	HWR_AddPrecipitationSprites();
@@ -6008,7 +6008,7 @@ void HWR_RenderPlayerView(void)
 
 	if (cv_glshaders.value)
 	{
-		HWD.pfnSetShaderInfo(HWD_SHADERINFO_LEVELTIME, (INT32)leveltime); // The water surface shader needs the leveltime.
+		HWD.pfnSetShaderInfo(HWD_SHADERINFO_LEVELTIME, (int32_t)leveltime); // The water surface shader needs the leveltime.
 
 		const angle_t light_angle = maplighting.angle - viewangle + ANGLE_90; // I fucking hate OGL's coordinate system
 		HWD.pfnSetShaderInfo(HWD_SHADERINFO_LIGHT_X, FINECOSINE(light_angle >> ANGLETOFINESHIFT));
@@ -6045,7 +6045,7 @@ void HWR_LoadLevel(void)
 	HWR_ResetLights();
 #endif
 
-	HWR_CreatePlanePolygons((INT32)numnodes - 1);
+	HWR_CreatePlanePolygons((int32_t)numnodes - 1);
 
 	// Build the sky dome
 	HWR_ClearSkyDome();
@@ -6192,7 +6192,7 @@ void transform(float *cx, float *cy, float *cz)
 	*cx *= gl_fovlud;
 }
 
-void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, INT32 texnum, INT32 basetexnum, FBITFIELD blend, dboolean fogwall, INT32 lightlevel, extracolormap_t *wallcolormap)
+void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, int32_t texnum, int32_t basetexnum, FBITFIELD blend, dboolean fogwall, int32_t lightlevel, extracolormap_t *wallcolormap)
 {
 	static size_t allocedwalls = 0;
 
@@ -6218,12 +6218,12 @@ void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, INT32 te
 	numwalls++;
 }
 
-void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend, dboolean fogwall, INT32 lightlevel, extracolormap_t *wallcolormap)
+void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend, dboolean fogwall, int32_t lightlevel, extracolormap_t *wallcolormap)
 {
 	FBITFIELD blendmode = blend;
-	UINT8 alpha = pSurf->PolyColor.s.alpha; // retain the alpha
+	uint8_t alpha = pSurf->PolyColor.s.alpha; // retain the alpha
 
-	INT32 shader = SHADER_DEFAULT;
+	int32_t shader = SHADER_DEFAULT;
 
 	// Lighting is done here instead so that fog isn't drawn incorrectly on transparent walls after sorting
 	HWR_Lighting(pSurf, lightlevel, wallcolormap, P_SectorUsesDirectionalLighting(gl_frontsector));
@@ -6250,7 +6250,7 @@ void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend,
 	HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode, shader, false);
 }
 
-INT32 HWR_GetTextureUsed(void)
+int32_t HWR_GetTextureUsed(void)
 {
 	return HWD.pfnGetTextureUsed();
 }
@@ -6300,10 +6300,10 @@ void HWR_DoPostProcessor(player_t *player)
 		float v[SCREENVERTS][SCREENVERTS][2];
 		static double disStart = 0;
 
-		UINT8 x, y;
-		INT32 WAVELENGTH;
-		INT32 AMPLITUDE;
-		INT32 FREQUENCY;
+		uint8_t x, y;
+		int32_t WAVELENGTH;
+		int32_t AMPLITUDE;
+		int32_t FREQUENCY;
 
 		// Modifies the wave.
 		if (*type == postimg_water)
@@ -6362,7 +6362,7 @@ void HWR_DrawIntermissionBG(void)
 static lumpnum_t wipelumpnum;
 
 // puts wipe lumpname in wipename[9]
-static dboolean HWR_WipeCheck(UINT8 wipenum, UINT8 scrnnum)
+static dboolean HWR_WipeCheck(uint8_t wipenum, uint8_t scrnnum)
 {
 	static char lumpname[9] = "FADEmmss";
 	size_t lsize;
@@ -6392,7 +6392,7 @@ static dboolean HWR_WipeCheck(UINT8 wipenum, UINT8 scrnnum)
 	return true;
 }
 
-void HWR_DoWipe(UINT8 wipenum, UINT8 scrnnum)
+void HWR_DoWipe(uint8_t wipenum, uint8_t scrnnum)
 {
 	if (!HWR_WipeCheck(wipenum, scrnnum))
 		return;
@@ -6401,7 +6401,7 @@ void HWR_DoWipe(UINT8 wipenum, UINT8 scrnnum)
 	HWD.pfnDoScreenWipe();
 }
 
-void HWR_DoTintedWipe(UINT8 wipenum, UINT8 scrnnum)
+void HWR_DoTintedWipe(uint8_t wipenum, uint8_t scrnnum)
 {
 	// It does the same thing
 	HWR_DoWipe(wipenum, scrnnum);
@@ -6417,9 +6417,9 @@ void HWR_DrawScreenFinalTexture(int width, int height)
     HWD.pfnDrawScreenFinalTexture(width, height);
 }
 
-static inline UINT16 HWR_FindShaderDefs(UINT16 wadnum)
+static inline uint16_t HWR_FindShaderDefs(uint16_t wadnum)
 {
-	UINT16 i;
+	uint16_t i;
 	lumpinfo_t *lump_p;
 
 	lump_p = wadfiles[wadnum]->lumpinfo;
@@ -6450,16 +6450,16 @@ customshaderxlat_t shaderxlat[] =
 
 void HWR_LoadAllCustomShaders(void)
 {
-	INT32 i;
+	int32_t i;
 
 	// read every custom shader
 	for (i = 0; i < numwadfiles; i++)
 		HWR_LoadCustomShadersFromFile(i, (wadfiles[i]->type == RET_PK3));
 }
 
-void HWR_LoadCustomShadersFromFile(UINT16 wadnum, dboolean PK3)
+void HWR_LoadCustomShadersFromFile(uint16_t wadnum, dboolean PK3)
 {
-	UINT16 lump;
+	uint16_t lump;
 	char *shaderdef, *line;
 	char *stoken;
 	char *value;
@@ -6532,7 +6532,7 @@ skip_lump:
 					size_t shader_size;
 					char *shader_source;
 					char *shader_lumpname;
-					UINT16 shader_lumpnum;
+					uint16_t shader_lumpnum;
 
 					if (PK3)
 					{
@@ -6577,9 +6577,9 @@ skip_field:
 	return;
 }
 
-const char *HWR_GetShaderName(INT32 shader)
+const char *HWR_GetShaderName(int32_t shader)
 {
-	INT32 i;
+	int32_t i;
 
 	if (shader)
 	{

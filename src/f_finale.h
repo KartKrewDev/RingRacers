@@ -42,7 +42,7 @@ void F_TextPromptTicker(void);
 // Called by main loop.
 void F_IntroDrawer(void);
 void F_TitleScreenDrawer(void);
-void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname);
+void F_SkyScroll(int32_t scrollxspeed, int32_t scrollyspeed, const char *patchname);
 
 void F_StartWaitingPlayers(void);
 void F_WaitingPlayersTicker(void);
@@ -55,18 +55,18 @@ void F_GameEvaluationTicker(void);
 
 void F_VersionDrawer(void);
 
-void F_StartCustomCutscene(INT32 cutscenenum, dboolean precutscene, dboolean resetplayer);
+void F_StartCustomCutscene(int32_t cutscenenum, dboolean precutscene, dboolean resetplayer);
 void F_CutsceneDrawer(void);
 void F_EndCutScene(void);
 
-void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postexectag, dboolean blockcontrols, dboolean freezerealtime);
-void F_GetPromptPageByNamedTag(const char *tag, INT32 *promptnum, INT32 *pagenum);
+void F_StartTextPrompt(int32_t promptnum, int32_t pagenum, mobj_t *mo, uint16_t postexectag, dboolean blockcontrols, dboolean freezerealtime);
+void F_GetPromptPageByNamedTag(const char *tag, int32_t *promptnum, int32_t *pagenum);
 void F_TextPromptDrawer(void);
 void F_EndTextPrompt(dboolean forceexec, dboolean noexec);
 dboolean F_GetPromptHideHudAll(void);
 dboolean F_GetPromptHideHud(fixed_t y);
 
-INT32 F_AttractDemoExitFade(void);
+int32_t F_AttractDemoExitFade(void);
 
 void F_StartGameEnd(void);
 void F_StartIntro(void);
@@ -75,10 +75,10 @@ void F_StartEnding(void);
 
 void F_PlayTitleScreenMusic(void);
 
-extern INT32 finalecount;
-extern INT32 titlescrollxspeed;
-extern INT32 titlescrollyspeed;
-extern UINT32 titlemusicstart;
+extern int32_t finalecount;
+extern int32_t titlescrollxspeed;
+extern int32_t titlescrollyspeed;
+extern uint32_t titlemusicstart;
 
 typedef enum
 {
@@ -91,33 +91,33 @@ typedef enum
 #define TTMAX_USER 100
 
 extern ttmode_enum ttmode;
-extern UINT8 ttscale;
+extern uint8_t ttscale;
 // ttmode user vars
 extern char ttname[9];
-extern INT16 ttx;
-extern INT16 tty;
-extern INT16 ttloop;
-extern UINT16 tttics;
+extern int16_t ttx;
+extern int16_t tty;
+extern int16_t ttloop;
+extern uint16_t tttics;
 extern dboolean ttavailable[6];
 
 // Current menu parameters
 extern char curbgname[9];
-extern SINT8 curfadevalue;
-extern INT32 curbgcolor;
-extern INT32 curbgxspeed;
-extern INT32 curbgyspeed;
+extern int8_t curfadevalue;
+extern int32_t curbgcolor;
+extern int32_t curbgxspeed;
+extern int32_t curbgyspeed;
 extern dboolean curbghide;
 extern dboolean hidetitlemap;
 
 extern dboolean curhidepics;
 extern ttmode_enum curttmode;
-extern UINT8 curttscale;
+extern uint8_t curttscale;
 // ttmode user vars
 extern char curttname[9];
-extern INT16 curttx;
-extern INT16 curtty;
-extern INT16 curttloop;
-extern UINT16 curtttics;
+extern int16_t curttx;
+extern int16_t curtty;
+extern int16_t curttloop;
+extern uint16_t curtttics;
 
 #define TITLEBACKGROUNDACTIVE (curfadevalue >= 0 || curbgname[0])
 
@@ -126,14 +126,14 @@ extern UINT16 curtttics;
 //
 
 extern dboolean WipeInAction;
-extern UINT8 g_wipemode;
-extern UINT8 g_wipetype;
-extern UINT8 g_wipeframe;
+extern uint8_t g_wipemode;
+extern uint8_t g_wipetype;
+extern uint8_t g_wipeframe;
 extern dboolean g_wipereverse;
 extern dboolean g_wipeencorewiggle;
 extern dboolean WipeStageTitle;
 
-extern INT32 lastwipetic;
+extern int32_t lastwipetic;
 
 extern dboolean g_attractnowipe;
 
@@ -143,19 +143,19 @@ extern dboolean g_attractnowipe;
 
 void F_WipeStartScreen(void);
 void F_WipeEndScreen(void);
-void F_RunWipe(UINT8 wipemode, UINT8 wipetype, dboolean drawMenu, const char *colormap, dboolean reverse, dboolean encorewiggle);
+void F_RunWipe(uint8_t wipemode, uint8_t wipetype, dboolean drawMenu, const char *colormap, dboolean reverse, dboolean encorewiggle);
 void F_WipeStageTitle(void);
 #define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
-tic_t F_GetWipeLength(UINT8 wipetype);
-dboolean F_WipeExists(UINT8 wipetype);
+tic_t F_GetWipeLength(uint8_t wipetype);
+dboolean F_WipeExists(uint8_t wipetype);
 /// @brief true if the wipetype is to-black
-dboolean F_WipeIsToBlack(UINT8 wipemode);
+dboolean F_WipeIsToBlack(uint8_t wipemode);
 /// @brief true if the wipetype is to-white
-dboolean F_WipeIsToWhite(UINT8 wipemode);
+dboolean F_WipeIsToWhite(uint8_t wipemode);
 /// @brief true if the wipetype is to-invert
-dboolean F_WipeIsToInvert(UINT8 wipemode);
+dboolean F_WipeIsToInvert(uint8_t wipemode);
 /// @brief true if the wipetype is modulated from the previous frame
-dboolean F_WipeIsCrossfade(UINT8 wipemode);
+dboolean F_WipeIsCrossfade(uint8_t wipemode);
 
 enum
 {
@@ -199,7 +199,7 @@ enum
 	WIPEFINALSHIFT = (wipe_level_final-wipe_level_toblack)
 };
 
-extern UINT8 wipedefs[NUMWIPEDEFS];
+extern uint8_t wipedefs[NUMWIPEDEFS];
 
 #ifdef __cplusplus
 } // extern "C"

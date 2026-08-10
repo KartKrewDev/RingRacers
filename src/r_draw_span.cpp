@@ -39,7 +39,7 @@ enum DrawSpanType
 };
 
 template<DrawSpanType Type>
-static constexpr UINT8 R_GetSpanTranslated(drawspandata_t* ds, UINT8 col)
+static constexpr uint8_t R_GetSpanTranslated(drawspandata_t* ds, uint8_t col)
 {
 	if constexpr (Type & DrawSpanType::DS_COLORMAP)
 	{
@@ -52,18 +52,18 @@ static constexpr UINT8 R_GetSpanTranslated(drawspandata_t* ds, UINT8 col)
 }
 
 template<DrawSpanType Type>
-static constexpr UINT8 R_GetSpanBrightmapped(drawspandata_t* ds, UINT8 *colormap, UINT32 bit, UINT8 col)
+static constexpr uint8_t R_GetSpanBrightmapped(drawspandata_t* ds, uint8_t *colormap, uint32_t bit, uint8_t col)
 {
 	col = R_GetSpanTranslated<Type>(ds, col);
 
 	if constexpr (Type & DrawSpanType::DS_BRIGHTMAP)
 	{
-		UINT8 brightCol = 31;
+		uint8_t brightCol = 31;
 
 		if constexpr (Type & DrawSpanType::DS_SPRITE)
 		{
-			UINT16 *spriteSource = reinterpret_cast<UINT16 *>(ds->brightmap);
-			UINT16 spriteCol = spriteSource[bit];
+			uint16_t *spriteSource = reinterpret_cast<uint16_t *>(ds->brightmap);
+			uint16_t spriteCol = spriteSource[bit];
 
 			if (spriteCol & 0xFF00)
 			{
@@ -85,7 +85,7 @@ static constexpr UINT8 R_GetSpanBrightmapped(drawspandata_t* ds, UINT8 *colormap
 }
 
 template<DrawSpanType Type>
-static constexpr UINT8 R_GetSpanTranslucent(drawspandata_t* ds, UINT8 *dsrc, UINT8 *colormap, UINT32 bit, UINT8 col)
+static constexpr uint8_t R_GetSpanTranslucent(drawspandata_t* ds, uint8_t *dsrc, uint8_t *colormap, uint32_t bit, uint8_t col)
 {
 	col = R_GetSpanBrightmapped<Type>(ds, colormap, bit, col);
 
@@ -100,14 +100,14 @@ static constexpr UINT8 R_GetSpanTranslucent(drawspandata_t* ds, UINT8 *dsrc, UIN
 }
 
 template<DrawSpanType Type>
-static constexpr UINT8 R_DrawSpanPixel(drawspandata_t* ds, UINT8 *dsrc, UINT8 *colormap, UINT32 bit)
+static constexpr uint8_t R_DrawSpanPixel(drawspandata_t* ds, uint8_t *dsrc, uint8_t *colormap, uint32_t bit)
 {
-	UINT8 col = 0;
+	uint8_t col = 0;
 
 	if constexpr (Type & DrawSpanType::DS_SPRITE)
 	{
-		UINT16 *spriteSource = reinterpret_cast<UINT16 *>(ds->source);
-		UINT16 spriteCol = spriteSource[bit];
+		uint16_t *spriteSource = reinterpret_cast<uint16_t *>(ds->source);
+		uint16_t spriteCol = spriteSource[bit];
 
 		if (spriteCol & 0xFF00)
 		{
@@ -143,12 +143,12 @@ static void R_DrawSpanTemplate(drawspandata_t* ds)
 	fixed_t xposition;
 	fixed_t yposition;
 	fixed_t xstep, ystep;
-	UINT32 bit;
+	uint32_t bit;
 
-	UINT8 *dest;
-	UINT8 *dsrc;
+	uint8_t *dest;
+	uint8_t *dsrc;
 
-	const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+	const uint8_t *deststop = screens[0] + vid.rowbytes * vid.height;
 
 	size_t count = (ds->x2 - ds->x1 + 1);
 	size_t i;
@@ -194,7 +194,7 @@ static void R_DrawSpanTemplate(drawspandata_t* ds)
 
 		for (i = 0; i < 8; i++)
 		{
-			bit = (((UINT32)yposition >> ds->nflatyshift) & ds->nflatmask) | ((UINT32)xposition >> ds->nflatxshift);
+			bit = (((uint32_t)yposition >> ds->nflatyshift) & ds->nflatmask) | ((uint32_t)xposition >> ds->nflatxshift);
 
 			dest[i] = R_DrawSpanPixel<Type>(ds, &dsrc[i], ds->colormap, bit);
 
@@ -210,7 +210,7 @@ static void R_DrawSpanTemplate(drawspandata_t* ds)
 
 	while (count-- && dest <= deststop)
 	{
-		bit = (((UINT32)yposition >> ds->nflatyshift) & ds->nflatmask) | ((UINT32)xposition >> ds->nflatxshift);
+		bit = (((uint32_t)yposition >> ds->nflatyshift) & ds->nflatmask) | ((uint32_t)xposition >> ds->nflatxshift);
 
 		*dest = R_DrawSpanPixel<Type>(ds, dsrc, ds->colormap, bit);
 
@@ -224,13 +224,13 @@ static void R_DrawSpanTemplate(drawspandata_t* ds)
 
 // R_CalcTiltedLighting
 // Exactly what it says on the tin. I wish I wasn't too lazy to explain things properly.
-static void R_CalcTiltedLighting(INT32 *lightbuffer, INT32 x1, INT32 x2, fixed_t start, fixed_t end)
+static void R_CalcTiltedLighting(int32_t *lightbuffer, int32_t x1, int32_t x2, fixed_t start, fixed_t end)
 {
 	// ZDoom uses a different lighting setup to us, and I couldn't figure out how to adapt their version
 	// of this function. Here's my own.
-	INT32 left = x1, right = x2;
+	int32_t left = x1, right = x2;
 	fixed_t step = (end-start)/(x2 - x1 + 1);
-	INT32 i;
+	int32_t i;
 
 	// I wanna do some optimizing by checking for out-of-range segments on either side to fill in all at once,
 	// but I'm too bad at coding to not crash the game trying to do that. I guess this is fast enough for now...
@@ -256,24 +256,24 @@ static void R_DrawTiltedSpanTemplate(drawspandata_t* ds)
 	// x1, x2 = ds_x1, ds_x2
 	int width = ds->x2 - ds->x1;
 	double iz, uz, vz;
-	UINT32 u, v;
+	uint32_t u, v;
 	int i;
 
-	UINT8 *colormap;
-	UINT8 *dest;
-	UINT8 *dsrc;
+	uint8_t *colormap;
+	uint8_t *dest;
+	uint8_t *dsrc;
 
 	double startz, startu, startv;
 	double izstep, uzstep, vzstep;
 	double endz, endu, endv;
-	UINT32 stepu, stepv;
-	UINT32 bit;
-	INT32 tiltlighting[MAXVIDWIDTH];
+	uint32_t stepu, stepv;
+	uint32_t bit;
+	int32_t tiltlighting[MAXVIDWIDTH];
 
-	INT32 x1 = ds->x1;
-	const INT32 nflatxshift = ds->nflatxshift;
-	const INT32 nflatyshift = ds->nflatyshift;
-	const INT32 nflatmask = ds->nflatmask;
+	int32_t x1 = ds->x1;
+	const int32_t nflatxshift = ds->nflatxshift;
+	const int32_t nflatyshift = ds->nflatyshift;
+	const int32_t nflatmask = ds->nflatmask;
 
 	iz = ds->szp.z + ds->szp.y*(centery-ds->y) + ds->szp.x*(ds->x1-centerx);
 
@@ -311,8 +311,8 @@ static void R_DrawTiltedSpanTemplate(drawspandata_t* ds)
 	do
 	{
 		double z = 1.f/iz;
-		u = (INT64)(uz*z);
-		v = (INT64)(vz*z);
+		u = (int64_t)(uz*z);
+		v = (int64_t)(vz*z);
 
 		bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 		if constexpr (!(Type & DS_SPRITE))
@@ -347,10 +347,10 @@ static void R_DrawTiltedSpanTemplate(drawspandata_t* ds)
 		endz = 1.f/iz;
 		endu = uz*endz;
 		endv = vz*endz;
-		stepu = (INT64)((endu - startu) * INVSPAN);
-		stepv = (INT64)((endv - startv) * INVSPAN);
-		u = (INT64)(startu);
-		v = (INT64)(startv);
+		stepu = (int64_t)((endu - startu) * INVSPAN);
+		stepv = (int64_t)((endv - startv) * INVSPAN);
+		u = (int64_t)(startu);
+		v = (int64_t)(startv);
 
 		x1 = ds->x1;
 
@@ -378,8 +378,8 @@ static void R_DrawTiltedSpanTemplate(drawspandata_t* ds)
 	{
 		if (width == 1)
 		{
-			u = (INT64)(startu);
-			v = (INT64)(startv);
+			u = (int64_t)(startu);
+			v = (int64_t)(startv);
 			bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 			if constexpr (!(Type & DS_SPRITE))
 			{
@@ -399,10 +399,10 @@ static void R_DrawTiltedSpanTemplate(drawspandata_t* ds)
 			endu = uz*endz;
 			endv = vz*endz;
 			left = 1.f/left;
-			stepu = (INT64)((endu - startu) * left);
-			stepv = (INT64)((endv - startv) * left);
-			u = (INT64)(startu);
-			v = (INT64)(startv);
+			stepu = (int64_t)((endu - startu) * left);
+			stepv = (int64_t)((endv - startv) * left);
+			u = (int64_t)(startu);
+			v = (int64_t)(startv);
 
 			for (; width != 0; width--)
 			{
@@ -435,9 +435,9 @@ static void R_DrawNPO2SpanTemplate(drawspandata_t* ds)
 	fixed_t x, y;
 	fixed_t fixedwidth, fixedheight;
 
-	UINT8 *dest;
-	UINT8 *dsrc;
-	const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+	uint8_t *dest;
+	uint8_t *dsrc;
+	const uint8_t *deststop = screens[0] + vid.rowbytes * vid.height;
 
 	size_t count = (ds->x2 - ds->x1 + 1);
 
@@ -468,11 +468,11 @@ static void R_DrawNPO2SpanTemplate(drawspandata_t* ds)
 
 	// Fix xposition and yposition if they are out of bounds.
 	if (xposition < 0)
-		xposition = fixedwidth - ((UINT32)(fixedwidth - xposition) % fixedwidth);
+		xposition = fixedwidth - ((uint32_t)(fixedwidth - xposition) % fixedwidth);
 	else if (xposition >= fixedwidth)
 		xposition %= fixedwidth;
 	if (yposition < 0)
-		yposition = fixedheight - ((UINT32)(fixedheight - yposition) % fixedheight);
+		yposition = fixedheight - ((uint32_t)(fixedheight - yposition) % fixedheight);
 	else if (yposition >= fixedheight)
 		yposition %= fixedheight;
 
@@ -515,18 +515,18 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 	// x1, x2 = ds_x1, ds_x2
 	int width = ds->x2 - ds->x1;
 	double iz, uz, vz;
-	UINT32 u, v;
+	uint32_t u, v;
 	int i;
 
-	UINT8 *colormap;
-	UINT8 *dest;
-	UINT8 *dsrc;
+	uint8_t *colormap;
+	uint8_t *dest;
+	uint8_t *dsrc;
 
 	double startz, startu, startv;
 	double izstep, uzstep, vzstep;
 	double endz, endu, endv;
-	UINT32 stepu, stepv;
-	INT32 tiltlighting[MAXVIDWIDTH];
+	uint32_t stepu, stepv;
+	int32_t tiltlighting[MAXVIDWIDTH];
 
 	struct libdivide_u32_t x_divider = libdivide_u32_gen(ds->flatwidth);
 	struct libdivide_u32_t y_divider = libdivide_u32_gen(ds->flatheight);
@@ -568,8 +568,8 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 	do
 	{
 		double z = 1.f/iz;
-		u = (INT64)(uz*z);
-		v = (INT64)(vz*z);
+		u = (int64_t)(uz*z);
+		v = (int64_t)(vz*z);
 
 		if constexpr (!(Type & DS_SPRITE))
 		{
@@ -583,13 +583,13 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 
 			// Carefully align all of my Friends.
 			if (x < 0)
-				x += (libdivide_u32_do((UINT32)(-x-1), &x_divider) + 1) * ds_flatwidth;
+				x += (libdivide_u32_do((uint32_t)(-x-1), &x_divider) + 1) * ds_flatwidth;
 			else
-				x -= libdivide_u32_do((UINT32)x, &x_divider) * ds_flatwidth;
+				x -= libdivide_u32_do((uint32_t)x, &x_divider) * ds_flatwidth;
 			if (y < 0)
-				y += (libdivide_u32_do((UINT32)(-y-1), &y_divider) + 1) * ds_flatheight;
+				y += (libdivide_u32_do((uint32_t)(-y-1), &y_divider) + 1) * ds_flatheight;
 			else
-				y -= libdivide_u32_do((UINT32)y, &y_divider) * ds_flatheight;
+				y -= libdivide_u32_do((uint32_t)y, &y_divider) * ds_flatheight;
 
 			*dest = R_DrawSpanPixel<Type>(ds, dsrc, colormap, ((y * ds->flatwidth) + x));
 		}
@@ -619,10 +619,10 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 		endz = 1.f/iz;
 		endu = uz*endz;
 		endv = vz*endz;
-		stepu = (INT64)((endu - startu) * INVSPAN);
-		stepv = (INT64)((endv - startv) * INVSPAN);
-		u = (INT64)(startu);
-		v = (INT64)(startv);
+		stepu = (int64_t)((endu - startu) * INVSPAN);
+		stepv = (int64_t)((endv - startv) * INVSPAN);
+		u = (int64_t)(startu);
+		v = (int64_t)(startv);
 
 		for (i = SPANSIZE-1; i >= 0; i--)
 		{
@@ -638,13 +638,13 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 
 				// Carefully align all of my Friends.
 				if (x < 0)
-					x += (libdivide_u32_do((UINT32)(-x-1), &x_divider) + 1) * ds->flatwidth;
+					x += (libdivide_u32_do((uint32_t)(-x-1), &x_divider) + 1) * ds->flatwidth;
 				else
-					x -= libdivide_u32_do((UINT32)x, &x_divider) * ds->flatwidth;
+					x -= libdivide_u32_do((uint32_t)x, &x_divider) * ds->flatwidth;
 				if (y < 0)
-					y += (libdivide_u32_do((UINT32)(-y-1), &y_divider) + 1) * ds->flatheight;
+					y += (libdivide_u32_do((uint32_t)(-y-1), &y_divider) + 1) * ds->flatheight;
 				else
-					y -= libdivide_u32_do((UINT32)y, &y_divider) * ds->flatheight;
+					y -= libdivide_u32_do((uint32_t)y, &y_divider) * ds->flatheight;
 
 				*dest = R_DrawSpanPixel<Type>(ds, dsrc, colormap, ((y * ds->flatwidth) + x));
 			}
@@ -661,8 +661,8 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 	{
 		if (width == 1)
 		{
-			u = (INT64)(startu);
-			v = (INT64)(startv);
+			u = (int64_t)(startu);
+			v = (int64_t)(startv);
 
 			if constexpr (!(Type & DS_SPRITE))
 			{
@@ -676,13 +676,13 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 
 				// Carefully align all of my Friends.
 				if (x < 0)
-					x += (libdivide_u32_do((UINT32)(-x-1), &x_divider) + 1) * ds->flatwidth;
+					x += (libdivide_u32_do((uint32_t)(-x-1), &x_divider) + 1) * ds->flatwidth;
 				else
-					x -= libdivide_u32_do((UINT32)x, &x_divider) * ds->flatwidth;
+					x -= libdivide_u32_do((uint32_t)x, &x_divider) * ds->flatwidth;
 				if (y < 0)
-					y += (libdivide_u32_do((UINT32)(-y-1), &y_divider) + 1) * ds->flatheight;
+					y += (libdivide_u32_do((uint32_t)(-y-1), &y_divider) + 1) * ds->flatheight;
 				else
-					y -= libdivide_u32_do((UINT32)y, &y_divider) * ds->flatheight;
+					y -= libdivide_u32_do((uint32_t)y, &y_divider) * ds->flatheight;
 
 				*dest = R_DrawSpanPixel<Type>(ds, dsrc, colormap, ((y * ds->flatwidth) + x));
 			}
@@ -698,10 +698,10 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 			endu = uz*endz;
 			endv = vz*endz;
 			left = 1.f/left;
-			stepu = (INT64)((endu - startu) * left);
-			stepv = (INT64)((endv - startv) * left);
-			u = (INT64)(startu);
-			v = (INT64)(startv);
+			stepu = (int64_t)((endu - startu) * left);
+			stepv = (int64_t)((endv - startv) * left);
+			u = (int64_t)(startu);
+			v = (int64_t)(startv);
 
 			for (; width != 0; width--)
 			{
@@ -717,13 +717,13 @@ static void R_DrawTiltedNPO2SpanTemplate(drawspandata_t* ds)
 
 					// Carefully align all of my Friends.
 					if (x < 0)
-						x += (libdivide_u32_do((UINT32)(-x-1), &x_divider) + 1) * ds->flatwidth;
+						x += (libdivide_u32_do((uint32_t)(-x-1), &x_divider) + 1) * ds->flatwidth;
 					else
-						x -= libdivide_u32_do((UINT32)x, &x_divider) * ds->flatwidth;
+						x -= libdivide_u32_do((uint32_t)x, &x_divider) * ds->flatwidth;
 					if (y < 0)
-						y += (libdivide_u32_do((UINT32)(-y-1), &y_divider) + 1) * ds->flatheight;
+						y += (libdivide_u32_do((uint32_t)(-y-1), &y_divider) + 1) * ds->flatheight;
 					else
-						y -= libdivide_u32_do((UINT32)y, &y_divider) * ds->flatheight;
+						y -= libdivide_u32_do((uint32_t)y, &y_divider) * ds->flatheight;
 
 					*dest = R_DrawSpanPixel<Type>(ds, dsrc, colormap, ((y * ds->flatwidth) + x));
 				}
@@ -767,8 +767,8 @@ void R_DrawFogSpan(drawspandata_t* ds)
 {
 	ZoneScoped;
 
-	UINT8 *colormap;
-	UINT8 *dest;
+	uint8_t *colormap;
+	uint8_t *dest;
 
 	size_t count;
 
@@ -804,9 +804,9 @@ void R_DrawFogSpan_Tilted(drawspandata_t* ds)
 	// x1, x2 = ds_x1, ds_x2
 	int width = ds->x2 - ds->x1;
 	double iz = ds->szp.z + ds->szp.y*(centery-ds->y) + ds->szp.x*(ds->x1-centerx);
-	INT32 tiltlighting[MAXVIDWIDTH];
+	int32_t tiltlighting[MAXVIDWIDTH];
 
-	UINT8 *dest = ylookup[ds->y] + columnofs[ds->x1];
+	uint8_t *dest = ylookup[ds->y] + columnofs[ds->x1];
 
 	// Lighting is simple. It's just linear interpolation from start to end
 	{
@@ -822,7 +822,7 @@ void R_DrawFogSpan_Tilted(drawspandata_t* ds)
 
 	do
 	{
-		UINT8 *colormap = ds->planezlight[tiltlighting[ds->x1++]] + (ds->colormap - colormaps);
+		uint8_t *colormap = ds->planezlight[tiltlighting[ds->x1++]] + (ds->colormap - colormaps);
 		*dest = colormap[*dest];
 		dest++;
 	}
@@ -833,7 +833,7 @@ void R_DrawSpan_Flat(drawspandata_t* ds)
 {
 	ZoneScoped;
 
-	UINT8 *dest = ylookup[ds->y] + columnofs[ds->x1];
+	uint8_t *dest = ylookup[ds->y] + columnofs[ds->x1];
 	memset(dest, ds->colormap[ds->r8_flatcolor], (ds->x2 - ds->x1) + 1);
 }
 
@@ -844,9 +844,9 @@ void R_DrawTiltedSpan_Flat(drawspandata_t* ds)
 	// x1, x2 = ds_x1, ds_x2
 	int width = ds->x2 - ds->x1;
 	double iz = ds->szp.z + ds->szp.y*(centery-ds->y) + ds->szp.x*(ds->x1-centerx);
-	INT32 tiltlighting[MAXVIDWIDTH];
+	int32_t tiltlighting[MAXVIDWIDTH];
 
-	UINT8 *dest = ylookup[ds->y];
+	uint8_t *dest = ylookup[ds->y];
 
 	// Lighting is simple. It's just linear interpolation from start to end
 	{

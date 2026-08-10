@@ -70,7 +70,7 @@ void K_UserPropertyPush(mapUserProperties_t *user, const char *key, mapUserPrope
 		}
 		case USER_PROP_INT:
 		{
-			prop->valueInt = *(INT32 *)value;
+			prop->valueInt = *(int32_t *)value;
 			break;
 		}
 		case USER_PROP_FIXED:
@@ -101,7 +101,7 @@ void K_UserPropertyPush(mapUserProperties_t *user, const char *key, mapUserPrope
 mapUserProperty_t *K_UserPropertyFind(mapUserProperties_t *user, const char *key)
 {
 	const size_t keyLength = strlen(key);
-	const UINT32 hash = quickncasehash(key, keyLength);
+	const uint32_t hash = quickncasehash(key, keyLength);
 	size_t i;
 
 	if (user->length == 0)

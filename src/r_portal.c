@@ -21,7 +21,7 @@
 #include "r_things.h"
 #include "r_sky.h"
 
-UINT8 portalrender;			/**< When rendering a portal, it establishes the depth of the current BSP traversal. */
+uint8_t portalrender;			/**< When rendering a portal, it establishes the depth of the current BSP traversal. */
 dboolean portalskipprecipmobjs = false;
 
 // Linked list for portals.
@@ -29,7 +29,7 @@ portal_t *portal_base, *portal_cap;
 
 line_t *portalclipline;
 sector_t *portalcullsector;
-INT32 portalclipstart, portalclipend;
+int32_t portalclipstart, portalclipend;
 
 portal_t *g_portal; // is curline a portal seg?
 
@@ -43,11 +43,11 @@ void Portal_InitList (void)
  */
 void Portal_ClipApply (const portal_t* portal)
 {
-	INT32 i;
-	INT32 start	= portal->start;
-	INT32 end	= portal->end;
-	INT16 *ceil		= portal->ceilingclip;
-	INT16 *floor	= portal->floorclip;
+	int32_t i;
+	int32_t start	= portal->start;
+	int32_t end	= portal->end;
+	int16_t *ceil		= portal->ceilingclip;
+	int16_t *floor	= portal->floorclip;
 	fixed_t *scale	= portal->frontscale;
 
 	for (i = 0; i < end-start; i++)
@@ -64,20 +64,20 @@ void Portal_ClipApply (const portal_t* portal)
 	for (i = 0; i < start; i++)
 	{
 		floorclip[i] = -1;
-		ceilingclip[i] = (INT16)viewheight;
+		ceilingclip[i] = (int16_t)viewheight;
 	}
 	for (i = end; i < vid.width; i++)
 	{
 		floorclip[i] = -1;
-		ceilingclip[i] = (INT16)viewheight;
+		ceilingclip[i] = (int16_t)viewheight;
 	}
 }
 
-static portal_t* Portal_Add (const INT16 x1, const INT16 x2)
+static portal_t* Portal_Add (const int16_t x1, const int16_t x2)
 {
 	portal_t *portal		= Z_Malloc(sizeof(portal_t), PU_LEVEL, NULL);
-	INT16 *ceilingclipsave	= Z_Malloc(sizeof(INT16)*(x2-x1 + 1), PU_LEVEL, NULL);
-	INT16 *floorclipsave	= Z_Malloc(sizeof(INT16)*(x2-x1 + 1), PU_LEVEL, NULL);
+	int16_t *ceilingclipsave	= Z_Malloc(sizeof(int16_t)*(x2-x1 + 1), PU_LEVEL, NULL);
+	int16_t *floorclipsave	= Z_Malloc(sizeof(int16_t)*(x2-x1 + 1), PU_LEVEL, NULL);
 	fixed_t *frontscalesave	= Z_Malloc(sizeof(fixed_t)*(x2-x1 + 1), PU_LEVEL, NULL);
 
 	// Linked list.
@@ -128,7 +128,7 @@ void Portal_Remove (portal_t* portal)
  * When the portal renders, it will create the illusion of
  * the two lines being seamed together.
  */
-void Portal_Add2Lines (const INT32 line1, const INT32 line2, const INT32 x1, const INT32 x2)
+void Portal_Add2Lines (const int32_t line1, const int32_t line2, const int32_t x1, const int32_t x2)
 {
 	portal_t* portal = Portal_Add(x1, x2);
 
@@ -172,9 +172,9 @@ void Portal_Add2Lines (const INT32 line1, const INT32 line2, const INT32 x1, con
  */
 static void Portal_ClipVisplane (const visplane_t* plane, portal_t* portal)
 {
-	INT16 start	= portal->start;
-	INT16 end	= portal->end;
-	INT32 i;
+	int16_t start	= portal->start;
+	int16_t end	= portal->end;
+	int32_t i;
 
 	for (i = 0; i < end - start; i++)
 	{
@@ -191,9 +191,9 @@ static void Portal_ClipVisplane (const visplane_t* plane, portal_t* portal)
 	}
 }
 
-extern INT32 viewwidth;
+extern int32_t viewwidth;
 
-static dboolean TrimVisplaneBounds (const visplane_t* plane, INT16* start, INT16* end)
+static dboolean TrimVisplaneBounds (const visplane_t* plane, int16_t* start, int16_t* end)
 {
 	*start = plane->minx;
 	*end = plane->maxx + 1;
@@ -237,7 +237,7 @@ void Portal_AddSkybox
 (		const player_t * player,
 		const visplane_t * plane)
 {
-	INT16 start, end;
+	int16_t start, end;
 	mapheader_t *mh;
 	portal_t* portal;
 
@@ -294,8 +294,8 @@ void Portal_AddSkybox
 void Portal_AddSkyboxPortals (const player_t *player)
 {
 	visplane_t *pl;
-	INT32 i;
-	UINT16 count = 0;
+	int32_t i;
+	uint16_t count = 0;
 
 	for (i = 0; i < MAXVISPLANES; i++, pl++)
 	{

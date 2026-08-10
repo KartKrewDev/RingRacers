@@ -40,8 +40,8 @@ class mod_metadata_t
 {
 private:
 	patch_t *_icon;
-	UINT16 _game_version;
-	UINT16 _game_subversion;
+	uint16_t _game_version;
+	uint16_t _game_subversion;
 
 	std::string _name;
 	std::string _author;
@@ -56,8 +56,8 @@ public:
 	mod_metadata_t(size_t wad_id);
 
 	patch_t *icon() const { return _icon; }
-	UINT16 game_version() const { return _game_version; }
-	UINT16 game_subversion() const { return _game_subversion; }
+	uint16_t game_version() const { return _game_version; }
+	uint16_t game_subversion() const { return _game_subversion; }
 
 	std::string name() const { return _name; }
 	std::string author() const { return _author; }
@@ -107,8 +107,8 @@ extern "C" {
 #endif
 
 patch_t *ModMetadata_GetIcon(mod_metadata_t *meta);
-UINT16 ModMetadata_GetGameVersion(mod_metadata_t *meta);
-UINT16 ModMetadata_GetGameSubVersion(mod_metadata_t *meta);
+uint16_t ModMetadata_GetGameVersion(mod_metadata_t *meta);
+uint16_t ModMetadata_GetGameSubVersion(mod_metadata_t *meta);
 
 char *ModMetadata_GetName(mod_metadata_t *meta);
 char *ModMetadata_GetAuthor(mod_metadata_t *meta);

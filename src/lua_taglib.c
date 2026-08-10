@@ -24,7 +24,7 @@
 
 static int tag_iterator(lua_State *L)
 {
-	INT32 tag = lua_isnil(L, 2) ? -1 : lua_tonumber(L, 2);
+	int32_t tag = lua_isnil(L, 2) ? -1 : lua_tonumber(L, 2);
 	do
 	{
 		if (++tag >= MAXTAGS)
@@ -45,7 +45,7 @@ enum {
 #undef UPVALUE
 };
 
-static INT32 next_element(lua_State *L, const mtag_t tag, const size_t p)
+static int32_t next_element(lua_State *L, const mtag_t tag, const size_t p)
 {
 	taggroup_t ** garray = lua_touserdata(L, up_garray);
 	const size_t * max_elements = lua_touserdata(L, up_max_elements);
@@ -61,7 +61,7 @@ static void push_element(lua_State *L, void *element)
 	}
 }
 
-static void push_next_element(lua_State *L, const INT32 element)
+static void push_next_element(lua_State *L, const int32_t element)
 {
 	char * element_array = *(char **)lua_touserdata(L, up_element_array);
 	const size_t sizeof_element = lua_tonumber(L, up_sizeof_element);
@@ -133,7 +133,7 @@ static int lib_getTaggroupElement(lua_State *L)
 {
 	const size_t p = luaL_checknumber(L, 2) - 1;
 	const mtag_t tag = *(mtag_t *)lua_touserdata(L, 1);
-	const INT32 element = next_element(L, tag, p);
+	const int32_t element = next_element(L, tag, p);
 
 	if (element == -1)
 		return 0;

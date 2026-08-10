@@ -28,19 +28,19 @@ struct brightmapStorage_t
 	// before putting them into texturebrightmaps.
 
 	char textureName[9];	// The texture's name.
-	UINT32 textureHash;		// The texture name's hash.
+	uint32_t textureHash;		// The texture name's hash.
 
 	char brightmapName[9];	// The brightmap's name.
-	UINT32 brightmapHash;	// The brightmap name's hash.
+	uint32_t brightmapHash;	// The brightmap name's hash.
 };
 
 /*--------------------------------------------------
-	void K_InitBrightmapsPwad(INT32 wadNum);
+	void K_InitBrightmapsPwad(int32_t wadNum);
 
 		Finds all BRIGHT lumps for one WAD/PK3 and processes them.
 --------------------------------------------------*/
 
-void K_InitBrightmapsPwad(INT32 wadNum);
+void K_InitBrightmapsPwad(int32_t wadNum);
 
 /*--------------------------------------------------
 	void K_InitBrightmaps(void);

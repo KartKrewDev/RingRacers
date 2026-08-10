@@ -85,7 +85,7 @@ dboolean K_PodiumHasEmerald(void);
 
 
 /*--------------------------------------------------
-	UINT8 K_GetPodiumPosition(player_t *player);
+	uint8_t K_GetPodiumPosition(player_t *player);
 
 		Calculates what the player's position would
 		be at the final standings.
@@ -98,7 +98,7 @@ dboolean K_PodiumHasEmerald(void);
 		between 1 and MAXPLAYERS.
 --------------------------------------------------*/
 
-UINT8 K_GetPodiumPosition(player_t *player);
+uint8_t K_GetPodiumPosition(player_t *player);
 
 
 /*--------------------------------------------------

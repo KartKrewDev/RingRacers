@@ -132,7 +132,7 @@ moving_toward_gate
 			R_PointToAngle2(0, 0, dx, dy)) < ANG60;
 }
 
-static SINT8
+static int8_t
 get_binary_direction
 (		angle_t pitch,
 		mobj_t * toucher)
@@ -154,7 +154,7 @@ get_binary_direction
 mobj_t *
 Obj_FindLoopCenter (const mtag_t tag)
 {
-	INT32 i;
+	int32_t i;
 
 	TAG_ITER_THINGS(tag, i)
 	{
@@ -188,7 +188,7 @@ void
 Obj_LinkLoopAnchor
 (		mobj_t * anchor,
 		mobj_t * center,
-		UINT8 type)
+		uint8_t type)
 {
 	P_SetTarget(&anchor_center(anchor), center);
 
@@ -232,7 +232,7 @@ Obj_LoopEndpointCollide
 	const fixed_t px = toucher->x + 2 * toucher->momx;
 	const fixed_t py = toucher->y + 2 * toucher->momy;
 
-	SINT8 flip;
+	int8_t flip;
 
 	if (P_MobjWasRemoved(center))
 	{

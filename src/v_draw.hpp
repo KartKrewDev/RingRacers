@@ -67,7 +67,7 @@ typedef enum
 } saturn_buttons_e;
 
 // Garden-variety standard gamepad
-static const srb2::HashMap<INT32, char> standardpad = {
+static const srb2::HashMap<int32_t, char> standardpad = {
 	{nc_a, gb_a},
 	{nc_b, gb_b},
 	{nc_x, gb_x},
@@ -84,7 +84,7 @@ static const srb2::HashMap<INT32, char> standardpad = {
 
 // Standard gamepad, but evil Nintendo layout flip was applied by your
 // controller firmware or Steam Input—swap B/A and X/Y
-static const srb2::HashMap<INT32, char> flippedpad = {
+static const srb2::HashMap<int32_t, char> flippedpad = {
 	{nc_a, gb_b},
 	{nc_b, gb_a},
 	{nc_x, gb_y},
@@ -100,7 +100,7 @@ static const srb2::HashMap<INT32, char> flippedpad = {
 };
 
 // Saturn Type A - Retrobit Wired Dinput, RB RT LB LT (CZLR)
-static const srb2::HashMap<INT32, char> saturntypeA = {
+static const srb2::HashMap<int32_t, char> saturntypeA = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -116,7 +116,7 @@ static const srb2::HashMap<INT32, char> saturntypeA = {
 };
 
 // Saturn Type B - Retrobit Wireless Dinput, LB RB LT RT (CZLR)
-static const srb2::HashMap<INT32, char> saturntypeB = {
+static const srb2::HashMap<int32_t, char> saturntypeB = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -132,7 +132,7 @@ static const srb2::HashMap<INT32, char> saturntypeB = {
 };
 
 // Saturn Type C - Retrobit Xinput, RT LT LB RB (CZLR)
-static const srb2::HashMap<INT32, char> saturntypeC = {
+static const srb2::HashMap<int32_t, char> saturntypeC = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -151,7 +151,7 @@ static const srb2::HashMap<INT32, char> saturntypeC = {
 // This cannot be disambiguated (shares L/R with type 1)
 // but is more spatially correct w/r/t SDL expectations
 // and standard arcade mapping (Z on top, C on bottom)
-static const srb2::HashMap<INT32, char> saturntypeD = {
+static const srb2::HashMap<int32_t, char> saturntypeD = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -170,7 +170,7 @@ static const srb2::HashMap<INT32, char> saturntypeD = {
 // The Hori layout is, to my knowledge, the only 6bt one that has fully
 // unique buttons in every slot while having both bumpers and triggers,
 // so there's no way to accurately portray it without using generics.
-static const srb2::HashMap<INT32, char> saturntypeE = {
+static const srb2::HashMap<int32_t, char> saturntypeE = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -187,7 +187,7 @@ static const srb2::HashMap<INT32, char> saturntypeE = {
 
 // Saturn Type F - Mayflash XInput Saturn adapter, CZ = RS LS
 // Cannot be disambiguated. GEE I SURE WISH THERE WERE A STANDARD
-static const srb2::HashMap<INT32, char> saturntypeF = {
+static const srb2::HashMap<int32_t, char> saturntypeF = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -204,7 +204,7 @@ static const srb2::HashMap<INT32, char> saturntypeF = {
 
 // Saturn Type G - 8BitDo M30 (non-Xbox)
 // Cannot be disambiguated.
-static const srb2::HashMap<INT32, char> saturntypeG = {
+static const srb2::HashMap<int32_t, char> saturntypeG = {
 	{nc_a, sb_a},
 	{nc_b, sb_b},
 	{nc_x, sb_x},
@@ -308,8 +308,8 @@ public:
 
 		const srb2::String& string() const { return string_; }
 		std::optional<Font> font() const { return font_; }
-		std::optional<INT32> flags() const { return flags_; }
-		std::optional<UINT8> as() const { return as_; }
+		std::optional<int32_t> flags() const { return flags_; }
+		std::optional<uint8_t> as() const { return as_; }
 
 		int width() const;
 
@@ -333,13 +333,13 @@ public:
 			return *this;
 		}
 
-		TextElement& flags(INT32 flags)
+		TextElement& flags(int32_t flags)
 		{
 			flags_ = flags;
 			return *this;
 		}
 
-		TextElement& as(UINT8 as)
+		TextElement& as(uint8_t as)
 		{
 			as_ = as;
 			return *this;
@@ -347,8 +347,8 @@ public:
 	private:
 		srb2::String string_;
 		std::optional<Font> font_;
-		std::optional<INT32> flags_;
-		std::optional<UINT8> as_;
+		std::optional<int32_t> flags_;
+		std::optional<uint8_t> as_;
 	};
 
 	class Chain
@@ -356,13 +356,13 @@ public:
 	public:
 		float x() const { return x_; }
 		float y() const { return y_; }
-		INT32 flags() const { return flags_; }
+		int32_t flags() const { return flags_; }
 
 		// Methods add relative to the current state
 		Chain& x(float x);
 		Chain& y(float y);
 		Chain& xy(float x, float y);
-		Chain& flags(INT32 flags);
+		Chain& flags(int32_t flags);
 
 		// Methods overwrite the current state
 		Chain& width(float width);
@@ -386,10 +386,10 @@ public:
 		// this to true
 		Chain& clip(bool yes);
 
-		Chain& colormap(const UINT8* colormap);
-		Chain& colormap(UINT16 color);
-		Chain& colormap(INT32 skin, UINT16 color);
-		Chain& colorize(UINT16 color);
+		Chain& colormap(const uint8_t* colormap);
+		Chain& colormap(uint16_t color);
+		Chain& colormap(int32_t skin, uint16_t color);
+		Chain& colorize(uint16_t color);
 
 		void text(const char* str) const { string(str, flags_, font_); }
 		void text(const srb2::String& str) const { text(str.c_str()); }
@@ -409,9 +409,9 @@ public:
 		void patch(const char* name) const { patch(Draw::cache_patch(name)); }
 		void patch(const srb2::String& name) const { patch(name.c_str()); }
 
-		void thumbnail(UINT16 mapnum) const;
+		void thumbnail(uint16_t mapnum) const;
 
-		void fill(UINT8 color) const;
+		void fill(uint8_t color) const;
 
 		void button(Button type, std::optional<bool> press = {}) const { button_(type, 0, press); }
 		void small_button(Button type, std::optional<bool> press = {}) const { button_(type, 1, press); }
@@ -419,7 +419,7 @@ public:
 		void generic_button(GenericButton type, std::optional<bool> press = {}) const { generic_button_(type, 0, press); }
 		void generic_small_button(GenericButton type, std::optional<bool> press = {}) const { generic_button_(type, 1, press); }
 
-		void sticker(patch_t* end_graphic, UINT8 color) const;
+		void sticker(patch_t* end_graphic, uint8_t color) const;
 		void sticker() const { sticker(Draw::cache_patch("K_STIKEN"), 24); }
 		void small_sticker() const { sticker(Draw::cache_patch("K_STIKE2"), 24); }
 
@@ -450,15 +450,15 @@ public:
 		float clipy2_ = BASEVIDHEIGHT;
 		bool clip_ = false;
 
-		INT32 flags_ = 0;
+		int32_t flags_ = 0;
 
 		Font font_ = Font::kThin;
 		Align align_ = Align::kLeft;
 		Stretch stretch_ = Stretch::kNone;
 
-		const UINT8* colormap_ = nullptr;
+		const uint8_t* colormap_ = nullptr;
 
-		void string(const char* str, INT32 flags, Font font) const;
+		void string(const char* str, int32_t flags, Font font) const;
 		void button_(Button type, int ver, std::optional<bool> press = {}) const;
 		void generic_button_(GenericButton type, int ver, std::optional<bool> press = {}) const;
 
@@ -475,7 +475,7 @@ public:
 
 	float x() const { return chain_.x(); }
 	float y() const { return chain_.y(); }
-	INT32 flags() const { return chain_.flags(); }
+	int32_t flags() const { return chain_.flags(); }
 
 #define METHOD(Name) \
 	template <typename... Args>\
@@ -527,8 +527,8 @@ private:
 	Chain chain_;
 
 	static int font_to_fontno(Font font);
-	static INT32 default_font_flags(Font font);
-	static fixed_t font_width(Font font, INT32 flags, const char* string);
+	static int32_t default_font_flags(Font font);
+	static fixed_t font_width(Font font, int32_t flags, const char* string);
 };
 
 }; // namespace srb2

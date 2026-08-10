@@ -885,11 +885,11 @@ void HWR_WallLighting(FOutVector *wlVerts)
 
 		Surf.PolyColor.rgba = LSBF_LONG(dynlights->p_lspr[j]->dynamic_color);
 #ifdef DL_HIGH_QUALITY
-		Surf.PolyColor.s.alpha = (UINT8)((1-dist_p2d/DL_SQRRADIUS(j))*Surf.PolyColor.s.alpha);
+		Surf.PolyColor.s.alpha = (uint8_t)((1-dist_p2d/DL_SQRRADIUS(j))*Surf.PolyColor.s.alpha);
 #endif
 		// next state is null so fade out with alpha
 		if (dynlights->mo[j]->state->nextstate == S_NULL)
-			Surf.PolyColor.s.alpha = (UINT8)(((float)dynlights->mo[j]->tics/(float)dynlights->mo[j]->state->tics)*Surf.PolyColor.s.alpha);
+			Surf.PolyColor.s.alpha = (uint8_t)(((float)dynlights->mo[j]->tics/(float)dynlights->mo[j]->state->tics)*Surf.PolyColor.s.alpha);
 
 		HWD.pfnDrawPolygon (&Surf, wlVerts, 4, LIGHTMAPFLAGS);
 
@@ -992,7 +992,7 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 		FSurfaceInfo    Surf;
 		float           cx = 0.0f, cy = 0.0f, cz = 0.0f; // gravity center
 		float           size;
-		UINT8           i;
+		uint8_t           i;
 
 		switch (p_lspr->type)
 		{
@@ -1101,7 +1101,7 @@ void HWR_DrawCoronas(void)
 			continue;
 		Surf.PolyColor.rgba = p_lspr->corona_color;
 		if (cz > 250.0f)
-			Surf.PolyColor.s.alpha = (UINT8)(0xff-(UINT8)(((int)cz-250)/8));
+			Surf.PolyColor.s.alpha = (uint8_t)(0xff-(uint8_t)(((int)cz-250)/8));
 		else
 			Surf.PolyColor.s.alpha = 0xff;
 
@@ -1111,7 +1111,7 @@ void HWR_DrawCoronas(void)
 				size  = p_lspr->corona_radius  * ((cz+120.0f)/950.0f); // d'ou vienne ces constante ?
 				break;
 			case ROCKET_SPR:
-				Surf.PolyColor.s.alpha = (UINT8)((M_RandomByte()>>1)&0xff);
+				Surf.PolyColor.s.alpha = (uint8_t)((M_RandomByte()>>1)&0xff);
 				// don't need a break
 			case CORONA_SPR:
 				size  = p_lspr->corona_radius  * ((cz+60.0f)/100.0f); // d'ou vienne ces constante ?
@@ -1233,7 +1233,7 @@ static void HWR_SetLight(void)
 	if (!lightmappatch.mipmap->downloaded && !lightmappatch.mipmap->data)
 	{
 
-		UINT16 *Data = (UINT16 *)Z_Malloc(129*128*sizeof (UINT16), PU_HWRCACHE, &lightmappatch.mipmap->data);
+		uint16_t *Data = (uint16_t *)Z_Malloc(129*128*sizeof (uint16_t), PU_HWRCACHE, &lightmappatch.mipmap->data);
 
 		for (i = 0; i < 128; i++)
 		{
@@ -1241,7 +1241,7 @@ static void HWR_SetLight(void)
 			{
 				int pos = ((i-64)*(i-64))+((j-64)*(j-64));
 				if (pos <= 63*63)
-					Data[i*128+j] = (UINT16)(((UINT8)(255-(4*(float)sqrt((float)pos)))) << 8 | 0xff);
+					Data[i*128+j] = (uint16_t)(((uint8_t)(255-(4*(float)sqrt((float)pos)))) << 8 | 0xff);
 				else
 					Data[i*128+j] = 0;
 			}

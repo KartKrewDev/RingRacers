@@ -12,11 +12,11 @@
 
 #include "../../k_menu.h"
 
-INT16 menugametype = GT_RACE;
+int16_t menugametype = GT_RACE;
 
-void M_NextMenuGametype(UINT32 forbidden)
+void M_NextMenuGametype(uint32_t forbidden)
 {
-	const INT16 currentmenugametype = menugametype;
+	const int16_t currentmenugametype = menugametype;
 	do
 	{
 		menugametype++;
@@ -28,9 +28,9 @@ void M_NextMenuGametype(UINT32 forbidden)
 	} while (menugametype != currentmenugametype);
 }
 
-void M_PrevMenuGametype(UINT32 forbidden)
+void M_PrevMenuGametype(uint32_t forbidden)
 {
-	const INT16 currentmenugametype = menugametype;
+	const int16_t currentmenugametype = menugametype;
 	do
 	{
 		if (menugametype == 0)

@@ -34,15 +34,15 @@ menu_t MISC_ManualDef = IMAGEDEF(MISC_Manual);
 
 // Handles the ImageDefs.  Just a specialized function that
 // uses left and right movement.
-void M_HandleImageDef(INT32 choice)
+void M_HandleImageDef(int32_t choice)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	dboolean exitmenu = false;
 	(void) choice;
 
 	if (menucmd[pid].dpad_lr > 0)
 	{
-		if (itemOn >= (INT16)(currentMenu->numitems-1))
+		if (itemOn >= (int16_t)(currentMenu->numitems-1))
 			return;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
@@ -74,7 +74,7 @@ void M_HandleImageDef(INT32 choice)
 
 // Opening manual
 #ifdef TODONEWMANUAL
-void M_Manual(INT32 choice)
+void M_Manual(int32_t choice)
 {
 	(void)choice;
 

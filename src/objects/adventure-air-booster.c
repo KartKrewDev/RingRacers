@@ -36,7 +36,7 @@ static const skincolornum_t AAB_COLORS[] = {
 	SKINCOLOR_RED,
 	SKINCOLOR_BLUE,
 };
-static const UINT8 AAB_NUM_COLORS = sizeof(AAB_COLORS) / sizeof(skincolornum_t);
+static const uint8_t AAB_NUM_COLORS = sizeof(AAB_COLORS) / sizeof(skincolornum_t);
 
 static void AdventureAirBoosterUpdateColor(mobj_t *mobj)
 {
@@ -59,7 +59,7 @@ void Obj_AdventureAirBoosterSetup(mobj_t *mobj, mapthing_t *mthing)
 	fixed_t oldHeight = mobj->height;
 	fixed_t baseScale = mobj->scale;
 	fixed_t xPos, yPos;
-	SINT8 i;
+	int8_t i;
 
 	// arg1: double scale (pre-dates UDMF)
 	if (mthing->thing_args[0])
@@ -139,7 +139,7 @@ void Obj_AdventureAirBoosterHitboxTouch(mobj_t *hitbox, player_t *player)
 	angle_t finalAngle = hitbox->angle;
 	angle_t playerAngle;
 	fixed_t finalSpeed, playerSpeed, xPos, yPos;
-	SINT8 i;
+	int8_t i;
 
 	if (P_MobjWasRemoved(booster) || !Obj_DashRingIsUsableByPlayer(booster, player))
 	{

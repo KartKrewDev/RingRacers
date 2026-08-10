@@ -120,7 +120,7 @@ sine_bob
 static void
 bob_in_place
 (		mobj_t * hyu,
-		INT32 bob_speed)
+		int32_t bob_speed)
 {
 	sine_bob(hyu,
 			(leveltime & (bob_speed - 1)) *
@@ -240,8 +240,8 @@ static mobj_t *
 find_duel_target (mobj_t *ignore)
 {
 	mobj_t *ret = NULL;
-	UINT8 bestPosition = UINT8_MAX;
-	UINT8 i;
+	uint8_t bestPosition = UINT8_MAX;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -376,7 +376,7 @@ append_hyudoro
 (		mobj_t ** head,
 		mobj_t * hyu)
 {
-	INT32 lastpos = 0;
+	int32_t lastpos = 0;
 
 	while (is_hyudoro(*head))
 	{
@@ -408,7 +408,7 @@ pop_hyudoro (mobj_t **head)
 		return;
 	}
 
-	INT32 lastpos = hyudoro_stackpos(hyu);
+	int32_t lastpos = hyudoro_stackpos(hyu);
 
 	{
 		mobj_t *next = hyudoro_next(hyu);
@@ -428,7 +428,7 @@ pop_hyudoro (mobj_t **head)
 
 	do
 	{
-		INT32 thispos = hyudoro_stackpos(hyu);
+		int32_t thispos = hyudoro_stackpos(hyu);
 
 		hyudoro_stackpos(hyu) = lastpos;
 		lastpos = thispos;
@@ -486,8 +486,8 @@ update_capsule_position (mobj_t *hyu)
 static void
 set_item
 (		mobj_t * hyu,
-		INT32 item,
-		INT32 amount)
+		int32_t item,
+		int32_t amount)
 {
 	mobj_t *caps = P_MobjWasRemoved(hyudoro_capsule(hyu))
 		? spawn_capsule(hyu) : hyudoro_capsule(hyu);

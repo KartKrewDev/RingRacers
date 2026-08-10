@@ -62,19 +62,19 @@ void Obj_SpawnEmeraldSparks(mobj_t *mobj)
 	sparkle->sprzoff = mobj->sprzoff;
 }
 
-static INT32 get_elapsed(mobj_t *emerald)
+static int32_t get_elapsed(mobj_t *emerald)
 {
 	return leveltime - min((tic_t)emerald_anim_start(emerald), leveltime);
 }
 
-static INT32 get_revolve_time(mobj_t *emerald)
+static int32_t get_revolve_time(mobj_t *emerald)
 {
 	return max(1, emerald_revolution_time(emerald));
 }
 
 static fixed_t get_suck_factor(mobj_t *emerald)
 {
-	const INT32 suck_time = get_revolve_time(emerald) * 2;
+	const int32_t suck_time = get_revolve_time(emerald) * 2;
 
 	return (min(get_elapsed(emerald), suck_time) * FRACUNIT) / suck_time;
 }
@@ -253,8 +253,8 @@ static mobj_t *spawn_glow_colorize(mobj_t *flare)
 
 void Obj_EmeraldFlareThink(mobj_t *flare)
 {
-	const INT32 kExtraTics = 3;
-	const INT32 flare_tics = states[S_EMERALDFLARE1].tics + kExtraTics;
+	const int32_t kExtraTics = 3;
+	const int32_t flare_tics = states[S_EMERALDFLARE1].tics + kExtraTics;
 
 	if (P_MobjWasRemoved(flare->target))
 	{
@@ -323,7 +323,7 @@ static void spawn_lens_flare(mobj_t *emerald)
 #endif
 }
 
-void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse)
+void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, int32_t revolution_time, tic_t fuse)
 {
 	P_SetTarget(&emerald_orbit(emerald), target);
 	P_SetTarget(&emerald->punt_ref, target);

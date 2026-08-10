@@ -46,7 +46,7 @@ menu_t MISC_AddonsDef = {
 
 // Addons menu: (Merely copypasted, original code by toaster)
 
-void M_Addons(INT32 choice)
+void M_Addons(int32_t choice)
 {
 	const char *pathname = ".";
 
@@ -82,7 +82,7 @@ void M_Addons(INT32 choice)
 
 char *M_AddonsHeaderPath(void)
 {
-	UINT32 len;
+	uint32_t len;
 	static char header[1024];
 
 	strlcpy(header, va("addons%s", menupath+menupathindex[menudepth-1]-1), 1024);
@@ -107,7 +107,7 @@ char *M_AddonsHeaderPath(void)
 
 static dboolean prevmajormods = false;
 
-static void M_AddonsClearName(INT32 choice)
+static void M_AddonsClearName(int32_t choice)
 {
 	(void)choice;
 
@@ -174,7 +174,7 @@ void M_AddonsRefresh(void)
 	return;// false;
 }
 
-static void M_AddonExec(INT32 ch)
+static void M_AddonExec(int32_t ch)
 {
 	if (ch == MA_YES)
 	{
@@ -202,9 +202,9 @@ void M_UpdateAddonsSearch(void)
 #endif
 }
 
-void M_HandleAddons(INT32 choice)
+void M_HandleAddons(int32_t choice)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	dboolean exitmenu = false; // exit to previous menu
 
 	(void) choice;
@@ -238,7 +238,7 @@ void M_HandleAddons(INT32 choice)
 
 	else if (M_MenuButtonPressed(pid, MBT_L))
 	{
-		UINT8 i;
+		uint8_t i;
 		for (i = numaddonsshown; i && (dir_on[menudepthleft] < sizedirmenu-1); i--)
 			dir_on[menudepthleft]++;
 
@@ -248,7 +248,7 @@ void M_HandleAddons(INT32 choice)
 
 	else if (M_MenuButtonPressed(pid, MBT_R))
 	{
-		UINT8 i;
+		uint8_t i;
 		for (i = numaddonsshown; i && (dir_on[menudepthleft]); i--)
 			dir_on[menudepthleft]--;
 

@@ -24,14 +24,14 @@ extern "C" {
 // -------------------------------
 // COMMON STUFF FOR 8bpp AND 16bpp
 // -------------------------------
-extern UINT8 *ylookup[MAXVIDHEIGHT*4];
-extern UINT8 *ylookup1[MAXVIDHEIGHT*4];
-extern UINT8 *ylookup2[MAXVIDHEIGHT*4];
-extern UINT8 *ylookup3[MAXVIDHEIGHT*4];
-extern UINT8 *ylookup4[MAXVIDHEIGHT*4];
-extern INT32 columnofs[MAXVIDWIDTH*4];
-extern UINT8 *topleft;
-extern UINT8 r8_flatcolor;
+extern uint8_t *ylookup[MAXVIDHEIGHT*4];
+extern uint8_t *ylookup1[MAXVIDHEIGHT*4];
+extern uint8_t *ylookup2[MAXVIDHEIGHT*4];
+extern uint8_t *ylookup3[MAXVIDHEIGHT*4];
+extern uint8_t *ylookup4[MAXVIDHEIGHT*4];
+extern int32_t columnofs[MAXVIDWIDTH*4];
+extern uint8_t *topleft;
+extern uint8_t r8_flatcolor;
 
 // -------------------------
 // COLUMN DRAWING CODE STUFF
@@ -153,12 +153,12 @@ enum
 
 // Custom player skin translation
 // Initialize color translation tables, for player rendering etc.
-UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags);
+uint8_t* R_GetTranslationColormap(int32_t skinnum, skincolornum_t color, uint8_t flags);
 void R_FlushTranslationColormapCache(void);
-UINT16 R_GetColorByName(const char *name);
-UINT16 R_GetSuperColorByName(const char *name);
+uint16_t R_GetColorByName(const char *name);
+uint16_t R_GetSuperColorByName(const char *name);
 
-extern UINT8 *transtables; // translucency tables, should be (*transtables)[5][256][256]
+extern uint8_t *transtables; // translucency tables, should be (*transtables)[5][256][256]
 
 enum
 {
@@ -169,20 +169,20 @@ enum
 	NUMBLENDMAPS
 };
 
-extern UINT8 *blendtables[NUMBLENDMAPS];
+extern uint8_t *blendtables[NUMBLENDMAPS];
 
 void R_InitTranslucencyTables(void);
 void R_GenerateBlendTables(void);
 
-UINT8 *R_GetTranslucencyTable(INT32 alphalevel);
-UINT8 *R_GetBlendTable(int style, INT32 alphalevel);
+uint8_t *R_GetTranslucencyTable(int32_t alphalevel);
+uint8_t *R_GetBlendTable(int style, int32_t alphalevel);
 
 // Color ramp modification should force a recache
-extern UINT8 skincolor_modified[];
+extern uint8_t skincolor_modified[];
 
-void R_InitViewBuffer(INT32 width, INT32 height);
+void R_InitViewBuffer(int32_t width, int32_t height);
 void R_InitViewBorder(void);
-void R_VideoErase(size_t ofs, INT32 count);
+void R_VideoErase(size_t ofs, int32_t count);
 
 // Rendering function.
 #if 0

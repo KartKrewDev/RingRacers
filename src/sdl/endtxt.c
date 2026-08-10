@@ -33,9 +33,9 @@
 
 void ShowEndTxt(void)
 {
-	INT32 i;
-	UINT16 j, att = 0;
-	INT32 nlflag = 1;
+	int32_t i;
+	uint16_t j, att = 0;
+	int32_t nlflag = 1;
 #ifdef _WIN32
 	HANDLE co = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD mode, bytesWritten;
@@ -43,7 +43,7 @@ void ShowEndTxt(void)
 	COORD resizewin = {80,-1};
 	CHAR let = 0;
 #endif
-	UINT16 *ptext;
+	uint16_t *ptext;
 	void *data;
 	lumpnum_t endoomnum = W_GetNumForName("ENDOOM");
 	//char *col;
@@ -75,7 +75,7 @@ void ShowEndTxt(void)
 
 	for (i=1; i<=80*25; i++) // print 80x25 text and deal with the attributes too
 	{
-		j = (UINT16)(*ptext >> 8); // attribute first
+		j = (uint16_t)(*ptext >> 8); // attribute first
 		let = (char)(*ptext & 0xff); // text second
 		if (j != att) // attribute changed?
 		{

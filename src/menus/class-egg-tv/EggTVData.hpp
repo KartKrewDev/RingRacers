@@ -180,7 +180,7 @@ public:
 			std::optional<std::size_t> skin;
 			std::size_t color;
 			std::optional<tic_t> time;
-			std::optional<UINT32> score;
+			std::optional<uint32_t> score;
 		};
 
 		class Gametype
@@ -194,13 +194,13 @@ public:
 			};
 
 			explicit Gametype() {}
-			explicit Gametype(INT16 gt, bool gp) : gametype_(get(gt)), name_(get_name(gt, gp)) {}
-			explicit Gametype(INT16 gt, bool gp, Race race) : Gametype(gt, gp) { var_ = race; }
+			explicit Gametype(int16_t gt, bool gp) : gametype_(get(gt)), name_(get_name(gt, gp)) {}
+			explicit Gametype(int16_t gt, bool gp, Race race) : Gametype(gt, gp) { var_ = race; }
 
 			bool valid() const { return gametype_; }
 
 			std::string_view name() const { return name_; }
-			UINT32 rules() const { return valid() ? gametype_->rules : 0u; }
+			uint32_t rules() const { return valid() ? gametype_->rules : 0u; }
 
 			bool ranks_time() const { return !ranks_points(); }
 			bool ranks_points() const { return rules() & GTR_POINTLIMIT; }
@@ -212,7 +212,7 @@ public:
 			std::string_view name_;
 			std::variant<std::monostate, Race> var_;
 
-			std::string_view get_name(INT16 gt, bool gp) const
+			std::string_view get_name(int16_t gt, bool gp) const
 			{
 				if (!valid())
 				{
@@ -232,7 +232,7 @@ public:
 				return gametype_->name;
 			}
 
-			static gametype_t* get(INT16 gt) { return gt >= 0 && gt < numgametypes ? gametypes[gt] : nullptr; }
+			static gametype_t* get(int16_t gt) { return gt >= 0 && gt < numgametypes ? gametypes[gt] : nullptr; }
 		};
 
 		explicit Replay(Folder::Cache::ReplayRef& ref);

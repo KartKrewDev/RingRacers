@@ -43,11 +43,11 @@
 namespace
 {
 
-constexpr const UINT8 kRRSalt[17] = "0L4rlK}{9ay6'VJS";
+constexpr const uint8_t kRRSalt[17] = "0L4rlK}{9ay6'VJS";
 
-std::array<UINT8, M_PW_BUF_SIZE> decode_hash(srb2::String encoded)
+std::array<uint8_t, M_PW_BUF_SIZE> decode_hash(srb2::String encoded)
 {
-	std::array<UINT8, M_PW_BUF_SIZE> decoded;
+	std::array<uint8_t, M_PW_BUF_SIZE> decoded;
 	std::string encoded_stl { static_cast<std::string_view>(encoded) };
 	if (modp::b64_decode(encoded_stl).size() != decoded.size())
 		throw std::invalid_argument("hash is incorrectly sized");
@@ -60,7 +60,7 @@ struct Pw
 	Pw(void (*cb)(), const char *encoded_hash) : cb_(cb), hash_(decode_hash(encoded_hash)) {}
 
 	void (*cb_)();
-	const std::array<UINT8, M_PW_BUF_SIZE> hash_;
+	const std::array<uint8_t, M_PW_BUF_SIZE> hash_;
 };
 
 srb2::Vector<Pw> passwords;
@@ -69,7 +69,7 @@ srb2::Vector<Pw> passwords;
 template <typename F>
 void iter_conditions(F&& f)
 {
-	UINT32 i, j;
+	uint32_t i, j;
 	conditionset_t *c;
 	condition_t *cn;
 
@@ -101,7 +101,7 @@ void iter_conditions(F&& f)
 
 void f_tournament()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 
 	/*if (modifiedgame)
@@ -257,7 +257,7 @@ void f_levelskull()
 
 void f_colors()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -289,7 +289,7 @@ void f_colors()
 
 void f_followers()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -321,7 +321,7 @@ void f_followers()
 
 void f_maps()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -367,7 +367,7 @@ void f_maps()
 
 void f_tutorials()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -381,7 +381,7 @@ void f_tutorials()
 		if (unlockables[i].type != SECRET_MAP)
 			continue;
 
-		UINT16 mapnum = M_UnlockableMapNum(&unlockables[i]);
+		uint16_t mapnum = M_UnlockableMapNum(&unlockables[i]);
 		if (mapnum >= nummapheaders || !mapheaderinfo[mapnum])
 			continue;
 
@@ -399,8 +399,8 @@ void f_tutorials()
 	}
 
 	const char *knucklesrap;
-	const UINT8 numsections = 5;
-	static UINT8 section = numsections;
+	const uint8_t numsections = 5;
+	static uint8_t section = numsections;
 	if (section == numsections)
 		section = M_RandomKey(numsections);
 
@@ -472,7 +472,7 @@ void f_tutorials()
 
 void f_characters()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -504,7 +504,7 @@ void f_characters()
 
 void f_altmusic()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -536,7 +536,7 @@ void f_altmusic()
 
 void f_timeattack()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 	dboolean already_have_encore = M_SecretUnlocked(SECRET_ENCORE, true);
 
@@ -580,7 +580,7 @@ void f_timeattack()
 
 void f_encore()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 	dboolean already_have_timeattacks = (
 		M_SecretUnlocked(SECRET_TIMEATTACK, true)
@@ -626,7 +626,7 @@ void f_encore()
 
 void f_difficulty()
 {
-	UINT16 i;
+	uint16_t i;
 	dboolean success = false;
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -659,7 +659,7 @@ void f_difficulty()
 
 void f_keys()
 {
-	INT32 givekeys = 25;
+	int32_t givekeys = 25;
 
 	if (gamedata->chaokeys > (GDMAX_CHAOKEYS - givekeys))
 	{
@@ -684,7 +684,7 @@ void f_keys()
 
 void f_devmode()
 {
-	INT32 i;
+	int32_t i;
 
 	if (modifiedgame)
 		return;
@@ -746,10 +746,10 @@ try_password_e M_TryPassword(const char *password, dboolean conditions)
 	srb2::String key = password;
 	strlwr((char*)key.data());
 
-	UINT8 key_hash[M_PW_HASH_SIZE];
+	uint8_t key_hash[M_PW_HASH_SIZE];
 	M_HashPassword(key_hash, key.c_str(), kRRSalt);
 
-	auto worker = [key_hash](const UINT8* hash, var result)
+	auto worker = [key_hash](const uint8_t* hash, var result)
 	{
 		if (memcmp(key_hash, hash, M_PW_HASH_SIZE))
 			result = std::monostate {}; // fail state
@@ -768,7 +768,7 @@ try_password_e M_TryPassword(const char *password, dboolean conditions)
 
 	// Only consider challenges passwords as needed.
 	if (conditions && !usedTourney)
-		iter_conditions([&](condition_t* cn) { add_job((const UINT8*)cn->stringvar, cn); });
+		iter_conditions([&](condition_t* cn) { add_job((const uint8_t*)cn->stringvar, cn); });
 
 	try_password_e return_code = M_PW_INVALID;
 	if (!std::holds_alternative<std::monostate>(result))
@@ -801,7 +801,7 @@ dboolean M_TryExactPassword(const char *password, const char *encodedhash)
 	srb2::String key = password;
 	strlwr((char*)key.data());
 
-	UINT8 key_hash[M_PW_HASH_SIZE];
+	uint8_t key_hash[M_PW_HASH_SIZE];
 	M_HashPassword(key_hash, key.c_str(), kRRSalt);
 
 	auto hash = decode_hash(encodedhash);
@@ -823,7 +823,7 @@ void Command_Crypt_f(void)
 
 	auto gen = [](char *input)
 	{
-		UINT8 bin[M_PW_BUF_SIZE];
+		uint8_t bin[M_PW_BUF_SIZE];
 		strlwr(input);
 		M_HashPassword(bin, input, kRRSalt);
 		CONS_Printf("%s %s\n", input, modp::b64_encode((const char*)bin, M_PW_BUF_SIZE).c_str());

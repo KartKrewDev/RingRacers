@@ -620,16 +620,16 @@ typedef struct gl_shaderstate_s
 static gl_shaderstate_t gl_shaderstate;
 
 // Shader info
-static INT32 shader_leveltime = 0;
+static int32_t shader_leveltime = 0;
 static float shader_light_x = 0.0f;
 static float shader_light_y = 0.0f;
 static float shader_light_z = 0.0f;
-static INT32 shader_light_contrast = 0;
-static INT32 shader_light_backlight = 0;
+static int32_t shader_light_contrast = 0;
+static int32_t shader_light_backlight = 0;
 
 // Lactozilla: Shader functions
 static dboolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar *vert_shader, const GLchar *frag_shader);
-static void Shader_CompileError(const char *message, GLuint program, INT32 shadernum);
+static void Shader_CompileError(const char *message, GLuint program, int32_t shadernum);
 static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade);
 
 static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -1050,7 +1050,7 @@ EXPORT dboolean HWRAPI(CompileShaders) (void)
 // Those are given to the uniforms.
 //
 
-EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value)
+EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, int32_t value)
 {
 #ifdef GL_SHADERS
 	switch (info)
@@ -1186,7 +1186,7 @@ EXPORT void HWRAPI(UnSetShader) (void)
 
 EXPORT void HWRAPI(CleanShaders) (void)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 1; i < HWR_MAXSHADERS; i++)
 	{
@@ -1465,7 +1465,7 @@ void Flush(void)
 // isExtAvailable   : Look if an OpenGL extension is available
 // Returns          : true if extension available
 // -----------------+
-INT32 isExtAvailable(const char *extension, const GLubyte *start)
+int32_t isExtAvailable(const char *extension, const GLubyte *start)
 {
 	GLubyte         *where, *terminator;
 
@@ -1513,10 +1513,10 @@ EXPORT void HWRAPI(ClearMipMapCache) (void)
 //                  : store pixels as 16bit 565 RGB
 // Returns          : 16bit 565 RGB pixel array stored in dst_data
 // -----------------+
-EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
-                                INT32 dst_stride, UINT16 * dst_data)
+EXPORT void HWRAPI(ReadRect) (int32_t x, int32_t y, int32_t width, int32_t height,
+                                int32_t dst_stride, uint16_t * dst_data)
 {
-	INT32 i;
+	int32_t i;
 	// GL_DBG_Printf ("ReadRect()\n");
 	if (dst_stride == width*3)
 	{
@@ -1540,7 +1540,7 @@ EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
 	}
 	else
 	{
-		INT32 j;
+		int32_t j;
 		GLubyte *image = (GLubyte *)malloc(width*height*3*sizeof (*image));
 		if (!image) return;
 		pglPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -1551,7 +1551,7 @@ EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
 			for (j = 0; j < width; j++)
 			{
 				dst_data[(height-1-i)*width+j] =
-				(UINT16)(
+				(uint16_t)(
 				                 ((image[(i*width+j)*3]>>3)<<11) |
 				                 ((image[(i*width+j)*3+1]>>2)<<5) |
 				                 ((image[(i*width+j)*3+2]>>3)));
@@ -1567,7 +1567,7 @@ EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height,
 // -----------------+
 // GClipRect        : Defines the 2D hardware clipping window
 // -----------------+
-EXPORT void HWRAPI(GClipRect) (INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, float nearclip)
+EXPORT void HWRAPI(GClipRect) (int32_t minx, int32_t miny, int32_t maxx, int32_t maxy, float nearclip)
 {
 	// GL_DBG_Printf ("GClipRect(%d, %d, %d, %d)\n", minx, miny, maxx, maxy);
 
@@ -1899,8 +1899,8 @@ EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *pTexInfo)
 	GLuint num = pTexInfo->downloaded;
 	dboolean update = true;
 
-	INT32 w = pTexInfo->width, h = pTexInfo->height;
-	INT32 i, j;
+	int32_t w = pTexInfo->width, h = pTexInfo->height;
+	int32_t i, j;
 
 	const GLubyte *pImgData = (const GLubyte *)pTexInfo->data;
 	const GLvoid *ptex = NULL;
@@ -1914,7 +1914,7 @@ EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *pTexInfo)
 		update = false;
 	}
 
-	//GL_DBG_Printf("UpdateTexture %d %x\n", (INT32)num, pImgData);
+	//GL_DBG_Printf("UpdateTexture %d %x\n", (int32_t)num, pImgData);
 
 	if ((pTexInfo->format == GL_TEXFMT_P_8) || (pTexInfo->format == GL_TEXFMT_AP_88))
 	{
@@ -2132,10 +2132,10 @@ EXPORT void HWRAPI(SetTexture) (GLMipmap_t *pTexInfo)
 		UpdateTexture(pTexInfo);
 
 		newTex->texture = pTexInfo;
-		newTex->downloaded = (UINT32)pTexInfo->downloaded;
-		newTex->width = (UINT32)pTexInfo->width;
-		newTex->height = (UINT32)pTexInfo->height;
-		newTex->format = (UINT32)pTexInfo->format;
+		newTex->downloaded = (uint32_t)pTexInfo->downloaded;
+		newTex->width = (uint32_t)pTexInfo->width;
+		newTex->height = (uint32_t)pTexInfo->height;
+		newTex->format = (uint32_t)pTexInfo->format;
 
 		// insertion at the tail
 		if (TexCacheTail)
@@ -2340,7 +2340,7 @@ static dboolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar
 	return true;
 }
 
-static void Shader_CompileError(const char *message, GLuint program, INT32 shadernum)
+static void Shader_CompileError(const char *message, GLuint program, int32_t shadernum)
 {
 	GLchar *infoLog = NULL;
 	GLint logLength;
@@ -2435,7 +2435,7 @@ static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD
 			return;
 
 		// the damned slow glReadPixels functions :(
-		pglReadPixels((INT32)px-4, (INT32)py, 8, 8, GL_DEPTH_COMPONENT, GL_FLOAT, buf);
+		pglReadPixels((int32_t)px-4, (int32_t)py, 8, 8, GL_DEPTH_COMPONENT, GL_FLOAT, buf);
 		//GL_DBG_Printf("DepthBuffer: %f %f\n", buf[0][0], buf[3][3]);
 
 		for (i = 0; i < 8; i++)
@@ -2496,7 +2496,7 @@ EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUI
 		Clamp2D(GL_TEXTURE_WRAP_T);
 }
 
-EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, UINT32 *IndexArray)
+EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, uint32_t *IndexArray)
 {
 	PreparePolygon(pSurf, pOutVerts, PolyFlags);
 
@@ -2612,7 +2612,7 @@ EXPORT void HWRAPI(RenderSkyDome) (gl_sky_t *sky)
 // ==========================================================================
 //
 // ==========================================================================
-EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
+EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, int32_t Value)
 {
 	switch (IdState)
 	{
@@ -2878,7 +2878,7 @@ EXPORT void HWRAPI(CreateModelVBOs) (model_t *model)
 
 #define BUFFER_OFFSET(i) ((void*)(i))
 
-static void DrawModelEx(model_t *model, INT32 frameIndex, float duration, float tics, INT32 nextFrameIndex, FTransform *pos, float hscale, float vscale, UINT8 flipped, UINT8 hflipped, FSurfaceInfo *Surface)
+static void DrawModelEx(model_t *model, int32_t frameIndex, float duration, float tics, int32_t nextFrameIndex, FTransform *pos, float hscale, float vscale, uint8_t flipped, uint8_t hflipped, FSurfaceInfo *Surface)
 {
 	static GLRGBAFloat poly = {0,0,0,0};
 	static GLRGBAFloat tint = {0,0,0,0};
@@ -3166,7 +3166,7 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, float duration, float 
 // -----------------+
 // HWRAPI DrawModel : Draw a model
 // -----------------+
-EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, float duration, float tics, INT32 nextFrameIndex, FTransform *pos, float hscale, float vscale, UINT8 flipped, UINT8 hflipped, FSurfaceInfo *Surface)
+EXPORT void HWRAPI(DrawModel) (model_t *model, int32_t frameIndex, float duration, float tics, int32_t nextFrameIndex, FTransform *pos, float hscale, float vscale, uint8_t flipped, uint8_t hflipped, FSurfaceInfo *Surface)
 {
 	DrawModelEx(model, frameIndex, duration, tics, nextFrameIndex, pos, hscale, vscale, flipped, hflipped, Surface);
 }
@@ -3235,10 +3235,10 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 
 }
 
-EXPORT INT32  HWRAPI(GetTextureUsed) (void)
+EXPORT int32_t  HWRAPI(GetTextureUsed) (void)
 {
 	FTextureInfo *tmp = TexCacheHead;
-	INT32 res = 0;
+	int32_t res = 0;
 
 	while (tmp)
 	{
@@ -3262,10 +3262,10 @@ EXPORT INT32  HWRAPI(GetTextureUsed) (void)
 
 EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2])
 {
-	INT32 x, y;
+	int32_t x, y;
 	float float_x, float_y, float_nextx, float_nexty;
 	float xfix, yfix;
-	INT32 texsize = 2048;
+	int32_t texsize = 2048;
 
 	const float blackBack[16] =
 	{
@@ -3366,7 +3366,7 @@ EXPORT void HWRAPI(FlushScreenTextures) (void)
 // Create Screen to fade from
 EXPORT void HWRAPI(StartScreenWipe) (void)
 {
-	INT32 texsize = 2048;
+	int32_t texsize = 2048;
 	dboolean firstTime = (startScreenWipe == 0);
 
 	// Use a power of two texture, dammit
@@ -3397,7 +3397,7 @@ EXPORT void HWRAPI(StartScreenWipe) (void)
 // Create Screen to fade to
 EXPORT void HWRAPI(EndScreenWipe)(void)
 {
-	INT32 texsize = 2048;
+	int32_t texsize = 2048;
 	dboolean firstTime = (endScreenWipe == 0);
 
 	// Use a power of two texture, dammit
@@ -3430,7 +3430,7 @@ EXPORT void HWRAPI(EndScreenWipe)(void)
 EXPORT void HWRAPI(DrawIntermissionBG)(void)
 {
 	float xfix, yfix;
-	INT32 texsize = 2048;
+	int32_t texsize = 2048;
 
 	const float screenVerts[12] =
 	{
@@ -3477,10 +3477,10 @@ EXPORT void HWRAPI(DrawIntermissionBG)(void)
 // Do screen fades!
 EXPORT void HWRAPI(DoScreenWipe)(void)
 {
-	INT32 texsize = 2048;
+	int32_t texsize = 2048;
 	float xfix, yfix;
 
-	INT32 fademaskdownloaded = tex_downloaded; // the fade mask that has been set
+	int32_t fademaskdownloaded = tex_downloaded; // the fade mask that has been set
 
 	const float screenVerts[12] =
 	{
@@ -3568,7 +3568,7 @@ EXPORT void HWRAPI(DoScreenWipe)(void)
 // Create a texture from the screen.
 EXPORT void HWRAPI(MakeScreenTexture) (void)
 {
-	INT32 texsize = 2048;
+	int32_t texsize = 2048;
 	dboolean firstTime = (screentexture == 0);
 
 	// Use a power of two texture, dammit
@@ -3598,7 +3598,7 @@ EXPORT void HWRAPI(MakeScreenTexture) (void)
 
 EXPORT void HWRAPI(MakeScreenFinalTexture) (void)
 {
-	INT32 texsize = 2048;
+	int32_t texsize = 2048;
 	dboolean firstTime = (finalScreenTexture == 0);
 
 	// Use a power of two texture, dammit
@@ -3632,7 +3632,7 @@ EXPORT void HWRAPI(DrawScreenFinalTexture)(int width, int height)
 	float origaspect, newaspect;
 	float xoff = 1, yoff = 1; // xoffset and yoffset for the polygon to have black bars around the screen
 	FRGBAFloat clearColour;
-	INT32 texsize = 2048;
+	int32_t texsize = 2048;
 
 	float off[12];
 	float fix[8];

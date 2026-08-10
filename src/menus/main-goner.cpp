@@ -33,20 +33,20 @@
 
 static void M_GonerDrawer(void);
 static void M_GonerChoiceDrawer(void);
-static void M_GonerConclude(INT32 choice);
-static dboolean M_GonerInputs(INT32 ch);
+static void M_GonerConclude(int32_t choice);
+static dboolean M_GonerInputs(int32_t ch);
 
 static menuitem_t MAIN_GonerAccessibility[] =
 {
 	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
 };
 
-static UINT32 goneraccessibilitytick = 0;
+static uint32_t goneraccessibilitytick = 0;
 
 //#define HANDSTRAIN
 
 #ifdef HANDSTRAIN
-static void M_GonerHandStrain(INT32 ch)
+static void M_GonerHandStrain(int32_t ch)
 {
 	if (ch != MA_YES)
 		return;
@@ -55,7 +55,7 @@ static void M_GonerHandStrain(INT32 ch)
 }
 #endif
 
-static void M_GonerPhotosensitivity(INT32 ch)
+static void M_GonerPhotosensitivity(int32_t ch)
 {
 	// if (ch == MA_YES)
 	// {
@@ -863,8 +863,8 @@ tic_t goner_youactuallylooked = 0;
 
 void M_GonerRailroad(bool set)
 {
-	INT16 destsize = std::min(
-		static_cast<INT16>(
+	int16_t destsize = std::min(
+		static_cast<int16_t>(
 			(set ? 2 : 1) // Quit + options + maybe 1 for extra access
 			+ 1
 			+ std::max(0, gamedata->gonerlevel - GDGONER_VIDEO)
@@ -1279,7 +1279,7 @@ static void M_GonerDrawer(void)
 	for (auto & element : LinesOutput)
 	{
 		srb2::String text;
-		INT32 flags;
+		int32_t flags;
 
 		if (newy < 0) break;
 
@@ -1356,7 +1356,7 @@ static void M_GonerChoiceDrawer(void)
 {
 	srb2::Draw drawer = srb2::Draw();
 
-	const INT32 lex = (24 + BASEVIDWIDTH/2)/2;
+	const int32_t lex = (24 + BASEVIDWIDTH/2)/2;
 
 	if (itemOn == GONERCHOICE_TAILS)
 	{
@@ -1478,13 +1478,13 @@ static void M_GonerChoiceDrawer(void)
 
 // ---
 
-void M_GonerProfile(INT32 choice)
+void M_GonerProfile(int32_t choice)
 {
 	(void)choice;
 
 	optionsmenu.profilen = cv_ttlprofilen.value;
 
-	const INT32 maxp = PR_GetNumProfiles();
+	const int32_t maxp = PR_GetNumProfiles();
 	if (optionsmenu.profilen > maxp)
 		optionsmenu.profilen = maxp;
 	else if (optionsmenu.profilen < 1)
@@ -1503,7 +1503,7 @@ void M_GonerProfile(INT32 choice)
 	M_GonerResetLooking(GDGONER_PROFILE);
 }
 
-static void M_GonerTutorialResponse(INT32 ch)
+static void M_GonerTutorialResponse(int32_t ch)
 {
 	if (ch != MA_YES)
 		return;
@@ -1511,12 +1511,12 @@ static void M_GonerTutorialResponse(INT32 ch)
 	M_GonerTutorial(0);
 }
 
-void M_GonerChoice(INT32 choice)
+void M_GonerChoice(int32_t choice)
 {
 	if (cv_currprofile.value == -1)
 	{
-		const INT32 maxp = PR_GetNumProfiles();
-		INT32 profilen = cv_ttlprofilen.value;
+		const int32_t maxp = PR_GetNumProfiles();
+		int32_t profilen = cv_ttlprofilen.value;
 		if (profilen >= maxp)
 			profilen = maxp-1;
 		else if (profilen < 1)
@@ -1537,7 +1537,7 @@ void M_GonerChoice(INT32 choice)
 	M_SetupNextMenu(&MAIN_GonerChoiceDef, false);
 }
 
-static void M_GonerSurveyResponse(INT32 ch)
+static void M_GonerSurveyResponse(int32_t ch)
 {
 	if (ch != MA_YES)
 		return;
@@ -1562,7 +1562,7 @@ static void M_GonerSurveyResponse(INT32 ch)
 	}
 }
 
-static void M_GonerSurvey(INT32 choice)
+static void M_GonerSurvey(int32_t choice)
 {
 	(void)choice;
 
@@ -1572,7 +1572,7 @@ static void M_GonerSurvey(INT32 choice)
 		&M_GonerSurveyResponse, MM_YESNO, "I agree", "Cancel");
 }
 
-void M_GonerTutorial(INT32 choice)
+void M_GonerTutorial(int32_t choice)
 {
 	(void)choice;
 
@@ -1590,11 +1590,11 @@ void M_GonerTutorial(INT32 choice)
 	}
 }
 
-void M_GonerPlayground(INT32 choice)
+void M_GonerPlayground(int32_t choice)
 {
 	(void)choice;
 
-	UINT16 playgroundmap = NEXTMAP_INVALID;
+	uint16_t playgroundmap = NEXTMAP_INVALID;
 	if (tutorialplaygroundmap)
 		playgroundmap = G_MapNumber(tutorialplaygroundmap);
 
@@ -1630,7 +1630,7 @@ void M_GonerPlayground(INT32 choice)
 	M_GonerResetText(true);
 }
 
-static void M_GonerConclude(INT32 choice)
+static void M_GonerConclude(int32_t choice)
 {
 	(void)choice;
 
@@ -1685,9 +1685,9 @@ void M_GonerGDQ(dboolean opinion)
 	}
 }
 
-static dboolean M_GonerInputs(INT32 ch)
+static dboolean M_GonerInputs(int32_t ch)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	static int holdtime = 0;
 	const int magicscroll = 4; // hehe
 

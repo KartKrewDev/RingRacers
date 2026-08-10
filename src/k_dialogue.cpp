@@ -216,7 +216,7 @@ void Dialogue::SetSpeaker(srb2::String skinName, int portraitID)
 	}
 }
 
-void Dialogue::SetSpeaker(srb2::String name, patch_t *patch, UINT8 *colormap, sfxenum_t voice)
+void Dialogue::SetSpeaker(srb2::String name, patch_t *patch, uint8_t *colormap, sfxenum_t voice)
 {
 	Init();
 
@@ -350,7 +350,7 @@ void Dialogue::Tick(void)
 	}
 }
 
-INT32 Dialogue::SlideAmount(fixed_t multiplier)
+int32_t Dialogue::SlideAmount(fixed_t multiplier)
 {
 	if (slide == 0)
 		return 0;
@@ -359,7 +359,7 @@ INT32 Dialogue::SlideAmount(fixed_t multiplier)
 	return Easing_OutCubic(slide, 0, multiplier);
 }
 
-INT32 Dialogue::FadeAmount(void)
+int32_t Dialogue::FadeAmount(void)
 {
 	return fade;
 }
@@ -371,11 +371,11 @@ void Dialogue::Draw(void)
 		return;
 	}
 
-	const UINT8 bgcol = 235, speakerhilicol = 240;
+	const uint8_t bgcol = 235, speakerhilicol = 240;
 
 	const fixed_t height = 78 * FRACUNIT;
 
-	INT32 speakernameedge = -6;
+	int32_t speakernameedge = -6;
 
 	srb2::Draw drawer =
 		srb2::Draw(
@@ -383,7 +383,7 @@ void Dialogue::Draw(void)
 		).flags(V_SNAPTOBOTTOM);
 
 	// TODO -- hack, change when dialogue is made per-player/netsynced
-	UINT32 speakerbgflags = (players[consoleplayer].nocontrol == 0 && P_LevelIsFrozen() == false)
+	uint32_t speakerbgflags = (players[consoleplayer].nocontrol == 0 && P_LevelIsFrozen() == false)
 		? V_30TRANS
 		: 0;
 
@@ -411,14 +411,14 @@ void Dialogue::Draw(void)
 
 	const char *speakername = speaker.c_str();
 
-	const INT32 arrowstep = 8; // width of TUTDIAGD
+	const int32_t arrowstep = 8; // width of TUTDIAGD
 
 	if (speakername && speaker[0])
 	{
-		INT32 speakernamewidth = V_MenuStringWidth(speakername, 0);
-		INT32 existingborder = (portrait == nullptr ? -4 : 3);
+		int32_t speakernamewidth = V_MenuStringWidth(speakername, 0);
+		int32_t existingborder = (portrait == nullptr ? -4 : 3);
 
-		INT32 speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 2) % arrowstep;
+		int32_t speakernamewidthoffset = (speakernamewidth + (arrowstep - existingborder) - 2) % arrowstep;
 		if (speakernamewidthoffset)
 		{
 			speakernamewidthoffset = (arrowstep - speakernamewidthoffset);
@@ -523,12 +523,12 @@ void Dialogue::Dismiss(void)
 	typewriter.ClearText();
 }
 
-UINT32 Dialogue::GetNewEra(void)
+uint32_t Dialogue::GetNewEra(void)
 {
 	return (++current_era);
 }
 
-bool Dialogue::EraIsValid(INT32 comparison)
+bool Dialogue::EraIsValid(int32_t comparison)
 {
 	return (current_era == comparison);
 }
@@ -566,12 +566,12 @@ void K_TickDialogue(void)
 	g_dialogue.Tick();
 }
 
-INT32 K_GetDialogueSlide(fixed_t multiplier)
+int32_t K_GetDialogueSlide(fixed_t multiplier)
 {
 	return g_dialogue.SlideAmount(multiplier);
 }
 
-INT32 K_GetDialogueFade(void)
+int32_t K_GetDialogueFade(void)
 {
 	return g_dialogue.FadeAmount();
 }

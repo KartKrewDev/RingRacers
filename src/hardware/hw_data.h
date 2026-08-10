@@ -46,8 +46,8 @@ typedef enum GLTextureFormat_e
 // Colormap structure for mipmaps.
 struct GLColormap_s
 {
-	const UINT8 *source;
-	UINT8 data[256];
+	const uint8_t *source;
+	uint8_t data[256];
 };
 typedef struct GLColormap_s GLColormap_t;
 
@@ -61,10 +61,10 @@ struct GLMipmap_s
 	GLTextureFormat_t     format;
 	void                 *data;
 
-	UINT32                flags;
-	UINT16                height;
-	UINT16                width;
-	UINT32                downloaded; // The GPU has this texture.
+	uint32_t                flags;
+	uint16_t                height;
+	uint16_t                width;
+	uint32_t                downloaded; // The GPU has this texture.
 
 	struct GLMipmap_s    *nextcolormap;
 	struct GLColormap_s  *colormap;

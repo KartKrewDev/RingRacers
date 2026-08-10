@@ -53,7 +53,7 @@ void Obj_WPZKuragenThink(mobj_t *mo)
 
 	if (!(mo->spawnpoint->options & 1 || mo->spawnpoint->thing_args[0]))	// extra flag skips player checks, making it a decoration.
 	{
-		UINT8 i;
+		uint8_t i;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			player_t *p;

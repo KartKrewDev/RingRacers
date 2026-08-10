@@ -42,9 +42,9 @@ dboolean M_EncoreAttackTogglePermitted(void)
 	return M_SecretUnlocked(SECRET_SPBATTACK, true);
 }
 
-dboolean M_TimeAttackInputs(INT32 ch)
+dboolean M_TimeAttackInputs(int32_t ch)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	const dboolean buttonR = M_MenuButtonPressed(pid, MBT_R);
 	(void) ch;
 
@@ -274,7 +274,7 @@ const char *M_GetRecordMode(void)
 		return "spb-";
 	}
 
-	const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
+	const int32_t skinid = R_SkinAvailableEx(cv_skin[0].string, false);
 	if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
 	{
 		return "hivolt-";
@@ -293,7 +293,7 @@ void CV_SPBAttackChanged(void)
 		// see also p_setup.c's P_LoadRecordGhosts
 		char *gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
 		const char *modeprefix = M_GetRecordMode();
-		UINT8 active;
+		uint8_t active;
 
 		if (!gpath)
 			return;
@@ -365,7 +365,7 @@ void CV_SPBAttackChanged(void)
 			dummystaff_cons_t[1].value = mapheaderinfo[levellist.choosemap]->ghostCount-1;
 
 			// LAST MINUTE SANITY
-			static UINT16 laststaffmap = NEXTMAP_INVALID;
+			static uint16_t laststaffmap = NEXTMAP_INVALID;
 			if (laststaffmap != levellist.choosemap || cv_dummystaff.value < dummystaff_cons_t[0].value)
 			{
 				laststaffmap = levellist.choosemap;
@@ -424,7 +424,7 @@ void M_PrepareTimeAttack(dboolean menuupdate)
 		levellist.newgametype = levellist.guessgt;
 		if (!(gametypes[levellist.newgametype]->tol & mapheaderinfo[levellist.choosemap]->typeoflevel))
 		{
-			INT32 guess = G_GuessGametypeByTOL(mapheaderinfo[levellist.choosemap]->typeoflevel);
+			int32_t guess = G_GuessGametypeByTOL(mapheaderinfo[levellist.choosemap]->typeoflevel);
 			if (guess != -1)
 				levellist.newgametype = guess;
 		}
@@ -447,7 +447,7 @@ void M_PrepareTimeAttack(dboolean menuupdate)
 	CV_SPBAttackChanged();
 }
 
-void M_HandleStaffReplay(INT32 choice)
+void M_HandleStaffReplay(int32_t choice)
 {
 	if (choice == 2)
 	{
@@ -469,7 +469,7 @@ void M_HandleStaffReplay(INT32 choice)
 	M_ChangeCvarDirect(choice, &cv_dummystaff);
 }
 
-void M_ReplayTimeAttack(INT32 choice)
+void M_ReplayTimeAttack(int32_t choice)
 {
 	menudemo_t menudemo = {0};
 	const char *which = NULL;
@@ -518,11 +518,11 @@ void M_ReplayTimeAttack(INT32 choice)
 
 static const char *TA_GuestReplay_Str = NULL;
 
-static void M_WriteGuestReplay(INT32 ch)
+static void M_WriteGuestReplay(int32_t ch)
 {
 	char *gpath, *rguest;
 
-	UINT8 *buf;
+	uint8_t *buf;
 	size_t len = 0;
 
 	if (ch != MA_YES)
@@ -566,7 +566,7 @@ static void M_WriteGuestReplay(INT32 ch)
 }
 
 
-void M_SetGuestReplay(INT32 choice)
+void M_SetGuestReplay(int32_t choice)
 {
 	switch (choice)
 	{
@@ -598,7 +598,7 @@ void M_SetGuestReplay(INT32 choice)
 	}
 }
 
-void M_StartTimeAttack(INT32 choice)
+void M_StartTimeAttack(int32_t choice)
 {
 	char *gpath;
 	char nameofdemo[256];

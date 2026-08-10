@@ -66,16 +66,16 @@ CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
 struct setup_chargrid_s setup_chargrid[9][9];
 setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 
-UINT8 setup_followercategories[MAXFOLLOWERCATEGORIES][2];
-UINT8 setup_numfollowercategories;
+uint8_t setup_followercategories[MAXFOLLOWERCATEGORIES][2];
+uint8_t setup_numfollowercategories;
 
-UINT8 setup_numplayers = 0; // This variable is very important, it was extended to determine how many players exist in ALL menus.
+uint8_t setup_numplayers = 0; // This variable is very important, it was extended to determine how many players exist in ALL menus.
 tic_t setup_animcounter = 0;
 
-UINT8 setup_page = 0;
-UINT8 setup_maxpage = 0;	// For charsel page to identify alts easier...
+uint8_t setup_page = 0;
+uint8_t setup_maxpage = 0;	// For charsel page to identify alts easier...
 
-static void M_PushMenuColor(setup_player_colors_t *colors, UINT16 newColor)
+static void M_PushMenuColor(setup_player_colors_t *colors, uint16_t newColor)
 {
 	if (colors->listLen >= colors->listCap)
 	{
@@ -90,10 +90,10 @@ static void M_PushMenuColor(setup_player_colors_t *colors, UINT16 newColor)
 
 		colors->list = Z_ReallocAlign(
 			colors->list,
-			sizeof(UINT16) * colors->listCap,
+			sizeof(uint16_t) * colors->listCap,
 			PU_STATIC,
 			NULL,
-			sizeof(UINT16) * 8
+			sizeof(uint16_t) * 8
 		);
 	}
 
@@ -112,10 +112,10 @@ static void M_ClearMenuColors(setup_player_colors_t *colors)
 	colors->listLen = colors->listCap = 0;
 }
 
-UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount)
+uint16_t M_GetColorAfter(setup_player_colors_t *colors, uint16_t value, int32_t amount)
 {
-	const INT32 sign = (amount < 0) ? -1 : 1;
-	INT32 index = -1;
+	const int32_t sign = (amount < 0) ? -1 : 1;
+	int32_t index = -1;
 	size_t i = SIZE_MAX;
 
 	if (amount == 0 || colors->listLen == 0)
@@ -149,7 +149,7 @@ UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount
 		{
 			index = colors->listLen - 1;
 		}
-		else if (index >= (INT32)colors->listLen)
+		else if (index >= (int32_t)colors->listLen)
 		{
 			index = 0;
 		}
@@ -163,7 +163,7 @@ UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount
 static void M_NewPlayerColors(setup_player_t *p)
 {
 	const dboolean follower = (p->mdepth >= CSSTEP_FOLLOWER);
-	INT32 i = INT32_MAX;
+	int32_t i = INT32_MAX;
 
 	M_ClearMenuColors(&p->colors);
 
@@ -187,14 +187,14 @@ static void M_NewPlayerColors(setup_player_t *p)
 	}
 }
 
-static INT16 M_GetMenuCategoryFromFollower(setup_player_t *p)
+static int16_t M_GetMenuCategoryFromFollower(setup_player_t *p)
 {
 	if (p->followern < 0
 	|| p->followern >= numfollowers
 	|| !K_FollowerUsable(p->followern))
 		return -1;
 
-	INT16 i;
+	int16_t i;
 
 	for (i = 0; i < setup_numfollowercategories; i++)
 	{
@@ -214,8 +214,8 @@ static INT16 M_GetMenuCategoryFromFollower(setup_player_t *p)
 static void M_SetupProfileGridPos(setup_player_t *p)
 {
 	profile_t *pr = PR_GetProfile(p->profilen);
-	INT32 i = R_SkinAvailableEx(pr->skinname, false);
-	INT32 alt = 0;	// Hey it's my character's name!
+	int32_t i = R_SkinAvailableEx(pr->skinname, false);
+	int32_t alt = 0;	// Hey it's my character's name!
 
 	if (i == -1)
 		i = 0;
@@ -256,10 +256,10 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 
 }
 
-static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
+static void M_SetupMidGameGridPos(setup_player_t *p, uint8_t num)
 {
-	INT32 i = R_SkinAvailableEx(cv_skin[num].zstring, false);
-	INT32 alt = 0;	// Hey it's my character's name!
+	int32_t i = R_SkinAvailableEx(cv_skin[num].zstring, false);
+	int32_t alt = 0;	// Hey it's my character's name!
 
 	if (i == -1)
 		i = 0;
@@ -288,7 +288,7 @@ static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 
 void M_CharacterSelectInit(void)
 {
-	UINT16 i, j;
+	uint16_t i, j;
 	setup_maxpage = 0;
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
@@ -306,8 +306,8 @@ void M_CharacterSelectInit(void)
 
 	for (i = 0; i < numskins; i++)
 	{
-		UINT8 x = skins[i]->kartspeed-1;
-		UINT8 y = skins[i]->kartweight-1;
+		uint8_t x = skins[i]->kartspeed-1;
+		uint8_t y = skins[i]->kartweight-1;
 
 		if (!R_SkinUsable(g_localplayers[0], i, false))
 			continue;
@@ -394,7 +394,7 @@ void M_CharacterSelectInit(void)
 }
 
 
-void M_CharacterSelect(INT32 choice)
+void M_CharacterSelect(int32_t choice)
 {
 	(void)choice;
 	PLAY_CharSelectDef.music = currentMenu->music;
@@ -419,9 +419,9 @@ static void M_GetFollowerState(setup_player_t *p)
 	p->follower_frame = p->follower_state->frame & FF_FRAMEMASK;
 }
 
-static dboolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
+static dboolean M_DeviceAvailable(int32_t deviceID, uint8_t numPlayers)
 {
-	INT32 i;
+	int32_t i;
 
 	if (numPlayers == 0)
 	{
@@ -447,10 +447,10 @@ static dboolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
 	return true;
 }
 
-static dboolean M_HandlePressStart(setup_player_t *p, UINT8 num)
+static dboolean M_HandlePressStart(setup_player_t *p, uint8_t num)
 {
-	INT32 i, j;
-	INT32 num_gamepads_available;
+	int32_t i, j;
+	int32_t num_gamepads_available;
 
 	if (optionsmenu.profile)
 		return false;	// Don't allow for the possibility of SOMEHOW another player joining in.
@@ -482,7 +482,7 @@ static dboolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 	num_gamepads_available = G_GetNumAvailableGamepads();
 	for (i = 0; i < num_gamepads_available + 1; i++)
 	{
-		INT32 device = 0;
+		int32_t device = 0;
 
 		if (i > 0)
 		{
@@ -552,18 +552,18 @@ static dboolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 	return false;
 }
 
-static dboolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
+static dboolean M_HandleCSelectProfile(setup_player_t *p, uint8_t num)
 {
-	const UINT8 maxp = PR_GetNumProfiles() -1;
-	UINT8 realnum = num;	// Used for profile when using splitdevice.
-	UINT8 i;
+	const uint8_t maxp = PR_GetNumProfiles() -1;
+	uint8_t realnum = num;	// Used for profile when using splitdevice.
+	uint8_t i;
 
 	if (cv_splitdevice.value)
 		num = 0;
 
 	if (menucmd[num].dpad_ud > 0)
 	{
-		UINT8 oldn = p->profilen;
+		uint8_t oldn = p->profilen;
 		p->profilen++;
 		if (p->profilen > maxp)
 			p->profilen = 0;
@@ -575,7 +575,7 @@ static dboolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 	}
 	else if (menucmd[num].dpad_ud < 0)
 	{
-		UINT8 oldn = p->profilen;
+		uint8_t oldn = p->profilen;
 		if (p->profilen == 0)
 			p->profilen = maxp;
 		else
@@ -618,7 +618,7 @@ static dboolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuConfirmPressed(num))
 	{
-		SINT8 belongsTo = -1;
+		int8_t belongsTo = -1;
 
 		if (p->profilen != PROFILE_GUEST)
 		{
@@ -661,8 +661,8 @@ static dboolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuExtraPressed(num))
 	{
-		UINT8 oldn = p->profilen;
-		UINT8 yourprofile = min(cv_lastprofile[realnum].value, PR_GetNumProfiles());
+		uint8_t oldn = p->profilen;
+		uint8_t yourprofile = min(cv_lastprofile[realnum].value, PR_GetNumProfiles());
 		if (p->profilen == yourprofile)
 			p->profilen = PROFILE_GUEST;
 		else
@@ -687,7 +687,7 @@ static void M_HandlePlayerFinalise(setup_player_t *p)
 }
 
 
-static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
+static void M_HandleCharAskChange(setup_player_t *p, uint8_t num)
 {
 	if (cv_splitdevice.value)
 		num = 0;
@@ -801,10 +801,10 @@ static void M_HandleBeginningColorsOrFollowers(setup_player_t *p)
 		M_HandleBeginningFollowers(p);
 }
 
-static dboolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
+static dboolean M_HandleCharacterGrid(setup_player_t *p, uint8_t num)
 {
-	UINT8 numclones;
-	INT32 skin;
+	uint8_t numclones;
+	int32_t skin;
 	dboolean forceskin = M_CharacterSelectForceInAction();
 
 	if (cv_splitdevice.value)
@@ -936,9 +936,9 @@ static dboolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	return false;
 }
 
-static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
+static void M_HandleCharRotate(setup_player_t *p, uint8_t num)
 {
-	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
+	uint8_t numclones = setup_chargrid[p->gridx][p->gridy].numskins;
 
 	if (cv_splitdevice.value)
 		num = 0;
@@ -983,7 +983,7 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 	}
 }
 
-static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
+static void M_HandleColorRotate(setup_player_t *p, uint8_t num)
 {
 	if (cv_splitdevice.value)
 		num = 0;
@@ -1059,7 +1059,7 @@ static void M_AnimateFollower(setup_player_t *p)
 	p->follower_timer++;
 }
 
-static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
+static void M_HandleFollowerCategoryRotate(setup_player_t *p, uint8_t num)
 {
 	if (cv_splitdevice.value)
 		num = 0;
@@ -1143,9 +1143,9 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	}
 }
 
-static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
+static void M_HandleFollowerRotate(setup_player_t *p, uint8_t num)
 {
-	INT16 startfollowern = p->followern;
+	int16_t startfollowern = p->followern;
 
 	if (cv_splitdevice.value)
 		num = 0;
@@ -1221,7 +1221,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 	}
 }
 
-static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
+static void M_HandleFollowerColorRotate(setup_player_t *p, uint8_t num)
 {
 	if (cv_splitdevice.value)
 		num = 0;
@@ -1255,7 +1255,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuExtraPressed(num))
 	{
-		UINT16 profile_followercolor = PR_GetProfile(p->profilen)->followercolor;
+		uint16_t profile_followercolor = PR_GetProfile(p->profilen)->followercolor;
 		if (p->followercolor == FOLLOWERCOLOR_MATCH)
 			p->followercolor = FOLLOWERCOLOR_OPPOSITE;
 		else if (p->followercolor == FOLLOWERCOLOR_OPPOSITE && profile_followercolor != FOLLOWERCOLOR_OPPOSITE && profile_followercolor != FOLLOWERCOLOR_MATCH)
@@ -1271,9 +1271,9 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 }
 
-dboolean M_CharacterSelectHandler(INT32 choice)
+dboolean M_CharacterSelectHandler(int32_t choice)
 {
-	INT32 i;
+	int32_t i;
 	dboolean forceskin = M_CharacterSelectForceInAction();
 
 	(void)choice;
@@ -1389,8 +1389,8 @@ dboolean M_CharacterSelectHandler(INT32 choice)
 // ...Will this cause command buffer issues? -Lat'
 static void M_MPConfirmCharacterSelection(void)
 {
-	UINT8 i;
-	INT16 col;
+	uint8_t i;
+	int16_t col;
 
 	for (i = 0; i < splitscreen +1; i++)
 	{
@@ -1422,7 +1422,7 @@ static void M_MPConfirmCharacterSelection(void)
 
 void M_CharacterSelectTick(void)
 {
-	UINT8 i;
+	uint8_t i;
 	dboolean setupnext = true;
 
 	setup_animcounter++;

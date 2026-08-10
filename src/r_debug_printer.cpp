@@ -25,14 +25,14 @@ using srb2::Draw;
 namespace
 {
 
-srb2::HashSet<INT32> frame_list;
+srb2::HashSet<int32_t> frame_list;
 
 }; // namespace
 
 namespace srb2::r_debug
 {
 
-void add_texture_to_frame_list(INT32 texnum)
+void add_texture_to_frame_list(int32_t texnum)
 {
 	if (cht_debug & DBG_RENDER)
 	{
@@ -59,7 +59,7 @@ void draw_frame_list()
 
 	line.y(-4 * static_cast<int>(frame_list.size() - 1)).size(32, 4 * frame_list.size()).fill(31);
 
-	for (INT32 texnum : frame_list)
+	for (int32_t texnum : frame_list)
 	{
 		line.text("{}", std::string_view {textures[texnum]->name, 8});
 		line = line.y(-4);

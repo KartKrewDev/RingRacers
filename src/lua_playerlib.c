@@ -29,7 +29,7 @@ dboolean constplayer = false;
 
 static int lib_iteratePlayers(lua_State *L)
 {
-	INT32 i = -1;
+	int32_t i = -1;
 
 	if (lua_gettop(L) < 2)
 	{
@@ -42,7 +42,7 @@ static int lib_iteratePlayers(lua_State *L)
 	lua_remove(L, 1); // state is unused.
 
 	if (!lua_isnil(L, 1))
-		i = (INT32)(*((player_t **)luaL_checkudata(L, 1, META_PLAYER)) - players);
+		i = (int32_t)(*((player_t **)luaL_checkudata(L, 1, META_PLAYER)) - players);
 
 	i++;
 
@@ -99,7 +99,7 @@ static int lib_lenPlayer(lua_State *L)
 
 static int lib_iterateDisplayplayers(lua_State *L)
 {
-	INT32 i = lua_tonumber(L, lua_upvalueindex(1));
+	int32_t i = lua_tonumber(L, lua_upvalueindex(1));
 
 	if (lua_gettop(L) < 2)
 	{
@@ -929,7 +929,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"tilt"))
 		plr->tilt = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"aiming")) {
-		UINT8 i;
+		uint8_t i;
 		plr->aiming = luaL_checkangle(L, 3);
 		for (i = 0; i <= r_splitscreen; i++)
 		{
@@ -949,8 +949,8 @@ static int player_set(lua_State *L)
 	{
 		// It's a really bad idea to let Lua modify the voicechat-related flags.
 		// If we notice they're modified in any way, don't set anything.
-		UINT32 newflags = luaL_checkinteger(L, 3);
-		UINT32 forbiddenFlags = PF2_SELFMUTE|PF2_SELFDEAFEN|PF2_SERVERMUTE|PF2_SERVERDEAFEN|PF2_SERVERTEMPMUTE;
+		uint32_t newflags = luaL_checkinteger(L, 3);
+		uint32_t forbiddenFlags = PF2_SELFMUTE|PF2_SELFDEAFEN|PF2_SERVERMUTE|PF2_SERVERDEAFEN|PF2_SERVERTEMPMUTE;
 		
 		if ((newflags & forbiddenFlags) != (plr->pflags2 & forbiddenFlags))
 			return luaL_error(L, "player_t's pflags2 member can't"
@@ -966,7 +966,7 @@ static int player_set(lua_State *L)
 		plr->flashpal = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"skincolor"))
 	{
-		UINT16 newcolor = luaL_checkinteger(L,3);
+		uint16_t newcolor = luaL_checkinteger(L,3);
 		if (newcolor >= numskincolors)
 			return luaL_error(L, "player.skincolor %d out of range (0 - %d).", newcolor, numskincolors-1);
 		plr->skincolor = newcolor;
@@ -1516,7 +1516,7 @@ static int player_set(lua_State *L)
 
 	//
 	else if (fastcmp(field,"charflags"))
-		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
+		plr->charflags = (uint32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"followitem"))
 		plr->followitem = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"followmobj"))
@@ -1527,15 +1527,15 @@ static int player_set(lua_State *L)
 		P_SetTarget(&plr->followmobj, mo);
 	}
 	else if (fastcmp(field,"lives"))
-		plr->lives = (SINT8)luaL_checkinteger(L, 3);
+		plr->lives = (int8_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"xtralife"))
-		plr->xtralife = (SINT8)luaL_checkinteger(L, 3);
+		plr->xtralife = (int8_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"speed"))
 		plr->speed = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"lastspeed"))
 		plr->lastspeed = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"deadtimer"))
-		plr->deadtimer = (INT32)luaL_checkinteger(L, 3);
+		plr->deadtimer = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"exiting"))
 		plr->exiting = (tic_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"cmomx"))
@@ -1547,13 +1547,13 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"rmomy"))
 		plr->rmomy = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"totalring"))
-		plr->totalring = (INT16)luaL_checkinteger(L, 3);
+		plr->totalring = (int16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"realtime"))
 		plr->realtime = (tic_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"laps"))
-		plr->laps = (UINT8)luaL_checkinteger(L, 3);
+		plr->laps = (uint8_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"latestlap"))
-		plr->latestlap = (UINT8)luaL_checkinteger(L, 3);
+		plr->latestlap = (uint8_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"exp"))
 		plr->exp = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"gradingfactor"))
@@ -1563,23 +1563,23 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"checkpointid"))
 		plr->checkpointId = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"team"))
-		G_AssignTeam(plr, (UINT8)luaL_checkinteger(L, 3));
+		G_AssignTeam(plr, (uint8_t)luaL_checkinteger(L, 3));
 	else if (fastcmp(field,"checkskip"))
-		plr->checkskip = (INT32)luaL_checkinteger(L, 3);
+		plr->checkskip = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"cheatchecknum"))
-		plr->cheatchecknum = (INT32)luaL_checkinteger(L, 3);
+		plr->cheatchecknum = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"duelscore"))
-		plr->duelscore = (INT16)luaL_checkinteger(L, 3);
+		plr->duelscore = (int16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastsidehit"))
-		plr->lastsidehit = (INT16)luaL_checkinteger(L, 3);
+		plr->lastsidehit = (int16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastlinehit"))
-		plr->lastlinehit = (INT16)luaL_checkinteger(L, 3);
+		plr->lastlinehit = (int16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"timeshit"))
-		plr->timeshit = (UINT8)luaL_checkinteger(L, 3);
+		plr->timeshit = (uint8_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"timeshitprev"))
-		plr->timeshitprev = (UINT8)luaL_checkinteger(L, 3);
+		plr->timeshitprev = (uint8_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"onconveyor"))
-		plr->onconveyor = (INT32)luaL_checkinteger(L, 3);
+		plr->onconveyor = (int32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"awayviewmobj")) // FIXME: struct
 	{
 		mobj_t *mo = NULL;
@@ -1589,7 +1589,7 @@ static int player_set(lua_State *L)
 	}
 	else if (fastcmp(field,"awayviewtics")) // FIXME: struct
 	{
-		plr->awayview.tics = (INT32)luaL_checkinteger(L, 3);
+		plr->awayview.tics = (int32_t)luaL_checkinteger(L, 3);
 		if (plr->awayview.tics && !plr->awayview.mobj) // awayviewtics must ALWAYS have an awayviewmobj set!!
 			P_SetTarget(&plr->awayview.mobj, plr->mo); // but since the script might set awayviewmobj immediately AFTER setting awayviewtics, use player mobj as filler for now.
 	}
@@ -1604,11 +1604,11 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"jointime"))
 		return NOSET;
 	else if (fastcmp(field,"spectatorreentry"))
-		plr->spectatorReentry = (UINT32)luaL_checkinteger(L, 3);
+		plr->spectatorReentry = (uint32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"griefvalue"))
-		plr->griefValue = (UINT32)luaL_checkinteger(L, 3);
+		plr->griefValue = (uint32_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"griefstrikes"))
-		plr->griefStrikes = (UINT8)luaL_checkinteger(L, 3);
+		plr->griefStrikes = (uint8_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"griefwarned"))
 		plr->griefWarned = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"typing_timer"))
@@ -1733,7 +1733,7 @@ static int player_num(lua_State *L)
 // karthud, ks -> karthud[ks]
 static int karthud_get(lua_State *L)
 {
-	INT32 *karthud = *((INT32 **)luaL_checkudata(L, 1, META_KARTHUD));
+	int32_t *karthud = *((int32_t **)luaL_checkudata(L, 1, META_KARTHUD));
 	karthudtype_t ks = luaL_checkinteger(L, 2);
 	if (ks >= NUMKARTHUD)
 		return luaL_error(L, LUA_QL("karthudtype_t") " cannot be %u", ks);
@@ -1744,9 +1744,9 @@ static int karthud_get(lua_State *L)
 // karthud, ks, value -> karthud[ks] = value
 static int karthud_set(lua_State *L)
 {
-	INT32 *karthud = *((INT32 **)luaL_checkudata(L, 1, META_KARTHUD));
+	int32_t *karthud = *((int32_t **)luaL_checkudata(L, 1, META_KARTHUD));
 	karthudtype_t ks = luaL_checkinteger(L, 2);
-	INT32 i = (INT32)luaL_checkinteger(L, 3);
+	int32_t i = (int32_t)luaL_checkinteger(L, 3);
 	if (ks >= NUMKARTHUD)
 		return luaL_error(L, LUA_QL("karthudtype_t") " cannot be %u", ks);
 	if (hud_running)
@@ -1806,15 +1806,15 @@ static int ticcmd_set(lua_State *L)
 		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
 
 	if (fastcmp(field,"forwardmove"))
-		cmd->forwardmove = (SINT8)luaL_checkinteger(L, 3);
+		cmd->forwardmove = (int8_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"turning"))
-		cmd->turning = (INT16)luaL_checkinteger(L, 3);
+		cmd->turning = (int16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"throwdir"))
-		cmd->throwdir = (INT16)luaL_checkinteger(L, 3);
+		cmd->throwdir = (int16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aiming"))
-		cmd->aiming = (INT16)luaL_checkinteger(L, 3);
+		cmd->aiming = (int16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"buttons"))
-		cmd->buttons = (UINT16)luaL_checkinteger(L, 3);
+		cmd->buttons = (uint16_t)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"latency"))
 		return NOSET;
 	else if (fastcmp(field,"flags"))

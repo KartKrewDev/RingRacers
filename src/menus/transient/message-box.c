@@ -37,9 +37,9 @@ static inline size_t M_StringHeight(const char *string)
 }
 
 // default message handler
-void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr)
+void M_StartMessage(const char *header, const char *string, void (*routine)(int32_t), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	DEBFILE(string);
 
 	char *message = V_ScaledWordWrap(
@@ -99,7 +99,7 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	M_SetMenuDelay(pid);	// Set menu delay to avoid setting off any of the handlers.
 }
 
-void M_StopMessage(INT32 choice)
+void M_StopMessage(int32_t choice)
 {
 	if (!menumessage.active || menumessage.closing)
 		return;
@@ -171,7 +171,7 @@ void M_HandleMenuMessage(void)
 	if (!M_MenuMessageTick())
 		return;
 
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	dboolean btok = M_MenuConfirmPressed(pid);
 	dboolean btnok = M_MenuBackPressed(pid);
 

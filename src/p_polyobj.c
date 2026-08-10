@@ -90,7 +90,7 @@
 
 // The Polyobjects
 polyobj_t *PolyObjects;
-INT32 numPolyObjects;
+int32_t numPolyObjects;
 
 // Polyobject Blockmap -- initialized in P_LoadBlockMap
 polymaplink_t **polyblocklinks;
@@ -473,7 +473,7 @@ newseg:
 
 // Setup functions
 
-static void Polyobj_spawnPolyObj(INT32 num, mobj_t *spawnSpot, INT32 id)
+static void Polyobj_spawnPolyObj(int32_t num, mobj_t *spawnSpot, int32_t id)
 {
 	size_t i;
 	polyobj_t *po = &PolyObjects[num];
@@ -548,7 +548,7 @@ static void Polyobj_spawnPolyObj(INT32 num, mobj_t *spawnSpot, INT32 id)
 	}
 	else
 	{
-		INT32 hashkey = po->id % numPolyObjects;
+		int32_t hashkey = po->id % numPolyObjects;
 		po->next = PolyObjects[hashkey].first;
 		PolyObjects[hashkey].first = num;
 	}
@@ -733,7 +733,7 @@ static void Polyobj_removeFromBlockmap(polyobj_t *po)
 {
 	polymaplink_t *rover;
 	fixed_t *blockbox = po->blockbox;
-	INT32 x, y;
+	int32_t x, y;
 
 	// don't bother trying to unlink one that's not linked
 	if (!po->linked)
@@ -863,8 +863,8 @@ static void Polyobj_slideThing(mobj_t *mo, fixed_t dx, fixed_t dy)
 // Causes objects resting on top of the polyobject to 'ride' with its movement.
 static void Polyobj_carryThings(polyobj_t *po, fixed_t dx, fixed_t dy)
 {
-	static INT32 pomovecount = 0;
-	INT32 x, y;
+	static int32_t pomovecount = 0;
+	int32_t x, y;
 
 	pomovecount++;
 
@@ -914,11 +914,11 @@ static void Polyobj_carryThings(polyobj_t *po, fixed_t dx, fixed_t dy)
 
 // Checks for things that are in the way of a polyobject line move.
 // Returns true if something was hit.
-static INT32 Polyobj_clipThings(polyobj_t *po, line_t *line)
+static int32_t Polyobj_clipThings(polyobj_t *po, line_t *line)
 {
-	INT32 hitflags = 0;
+	int32_t hitflags = 0;
 	fixed_t linebox[4];
-	INT32 x, y;
+	int32_t x, y;
 
 	if (!(po->flags & POF_SOLID))
 		return hitflags;
@@ -981,7 +981,7 @@ dboolean Polyobj_moveXY(polyobj_t *po, fixed_t x, fixed_t y, dboolean checkmobjs
 {
 	size_t i;
 	vertex_t vec;
-	INT32 hitflags = 0;
+	int32_t hitflags = 0;
 
 	vec.x = x;
 	vec.y = y;
@@ -1093,8 +1093,8 @@ static void Polyobj_rotateLine(line_t *ld)
 // Causes objects resting on top of the rotating polyobject to 'ride' with its movement.
 static void Polyobj_rotateThings(polyobj_t *po, vector2_t origin, angle_t delta, dboolean turnplayers, dboolean turnothers)
 {
-	static INT32 pomovecount = 10000;
-	INT32 x, y;
+	static int32_t pomovecount = 10000;
+	int32_t x, y;
 	angle_t deltafine = (((po->angle + delta) >> ANGLETOFINESHIFT) - (po->angle >> ANGLETOFINESHIFT)) & FINEMASK;
 	// This fineshift trickery replaces the old delta>>ANGLETOFINESHIFT; doing it this way avoids loss of precision causing objects to slide off -fickle
 
@@ -1170,7 +1170,7 @@ dboolean Polyobj_rotate(polyobj_t *po, angle_t delta, dboolean turnplayers, dboo
 	size_t i;
 	angle_t angle;
 	vector2_t origin;
-	INT32 hitflags = 0;
+	int32_t hitflags = 0;
 
 	// don't move bad polyobjects
 	if (po->isBad)
@@ -1243,9 +1243,9 @@ dboolean Polyobj_rotate(polyobj_t *po, angle_t delta, dboolean turnplayers, dboo
 
 // Retrieves a polyobject by its numeric id using hashing.
 // Returns NULL if no such polyobject exists.
-polyobj_t *Polyobj_GetForNum(INT32 id)
+polyobj_t *Polyobj_GetForNum(int32_t id)
 {
-	INT32 curidx  = PolyObjects[id % numPolyObjects].first;
+	int32_t curidx  = PolyObjects[id % numPolyObjects].first;
 
 	while (curidx != numPolyObjects && PolyObjects[curidx].id != id)
 		curidx = PolyObjects[curidx].next;
@@ -1265,7 +1265,7 @@ static polyobj_t *Polyobj_GetParent(polyobj_t *po)
 
 // Iteratively retrieves the children POs of a parent,
 // sorta like P_FindSectorSpecialFromTag.
-static polyobj_t *Polyobj_GetChild(polyobj_t *po, INT32 *start)
+static polyobj_t *Polyobj_GetChild(polyobj_t *po, int32_t *start)
 {
 	for (; *start < numPolyObjects; (*start)++)
 	{
@@ -1291,7 +1291,7 @@ void Polyobj_InitLevel(void)
 	mqueue_t    spawnqueue;
 	mqueue_t    anchorqueue;
 	mobjqitem_t *qitem;
-	INT32 i, numAnchors = 0;
+	int32_t i, numAnchors = 0;
 	mobj_t *mo;
 
 	M_QueueInit(&spawnqueue);
@@ -1369,7 +1369,7 @@ void Polyobj_InitLevel(void)
 	printf("DEBUG: numPolyObjects = %d\n", numPolyObjects);
 	for (i = 0; i < numPolyObjects; ++i)
 	{
-		INT32 j;
+		int32_t j;
 		polyobj_t *po = &PolyObjects[i];
 
 		printf("polyobj %d:\n", i);
@@ -1455,7 +1455,7 @@ void T_PolyObjRotate(polyrotate_t *th)
 	// if distance == -1, this polyobject rotates perpetually
 	if (Polyobj_rotate(po, th->speed, th->turnobjs & PTF_PLAYERS, th->turnobjs & PTF_OTHERS, true) && th->distance != -1)
 	{
-		INT32 avel = abs(th->speed);
+		int32_t avel = abs(th->speed);
 
 		// decrement distance by the amount it moved
 		th->distance -= avel;
@@ -1484,7 +1484,7 @@ void T_PolyObjRotate(polyrotate_t *th)
 }
 
 // Calculates the speed components from the desired resultant velocity.
-FUNCINLINE static ATTRINLINE void Polyobj_componentSpeed(INT32 resVel, INT32 angle,
+FUNCINLINE static ATTRINLINE void Polyobj_componentSpeed(int32_t resVel, int32_t angle,
                                             fixed_t *xVel, fixed_t *yVel)
 {
 	if (angle == 0)
@@ -1492,7 +1492,7 @@ FUNCINLINE static ATTRINLINE void Polyobj_componentSpeed(INT32 resVel, INT32 ang
 		*xVel = resVel;
 		*yVel = 0;
 	}
-	else if (angle == (INT32)(ANGLE_90>>ANGLETOFINESHIFT))
+	else if (angle == (int32_t)(ANGLE_90>>ANGLETOFINESHIFT))
 	{
 		*xVel = 0;
 		*yVel = resVel;
@@ -1531,7 +1531,7 @@ void T_PolyObjMove(polymove_t *th)
 	// move the polyobject one step along its movement angle
 	if (Polyobj_moveXY(po, th->momx, th->momy, true))
 	{
-		INT32 avel = abs(th->speed);
+		int32_t avel = abs(th->speed);
 
 		// decrement distance by the amount it moved
 		th->distance -= avel;
@@ -1563,7 +1563,7 @@ void T_PolyObjMove(polymove_t *th)
 static void T_MovePolyObj(polyobj_t *po, fixed_t distx, fixed_t disty, fixed_t distz)
 {
 	polyobj_t *child;
-	INT32 start;
+	int32_t start;
 
 	Polyobj_moveXY(po, distx, disty, true);
 	// TODO: use T_MovePlane
@@ -1739,7 +1739,7 @@ void T_PolyDoorSlide(polyslidedoor_t *th)
 	// move the polyobject one step along its movement angle
 	if (Polyobj_moveXY(po, th->momx, th->momy, true))
 	{
-		INT32 avel = abs(th->speed);
+		int32_t avel = abs(th->speed);
 
 		// decrement distance by the amount it moved
 		th->distance -= avel;
@@ -1841,7 +1841,7 @@ void T_PolyDoorSwing(polyswingdoor_t *th)
 	// if distance == -1, this polyobject rotates perpetually
 	if (Polyobj_rotate(po, th->speed, false, false, true) && th->distance != -1)
 	{
-		INT32 avel = abs(th->speed);
+		int32_t avel = abs(th->speed);
 
 		// decrement distance by the amount it moved
 		th->distance -= avel;
@@ -1966,7 +1966,7 @@ void T_PolyObjRotDisplace(polyrotdisplace_t *th)
 		th->oldHeights = newheights;
 }
 
-static inline INT32 Polyobj_AngSpeed(INT32 speed)
+static inline int32_t Polyobj_AngSpeed(int32_t speed)
 {
 	return (speed*ANG1)>>3; // no FixedAngle()
 }
@@ -1978,7 +1978,7 @@ dboolean EV_DoPolyObjRotate(polyrotdata_t *prdata)
 	polyobj_t *po;
 	polyobj_t *oldpo;
 	polyrotate_t *th;
-	INT32 start;
+	int32_t start;
 
 	if (!(po = Polyobj_GetForNum(prdata->polyObjNum)))
 	{
@@ -2052,7 +2052,7 @@ dboolean EV_DoPolyObjMove(polymovedata_t *pmdata)
 	polyobj_t *po;
 	polyobj_t *oldpo;
 	polymove_t *th;
-	INT32 start;
+	int32_t start;
 
 	if (!(po = Polyobj_GetForNum(pmdata->polyObjNum)))
 	{
@@ -2117,7 +2117,7 @@ dboolean EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
 	polyobj_t *oldpo;
 	polywaypoint_t *th;
 	mobj_t *first = NULL;
-	INT32 start;
+	int32_t start;
 
 	if (!(po = Polyobj_GetForNum(pwdata->polyObjNum)))
 	{
@@ -2200,7 +2200,7 @@ static void Polyobj_doSlideDoor(polyobj_t *po, polydoordata_t *doordata)
 	polyslidedoor_t *th;
 	polyobj_t *oldpo;
 	angle_t angtemp;
-	INT32 start;
+	int32_t start;
 
 	// allocate and add a new slide door thinker
 	th = Z_LevelPoolMalloc(sizeof(polyslidedoor_t));
@@ -2253,7 +2253,7 @@ static void Polyobj_doSwingDoor(polyobj_t *po, polydoordata_t *doordata)
 {
 	polyswingdoor_t *th;
 	polyobj_t *oldpo;
-	INT32 start;
+	int32_t start;
 
 	// allocate and add a new swing door thinker
 	th = Z_LevelPoolMalloc(sizeof(polyswingdoor_t));
@@ -2330,7 +2330,7 @@ dboolean EV_DoPolyObjDisplace(polydisplacedata_t *prdata)
 	polyobj_t *po;
 	polyobj_t *oldpo;
 	polydisplace_t *th;
-	INT32 start;
+	int32_t start;
 
 	if (!(po = Polyobj_GetForNum(prdata->polyObjNum)))
 	{
@@ -2381,7 +2381,7 @@ dboolean EV_DoPolyObjRotDisplace(polyrotdisplacedata_t *prdata)
 	polyobj_t *po;
 	polyobj_t *oldpo;
 	polyrotdisplace_t *th;
-	INT32 start;
+	int32_t start;
 
 	if (!(po = Polyobj_GetForNum(prdata->polyObjNum)))
 	{
@@ -2475,7 +2475,7 @@ dboolean EV_DoPolyObjFlag(polyflagdata_t *pfdata)
 	polyobj_t *oldpo;
 	polymove_t *th;
 	size_t i;
-	INT32 start;
+	int32_t start;
 	mtag_t tag = pfdata->polyObjNum;
 
 	if (!(po = Polyobj_GetForNum(tag)))
@@ -2562,15 +2562,15 @@ void T_PolyObjFade(polyfade_t *th)
 	}
 	else
 	{
-		INT16 delta = abs(th->destvalue - th->sourcevalue);
-		INT32 duration = th->ticbased ? th->duration
+		int16_t delta = abs(th->destvalue - th->sourcevalue);
+		int32_t duration = th->ticbased ? th->duration
 			: abs(FixedMul(FixedDiv(256, NUMTRANSMAPS), NUMTRANSMAPS - th->destvalue)
 				- FixedMul(FixedDiv(256, NUMTRANSMAPS), NUMTRANSMAPS - th->sourcevalue)); // speed-based internal counter duration: delta in 256 scale
 		fixed_t factor = min(FixedDiv(duration - th->timer, duration), 1*FRACUNIT);
 		if (th->destvalue < th->sourcevalue)
-			po->translucency = max(min(po->translucency, th->sourcevalue - (INT16)FixedMul(delta, factor)), th->destvalue);
+			po->translucency = max(min(po->translucency, th->sourcevalue - (int16_t)FixedMul(delta, factor)), th->destvalue);
 		else if (th->destvalue > th->sourcevalue)
-			po->translucency = min(max(po->translucency, th->sourcevalue + (INT16)FixedMul(delta, factor)), th->destvalue);
+			po->translucency = min(max(po->translucency, th->sourcevalue + (int16_t)FixedMul(delta, factor)), th->destvalue);
 	}
 
 	if (!stillfading)
@@ -2628,7 +2628,7 @@ dboolean EV_DoPolyObjFade(polyfadedata_t *pfdata)
 	polyobj_t *po;
 	polyobj_t *oldpo;
 	polyfade_t *th;
-	INT32 start;
+	int32_t start;
 
 	if (!(po = Polyobj_GetForNum(pfdata->polyObjNum)))
 	{

@@ -633,13 +633,13 @@ static int mobj_set(lua_State *L)
 		mo->sprite = luaL_checkinteger(L, 3);
 		break;
 	case mobj_frame:
-		mo->frame = (UINT32)luaL_checkinteger(L, 3);
+		mo->frame = (uint32_t)luaL_checkinteger(L, 3);
 		break;
 	case mobj_sprite2:
-		mo->sprite2 = P_GetSkinSprite2(((skin_t *)mo->skin), (UINT8)luaL_checkinteger(L, 3), mo->player);
+		mo->sprite2 = P_GetSkinSprite2(((skin_t *)mo->skin), (uint8_t)luaL_checkinteger(L, 3), mo->player);
 		break;
 	case mobj_anim_duration:
-		mo->anim_duration = (UINT16)luaL_checkinteger(L, 3);
+		mo->anim_duration = (uint16_t)luaL_checkinteger(L, 3);
 		break;
 	case mobj_spritexscale:
 		mo->spritexscale = luaL_checkfixed(L, 3);
@@ -656,7 +656,7 @@ static int mobj_set(lua_State *L)
 	case mobj_floorspriteslope:
 		return NOSET;
 	case mobj_lightlevel:
-		mo->lightlevel = (INT16)luaL_checkinteger(L, 3);
+		mo->lightlevel = (int16_t)luaL_checkinteger(L, 3);
 		break;
 	case mobj_touching_sectorlist:
 		return UNIMPLEMENTED;
@@ -722,7 +722,7 @@ static int mobj_set(lua_State *L)
 		break;
 	case mobj_flags: // special handling for MF_NOBLOCKMAP and MF_NOSECTOR
 	{
-		UINT32 flags = luaL_checkinteger(L, 3);
+		uint32_t flags = luaL_checkinteger(L, 3);
 		if ((flags & (MF_NOBLOCKMAP|MF_NOSECTOR)) != (mo->flags & (MF_NOBLOCKMAP|MF_NOSECTOR)))
 		{
 			P_UnsetThingPosition(mo);
@@ -741,18 +741,18 @@ static int mobj_set(lua_State *L)
 		break;
 	}
 	case mobj_flags2:
-		mo->flags2 = (UINT32)luaL_checkinteger(L, 3);
+		mo->flags2 = (uint32_t)luaL_checkinteger(L, 3);
 		break;
 	case mobj_eflags:
-		mo->eflags = (UINT32)luaL_checkinteger(L, 3);
+		mo->eflags = (uint32_t)luaL_checkinteger(L, 3);
 		break;
 	case mobj_renderflags:
-		mo->renderflags = (UINT32)luaL_checkinteger(L, 3);
+		mo->renderflags = (uint32_t)luaL_checkinteger(L, 3);
 		break;
 	case mobj_skin: // set skin by name
 	{
 		const char *name = luaL_checkstring(L, 3);
-		INT32 skin = R_SkinAvailable(name);
+		int32_t skin = R_SkinAvailable(name);
 
 		if (skin != -1)
 		{
@@ -769,7 +769,7 @@ static int mobj_set(lua_State *L)
 	}
 	case mobj_color:
 	{
-		UINT16 newcolor = (UINT16)luaL_checkinteger(L,3);
+		uint16_t newcolor = (uint16_t)luaL_checkinteger(L,3);
 		if (newcolor >= numskincolors)
 			return luaL_error(L, "mobj.color %d out of range (0 - %d).", newcolor, numskincolors-1);
 		mo->color = newcolor;
@@ -954,7 +954,7 @@ static int mobj_set(lua_State *L)
 		mo->hitlag = luaL_checkinteger(L, 3);
 		break;
 	case mobj_waterskip:
-		mo->waterskip = (UINT8)luaL_checkinteger(L, 3);
+		mo->waterskip = (uint8_t)luaL_checkinteger(L, 3);
 		break;
 	case mobj_dispoffset:
 		mo->dispoffset = luaL_checkinteger(L, 3);
@@ -1021,7 +1021,7 @@ static int mobj_set(lua_State *L)
 // args, i -> args[i]
 static int thingargs_get(lua_State *L)
 {
-	INT32 *args = *((INT32**)luaL_checkudata(L, 1, META_THINGARGS));
+	int32_t *args = *((int32_t**)luaL_checkudata(L, 1, META_THINGARGS));
 	int i = luaL_checkinteger(L, 2);
 	if (i < 0 || i >= NUM_MAPTHING_ARGS)
 		return luaL_error(L, LUA_QL("mapthing_t.args") " index cannot be %d", i);

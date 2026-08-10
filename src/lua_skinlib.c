@@ -148,7 +148,7 @@ static int skin_num(lua_State *L)
 
 static int lib_iterateSkins(lua_State *L)
 {
-	INT32 i;
+	int32_t i;
 
 	if (lua_gettop(L) < 2)
 	{
@@ -161,7 +161,7 @@ static int lib_iterateSkins(lua_State *L)
 	lua_remove(L, 1); // state is unused.
 
 	if (!lua_isnil(L, 1))
-		i = (INT32)((*((skin_t **)luaL_checkudata(L, 1, META_SKIN)))->skinnum) + 1;
+		i = (int32_t)((*((skin_t **)luaL_checkudata(L, 1, META_SKIN)))->skinnum) + 1;
 	else
 		i = 0;
 
@@ -178,7 +178,7 @@ static int lib_iterateSkins(lua_State *L)
 static int lib_getSkin(lua_State *L)
 {
 	const char *field;
-	INT32 i;
+	int32_t i;
 
 	// find skin by number
 	if (lua_type(L, 2) == LUA_TNUMBER)

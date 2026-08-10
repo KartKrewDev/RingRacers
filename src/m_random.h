@@ -108,11 +108,11 @@ extern char rng_class_names[34][30];
 // P_Random functions pulls random bytes from a PRNG that is network synced.
 
 // RNG functions
-UINT32  M_Random(void);
+uint32_t  M_Random(void);
 fixed_t M_RandomFixed(void);
-UINT8   M_RandomByte(void);
-UINT32  M_RandomKey(UINT32 a);
-INT32   M_RandomRange(INT32 a, INT32 b);
+uint8_t   M_RandomByte(void);
+uint32_t  M_RandomKey(uint32_t a);
+int32_t   M_RandomRange(int32_t a, int32_t b);
 
 // PRNG functions
 #ifdef DEBUGRANDOM
@@ -121,28 +121,28 @@ INT32   M_RandomRange(INT32 a, INT32 b);
 #define P_RandomByte(c)        P_RandomByteD(__FILE__, __LINE__, c)
 #define P_RandomKey(c, d)      P_RandomKeyD(__FILE__, __LINE__, c, d)
 #define P_RandomRange(c, d, e) P_RandomRangeD(__FILE__, __LINE__, c, d, e)
-UINT32  P_RandomD(const char *rfile, INT32 rline, pr_class_t pr_class);
-fixed_t P_RandomFixedD(const char *rfile, INT32 rline, pr_class_t pr_class);
-UINT8   P_RandomByteD(const char *rfile, INT32 rline, pr_class_t pr_class);
-UINT32  P_RandomKeyD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 a);
-INT32   P_RandomRangeD(const char *rfile, INT32 rline, pr_class_t pr_class, INT32 a, INT32 b);
+uint32_t  P_RandomD(const char *rfile, int32_t rline, pr_class_t pr_class);
+fixed_t P_RandomFixedD(const char *rfile, int32_t rline, pr_class_t pr_class);
+uint8_t   P_RandomByteD(const char *rfile, int32_t rline, pr_class_t pr_class);
+uint32_t  P_RandomKeyD(const char *rfile, int32_t rline, pr_class_t pr_class, uint32_t a);
+int32_t   P_RandomRangeD(const char *rfile, int32_t rline, pr_class_t pr_class, int32_t a, int32_t b);
 #else
-UINT32  P_Random(pr_class_t pr_class);
+uint32_t  P_Random(pr_class_t pr_class);
 fixed_t P_RandomFixed(pr_class_t pr_class);
-UINT8   P_RandomByte(pr_class_t pr_class);
-UINT32  P_RandomKey(pr_class_t pr_class, UINT32 a);
-INT32   P_RandomRange(pr_class_t pr_class, INT32 a, INT32 b);
+uint8_t   P_RandomByte(pr_class_t pr_class);
+uint32_t  P_RandomKey(pr_class_t pr_class, uint32_t a);
+int32_t   P_RandomRange(pr_class_t pr_class, int32_t a, int32_t b);
 #endif
 
 // Macros for other functions
-#define M_SignedRandom()   ((INT32)M_RandomByte() + INT8_MIN)   // [-128, 127] signed byte, originally a
-#define P_SignedRandom(pr) ((INT32)P_RandomByte(pr) + INT8_MIN) // function of its own, moved to a macro
+#define M_SignedRandom()   ((int32_t)M_RandomByte() + INT8_MIN)   // [-128, 127] signed byte, originally a
+#define P_SignedRandom(pr) ((int32_t)P_RandomByte(pr) + INT8_MIN) // function of its own, moved to a macro
 
 #define M_RandomChance(p)     (M_RandomFixed() < p)   // given fixed point probability, p, between 0 (0%)
 #define P_RandomChance(pr, p) (P_RandomFixed(pr) < p) // and FRACUNIT (100%), returns true p% of the time
 
 // Debugging
-UINT32 P_RandomPeek(pr_class_t pr_class);
+uint32_t P_RandomPeek(pr_class_t pr_class);
 
 // Working with the seed for PRNG
 #ifdef DEBUGRANDOM
@@ -151,21 +151,21 @@ UINT32 P_RandomPeek(pr_class_t pr_class);
 #define P_SetRandSeed(pr, s) P_SetRandSeedD(__FILE__, __LINE__, pr, s)
 #define P_SetRandSeedNet(pr, i, s) P_SetRandSeedD(__FILE__, __LINE__, pr, i, s)
 #define P_ResetInterpHudRandSeed(newframe) P_ResetInterpHudRandSeedD(__FILE__, __LINE__, newframe)
-UINT32 P_GetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class);
-UINT32 P_GetInitSeedD(const char *rfile, INT32 rline, pr_class_t pr_class);
-void P_SetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 seed);
-void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 init, UINT32 seed);
-void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, dboolean newframe);
+uint32_t P_GetRandSeedD(const char *rfile, int32_t rline, pr_class_t pr_class);
+uint32_t P_GetInitSeedD(const char *rfile, int32_t rline, pr_class_t pr_class);
+void P_SetRandSeedD(const char *rfile, int32_t rline, pr_class_t pr_class, uint32_t seed);
+void P_SetRandSeedNetD(const char *rfile, int32_t rline, pr_class_t pr_class, uint32_t init, uint32_t seed);
+void P_ResetInterpHudRandSeedD(const char *rfile, int32_t rline, dboolean newframe);
 #else
-UINT32 P_GetRandSeed(pr_class_t pr_class);
-UINT32 P_GetInitSeed(pr_class_t pr_class);
-void P_SetRandSeed(pr_class_t pr_class, UINT32 seed);
-void P_SetRandSeedNet(pr_class_t pr_class, UINT32 init, UINT32 seed);
+uint32_t P_GetRandSeed(pr_class_t pr_class);
+uint32_t P_GetInitSeed(pr_class_t pr_class);
+void P_SetRandSeed(pr_class_t pr_class, uint32_t seed);
+void P_SetRandSeedNet(pr_class_t pr_class, uint32_t init, uint32_t seed);
 void P_ResetInterpHudRandSeed(dboolean newframe);
 #endif
 
-void P_ClearRandom(UINT32 seed);
-UINT32 M_RandomizedSeed(void);
+void P_ClearRandom(uint32_t seed);
+uint32_t M_RandomizedSeed(void);
 
 #ifdef __cplusplus
 } // extern "C"

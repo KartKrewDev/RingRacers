@@ -147,7 +147,7 @@ static int respawn_set(lua_State *L)
 	switch (field)
 	{
 		case respawnvars_state:
-			rsp->state = (UINT8)luaL_checkinteger(L, 3);
+			rsp->state = (uint8_t)luaL_checkinteger(L, 3);
 			break;
 		case respawnvars_waypoint:
 			rsp->wp = *((waypoint_t **)luaL_checkudata(L, 3, META_WAYPOINT));
@@ -174,7 +174,7 @@ static int respawn_set(lua_State *L)
 			rsp->airtimer = (tic_t)luaL_checkinteger(L, 3);
 			break;
 		case respawnvars_distanceleft:
-			rsp->distanceleft = (UINT32)luaL_checkinteger(L, 3);
+			rsp->distanceleft = (uint32_t)luaL_checkinteger(L, 3);
 			break;
 		case respawnvars_dropdash:
 			rsp->dropdash = (tic_t)luaL_checkinteger(L, 3);

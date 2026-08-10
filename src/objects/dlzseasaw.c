@@ -31,7 +31,7 @@ static void Obj_DLZSeasawUpdate(mobj_t *mo, dboolean ghostme)
 
 	mobj_t *ptr = mo;
 	mobj_t *ptrp = mo;
-	UINT8 i, j;
+	uint8_t i, j;
 	angle_t visan = (angle_t)mo->extravalue1 + ANGLE_90;
 
 	if (mo->tracer && !P_MobjWasRemoved(mo->tracer))
@@ -51,8 +51,8 @@ static void Obj_DLZSeasawUpdate(mobj_t *mo, dboolean ghostme)
 
 	for (i = 0; i < 2; i++)
 	{
-		INT32 dist = 32;	// visuals dist
-		INT32 hdist = 16;	// hitbox dist
+		int32_t dist = 32;	// visuals dist
+		int32_t hdist = 16;	// hitbox dist
 
 		// visuals
 		for (j = 0; j < 2; j++)
@@ -125,13 +125,13 @@ void Obj_DLZSeasawSpawn(mobj_t *mo)
 	mobj_t *pole;
 	mobj_t *ptr = mo;
 	mobj_t *ptrp = mo;
-	UINT8 i, j;
+	uint8_t i, j;
 
 	P_SetScale(mo, 2*mapobjectscale);
 	mo->destscale = 2*mapobjectscale;
 
 	// setup vars
-	mo->extravalue1 = (INT32)mo->angle;
+	mo->extravalue1 = (int32_t)mo->angle;
 
 	// center pole:
 	pole = P_SpawnMobj(mo->x, mo->y, mo->z, MT_THOK);
@@ -193,7 +193,7 @@ void Obj_DLZSeasawSpawn(mobj_t *mo)
 
 static void Obj_DLZSeasawReset(mobj_t *mo)
 {
-	mo->extravalue1 = (INT32)mo->angle;
+	mo->extravalue1 = (int32_t)mo->angle;
 	P_SetTarget(&mo->target, NULL);
 	Obj_DLZSeasawUpdate(mo, false);
 }
@@ -202,7 +202,7 @@ static void Obj_DLZSeasawReset(mobj_t *mo)
 void Obj_DLZSeasawThink(mobj_t *mo)
 {
 	dboolean ghost = false;
-	SINT8 rot = 1;
+	int8_t rot = 1;
 	fixed_t px, py;
 
 	if (mo->target && !P_MobjWasRemoved(mo->target))
@@ -222,7 +222,7 @@ void Obj_DLZSeasawThink(mobj_t *mo)
 		// first half of the animation...
 		if (!p->seasawdir)
 		{
-			INT32 angleadd = ANG1*max(4, (mo->movefactor/3)/mapobjectscale) * rot;
+			int32_t angleadd = ANG1*max(4, (mo->movefactor/3)/mapobjectscale) * rot;
 
 			if (p->seasawangleadd > 175)
 				angleadd /= max(1, (p->seasawangleadd - 160)/8);
@@ -248,7 +248,7 @@ void Obj_DLZSeasawThink(mobj_t *mo)
 		}
 		else
 		{
-			INT32 angleadd = (mo->cvmem*2 +1)*(-rot);
+			int32_t angleadd = (mo->cvmem*2 +1)*(-rot);
 			mo->cvmem++;
 
 			p->seasawangleadd += abs(angleadd)/2;	// for some reason i need to do this and i'm actually not sure why.
@@ -293,9 +293,9 @@ void Obj_DLZSeasawThink(mobj_t *mo)
 	Obj_DLZSeasawUpdate(mo, ghost);
 }
 
-// ported just for convenience of not needing to rewrite the code to account for UINT32 angles...
+// ported just for convenience of not needing to rewrite the code to account for uint32_t angles...
 // the precision loss hardly matters whatsoever.
-static INT32 angtoint(angle_t a)
+static int32_t angtoint(angle_t a)
 {
 	return a/ANG1;
 }
@@ -305,7 +305,7 @@ static INT32 angtoint(angle_t a)
 void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2)
 {
 	player_t *p = mo->player;
-	INT32 momangle;
+	int32_t momangle;
 	dboolean invert = false;
 
 	// cooldown / respawning
@@ -356,7 +356,7 @@ void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2)
 
 	// set player vars now:
 	p->seasawdist = R_PointToDist2(mo->x, mo->y, mo2->target->x, mo2->target->y) /FRACUNIT; // distance from us to the center
-	p->seasawangle = (INT32)R_PointToAngle2(mo2->target->x, mo2->target->y, mo->x, mo->y);	// angle from the center to us
+	p->seasawangle = (int32_t)R_PointToAngle2(mo2->target->x, mo2->target->y, mo->x, mo->y);	// angle from the center to us
 	p->seasawangleadd = 0;
 	p->seasawdir = false;
 	p->seasaw = true;

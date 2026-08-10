@@ -72,7 +72,7 @@ void K_RunFinishLineBeam(void);
 
 
 /*--------------------------------------------------
-	UINT8 K_RaceLapCount(INT16 mapNum);
+	uint8_t K_RaceLapCount(int16_t mapNum);
 
 		Returns the effective final lap count of the race.
 
@@ -83,9 +83,9 @@ void K_RunFinishLineBeam(void);
 		The lap count to finish.
 --------------------------------------------------*/
 
-UINT8 K_RaceLapCount(INT16 mapNum);
+uint8_t K_RaceLapCount(int16_t mapNum);
 
-void K_SpawnFinishEXP(player_t *player, UINT16 exp);
+void K_SpawnFinishEXP(player_t *player, uint16_t exp);
 
 
 #ifdef __cplusplus

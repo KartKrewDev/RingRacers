@@ -48,7 +48,7 @@
  * Sacrifice some more compression quality in favour of compression speed.
  * (roughly 1-2% worse compression for large blocks and
  * 9-10% for small, redundant, blocks and >>20% better speed in both cases)
- * In INT16: when in need for speed, enable this for binary data,
+ * In int16_t: when in need for speed, enable this for binary data,
  * possibly disable this for text data.
  */
 #ifndef ULTRA_FAST

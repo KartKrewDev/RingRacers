@@ -106,8 +106,8 @@ sine_bob
 void
 bob_in_place
 (		mobj_t * hyu,
-		INT32 phase,
-		INT32 bob_speed)
+		int32_t phase,
+		int32_t bob_speed)
 {
 	sine_bob(hyu,
 			((leveltime + phase) & (bob_speed - 1)) *
@@ -617,7 +617,7 @@ struct Flicky : mobj_t
 
 	void noclip(bool n)
 	{
-		constexpr UINT32 kNoClipFlags = MF_NOCLIP | MF_NOCLIPHEIGHT;
+		constexpr uint32_t kNoClipFlags = MF_NOCLIP | MF_NOCLIPHEIGHT;
 		flags = (flags & ~kNoClipFlags) | (kNoClipFlags * n);
 	}
 

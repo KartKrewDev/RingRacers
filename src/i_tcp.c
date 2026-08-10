@@ -53,7 +53,7 @@
 typedef struct
 {
 	mysockaddr_t address;
-	UINT8 mask;
+	uint8_t mask;
 	char *username;
 	char *reason;
 	time_t timestamp;
@@ -67,7 +67,7 @@ mysockaddr_t clientaddress[MAXNETNODES+1];
 static mysockaddr_t broadcastaddress[MAXNETNODES+1];
 static size_t broadcastaddresses = 0;
 static dboolean nodeconnected[MAXNETNODES+1];
-static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
+static const int32_t hole_punch_magic = MSBF_LONG (0x52eb11);
 
 static bannednode_t SOCK_bannednode[MAXNETNODES+1]; /// \note do we really need the +1?
 static dboolean init_tcp_driver = false;
@@ -227,7 +227,7 @@ static inline void I_UPnP_rem(const char *port, const char * servicetype)
 
 // I spent 3 hours trying to work out why I couldn't sensibly access this from anywhere,
 // even when extern'd. I am not the person who should be doing this. -Tyron, 2023-10-08
-mysockaddr_t SOCK_DirectNodeToAddr(UINT8 node)
+mysockaddr_t SOCK_DirectNodeToAddr(uint8_t node)
 {
 	return clientaddress[node];
 }
@@ -269,7 +269,7 @@ const char *SOCK_AddrToStr(mysockaddr_t *sk)
 	return s;
 }
 
-static const char *SOCK_GetNodeAddress(INT32 node)
+static const char *SOCK_GetNodeAddress(int32_t node)
 {
 	if (node == 0)
 		return "self";
@@ -278,7 +278,7 @@ static const char *SOCK_GetNodeAddress(INT32 node)
 	return SOCK_AddrToStr(&clientaddress[node]);
 }
 
-static UINT32 SOCK_GetNodeAddressInt(INT32 node)
+static uint32_t SOCK_GetNodeAddressInt(int32_t node)
 {
     if (nodeconnected[node] && clientaddress[node].any.sa_family == AF_INET)
     {
@@ -292,12 +292,12 @@ static UINT32 SOCK_GetNodeAddressInt(INT32 node)
     return 0;
 }
 
-dboolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask)
+dboolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, uint8_t mask)
 {
-	UINT32 bitmask = INADDR_NONE;
+	uint32_t bitmask = INADDR_NONE;
 
 	if (mask && mask < 32)
-		bitmask = htonl((UINT32)(-1) << (32 - mask));
+		bitmask = htonl((uint32_t)(-1) << (32 - mask));
 
 	if (b->any.sa_family == AF_INET)
 		return (a->ip4.sin_addr.s_addr & bitmask) == (b->ip4.sin_addr.s_addr & bitmask)
@@ -319,7 +319,7 @@ dboolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask)
   */
 static void cleanupnodes(void)
 {
-	SINT8 j;
+	int8_t j;
 
 	if (!Playing())
 		return;
@@ -330,9 +330,9 @@ static void cleanupnodes(void)
 			nodeconnected[j] = false;
 }
 
-static SINT8 getfreenode(void)
+static int8_t getfreenode(void)
 {
-	SINT8 j;
+	int8_t j;
 
 	cleanupnodes();
 
@@ -358,9 +358,9 @@ static SINT8 getfreenode(void)
 
 void Command_Numnodes(void)
 {
-	INT32 connected = 0;
-	INT32 ingame = 0;
-	INT32 i;
+	int32_t connected = 0;
+	int32_t ingame = 0;
+	int32_t i;
 
 	for (i = 1; i < MAXNETNODES; i++)
 	{
@@ -448,8 +448,8 @@ static dboolean SOCK_Get(void)
 			{
 				if (SOCK_cmpaddr(&fromaddress, &clientaddress[j], 0))
 				{
-					doomcom->remotenode = (INT16)j; // good packet from a game player
-					doomcom->datalength = (INT16)c;
+					doomcom->remotenode = (int16_t)j; // good packet from a game player
+					doomcom->datalength = (int16_t)c;
 					nodesocket[j] = mysockets[n];
 					return false;
 				}
@@ -464,8 +464,8 @@ static dboolean SOCK_Get(void)
 				nodesocket[j] = mysockets[n];
 				DEBFILE(va("New node detected: node:%d address:%s\n", j,
 						SOCK_GetNodeAddress(j)));
-				doomcom->remotenode = (INT16)j; // good packet from a game player
-				doomcom->datalength = (INT16)c;
+				doomcom->remotenode = (int16_t)j; // good packet from a game player
+				doomcom->datalength = (int16_t)c;
 
 				return true;
 			}
@@ -592,7 +592,7 @@ static void SOCK_Send(void)
 	}
 }
 
-static void SOCK_FreeNodenum(INT32 numnode)
+static void SOCK_FreeNodenum(int32_t numnode)
 {
 	// can't disconnect from self :)
 	if (!numnode || numnode > MAXNETNODES)
@@ -714,7 +714,7 @@ static SOCKET_TYPE UDP_Bind(int family, struct sockaddr *addr, socklen_t addrlen
 	if (getsockname(s, (struct sockaddr *)&sin, &len) == -1)
 		CONS_Alert(CONS_WARNING, M_GetText("Failed to get port number\n"));
 	else
-		current_port = (UINT16)ntohs(sin.sin_port);
+		current_port = (uint16_t)ntohs(sin.sin_port);
 
 	return s;
 }
@@ -725,7 +725,7 @@ static dboolean UDP_Socket(void)
 	struct my_addrinfo *ai, *runp, hints;
 	int gaie;
 #ifdef HAVE_IPV6
-	const INT32 b_ipv6 = M_CheckParm("-ipv6");
+	const int32_t b_ipv6 = M_CheckParm("-ipv6");
 #endif
 	const char *serv;
 
@@ -1054,9 +1054,9 @@ static dboolean SOCK_GetAddr(struct sockaddr_in *sin, const char *address, const
 	return (runp != NULL);
 }
 
-static SINT8 SOCK_NetMakeNodewPort(const char *address, const char *port)
+static int8_t SOCK_NetMakeNodewPort(const char *address, const char *port)
 {
-	SINT8 newnode = getfreenode();
+	int8_t newnode = getfreenode();
 
 	DEBFILE(va("Creating new node: %s@%s\n", address, port));
 
@@ -1106,7 +1106,7 @@ static void rendezvous(int size)
 	free(addrs);
 }
 
-static void SOCK_RequestHolePunch(INT32 node)
+static void SOCK_RequestHolePunch(int32_t node)
 {
 	mysockaddr_t * addr = &clientaddress[node];
 
@@ -1160,7 +1160,7 @@ static int SOCK_IsExternalAddress (const void *p)
 	const int a = ((const unsigned char*)p)[0];
 	const int b = ((const unsigned char*)p)[1];
 
-	if (*(const UINT32*)p == (UINT32)~0)/* 255.255.255.255 */
+	if (*(const uint32_t*)p == (uint32_t)~0)/* 255.255.255.255 */
 		return 0;
 
 	switch (a)
@@ -1218,7 +1218,7 @@ dboolean I_InitTcpNetwork(void)
 		if (dedicated)
 			doomcom->numnodes = 0;
 /*		else if (M_IsNextParm())
-			doomcom->numnodes = (INT16)atoi(M_GetNextParm());*/
+			doomcom->numnodes = (int16_t)atoi(M_GetNextParm());*/
 		else
 			doomcom->numnodes = 1;
 

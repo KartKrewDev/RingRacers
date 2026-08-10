@@ -56,7 +56,7 @@ void Obj_playerBungeeThink(player_t *p)
 {
 
 	mobj_t *bungee = p->mo->tracer;
-	UINT8 i;
+	uint8_t i;
 
 	// someone removed it
 	if (!bungee || P_MobjWasRemoved(bungee))

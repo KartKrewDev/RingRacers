@@ -28,7 +28,7 @@ menuitem_t PLAY_RaceGamemodesMenu[] =
 
 menu_t PLAY_RaceGamemodesDef = KARTGAMEMODEMENU(PLAY_RaceGamemodesMenu, &PLAY_GamemodesDef);
 
-void M_SetupRaceMenu(INT32 choice)
+void M_SetupRaceMenu(int32_t choice)
 {
 	if (choice != -1)
 		PLAY_RaceGamemodesDef.prevMenu = currentMenu;

@@ -120,7 +120,7 @@ menu_t OPTIONS_VideoColorProfileDef = {
 };
 
 // Set all color profile settings to the default values.
-void M_ColorProfileDefault(INT32 choice)
+void M_ColorProfileDefault(int32_t choice)
 {
 	(void)choice;
 	

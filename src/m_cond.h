@@ -161,19 +161,19 @@ typedef enum
 // Condition Set information
 struct condition_t
 {
-	UINT32 id;           /// <- The ID of this condition.
+	uint32_t id;           /// <- The ID of this condition.
 	                     ///    In an unlock condition, all conditions with the same ID
 	                     ///    must be true to fulfill the unlockable requirements.
 	                     ///    Only one ID set needs to be true, however.
 	conditiontype_t type;/// <- The type of condition
-	INT32 requirement;   /// <- The requirement for this variable.
-	INT16 extrainfo1;    /// <- Extra information for the condition when needed.
-	INT16 extrainfo2;    /// <- Extra information for the condition when needed.
+	int32_t requirement;   /// <- The requirement for this variable.
+	int16_t extrainfo1;    /// <- Extra information for the condition when needed.
+	int16_t extrainfo2;    /// <- Extra information for the condition when needed.
 	char *stringvar;     /// <- Extra z-allocated string for the condition when needed
 };
 struct conditionset_t
 {
-	UINT32 numconditions;   /// <- number of conditions.
+	uint32_t numconditions;   /// <- number of conditions.
 	condition_t *condition; /// <- All conditionals to be checked.
 };
 
@@ -201,15 +201,15 @@ struct conditionset_t
 
 struct emblem_t
 {
-	UINT8 type;			///< Emblem type
-	INT16 tag;			///< Tag of emblem mapthing
+	uint8_t type;			///< Emblem type
+	int16_t tag;			///< Tag of emblem mapthing
 	char *level;		///< Level on which this emblem can be found.
-	INT16 levelCache;	///< Stored G_MapNumber()+1 result
-	UINT8 sprite;		///< emblem sprite to use, 0 - 25
-	UINT16 color;		///< skincolor to use
-	INT32 flags;		///< GE or ME constants
-	INT32 var;			///< If needed, specifies extra information
-	INT32 var2;			///< Ditto
+	int16_t levelCache;	///< Stored G_MapNumber()+1 result
+	uint8_t sprite;		///< emblem sprite to use, 0 - 25
+	uint16_t color;		///< skincolor to use
+	int32_t flags;		///< GE or ME constants
+	int32_t var;			///< If needed, specifies extra information
+	int32_t var2;			///< Ditto
 	char *stringVar;	///< String version
 	char *stringVar2;	///< Ditto
 };
@@ -219,13 +219,13 @@ struct unlockable_t
 {
 	char name[64];
 	char *icon;
-	UINT16 color;
-	UINT16 conditionset;
-	INT16 type;
-	INT16 variable;
+	uint16_t color;
+	uint16_t conditionset;
+	int16_t type;
+	int16_t variable;
 	char *stringVar;
-	INT16 stringVarCache;
-	UINT8 majorunlock;
+	int16_t stringVarCache;
+	uint8_t majorunlock;
 };
 
 typedef enum
@@ -296,7 +296,7 @@ typedef enum {
 	GDMUSIC_MAX
 } gdmusic_t;
 
-// This is the largest number of 9s that will fit in UINT32 and UINT16 respectively.
+// This is the largest number of 9s that will fit in uint32_t and uint16_t respectively.
 #define GDMAX_RINGS 999999999
 #define GDMAX_CHAOKEYS 9999
 #define GDMAX_SEALEDSWAPS 7
@@ -319,8 +319,8 @@ typedef enum {
 
 struct candata_t
 {
-	UINT16 col;
-	UINT16 map;
+	uint16_t col;
+	uint16_t map;
 };
 
 // GAMEDATA STRUCTURE
@@ -345,42 +345,42 @@ struct gamedata_t
 	dboolean unlockpending[MAXUNLOCKABLES];
 
 	// SPRAYCANS COLLECTED
-	UINT16 numspraycans;
-	UINT16 gotspraycans;
+	uint16_t numspraycans;
+	uint16_t gotspraycans;
 	candata_t* spraycans;
 
 	// PRISON EGG PICKUPS
-	UINT16 numprisoneggpickups;
-	UINT16 thisprisoneggpickup;
+	uint16_t numprisoneggpickups;
+	uint16_t thisprisoneggpickup;
 	condition_t *thisprisoneggpickup_cached;
 	dboolean thisprisoneggpickupgrabbed;
-	UINT16 prisoneggstothispickup;
-	UINT16* prisoneggpickups;
+	uint16_t prisoneggstothispickup;
+	uint16_t* prisoneggpickups;
 
 	// CHALLENGE GRID
-	UINT16 challengegridwidth;
-	UINT16 *challengegrid;
+	uint16_t challengegridwidth;
+	uint16_t *challengegrid;
 
 	// # OF TIMES THE GAME HAS BEEN BEATEN
-	UINT32 timesBeaten;
+	uint32_t timesBeaten;
 
 	// PLAY TIME
-	UINT32 totalplaytime;
-	UINT32 totalnetgametime;
-	UINT32 timeattackingtotaltime;
-	UINT32 spbattackingtotaltime;
-	UINT32 modeplaytime[GDGT_MAX];
-	UINT32 totalmenutime;
-	UINT32 totaltimestaringatstatistics;
-	UINT32 roundsplayed[GDGT_MAX];
-	UINT32 totalrings;
-	UINT32 totaltumbletime;
+	uint32_t totalplaytime;
+	uint32_t totalnetgametime;
+	uint32_t timeattackingtotaltime;
+	uint32_t spbattackingtotaltime;
+	uint32_t modeplaytime[GDGT_MAX];
+	uint32_t totalmenutime;
+	uint32_t totaltimestaringatstatistics;
+	uint32_t roundsplayed[GDGT_MAX];
+	uint32_t totalrings;
+	uint32_t totaltumbletime;
 
 	// CHAO KEYS AND THEIR GENERATION
-	UINT32 pendingkeyrounds;
-	UINT8 pendingkeyroundoffset;
-	UINT16 keyspending;
-	UINT16 chaokeys;
+	uint32_t pendingkeyrounds;
+	uint8_t pendingkeyroundoffset;
+	uint16_t keyspending;
+	uint16_t chaokeys;
 
 	// EMERALD REMAPPING
 	cupheader_t *sealedswaps[GDMAX_SEALEDSWAPS];
@@ -400,7 +400,7 @@ struct gamedata_t
 	dboolean playgroundroute;
 	gdmusic_t musicstate;
 
-	UINT8 gonerlevel;
+	uint8_t gonerlevel;
 
 	// BACKWARDS COMPAT ASSIST
 	dboolean importprofilewins;
@@ -415,7 +415,7 @@ extern conditionset_t conditionSets[MAXCONDITIONSETS];
 extern emblem_t emblemlocations[MAXEMBLEMS];
 extern unlockable_t unlockables[MAXUNLOCKABLES];
 
-extern INT32 numemblems;
+extern int32_t numemblems;
 
 void M_NewGameDataStruct(void);
 
@@ -425,8 +425,8 @@ void M_SanitiseChallengeGrid(void);
 
 struct challengegridextradata_t
 {
-	UINT8 flags;
-	UINT8 flip;
+	uint8_t flags;
+	uint8_t flip;
 };
 
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata);
@@ -438,71 +438,71 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata);
 #define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
 #define CHE_ALLCLEAR      (1<<3)
 
-char *M_BuildConditionSetString(UINT16 unlockid);
+char *M_BuildConditionSetString(uint16_t unlockid);
 #define DESCRIPTIONWIDTH 170
 
 // Condition set setup
-void M_AddRawCondition(UINT16 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar);
+void M_AddRawCondition(uint16_t set, uint8_t id, conditiontype_t c, int32_t r, int16_t x1, int16_t x2, char *stringvar);
 void M_UpdateConditionSetsPending(void);
 
 // Gamedata clear/init
-void M_ClearConditionSet(UINT16 set);
+void M_ClearConditionSet(uint16_t set);
 void M_ClearSecrets(void);
 void M_ClearStats(void);
 void M_FinaliseGameData(void);
 void M_SetNetUnlocked(void);
 
 dboolean M_NotFreePlay(void);
-UINT16 M_CheckCupEmeralds(UINT8 difficulty);
+uint16_t M_CheckCupEmeralds(uint8_t difficulty);
 
 // Updating conditions and unlockables
 dboolean M_CheckCondition(condition_t *cn, player_t *player);
 dboolean M_UpdateUnlockablesAndExtraEmblems(dboolean loud, dboolean doall);
 
 #define PENDING_CHAOKEYS (UINT16_MAX-1)
-UINT16 M_GetNextAchievedUnlock(dboolean canskipchaokeys);
+uint16_t M_GetNextAchievedUnlock(dboolean canskipchaokeys);
 
 void M_UpdateNextPrisonEggPickup(void);
 
-UINT16 M_CheckLevelEmblems(void);
-UINT16 M_CompletionEmblems(void);
+uint16_t M_CheckLevelEmblems(void);
+uint16_t M_CompletionEmblems(void);
 
-extern UINT16 gamestartchallenge;
+extern uint16_t gamestartchallenge;
 
 // Checking unlockable status
-dboolean M_CheckNetUnlockByID(UINT16 unlockid);
-dboolean M_SecretUnlocked(INT32 type, dboolean local);
+dboolean M_CheckNetUnlockByID(uint16_t unlockid);
+dboolean M_SecretUnlocked(int32_t type, dboolean local);
 dboolean M_GameTrulyStarted(void);
 dboolean M_GameAboutToStart(void);
 dboolean M_CupLocked(cupheader_t *cup);
 dboolean M_CupSecondRowLocked(void);
-dboolean M_MapLocked(UINT16 mapnum);
-INT32 M_CountMedals(dboolean all, dboolean extraonly);
+dboolean M_MapLocked(uint16_t mapnum);
+int32_t M_CountMedals(dboolean all, dboolean extraonly);
 
 // Emblem shit
-emblem_t *M_GetLevelEmblems(INT32 mapnum);
+emblem_t *M_GetLevelEmblems(int32_t mapnum);
 skincolornum_t M_GetEmblemColor(emblem_t *em);
 const char *M_GetEmblemPatch(emblem_t *em, dboolean big);
 
 // If you're looking to compare stats for unlocks or what not, use these
 // They stop checking upon reaching the target number so they
 // should be (theoretically?) slightly faster.
-dboolean M_GotEnoughMedals(INT32 number);
-dboolean M_GotLowEnoughTime(INT32 tictime);
+dboolean M_GotEnoughMedals(int32_t number);
+dboolean M_GotLowEnoughTime(int32_t tictime);
 
-INT32 M_UnlockableSkinNum(unlockable_t *unlock);
-INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
-INT32 M_UnlockableColorNum(unlockable_t *unlock);
+int32_t M_UnlockableSkinNum(unlockable_t *unlock);
+int32_t M_UnlockableFollowerNum(unlockable_t *unlock);
+int32_t M_UnlockableColorNum(unlockable_t *unlock);
 cupheader_t *M_UnlockableCup(unlockable_t *unlock);
-UINT16 M_UnlockableMapNum(unlockable_t *unlock);
+uint16_t M_UnlockableMapNum(unlockable_t *unlock);
 
-INT32 M_EmblemSkinNum(emblem_t *emblem);
-UINT16 M_EmblemMapNum(emblem_t *emblem);
+int32_t M_EmblemSkinNum(emblem_t *emblem);
+uint16_t M_EmblemMapNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])
 
 dboolean M_UseAlternateTitleScreen(void);
-INT32 M_GameDataGameType(INT32 gametype, dboolean battleprisons);
+int32_t M_GameDataGameType(int32_t gametype, dboolean battleprisons);
 
 #ifdef __cplusplus
 } // extern "C"

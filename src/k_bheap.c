@@ -363,11 +363,11 @@ dboolean K_BHeapValid(bheap_t *const heap)
 }
 
 /*--------------------------------------------------
-	dboolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback)
+	dboolean K_BHeapPush(bheap_t *const heap, void *const item, uint32_t value, updateindexfunc changeindexcallback)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean K_BHeapPush(bheap_t *const heap, void *const item, UINT32 value, updateindexfunc changeindexcallback)
+dboolean K_BHeapPush(bheap_t *const heap, void *const item, uint32_t value, updateindexfunc changeindexcallback)
 {
 	dboolean pushsuccess = false;
 	if (heap == NULL)
@@ -482,11 +482,11 @@ dboolean K_BHeapPop(bheap_t *const heap, bheapitem_t *const returnitemstorage)
 }
 
 /*--------------------------------------------------
-	dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+	dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const uint32_t newvalue)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const UINT32 newvalue)
+dboolean K_UpdateBHeapItemValue(bheapitem_t *const item, const uint32_t newvalue)
 {
 	dboolean updatevaluesuccess = false;
 	if (item == NULL)

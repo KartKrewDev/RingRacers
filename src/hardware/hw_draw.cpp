@@ -46,24 +46,24 @@
 #endif
 typedef struct
 {
-	UINT8 id_field_length ; // 1
-	UINT8 color_map_type  ; // 2
-	UINT8 image_type      ; // 3
-	UINT8 dummy[5]        ; // 4,  8
-	INT16 x_origin        ; // 9, 10
-	INT16 y_origin        ; //11, 12
-	INT16 width           ; //13, 14
-	INT16 height          ; //15, 16
-	UINT8 image_pix_size  ; //17
-	UINT8 image_descriptor; //18
+	uint8_t id_field_length ; // 1
+	uint8_t color_map_type  ; // 2
+	uint8_t image_type      ; // 3
+	uint8_t dummy[5]        ; // 4,  8
+	int16_t x_origin        ; // 9, 10
+	int16_t y_origin        ; //11, 12
+	int16_t width           ; //13, 14
+	int16_t height          ; //15, 16
+	uint8_t image_pix_size  ; //17
+	uint8_t image_descriptor; //18
 } ATTRPACK TGAHeader; // sizeof is 18
 #if defined(_MSC_VER)
 #pragma pack()
 #endif
 
-static UINT8 softwaretranstogl[11]    = {  0, 25, 51, 76,102,127,153,178,204,229,255};
-static UINT8 softwaretranstogl_hi[11] = {  0, 51,102,153,204,255,255,255,255,255,255};
-static UINT8 softwaretranstogl_lo[11] = {  0, 12, 24, 36, 48, 60, 71, 83, 95,111,127};
+static uint8_t softwaretranstogl[11]    = {  0, 25, 51, 76,102,127,153,178,204,229,255};
+static uint8_t softwaretranstogl_hi[11] = {  0, 51,102,153,204,255,255,255,255,255,255};
+static uint8_t softwaretranstogl_lo[11] = {  0, 12, 24, 36, 48, 60, 71, 83, 95,111,127};
 
 //
 // -----------------+
@@ -71,7 +71,7 @@ static UINT8 softwaretranstogl_lo[11] = {  0, 12, 24, 36, 48, 60, 71, 83, 95,111
 // Notes            : x,y : positions relative to the original Doom resolution
 //                  : textes(console+score) + menus + status bar
 // -----------------+
-void HWR_DrawPatch(patch_t *gpatch, INT32 x, INT32 y, INT32 option)
+void HWR_DrawPatch(patch_t *gpatch, int32_t x, int32_t y, int32_t option)
 {
 	FOutVector v[4];
 	FBITFIELD flags;
@@ -131,13 +131,13 @@ void HWR_DrawPatch(patch_t *gpatch, INT32 x, INT32 y, INT32 option)
 	HWD.pfnDrawPolygon(NULL, v, 4, flags);
 }
 
-void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap)
+void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, int32_t option, const uint8_t *colormap)
 {
 	FOutVector v[4];
 	FBITFIELD flags;
 	float cx = FIXED_TO_FLOAT(x);
 	float cy = FIXED_TO_FLOAT(y);
-	UINT32 alphalevel, blendmode;
+	uint32_t alphalevel, blendmode;
 	GLPatch_t *hwrPatch;
 
 //  3--2
@@ -210,9 +210,9 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 
 		if (!(option & V_SCALEPATCHMASK))
 		{
-			INT32 intx, inty;
-			intx = (INT32)cx;
-			inty = (INT32)cy;
+			int32_t intx, inty;
+			intx = (int32_t)cx;
+			inty = (int32_t)cy;
 			V_AdjustXYWithSnap(&intx, &inty, option, dupx, dupy);
 			cx = (float)intx;
 			cy = (float)inty;
@@ -344,13 +344,13 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 		HWD.pfnDrawPolygon(NULL, v, 4, flags|PF_Translucent);
 }
 
-void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
+void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, int32_t option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
 {
 	FOutVector v[4];
 	FBITFIELD flags;
 	float cx = FIXED_TO_FLOAT(x);
 	float cy = FIXED_TO_FLOAT(y);
-	UINT32 alphalevel, blendmode;
+	uint32_t alphalevel, blendmode;
 	GLPatch_t *hwrPatch;
 
 //  3--2
@@ -500,7 +500,7 @@ void HWR_DrawCroppedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 		HWD.pfnDrawPolygon(NULL, v, 4, flags|PF_Translucent);
 }
 
-void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)
+void HWR_DrawPic(int32_t x, int32_t y, lumpnum_t lumpnum)
 {
 	FOutVector      v[4];
 	const patch_t    *patch;
@@ -543,13 +543,13 @@ void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)
 // --------------------------------------------------------------------------
 // Fills a box of pixels using a flat texture as a pattern
 // --------------------------------------------------------------------------
-void HWR_DrawFlatFill (INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum)
+void HWR_DrawFlatFill (int32_t x, int32_t y, int32_t w, int32_t h, lumpnum_t flatlumpnum)
 {
 	const size_t len = W_LumpLength(flatlumpnum);
 
 	size_t sflatsize;
 	double dflatsize;
-	INT32 flatflag;
+	int32_t flatflag;
 
 	FOutVector v[4];
 
@@ -594,7 +594,7 @@ void HWR_DrawFlatFill (INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum
 //  | /|
 //  |/ |
 //  0--1
-void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
+void HWR_FadeScreenMenuBack(uint16_t color, uint8_t strength)
 {
 	FOutVector  v[4];
 	FSurfaceInfo Surf;
@@ -626,7 +626,7 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 // -----------------+
 // HWR_DrawFadeFill : draw flat coloured rectangle, with transparency
 // -----------------+
-void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 actualcolor, UINT8 strength)
+void HWR_DrawFadeFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t color, uint16_t actualcolor, uint8_t strength)
 {
 	FOutVector v[4];
 	FSurfaceInfo Surf;
@@ -645,15 +645,15 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 	if (!(color & V_NOSCALESTART))
 	{
 		float dupx = (float)vid.dupx, dupy = (float)vid.dupy;
-		INT32 intx, inty;
+		int32_t intx, inty;
 
 		fx *= dupx;
 		fy *= dupy;
 		fw *= dupx;
 		fh *= dupy;
 
-		intx = (INT32)fx;
-		inty = (INT32)fy;
+		intx = (int32_t)fx;
+		inty = (int32_t)fy;
 		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
@@ -710,7 +710,7 @@ void HWR_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT16 ac
 }
 
 // Draw the console background with translucency support
-void HWR_DrawConsoleBack(UINT32 color, INT32 height)
+void HWR_DrawConsoleBack(uint32_t color, int32_t height)
 {
 	FOutVector  v[4];
 	FSurfaceInfo Surf;
@@ -757,7 +757,7 @@ void HWR_EncoreInvertScreen(void)
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Invert|PF_NoDepthTest);
 }
 
-void HWR_DrawCustomFadeScreen(UINT8 color, UINT8 strength)
+void HWR_DrawCustomFadeScreen(uint8_t color, uint8_t strength)
 {
 	FOutVector v[4];
 	FSurfaceInfo Surf;
@@ -775,7 +775,7 @@ void HWR_DrawCustomFadeScreen(UINT8 color, UINT8 strength)
 
 	Surf.PolyColor.rgba = V_GetColor(color).rgba;
 
-	UINT16 workingstrength = (strength*12);
+	uint16_t workingstrength = (strength*12);
 	if (workingstrength > 0xFF)
 		Surf.PolyColor.s.alpha = 0xFF;
 	else
@@ -785,11 +785,11 @@ void HWR_DrawCustomFadeScreen(UINT8 color, UINT8 strength)
 }
 
 // Very similar to HWR_DrawConsoleBack, except we draw from the middle(-ish) of the screen to the bottom.
-void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight)
+void HWR_DrawTutorialBack(uint32_t color, int32_t boxheight)
 {
 	FOutVector  v[4];
 	FSurfaceInfo Surf;
-	INT32 height;
+	int32_t height;
 	if (boxheight < 0)
 		height = -boxheight;
 	else
@@ -826,12 +826,12 @@ void HWR_DrawTutorialBack(UINT32 color, INT32 boxheight)
 // 'clearlines' is useful to clear the heads up messages, when the view
 // window is reduced, it doesn't refresh all the view borders.
 // ------------------
-void HWR_DrawViewBorder(INT32 clearlines)
+void HWR_DrawViewBorder(int32_t clearlines)
 {
-	INT32 x, y;
-	INT32 top, side;
-	INT32 baseviewwidth, baseviewheight;
-	INT32 basewindowx, basewindowy;
+	int32_t x, y;
+	int32_t top, side;
+	int32_t baseviewwidth, baseviewheight;
+	int32_t basewindowx, basewindowy;
 	patch_t *patch;
 
 //    if (gl_viewwidth == vid.width)
@@ -953,7 +953,7 @@ void HWR_DrawViewBorder(INT32 clearlines)
 // HWR_drawAMline   : draw a line of the automap (the clipping is already done in automap code)
 // Arg              : color is a RGB 888 value
 // -----------------+
-void HWR_drawAMline(const fline_t *fl, INT32 color)
+void HWR_drawAMline(const fline_t *fl, int32_t color)
 {
 	F2DCoord v1, v2;
 	RGBA_t color_rgba;
@@ -972,7 +972,7 @@ void HWR_drawAMline(const fline_t *fl, INT32 color)
 // -----------------+
 // HWR_DrawDiag     : draw flat coloured rectangle, with no texture
 // -----------------+
-void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color)
+void HWR_DrawDiag(int32_t x, int32_t y, int32_t wh, int32_t color)
 {
 	FOutVector v[4];
 	FSurfaceInfo Surf;
@@ -993,15 +993,15 @@ void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color)
 	if (!(color & V_NOSCALESTART))
 	{
 		float dupx = (float)vid.dupx, dupy = (float)vid.dupy;
-		INT32 intx, inty;
+		int32_t intx, inty;
 
 		fx *= dupx;
 		fy *= dupy;
 		fw *= dupx;
 		fh *= dupy;
 
-		intx = (INT32)fx;
-		inty = (INT32)fy;
+		intx = (int32_t)fx;
+		inty = (int32_t)fy;
 		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
@@ -1057,7 +1057,7 @@ void HWR_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 color)
 // -------------------+
 // HWR_DrawConsoleFill     : draw flat coloured transparent rectangle because that's cool, and hw sucks less than sw for that.
 // -------------------+
-void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32 actualcolor)
+void HWR_DrawConsoleFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t color, uint32_t actualcolor)
 {
 	FOutVector v[4];
 	FSurfaceInfo Surf;
@@ -1076,15 +1076,15 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 	if (!(color & V_NOSCALESTART))
 	{
 		float dupx = (float)vid.dupx, dupy = (float)vid.dupy;
-		INT32 intx, inty;
+		int32_t intx, inty;
 
 		fx *= dupx;
 		fy *= dupy;
 		fw *= dupx;
 		fh *= dupy;
 
-		intx = (INT32)fx;
-		inty = (INT32)fy;
+		intx = (int32_t)fx;
+		inty = (int32_t)fy;
 		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
@@ -1136,7 +1136,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 // -----------------+
 // HWR_DrawFill     : draw flat coloured rectangle, with no texture
 // -----------------+
-void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
+void HWR_DrawFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t color)
 {
 	FOutVector v[4];
 	FSurfaceInfo Surf;
@@ -1155,7 +1155,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 	if (!(color & V_NOSCALESTART))
 	{
 		float dupx = (float)vid.dupx, dupy = (float)vid.dupy;
-		INT32 intx, inty;
+		int32_t intx, inty;
 
 		if (x == 0 && y == 0 && w == BASEVIDWIDTH && h == BASEVIDHEIGHT)
 		{
@@ -1174,8 +1174,8 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 		fw *= dupx;
 		fh *= dupy;
 
-		intx = (INT32)fx;
-		inty = (INT32)fy;
+		intx = (int32_t)fx;
+		inty = (int32_t)fy;
 		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
@@ -1251,12 +1251,12 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 // save screenshots with TGA format
 // --------------------------------------------------------------------------
 static inline dboolean saveTGA(const char *file_name, void *buffer,
-	INT32 width, INT32 height)
+	int32_t width, int32_t height)
 {
-	INT32 fd;
+	int32_t fd;
 	TGAHeader tga_hdr;
-	INT32 i;
-	UINT8 *buf8 = buffer;
+	int32_t i;
+	uint8_t *buf8 = buffer;
 
 	fd = open(file_name, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
 	if (fd < 0)
@@ -1277,7 +1277,7 @@ static inline dboolean saveTGA(const char *file_name, void *buffer,
 	// format to 888 BGR
 	for (i = 0; i < width * height * 3; i+=3)
 	{
-		const UINT8 temp = buf8[i];
+		const uint8_t temp = buf8[i];
 		buf8[i] = buf8[i+2];
 		buf8[i+2] = temp;
 	}
@@ -1295,21 +1295,21 @@ static inline dboolean saveTGA(const char *file_name, void *buffer,
 // screen shot
 // --------------------------------------------------------------------------
 
-UINT8 *HWR_GetScreenshot(void)
+uint8_t *HWR_GetScreenshot(void)
 {
-	UINT8 *buf = (UINT8 *)malloc(vid.width * vid.height * 3 * sizeof (*buf));
+	uint8_t *buf = (uint8_t *)malloc(vid.width * vid.height * 3 * sizeof (*buf));
 
 	if (!buf)
 		return NULL;
 	// returns 24bit 888 RGB
-	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (UINT16 *)buf);
+	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (uint16_t *)buf);
 	return buf;
 }
 
 dboolean HWR_Screenshot(const char *pathname)
 {
 	dboolean ret;
-	UINT8 *buf = (UINT8 *)malloc(vid.width * vid.height * 3 * sizeof (*buf));
+	uint8_t *buf = (uint8_t *)malloc(vid.width * vid.height * 3 * sizeof (*buf));
 
 	if (!buf)
 	{
@@ -1318,7 +1318,7 @@ dboolean HWR_Screenshot(const char *pathname)
 	}
 
 	// returns 24bit 888 RGB
-	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (UINT16 *)buf);
+	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (uint16_t *)buf);
 
 #ifdef USE_PNG
 	ret = M_SavePNG(pathname, buf, vid.width, vid.height, NULL);

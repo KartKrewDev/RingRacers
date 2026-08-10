@@ -75,7 +75,7 @@ static colorlookup_t png_colorlookup;
 void *Picture_Convert(
 	pictureformat_t informat, void *picture, pictureformat_t outformat,
 	size_t insize, size_t *outsize,
-	INT32 inwidth, INT32 inheight, INT32 inleftoffset, INT32 intopoffset,
+	int32_t inwidth, int32_t inheight, int32_t inleftoffset, int32_t intopoffset,
 	pictureflags_t flags)
 {
 	if (informat == PICFMT_NONE)
@@ -112,17 +112,17 @@ void *Picture_Convert(
 void *Picture_PatchConvert(
 	pictureformat_t informat, void *picture, pictureformat_t outformat,
 	size_t insize, size_t *outsize,
-	INT16 inwidth, INT16 inheight, INT16 inleftoffset, INT16 intopoffset,
+	int16_t inwidth, int16_t inheight, int16_t inleftoffset, int16_t intopoffset,
 	pictureflags_t flags)
 {
-	INT16 x, y;
-	UINT8 *img;
-	UINT8 *imgbuf;
-	UINT8 *imgptr;
-	UINT8 *colpointers, *startofspan;
+	int16_t x, y;
+	uint8_t *img;
+	uint8_t *imgbuf;
+	uint8_t *imgptr;
+	uint8_t *colpointers, *startofspan;
 	size_t size = 0;
 	patch_t *inpatch = NULL;
-	INT32 inbpp = Picture_FormatBPP(informat);
+	int32_t inbpp = Picture_FormatBPP(informat);
 
 	(void)insize; // ignore
 
@@ -206,13 +206,13 @@ void *Picture_PatchConvert(
 				switch (informat)
 				{
 					case PICFMT_FLAT32:
-						input = (UINT32 *)picture + offs;
+						input = (uint32_t *)picture + offs;
 						break;
 					case PICFMT_FLAT16:
-						input = (UINT16 *)picture + offs;
+						input = (uint16_t *)picture + offs;
 						break;
 					case PICFMT_FLAT:
-						input = (UINT8 *)picture + offs;
+						input = (uint8_t *)picture + offs;
 						break;
 					default:
 						I_Error("Picture_PatchConvert: unsupported flat input format!");
@@ -225,7 +225,7 @@ void *Picture_PatchConvert(
 			// Determine opacity
 			if (input != NULL)
 			{
-				UINT8 alpha = 0xFF;
+				uint8_t alpha = 0xFF;
 				if (inbpp == PICDEPTH_32BPP)
 				{
 					RGBA_t px = *(RGBA_t *)input;
@@ -233,12 +233,12 @@ void *Picture_PatchConvert(
 				}
 				else if (inbpp == PICDEPTH_16BPP)
 				{
-					UINT16 px = *(UINT16 *)input;
+					uint16_t px = *(uint16_t *)input;
 					alpha = (px & 0xFF00) >> 8;
 				}
 				else if (inbpp == PICDEPTH_8BPP)
 				{
-					UINT8 px = *(UINT8 *)input;
+					uint8_t px = *(uint8_t *)input;
 					if (px == TRANSPARENTPIXEL)
 						alpha = 0;
 				}
@@ -307,12 +307,12 @@ void *Picture_PatchConvert(
 					}
 					else if (inbpp == PICDEPTH_16BPP)
 					{
-						RGBA_t out = pMasterPalette[*((UINT16 *)input) & 0xFF];
+						RGBA_t out = pMasterPalette[*((uint16_t *)input) & 0xFF];
 						WRITEUINT32(imgptr, out.rgba);
 					}
 					else // PICFMT_PATCH
 					{
-						RGBA_t out = pMasterPalette[*((UINT8 *)input) & 0xFF];
+						RGBA_t out = pMasterPalette[*((uint8_t *)input) & 0xFF];
 						WRITEUINT32(imgptr, out.rgba);
 					}
 					break;
@@ -322,29 +322,29 @@ void *Picture_PatchConvert(
 					if (inbpp == PICDEPTH_32BPP)
 					{
 						RGBA_t in = *(RGBA_t *)input;
-						UINT8 out = NearestColor(in.s.red, in.s.green, in.s.blue);
+						uint8_t out = NearestColor(in.s.red, in.s.green, in.s.blue);
 						WRITEUINT16(imgptr, (0xFF00 | out));
 					}
 					else if (inbpp == PICDEPTH_16BPP)
-						WRITEUINT16(imgptr, *(UINT16 *)input);
+						WRITEUINT16(imgptr, *(uint16_t *)input);
 					else // PICFMT_PATCH
-						WRITEUINT16(imgptr, (0xFF00 | (*(UINT8 *)input)));
+						WRITEUINT16(imgptr, (0xFF00 | (*(uint8_t *)input)));
 					break;
 				default: // PICFMT_PATCH
 				{
 					if (inbpp == PICDEPTH_32BPP)
 					{
 						RGBA_t in = *(RGBA_t *)input;
-						UINT8 out = NearestColor(in.s.red, in.s.green, in.s.blue);
+						uint8_t out = NearestColor(in.s.red, in.s.green, in.s.blue);
 						WRITEUINT8(imgptr, out);
 					}
 					else if (inbpp == PICDEPTH_16BPP)
 					{
-						UINT16 out = *(UINT16 *)input;
+						uint16_t out = *(uint16_t *)input;
 						WRITEUINT8(imgptr, (out & 0xFF));
 					}
 					else // PICFMT_PATCH
-						WRITEUINT8(imgptr, *(UINT8 *)input);
+						WRITEUINT8(imgptr, *(uint8_t *)input);
 					break;
 				}
 			}
@@ -403,14 +403,14 @@ void *Picture_PatchConvert(
 void *Picture_FlatConvert(
 	pictureformat_t informat, void *picture, pictureformat_t outformat,
 	size_t insize, size_t *outsize,
-	INT16 inwidth, INT16 inheight, INT16 inleftoffset, INT16 intopoffset,
+	int16_t inwidth, int16_t inheight, int16_t inleftoffset, int16_t intopoffset,
 	pictureflags_t flags)
 {
 	void *outflat;
 	patch_t *inpatch = NULL;
-	INT32 inbpp = Picture_FormatBPP(informat);
-	INT32 outbpp = Picture_FormatBPP(outformat);
-	INT32 x, y;
+	int32_t inbpp = Picture_FormatBPP(informat);
+	int32_t outbpp = Picture_FormatBPP(outformat);
+	int32_t x, y;
 	size_t size;
 
 	(void)insize; // ignore
@@ -466,7 +466,7 @@ void *Picture_FlatConvert(
 			if (Picture_IsPatchFormat(informat))
 				input = Picture_GetPatchPixel(inpatch, informat, x, y, flags);
 			else if (Picture_IsFlatFormat(informat))
-				input = (UINT8 *)picture + (offs * (inbpp / 8));
+				input = (uint8_t *)picture + (offs * (inbpp / 8));
 			else
 				I_Error("Picture_FlatConvert: unsupported input format!");
 
@@ -477,7 +477,7 @@ void *Picture_FlatConvert(
 			{
 				case PICFMT_FLAT32:
 				{
-					UINT32 *f32 = (UINT32 *)outflat;
+					uint32_t *f32 = (uint32_t *)outflat;
 					if (inbpp == PICDEPTH_32BPP)
 					{
 						RGBA_t out = *(RGBA_t *)input;
@@ -485,47 +485,47 @@ void *Picture_FlatConvert(
 					}
 					else if (inbpp == PICDEPTH_16BPP)
 					{
-						RGBA_t out = pMasterPalette[*((UINT16 *)input) & 0xFF];
+						RGBA_t out = pMasterPalette[*((uint16_t *)input) & 0xFF];
 						f32[offs] = out.rgba;
 					}
 					else // PICFMT_PATCH
 					{
-						RGBA_t out = pMasterPalette[*((UINT8 *)input) & 0xFF];
+						RGBA_t out = pMasterPalette[*((uint8_t *)input) & 0xFF];
 						f32[offs] = out.rgba;
 					}
 					break;
 				}
 				case PICFMT_FLAT16:
 				{
-					UINT16 *f16 = (UINT16 *)outflat;
+					uint16_t *f16 = (uint16_t *)outflat;
 					if (inbpp == PICDEPTH_32BPP)
 					{
 						RGBA_t in = *(RGBA_t *)input;
-						UINT8 out = NearestColor(in.s.red, in.s.green, in.s.blue);
+						uint8_t out = NearestColor(in.s.red, in.s.green, in.s.blue);
 						f16[offs] = (0xFF00 | out);
 					}
 					else if (inbpp == PICDEPTH_16BPP)
-						f16[offs] = *(UINT16 *)input;
+						f16[offs] = *(uint16_t *)input;
 					else // PICFMT_PATCH
-						f16[offs] = (0xFF00 | *((UINT8 *)input));
+						f16[offs] = (0xFF00 | *((uint8_t *)input));
 					break;
 				}
 				case PICFMT_FLAT:
 				{
-					UINT8 *f8 = (UINT8 *)outflat;
+					uint8_t *f8 = (uint8_t *)outflat;
 					if (inbpp == PICDEPTH_32BPP)
 					{
 						RGBA_t in = *(RGBA_t *)input;
-						UINT8 out = NearestColor(in.s.red, in.s.green, in.s.blue);
+						uint8_t out = NearestColor(in.s.red, in.s.green, in.s.blue);
 						f8[offs] = out;
 					}
 					else if (inbpp == PICDEPTH_16BPP)
 					{
-						UINT16 out = *(UINT16 *)input;
+						uint16_t out = *(uint16_t *)input;
 						f8[offs] = (out & 0xFF);
 					}
 					else // PICFMT_PATCH
-						f8[offs] = *(UINT8 *)input;
+						f8[offs] = *(uint8_t *)input;
 					break;
 				}
 				default:
@@ -547,15 +547,15 @@ void *Picture_FlatConvert(
   */
 void *Picture_GetPatchPixel(
 	patch_t *patch, pictureformat_t informat,
-	INT32 x, INT32 y,
+	int32_t x, int32_t y,
 	pictureflags_t flags)
 {
 	fixed_t ofs;
 	column_t *column;
-	INT32 inbpp = Picture_FormatBPP(informat);
+	int32_t inbpp = Picture_FormatBPP(informat);
 	softwarepatch_t *doompatch = (softwarepatch_t *)patch;
 	dboolean isdoompatch = Picture_IsDoomPatchFormat(informat);
-	INT16 width;
+	int16_t width;
 
 	if (patch == NULL)
 		I_Error("Picture_GetPatchPixel: patch == NULL");
@@ -564,21 +564,21 @@ void *Picture_GetPatchPixel(
 
 	if (x >= 0 && x < width)
 	{
-		INT32 colx = (flags & PICFLAGS_XFLIP) ? (width-1)-x : x;
-		INT32 topdelta, prevdelta = -1;
-		INT32 colofs = (isdoompatch ? LSBF_LONG(doompatch->columnofs[colx]) : patch->columnofs[colx]);
+		int32_t colx = (flags & PICFLAGS_XFLIP) ? (width-1)-x : x;
+		int32_t topdelta, prevdelta = -1;
+		int32_t colofs = (isdoompatch ? LSBF_LONG(doompatch->columnofs[colx]) : patch->columnofs[colx]);
 
 		// Column offsets are pointers, so no casting is required.
 		if (isdoompatch)
-			column = (column_t *)((UINT8 *)doompatch + colofs);
+			column = (column_t *)((uint8_t *)doompatch + colofs);
 		else
-			column = (column_t *)((UINT8 *)patch->columns + colofs);
+			column = (column_t *)((uint8_t *)patch->columns + colofs);
 
 		while (column->topdelta != 0xff)
 		{
-			UINT8 *s8 = NULL;
-			UINT16 *s16 = NULL;
-			UINT32 *s32 = NULL;
+			uint8_t *s8 = NULL;
+			uint16_t *s16 = NULL;
+			uint32_t *s32 = NULL;
 
 			topdelta = column->topdelta;
 			if (topdelta <= prevdelta)
@@ -589,14 +589,14 @@ void *Picture_GetPatchPixel(
 
 			if (y >= topdelta && ofs < column->length)
 			{
-				s8 = (UINT8 *)(column) + 3;
+				s8 = (uint8_t *)(column) + 3;
 				switch (inbpp)
 				{
 					case PICDEPTH_32BPP:
-						s32 = (UINT32 *)s8;
+						s32 = (uint32_t *)s8;
 						return &s32[ofs];
 					case PICDEPTH_16BPP:
-						s16 = (UINT16 *)s8;
+						s16 = (uint16_t *)s8;
 						return &s16[ofs];
 					default: // PICDEPTH_8BPP
 						return &s8[ofs];
@@ -604,12 +604,12 @@ void *Picture_GetPatchPixel(
 			}
 
 			if (inbpp == PICDEPTH_32BPP)
-				column = (column_t *)((UINT32 *)column + column->length);
+				column = (column_t *)((uint32_t *)column + column->length);
 			else if (inbpp == PICDEPTH_16BPP)
-				column = (column_t *)((UINT16 *)column + column->length);
+				column = (column_t *)((uint16_t *)column + column->length);
 			else
-				column = (column_t *)((UINT8 *)column + column->length);
-			column = (column_t *)((UINT8 *)column + 4);
+				column = (column_t *)((uint8_t *)column + column->length);
+			column = (column_t *)((uint8_t *)column + 4);
 		}
 	}
 
@@ -621,9 +621,9 @@ void *Picture_GetPatchPixel(
   * \param format Input picture format.
   * \return The bits per pixel amount of the picture format.
   */
-INT32 Picture_FormatBPP(pictureformat_t format)
+int32_t Picture_FormatBPP(pictureformat_t format)
 {
-	INT32 bpp = PICDEPTH_NONE;
+	int32_t bpp = PICDEPTH_NONE;
 	switch (format)
 	{
 		case PICFMT_PATCH32:
@@ -713,7 +713,7 @@ dboolean Picture_IsFlatFormat(pictureformat_t format)
   */
 dboolean Picture_CheckIfDoomPatch(softwarepatch_t *patch, size_t size)
 {
-	INT16 width, height;
+	int16_t width, height;
 	dboolean result;
 
 	// minimum length of a valid Doom patch
@@ -730,14 +730,14 @@ dboolean Picture_CheckIfDoomPatch(softwarepatch_t *patch, size_t size)
 		// check the column directory for extra security. All columns
 		// must begin after the column directory, and none of them must
 		// point past the end of the patch.
-		INT16 x;
+		int16_t x;
 
 		for (x = 0; x < width; x++)
 		{
-			UINT32 ofs = LSBF_LONG(patch->columnofs[x]);
+			uint32_t ofs = LSBF_LONG(patch->columnofs[x]);
 
 			// Need one byte for an empty column (but there's patches that don't know that!)
-			if (ofs < (UINT32)width * 4 + 8 || ofs >= (UINT32)size)
+			if (ofs < (uint32_t)width * 4 + 8 || ofs >= (uint32_t)size)
 			{
 				result = false;
 				break;
@@ -758,12 +758,12 @@ void *Picture_TextureToFlat(size_t trickytex)
 	texture_t *texture;
 	size_t tex;
 
-	UINT8 *converted;
+	uint8_t *converted;
 	size_t flatsize;
 	fixed_t col, ofs;
 	column_t *column;
-	UINT8 *desttop, *dest, *deststop;
-	UINT8 *source;
+	uint8_t *desttop, *dest, *deststop;
+	uint8_t *source;
 
 	if (trickytex >= (unsigned)numtextures)
 		I_Error("Picture_TextureToFlat: invalid texture number!");
@@ -788,7 +788,7 @@ void *Picture_TextureToFlat(size_t trickytex)
 		if (!texture->holes)
 		{
 			column = (column_t *)(R_GetColumn(tex, col));
-			source = (UINT8 *)(column);
+			source = (uint8_t *)(column);
 			dest = desttop;
 			for (ofs = 0; dest < deststop && ofs < texture->height; ofs++)
 			{
@@ -799,8 +799,8 @@ void *Picture_TextureToFlat(size_t trickytex)
 		}
 		else
 		{
-			INT32 topdelta, prevdelta = -1;
-			column = (column_t *)((UINT8 *)R_GetColumn(tex, col) - 3);
+			int32_t topdelta, prevdelta = -1;
+			column = (column_t *)((uint8_t *)R_GetColumn(tex, col) - 3);
 			while (column->topdelta != 0xff)
 			{
 				topdelta = column->topdelta;
@@ -809,14 +809,14 @@ void *Picture_TextureToFlat(size_t trickytex)
 				prevdelta = topdelta;
 
 				dest = desttop + (topdelta * texture->width);
-				source = (UINT8 *)column + 3;
+				source = (uint8_t *)column + 3;
 				for (ofs = 0; dest < deststop && ofs < column->length; ofs++)
 				{
 					if (source[ofs] != TRANSPARENTPIXEL)
 						*dest = source[ofs];
 					dest += texture->width;
 				}
-				column = (column_t *)((UINT8 *)column + column->length + 4);
+				column = (column_t *)((uint8_t *)column + column->length + 4);
 			}
 		}
 	}
@@ -830,7 +830,7 @@ void *Picture_TextureToFlat(size_t trickytex)
   * \param s The lump size.
   * \return True if the lump is a PNG image.
   */
-dboolean Picture_IsLumpPNG(const UINT8 *d, size_t s)
+dboolean Picture_IsLumpPNG(const uint8_t *d, size_t s)
 {
 	if (s < 67) // http://garethrees.org/2007/11/14/pngcrush/
 		return false;
@@ -848,9 +848,9 @@ typedef PNG_CONST png_byte *png_const_bytep;
 #endif*/
 typedef struct
 {
-	const UINT8 *buffer;
-	UINT32 size;
-	UINT32 position;
+	const uint8_t *buffer;
+	uint32_t size;
+	uint32_t position;
 } png_io_t;
 
 static void PNG_IOReader(png_structp png_ptr, png_bytep data, png_size_t length)
@@ -900,8 +900,8 @@ static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 static png_byte grAb_chunk[5] = {'g', 'r', 'A', 'b', (png_byte)'\0'};
 
 static png_bytep *PNG_Read(
-	const UINT8 *png,
-	INT32 *w, INT32 *h, INT16 *topoffset, INT16 *leftoffset,
+	const uint8_t *png,
+	int32_t *w, int32_t *h, int16_t *topoffset, int16_t *leftoffset,
 	dboolean *use_palette, size_t size)
 {
 	png_structp png_ptr;
@@ -989,7 +989,7 @@ static png_bytep *PNG_Read(
 			if (palette_size == 256 && pMasterPalette)
 			{
 				png_colorp pal = palette;
-				INT32 i;
+				int32_t i;
 
 				usepal = true;
 
@@ -1012,7 +1012,7 @@ static png_bytep *PNG_Read(
 		{
 			if (png_get_tRNS(png_ptr, png_info_ptr, &trans, &trans_num, &trans_values) == PNG_INFO_tRNS)
 			{
-				INT32 i;
+				int32_t i;
 				for (i = 0; i < trans_num; i++)
 				{
 					// libpng will transform this image into RGBA even if
@@ -1055,22 +1055,22 @@ static png_bytep *PNG_Read(
 	// Read grAB chunk
 	if ((topoffset || leftoffset) && (chunk.data != NULL))
 	{
-		INT32 *offsets = (INT32 *)chunk.data;
+		int32_t *offsets = (int32_t *)chunk.data;
 		// read left offset
 		if (leftoffset != NULL)
-			*leftoffset = (INT16)BIGENDIAN_LONG(*offsets);
+			*leftoffset = (int16_t)BIGENDIAN_LONG(*offsets);
 		offsets++;
 		// read top offset
 		if (topoffset != NULL)
-			*topoffset = (INT16)BIGENDIAN_LONG(*offsets);
+			*topoffset = (int16_t)BIGENDIAN_LONG(*offsets);
 	}
 
 	png_destroy_read_struct(&png_ptr, &png_info_ptr, NULL);
 	if (chunk.data)
 		Z_Free(chunk.data);
 
-	*w = (INT32)width;
-	*h = (INT32)height;
+	*w = (int32_t)width;
+	*h = (int32_t)height;
 
 	return row_pointers;
 }
@@ -1089,14 +1089,14 @@ static png_bytep *PNG_Read(
   * \return A pointer to the converted picture.
   */
 void *Picture_PNGConvert(
-	const UINT8 *png, pictureformat_t outformat,
-	INT32 *w, INT32 *h,
-	INT16 *topoffset, INT16 *leftoffset,
+	const uint8_t *png, pictureformat_t outformat,
+	int32_t *w, int32_t *h,
+	int16_t *topoffset, int16_t *leftoffset,
 	size_t insize, size_t *outsize,
 	pictureflags_t flags)
 {
 	void *flat;
-	INT32 outbpp;
+	int32_t outbpp;
 	size_t flatsize;
 	png_uint_32 x, y;
 	png_bytep row;
@@ -1104,8 +1104,8 @@ void *Picture_PNGConvert(
 	png_bytep *row_pointers = NULL;
 	png_uint_32 width, height;
 
-	INT32 pngwidth, pngheight;
-	INT16 loffs = 0, toffs = 0;
+	int32_t pngwidth, pngheight;
+	int16_t loffs = 0, toffs = 0;
 
 	if (png == NULL)
 		I_Error("Picture_PNGConvert: picture was NULL!");
@@ -1161,7 +1161,7 @@ void *Picture_PNGConvert(
 	if (outbpp == PICDEPTH_32BPP)
 	{
 		RGBA_t out;
-		UINT32 *outflat = (UINT32 *)flat;
+		uint32_t *outflat = (uint32_t *)flat;
 
 		if (palette)
 		{
@@ -1183,12 +1183,12 @@ void *Picture_PNGConvert(
 				for (x = 0; x < width; x++)
 				{
 					png_bytep px = &(row[x * 4]);
-					if ((UINT8)px[3])
+					if ((uint8_t)px[3])
 					{
-						out.s.red = (UINT8)px[0];
-						out.s.green = (UINT8)px[1];
-						out.s.blue = (UINT8)px[2];
-						out.s.alpha = (UINT8)px[3];
+						out.s.red = (uint8_t)px[0];
+						out.s.green = (uint8_t)px[1];
+						out.s.blue = (uint8_t)px[2];
+						out.s.alpha = (uint8_t)px[3];
 						outflat[((y * width) + x)] = out.rgba;
 					}
 					else
@@ -1199,7 +1199,7 @@ void *Picture_PNGConvert(
 	}
 	else if (outbpp == PICDEPTH_16BPP)
 	{
-		UINT16 *outflat = (UINT16 *)flat;
+		uint16_t *outflat = (uint16_t *)flat;
 
 		if (palette)
 		{
@@ -1218,17 +1218,17 @@ void *Picture_PNGConvert(
 				for (x = 0; x < width; x++)
 				{
 					png_bytep px = &(row[x * 4]);
-					UINT8 red = (UINT8)px[0];
-					UINT8 green = (UINT8)px[1];
-					UINT8 blue = (UINT8)px[2];
-					UINT8 alpha = (UINT8)px[3];
+					uint8_t red = (uint8_t)px[0];
+					uint8_t green = (uint8_t)px[1];
+					uint8_t blue = (uint8_t)px[2];
+					uint8_t alpha = (uint8_t)px[3];
 
 					if (alpha)
 					{
 #ifdef PICTURE_PNG_USELOOKUP
-						UINT8 palidx = GetColorLUT(&png_colorlookup, red, green, blue);
+						uint8_t palidx = GetColorLUT(&png_colorlookup, red, green, blue);
 #else
-						UINT8 palidx = NearestColor(red, green, blue);
+						uint8_t palidx = NearestColor(red, green, blue);
 #endif
 						outflat[((y * width) + x)] = (0xFF << 8) | palidx;
 					}
@@ -1240,7 +1240,7 @@ void *Picture_PNGConvert(
 	}
 	else // 8bpp
 	{
-		UINT8 *outflat = (UINT8 *)flat;
+		uint8_t *outflat = (uint8_t *)flat;
 
 		if (palette)
 		{
@@ -1259,17 +1259,17 @@ void *Picture_PNGConvert(
 				for (x = 0; x < width; x++)
 				{
 					png_bytep px = &(row[x * 4]);
-					UINT8 red = (UINT8)px[0];
-					UINT8 green = (UINT8)px[1];
-					UINT8 blue = (UINT8)px[2];
-					UINT8 alpha = (UINT8)px[3];
+					uint8_t red = (uint8_t)px[0];
+					uint8_t green = (uint8_t)px[1];
+					uint8_t blue = (uint8_t)px[2];
+					uint8_t alpha = (uint8_t)px[3];
 
 					if (alpha)
 					{
 #ifdef PICTURE_PNG_USELOOKUP
-						UINT8 palidx = GetColorLUT(&png_colorlookup, red, green, blue);
+						uint8_t palidx = GetColorLUT(&png_colorlookup, red, green, blue);
 #else
-						UINT8 palidx = NearestColor(red, green, blue);
+						uint8_t palidx = NearestColor(red, green, blue);
 #endif
 						outflat[((y * width) + x)] = palidx;
 					}
@@ -1304,7 +1304,7 @@ void *Picture_PNGConvert(
 		}
 
 		// Now, convert it!
-		converted = Picture_PatchConvert(informat, flat, outformat, insize, outsize, (INT16)width, (INT16)height, *leftoffset, *topoffset, flags);
+		converted = Picture_PatchConvert(informat, flat, outformat, insize, outsize, (int16_t)width, (int16_t)height, *leftoffset, *topoffset, flags);
 		Z_Free(flat);
 		return converted;
 	}
@@ -1323,7 +1323,7 @@ void *Picture_PNGConvert(
   * \param size The input picture's size.
   * \return True if reading the file succeeded, false if it failed.
   */
-dboolean Picture_PNGDimensions(UINT8 *png, INT32 *width, INT32 *height, INT16 *topoffset, INT16 *leftoffset, size_t size)
+dboolean Picture_PNGDimensions(uint8_t *png, int32_t *width, int32_t *height, int16_t *topoffset, int16_t *leftoffset, size_t size)
 {
 	png_structp png_ptr;
 	png_infop png_info_ptr;
@@ -1384,22 +1384,22 @@ dboolean Picture_PNGDimensions(UINT8 *png, INT32 *width, INT32 *height, INT16 *t
 	// Read grAB chunk
 	if ((topoffset || leftoffset) && (chunk.data != NULL))
 	{
-		INT32 *offsets = (INT32 *)chunk.data;
+		int32_t *offsets = (int32_t *)chunk.data;
 		// read left offset
 		if (leftoffset != NULL)
-			*leftoffset = (INT16)BIGENDIAN_LONG(*offsets);
+			*leftoffset = (int16_t)BIGENDIAN_LONG(*offsets);
 		offsets++;
 		// read top offset
 		if (topoffset != NULL)
-			*topoffset = (INT16)BIGENDIAN_LONG(*offsets);
+			*topoffset = (int16_t)BIGENDIAN_LONG(*offsets);
 	}
 
 	png_destroy_read_struct(&png_ptr, &png_info_ptr, NULL);
 	if (chunk.data)
 		Z_Free(chunk.data);
 
-	*width = (INT32)w;
-	*height = (INT32)h;
+	*width = (int32_t)w;
+	*height = (int32_t)h;
 	return true;
 }
 #endif
@@ -1411,8 +1411,8 @@ struct ParseSpriteInfoState {
 	spritenum_t sprnum;
 	playersprite_t spr2num;
 	dboolean any;
-	INT32 skinnumbers[MAXSKINS];
-	INT32 foundskins;
+	int32_t skinnumbers[MAXSKINS];
+	int32_t foundskins;
 };
 
 #define PARSER_FRAME (false)
@@ -1423,7 +1423,7 @@ static void R_ParseSpriteInfoSkin(struct ParseSpriteInfoState *parser)
 	char *sprinfoToken;
 	size_t sprinfoTokenLength;
 
-	INT32 skinnum;
+	int32_t skinnum;
 	char *skinName = NULL;
 
 	// Skin name
@@ -1457,7 +1457,7 @@ static void R_ParseSpriteInfoSkin(struct ParseSpriteInfoState *parser)
 	Z_Free(sprinfoToken);
 }
 
-static void copy_to_skin (struct ParseSpriteInfoState *parser, INT32 skinnum)
+static void copy_to_skin (struct ParseSpriteInfoState *parser, int32_t skinnum)
 {
 	skin_t *skin = skins[skinnum];
 	spriteinfo_t *sprinfo = skin->sprinfo;
@@ -1482,9 +1482,9 @@ static dboolean R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, dboo
 	char *sprinfoToken;
 	size_t sprinfoTokenLength;
 	char *frameChar = NULL;
-	UINT8 frameFrame = 0xFF;
-	INT16 frameXPivot = INT16_MIN;
-	INT16 frameYPivot = INT16_MIN;
+	uint8_t frameFrame = 0xFF;
+	int16_t frameXPivot = INT16_MIN;
+	int16_t frameYPivot = INT16_MIN;
 	rotaxis_t frameRotAxis = 0;
 	char *bright = NULL;
 
@@ -1590,7 +1590,7 @@ static dboolean R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, dboo
 
 	if (parser->spr2)
 	{
-		INT32 i;
+		int32_t i;
 
 		if (!parser->foundskins)
 		{
@@ -1653,7 +1653,7 @@ static dboolean R_ParseSpriteInfo(dboolean spr2)
 		.foundskins = 0,
 	};
 
-	INT32 i;
+	int32_t i;
 
 	// Sprite name
 	sprinfoToken = M_GetToken(NULL);
@@ -1810,7 +1810,7 @@ static dboolean R_ParseSpriteInfo(dboolean spr2)
 //
 // Read a SPRTINFO lump.
 //
-void R_ParseSPRTINFOLump(UINT16 wadNum, UINT16 lumpNum)
+void R_ParseSPRTINFOLump(uint16_t wadNum, uint16_t lumpNum)
 {
 	char *sprinfoLump;
 	size_t sprinfoLumpLength;
@@ -1861,10 +1861,10 @@ void R_ParseSPRTINFOLump(UINT16 wadNum, UINT16 lumpNum)
 //
 // Load and read every SPRTINFO lump from the specified file.
 //
-void R_LoadSpriteInfoLumps(UINT16 wadnum, UINT16 numlumps)
+void R_LoadSpriteInfoLumps(uint16_t wadnum, uint16_t numlumps)
 {
 	lumpinfo_t *lumpinfo = wadfiles[wadnum]->lumpinfo;
-	UINT16 i;
+	uint16_t i;
 	char *name;
 
 	for (i = 0; i < numlumps; i++, lumpinfo++)

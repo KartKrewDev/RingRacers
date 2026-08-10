@@ -25,10 +25,10 @@ extern "C" {
 typedef void**(*getconnectednodesfunc)(void*, size_t*);
 
 // function pointer for getting the list of connected node costs/distances
-typedef UINT32*(*getnodeconnectioncostsfunc)(void*);
+typedef uint32_t*(*getnodeconnectioncostsfunc)(void*);
 
 // function pointer for getting a heuristic between 2 nodes from their base data
-typedef UINT32(*getnodeheuristicfunc)(void*, void*);
+typedef uint32_t(*getnodeheuristicfunc)(void*, void*);
 
 // function pointer for getting if a node is traversable from its base data
 typedef dboolean(*getnodetraversablefunc)(void*, void*);
@@ -43,15 +43,15 @@ struct pathfindnode_t {
 	size_t heapindex;     // The index in the openset binary heap. Only valid while the node is in the openset.
 	void   *nodedata;
 	pathfindnode_t *camefrom; // should eventually be the most efficient predecessor node
-	UINT32     gscore;    // The accumulated distance from the start to this node
-	UINT32     hscore;    // The heuristic from this node to the goal
+	uint32_t     gscore;    // The accumulated distance from the start to this node
+	uint32_t     hscore;    // The heuristic from this node to the goal
 };
 
 // Contains the final created path after pathfinding is completed
 struct path_t {
 	size_t numnodes;
 	pathfindnode_t *array;
-	UINT32 totaldist;
+	uint32_t totaldist;
 };
 
 // Contains info about the pathfinding used to setup the algorithm
@@ -65,7 +65,7 @@ struct pathfindsetup_t {
 	size_t nodesarraycapacity;
 	void   *startnodedata;
 	void   *endnodedata;
-	UINT32 endgscore;
+	uint32_t endgscore;
 	getconnectednodesfunc getconnectednodes;
 	getnodeconnectioncostsfunc getconnectioncosts;
 	getnodeheuristicfunc getheuristic;

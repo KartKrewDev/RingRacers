@@ -57,29 +57,29 @@ statenum_t get_state(const char *word);
 spritenum_t get_sprite(const char *word);
 playersprite_t get_sprite2(const char *word);
 sfxenum_t get_sfx(const char *word);
-//INT16 get_gametype(const char *word);
+//int16_t get_gametype(const char *word);
 //powertype_t get_power(const char *word);
 skincolornum_t get_skincolor(const char *word);
 
 void readwipes(MYFILE *f);
 void readmaincfg(MYFILE *f, dboolean mainfile);
-void readconditionset(MYFILE *f, UINT16 setnum);
-void readunlockable(MYFILE *f, INT32 num);
-void reademblemdata(MYFILE *f, INT32 num);
-void readsound(MYFILE *f, INT32 num);
-void readframe(MYFILE *f, INT32 num);
-void readhuditem(MYFILE *f, INT32 num);
-void readmenu(MYFILE *f, INT32 num);
-void readtextprompt(MYFILE *f, INT32 num);
-void readcutscene(MYFILE *f, INT32 num);
+void readconditionset(MYFILE *f, uint16_t setnum);
+void readunlockable(MYFILE *f, int32_t num);
+void reademblemdata(MYFILE *f, int32_t num);
+void readsound(MYFILE *f, int32_t num);
+void readframe(MYFILE *f, int32_t num);
+void readhuditem(MYFILE *f, int32_t num);
+void readmenu(MYFILE *f, int32_t num);
+void readtextprompt(MYFILE *f, int32_t num);
+void readcutscene(MYFILE *f, int32_t num);
 void readlevelheader(MYFILE *f, char * name);
 void readgametype(MYFILE *f, char *gtname);
-void readsprite2(MYFILE *f, INT32 num);
+void readsprite2(MYFILE *f, int32_t num);
 #ifdef HWRENDER
-void readlight(MYFILE *f, INT32 num);
+void readlight(MYFILE *f, int32_t num);
 #endif
-void readskincolor(MYFILE *f, INT32 num);
-void readthing(MYFILE *f, INT32 num);
+void readskincolor(MYFILE *f, int32_t num);
+void readthing(MYFILE *f, int32_t num);
 void readfreeslots(MYFILE *f);
 void clear_emblems(void);
 void clear_unlockables(void);
@@ -90,7 +90,7 @@ void readcupheader(MYFILE *f, cupheader_t *cup);
 void readfollower(MYFILE *f);
 void readfollowercategory(MYFILE *f);
 preciptype_t get_precip(const char *word);
-void readweather(MYFILE *f, INT32 num);
+void readweather(MYFILE *f, int32_t num);
 
 #ifdef __cplusplus
 } // extern "C"

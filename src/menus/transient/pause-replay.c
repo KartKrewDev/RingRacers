@@ -23,11 +23,11 @@
 static void M_PlaybackTick(void);
 
 // This is barebones, just toggle director on all screens.
-static void M_PlaybackToggleDirector(INT32 choice)
+static void M_PlaybackToggleDirector(int32_t choice)
 {
 	(void)choice;
 
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i <= r_splitscreen; ++i)
 	{
 		K_ToggleDirector(i, !K_DirectorIsEnabled(i));
@@ -149,7 +149,7 @@ tic_t playback_last_menu_interaction_leveltime = 0;
 
 static void M_PlaybackTick(void)
 {
-	INT16 i;
+	int16_t i;
 
 	if (leveltime - playback_last_menu_interaction_leveltime >= 6*TICRATE)
 		playback_last_menu_interaction_leveltime = leveltime - 6*TICRATE;
@@ -206,7 +206,7 @@ void M_SetPlaybackMenuPointer(void)
 	itemOn = playback_pause;
 }
 
-void M_PlaybackRewind(INT32 choice)
+void M_PlaybackRewind(int32_t choice)
 {
 	const tic_t curleveltime = leveltime;
 
@@ -242,7 +242,7 @@ void M_PlaybackRewind(INT32 choice)
 	}
 }
 
-void M_PlaybackPause(INT32 choice)
+void M_PlaybackPause(int32_t choice)
 {
 	(void)choice;
 
@@ -256,14 +256,14 @@ void M_PlaybackPause(INT32 choice)
 	CV_SetValue(&cv_playbackspeed, 1);
 }
 
-void M_PlaybackFastForward(INT32 choice)
+void M_PlaybackFastForward(int32_t choice)
 {
 	(void)choice;
 
 	CV_SetValue(&cv_playbackspeed, cv_playbackspeed.value == 1 ? 4 : 1);
 }
 
-void M_PlaybackAdvance(INT32 choice)
+void M_PlaybackAdvance(int32_t choice)
 {
 	(void)choice;
 
@@ -272,7 +272,7 @@ void M_PlaybackAdvance(INT32 choice)
 	paused = true;
 }
 
-void M_PlaybackSetViews(INT32 choice)
+void M_PlaybackSetViews(int32_t choice)
 {
 	if (choice > 0)
 	{
@@ -292,13 +292,13 @@ void M_PlaybackSetViews(INT32 choice)
 	}
 }
 
-void M_PlaybackAdjustView(INT32 choice)
+void M_PlaybackAdjustView(int32_t choice)
 {
 	G_AdjustView(itemOn - playback_viewcount, (choice > 0) ? 1 : -1, true);
 }
 
 // this one's rather tricky
-void M_PlaybackToggleFreecam(INT32 choice)
+void M_PlaybackToggleFreecam(int32_t choice)
 {
 	(void)choice;
 	M_ClearMenus(true);
@@ -307,14 +307,14 @@ void M_PlaybackToggleFreecam(INT32 choice)
 	splitscreen = 0;
 	R_ExecuteSetViewSize();
 
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i <= r_splitscreen; ++i)
 	{
 		P_ToggleDemoCamera(i);
 	}
 }
 
-void M_PlaybackQuit(INT32 choice)
+void M_PlaybackQuit(int32_t choice)
 {
 	(void)choice;
 	G_StopDemo();

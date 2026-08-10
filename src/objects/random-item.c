@@ -38,7 +38,7 @@ static player_t *GetItemBoxPlayer(mobj_t *mobj)
 {
 	fixed_t closest = INT32_MAX;
 	player_t *player = NULL;
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -51,7 +51,7 @@ static player_t *GetItemBoxPlayer(mobj_t *mobj)
 		if (P_CanPickupItem(&players[i], PICKUP_ITEMBOX))
 		{
 			// Check for players who can take this pickup, but won't be allowed to (antifarming)
-			UINT8 mytype = (mobj->flags2 & MF2_BOSSDEAD) ? CHEESE_RINGBOX : CHEESE_ITEMBOX;
+			uint8_t mytype = (mobj->flags2 & MF2_BOSSDEAD) ? CHEESE_RINGBOX : CHEESE_ITEMBOX;
 			if (P_IsPickupCheesy(&players[i], mytype))
 				continue;
 
@@ -118,9 +118,9 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	// Fade items in as we cross the first checkpoint, but don't touch their visibility otherwise!
 	if (!((mobj->flags & MF_NOCLIPTHING) || mobj->fuse))
 	{
-		UINT8 maxgrab = 0;
+		uint8_t maxgrab = 0;
 
-		for (UINT8 i = 0; i <= r_splitscreen; i++)
+		for (uint8_t i = 0; i <= r_splitscreen; i++)
 		{
 			maxgrab = max(maxgrab, players[displayplayers[i]].cangrabitems);
 		}
@@ -132,9 +132,9 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 
 		if (maxgrab > 0 && maxgrab <= EARLY_ITEM_FLICKER)
 		{
-			UINT8 maxtranslevel = NUMTRANSMAPS;
+			uint8_t maxtranslevel = NUMTRANSMAPS;
 
-			UINT8 trans = maxgrab;
+			uint8_t trans = maxgrab;
 			if (trans > maxtranslevel)
 				trans = maxtranslevel;
 			trans = NUMTRANSMAPS - trans;

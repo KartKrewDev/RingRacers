@@ -46,7 +46,7 @@ namespace
 struct Spawner : Mobj
 {
 	void thing_args() = delete;
-	INT32 id() const { return this->mobj_t::thing_args[0]; }
+	int32_t id() const { return this->mobj_t::thing_args[0]; }
 
 	void hnext() = delete;
 	Spawner* next() const { return Mobj::hnext<Spawner>(); }
@@ -86,7 +86,7 @@ public:
 	void insert(Spawner* spawner) { list_.push_front(spawner); }
 	void erase(Spawner* spawner) { list_.erase(spawner); }
 
-	Spawner* next(INT32 order) const
+	Spawner* next(int32_t order) const
 	{
 		using T = const Spawner*;
 
@@ -98,7 +98,7 @@ public:
 			: min([](T a, T b) { return a->id() < b->id(); }));
 	}
 
-	INT32 random_id() const
+	int32_t random_id() const
 	{
 		if (list_.empty())
 		{
@@ -177,7 +177,7 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 void Obj_BattleUFODeath(mobj_t *mobj, mobj_t *inflictor)
 {
 	UFO* ufo = static_cast<UFO*>(mobj);
-	const SINT8 flip = P_MobjFlip(ufo);
+	const int8_t flip = P_MobjFlip(ufo);
 	const kartitems_t pwrup = static_cast<kartitems_t>(P_RandomRange(PR_BATTLEUFO, FIRSTPOWERUP, LASTPOWERUP));
 
 	ufo->momz = -(8*mapobjectscale)/2;
@@ -212,7 +212,7 @@ void Obj_BattleUFODeath(mobj_t *mobj, mobj_t *inflictor)
 
 void Obj_SpawnBattleUFOLegs(mobj_t *ufo)
 {
-	INT32 i;
+	int32_t i;
 	angle_t ang = 0;
 	const fixed_t angle_factor = ANGLE_MAX / BATTLEUFO_LEGS;
 
@@ -273,7 +273,7 @@ void Obj_SpawnBattleUFOFromSpawner(void)
 	g_spawners.spawn_ufo();
 }
 
-INT32 Obj_RandomBattleUFOSpawnerID(void)
+int32_t Obj_RandomBattleUFOSpawnerID(void)
 {
 	return g_spawners.random_id();
 }
@@ -283,7 +283,7 @@ void Obj_BattleUFOBeamThink(mobj_t *beam)
 	P_SetObjectMomZ(beam, beam->info->speed, true);
 }
 
-INT32 Obj_BattleUFOSpawnerID(const mobj_t *spawner)
+int32_t Obj_BattleUFOSpawnerID(const mobj_t *spawner)
 {
 	return static_cast<const Spawner*>(spawner)->id();
 }

@@ -114,7 +114,7 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 	// What physical binds should appear as Saturn icons anyway?
 	// (We don't have generic binds for stick/dpad directions, so
 	// using the existing arrow graphics is the best thing here.)
-	static const srb2::HashMap<INT32, char> prettyinputs = {
+	static const srb2::HashMap<int32_t, char> prettyinputs = {
 		{KEY_UPARROW, sb_up},
 		{KEY_DOWNARROW, sb_down},
 		{KEY_LEFTARROW, sb_left},
@@ -177,12 +177,12 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 		else if (auto it = translation.find(code); it != translation.end()) // This represents a gamecontrol, turn into Saturn button or generic button.
 		{
 
-			UINT8 localplayer = R_GetViewNumber();
+			uint8_t localplayer = R_GetViewNumber();
 
 			if (as_.has_value())
 			{
-				UINT8 indexedplayer = as_.value();
-				for (UINT8 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+				uint8_t indexedplayer = as_.value();
+				for (uint8_t i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 				{
 					if (g_localplayers[i] == indexedplayer)
 					{
@@ -199,11 +199,11 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 				if (auto id = inputdefinition.find(it->second & (~0xB0)); id != inputdefinition.end()) // This is a game control, do descriptive input translation!
 				{
 					// Grab our local controls  - if pid set in the call to parse(), use stplyr's controls
-					INT32 bind = G_FindPlayerBindForGameControl(localplayer, id->second);
+					int32_t bind = G_FindPlayerBindForGameControl(localplayer, id->second);
 
 					// EXTRA: descriptiveinput values above 1 translate binds back to Saturn buttons,
 					// with various modes for various fucked up 6bt pads
-					srb2::HashMap<INT32, char> padconfig = {};
+					srb2::HashMap<int32_t, char> padconfig = {};
 					switch (cv_descriptiveinput[localplayer].value)
 					{
 						case 1:
@@ -219,8 +219,8 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 							// true, try to guess their physical layout based on what
 							// they've chosen.
 
-							INT32 leftbumper = G_FindPlayerBindForGameControl(localplayer, gc_l);
-							INT32 rightbumper = G_FindPlayerBindForGameControl(localplayer, gc_r);
+							int32_t leftbumper = G_FindPlayerBindForGameControl(localplayer, gc_l);
+							int32_t rightbumper = G_FindPlayerBindForGameControl(localplayer, gc_r);
 
 							if (leftbumper == nc_lb && rightbumper == nc_lt)
 							{
@@ -292,8 +292,8 @@ Draw::TextElement& Draw::TextElement::parse(std::string_view raw)
 					}
 					else
 					{
-						UINT8 fragment = (it->second & 0xB0);
-						UINT8 code = '\xEE'; // Control code: "toggle boxed drawing"
+						uint8_t fragment = (it->second & 0xB0);
+						uint8_t code = '\xEE'; // Control code: "toggle boxed drawing"
 
 						if (fragment == 0xA0)
 							code = '\xED'; // ... but animated
@@ -344,21 +344,21 @@ void Chain::patch(patch_t* patch) const
 	V_DrawStretchyFixedPatch(FloatToFixed(x_), FloatToFixed(y_), h * scale_, v * scale_, flags_, patch, colormap_);
 }
 
-void Chain::thumbnail(UINT16 mapnum) const
+void Chain::thumbnail(uint16_t mapnum) const
 {
 	const auto _ = Clipper(*this);
 
 	K_DrawMapThumbnail(FloatToFixed(x_), FloatToFixed(y_), FloatToFixed(width_), flags_, mapnum, colormap_);
 }
 
-void Chain::fill(UINT8 color) const
+void Chain::fill(uint8_t color) const
 {
 	const auto _ = Clipper(*this);
 
 	V_DrawFill(x_, y_, width_, height_, color|(flags_ & ~0xFF));
 }
 
-void Chain::string(const char* str, INT32 flags, Font font) const
+void Chain::string(const char* str, int32_t flags, Font font) const
 {
 	if (!str)
 	{
@@ -481,14 +481,14 @@ void Chain::generic_button_(GenericButton type, int ver, std::optional<bool> pre
 	}
 }
 
-void Chain::sticker(patch_t* end_graphic, UINT8 color) const
+void Chain::sticker(patch_t* end_graphic, uint8_t color) const
 {
 	const auto _ = Clipper(*this);
 
-	INT32 x = x_;
-	INT32 y = y_;
-	INT32 width = width_;
-	INT32 flags = flags_ | V_FLIP;
+	int32_t x = x_;
+	int32_t y = y_;
+	int32_t width = width_;
+	int32_t flags = flags_ | V_FLIP;
 
 	auto fill = [&](int x, int width) { V_DrawFill(x, y, width, LSBF_SHORT(end_graphic->height), color | (flags_ & ~0xFF)); };
 
@@ -629,16 +629,16 @@ int Draw::font_to_fontno(Font font)
 	}
 };
 
-INT32 Draw::default_font_flags(Font font)
+int32_t Draw::default_font_flags(Font font)
 {
-	INT32 flags = 0;
+	int32_t flags = 0;
 
 	(void)font;
 
 	return flags;
 };
 
-fixed_t Draw::font_width(Font font, INT32 flags, const char* string)
+fixed_t Draw::font_width(Font font, int32_t flags, const char* string)
 {
 	if (!string)
 	{

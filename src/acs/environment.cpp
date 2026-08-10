@@ -290,7 +290,7 @@ bool Environment::checkTag(ACSVM::Word type, ACSVM::Word tag)
 	{
 		case ACS_TAGTYPE_SECTOR:
 		{
-			INT32 secnum = -1;
+			int32_t secnum = -1;
 
 			TAG_ITER_SECTORS(tag, secnum)
 			{
@@ -356,7 +356,7 @@ ACSVM::Word Environment::callSpecImpl
 	auto info = &static_cast<Thread *>(thread)->info;
 	ACSVM::MapScope *const map = thread->scopeMap;
 
-	INT32 args[NUM_SCRIPT_ARGS] = {0};
+	int32_t args[NUM_SCRIPT_ARGS] = {0};
 
 	char *stringargs[NUM_SCRIPT_STRINGARGS] = {0};
 	auto _ = srb2::finally(

@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-typedef INT16 mtag_t;
+typedef int16_t mtag_t;
 #define MAXTAGS UINT16_MAX
 #define MTAG_GLOBAL -1
 
@@ -29,7 +29,7 @@ typedef INT16 mtag_t;
 struct taglist_t
 {
 	mtag_t* tags;
-	UINT16 count;
+	uint16_t count;
 };
 
 void Tag_Add (taglist_t* list, const mtag_t tag);
@@ -66,7 +66,7 @@ void Taggroup_Remove (taggroup_t *garray[], const mtag_t tag, size_t id);
 size_t Taggroup_Find (const taggroup_t *group, const size_t id);
 size_t Taggroup_Count (const taggroup_t *group);
 
-INT32 Taggroup_Iterate
+int32_t Taggroup_Iterate
 (		taggroup_t *garray[],
 		const size_t max_elements,
 		const mtag_t tag,
@@ -74,12 +74,12 @@ INT32 Taggroup_Iterate
 
 void Taglist_InitGlobalTables(void);
 
-INT32 Tag_Iterate_Sectors (const mtag_t tag, const size_t p);
-INT32 Tag_Iterate_Lines (const mtag_t tag, const size_t p);
-INT32 Tag_Iterate_Things (const mtag_t tag, const size_t p);
+int32_t Tag_Iterate_Sectors (const mtag_t tag, const size_t p);
+int32_t Tag_Iterate_Lines (const mtag_t tag, const size_t p);
+int32_t Tag_Iterate_Things (const mtag_t tag, const size_t p);
 
-INT32 Tag_FindLineSpecial(const INT16 special, const mtag_t tag);
-INT32 P_FindSpecialLineFromTag(INT16 special, INT16 tag, INT32 start);
+int32_t Tag_FindLineSpecial(const int16_t special, const mtag_t tag);
+int32_t P_FindSpecialLineFromTag(int16_t special, int16_t tag, int32_t start);
 
 #define ICNAME2(id) ICNT_##id
 #define ICNAME(id) ICNAME2(id)
@@ -101,7 +101,7 @@ Target variable's name to return the iteration results to.
 EXAMPLE:
 {
 	size_t li;
-	INT32 tag1 = 4;
+	int32_t tag1 = 4;
 
 	...
 

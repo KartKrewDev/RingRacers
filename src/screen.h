@@ -44,33 +44,33 @@ extern "C" {
 // global video state
 struct viddef_t
 {
-	INT32 modenum; // vidmode num indexes videomodes list
+	int32_t modenum; // vidmode num indexes videomodes list
 
-	UINT8 *buffer; // invisible screens buffer
+	uint8_t *buffer; // invisible screens buffer
 	size_t rowbytes; // bytes per scanline of the VIDEO mode
-	INT32 width; // PIXELS per scanline
-	INT32 height;
-	UINT32 realwidth; // real pixel width of window/screen
-	UINT32 realheight; // real pixel height of window/screen
+	int32_t width; // PIXELS per scanline
+	int32_t height;
+	uint32_t realwidth; // real pixel width of window/screen
+	uint32_t realheight; // real pixel height of window/screen
 	union { // don't need numpages for OpenGL, so we can use it for fullscreen/windowed mode
-		INT32 numpages; // always 1, page flipping todo
-		INT32 windowed; // windowed or fullscren mode?
+		int32_t numpages; // always 1, page flipping todo
+		int32_t windowed; // windowed or fullscren mode?
 	} u;
-	INT32 recalc; // if true, recalc vid-based stuff
-	UINT8 *direct; // linear frame buffer, or vga base mem.
-	INT32 dupx, dupy; // scale 1, 2, 3 value for menus & overlays
-	INT32/*fixed_t*/ fdupx, fdupy; // same as dupx, dupy, but exact value when aspect ratio isn't 320/200
-	INT32 bpp; // BYTES per pixel: 1 = 256color, 2 = highcolor
+	int32_t recalc; // if true, recalc vid-based stuff
+	uint8_t *direct; // linear frame buffer, or vga base mem.
+	int32_t dupx, dupy; // scale 1, 2, 3 value for menus & overlays
+	int32_t/*fixed_t*/ fdupx, fdupy; // same as dupx, dupy, but exact value when aspect ratio isn't 320/200
+	int32_t bpp; // BYTES per pixel: 1 = 256color, 2 = highcolor
 
-	INT32 baseratio; // Used to get the correct value for lighting walls
+	int32_t baseratio; // Used to get the correct value for lighting walls
 
 	// for Win32 version
-	UINT8 smalldupx, smalldupy; // factor for a little bit of scaling
-	UINT8 meddupx, meddupy; // factor for moderate, but not full, scaling
+	uint8_t smalldupx, smalldupy; // factor for a little bit of scaling
+	uint8_t meddupx, meddupy; // factor for moderate, but not full, scaling
 #ifdef HWRENDER
-	INT32/*fixed_t*/ fsmalldupx, fsmalldupy;
-	INT32/*fixed_t*/ fmeddupx, fmeddupy;
-	INT32 glstate;
+	int32_t/*fixed_t*/ fsmalldupx, fsmalldupy;
+	int32_t/*fixed_t*/ fmeddupx, fmeddupy;
+	int32_t glstate;
 #endif
 };
 
@@ -85,8 +85,8 @@ enum
 // screen variables
 // ----------------
 extern viddef_t vid;
-extern INT32 setmodeneeded; // mode number to set if needed, or 0
-extern UINT8 setrenderneeded;
+extern int32_t setmodeneeded; // mode number to set if needed, or 0
+extern uint8_t setrenderneeded;
 
 extern double averageFPS;
 
@@ -94,8 +94,8 @@ void SCR_ChangeRenderer(void);
 
 extern CV_PossibleValue_t cv_renderer_t[];
 
-extern INT32 scr_bpp;
-extern UINT8 *scr_borderpatch; // patch used to fill the view borders
+extern int32_t scr_bpp;
+extern uint8_t *scr_borderpatch; // patch used to fill the view borders
 
 extern consvar_t cv_scr_width, cv_scr_height, cv_scr_depth, cv_renderview, cv_renderer, cv_renderhitbox, cv_fullscreen;
 extern consvar_t cv_scr_effect;
@@ -134,7 +134,7 @@ void SCR_SetDefaultMode(void);
 
 void SCR_CalculateFPS(void);
 
-FUNCMATH dboolean SCR_IsAspectCorrect(INT32 width, INT32 height);
+FUNCMATH dboolean SCR_IsAspectCorrect(int32_t width, int32_t height);
 
 // move out to main code for consistency
 void SCR_DisplayTicRate(void);

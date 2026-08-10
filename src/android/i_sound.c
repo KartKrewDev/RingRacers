@@ -10,7 +10,7 @@
 
 #include "../i_sound.h"
 
-UINT8 sound_started = 0;
+uint8_t sound_started = 0;
 
 void *I_GetSfx(sfxinfo_t *sfx)
 {
@@ -36,7 +36,7 @@ void I_ShutdownSound(void){}
 //  SFX I/O
 //
 
-INT32 I_StartSound(sfxenum_t id, INT32 vol, INT32 sep, INT32 pitch, INT32 priority, INT32 channel)
+int32_t I_StartSound(sfxenum_t id, int32_t vol, int32_t sep, int32_t pitch, int32_t priority, int32_t channel)
 {
         (void)id;
         (void)vol;
@@ -47,18 +47,18 @@ INT32 I_StartSound(sfxenum_t id, INT32 vol, INT32 sep, INT32 pitch, INT32 priori
         return -1;
 }
 
-void I_StopSound(INT32 handle)
+void I_StopSound(int32_t handle)
 {
         (void)handle;
 }
 
-INT32 I_SoundIsPlaying(INT32 handle)
+int32_t I_SoundIsPlaying(int32_t handle)
 {
         (void)handle;
         return false;
 }
 
-void I_UpdateSoundParams(INT32 handle, INT32 vol, INT32 sep, INT32 pitch)
+void I_UpdateSoundParams(int32_t handle, int32_t vol, int32_t sep, int32_t pitch)
 {
         (void)handle;
         (void)vol;
@@ -66,7 +66,7 @@ void I_UpdateSoundParams(INT32 handle, INT32 vol, INT32 sep, INT32 pitch)
         (void)pitch;
 }
 
-void I_SetSfxVolume(INT32 volume)
+void I_SetSfxVolume(int32_t volume)
 {
         (void)volume;
 }
@@ -75,8 +75,8 @@ void I_SetSfxVolume(INT32 volume)
 //  MUSIC SYSTEM
 /// ------------------------
 
-UINT8 music_started = 0;
-UINT8 digmusic_started = 0;
+uint8_t music_started = 0;
+uint8_t digmusic_started = 0;
 
 void I_InitMusic(void){}
 
@@ -115,29 +115,29 @@ dboolean I_SetSongSpeed(float speed)
 //  MUSIC SEEKING
 /// ------------------------
 
-UINT32 I_GetSongLength(void)
+uint32_t I_GetSongLength(void)
 {
         return 0;
 }
 
-dboolean I_SetSongLoopPoint(UINT32 looppoint)
+dboolean I_SetSongLoopPoint(uint32_t looppoint)
 {
         (void)looppoint;
         return false;
 }
 
-UINT32 I_GetSongLoopPoint(void)
+uint32_t I_GetSongLoopPoint(void)
 {
 	return 0;
 }
 
-dboolean I_SetSongPosition(UINT32 position)
+dboolean I_SetSongPosition(uint32_t position)
 {
         (void)position;
         return false;
 }
 
-UINT32 I_GetSongPosition(void)
+uint32_t I_GetSongPosition(void)
 {
         return 0;
 }
@@ -146,7 +146,7 @@ UINT32 I_GetSongPosition(void)
 //  MUSIC PLAYBACK
 /// ------------------------
 
-UINT8 midimusic_started = 0;
+uint8_t midimusic_started = 0;
 
 dboolean I_LoadSong(char *data, size_t len)
 {
@@ -182,7 +182,7 @@ void I_ResumeSong(void)
         (void)handle;
 }
 
-void I_SetMusicVolume(INT32 volume)
+void I_SetMusicVolume(int32_t volume)
 {
         (void)volume;
 }
@@ -191,7 +191,7 @@ void I_SetMusicVolume(INT32 volume)
 //  MUSIC FADING
 /// ------------------------
 
-void I_SetInternalMusicVolume(UINT8 volume)
+void I_SetInternalMusicVolume(uint8_t volume)
 {
 	(void)volume;
 }
@@ -200,7 +200,7 @@ void I_StopFadingSong(void)
 {
 }
 
-dboolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void));
+dboolean I_FadeSongFromVolume(uint8_t target_volume, uint8_t source_volume, uint32_t ms, void (*callback)(void));
 {
 	(void)target_volume;
 	(void)source_volume;
@@ -208,20 +208,20 @@ dboolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 m
         return false;
 }
 
-dboolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void));
+dboolean I_FadeSong(uint8_t target_volume, uint32_t ms, void (*callback)(void));
 {
 	(void)target_volume;
 	(void)ms;
 	return false;
 }
 
-dboolean I_FadeOutStopSong(UINT32 ms)
+dboolean I_FadeOutStopSong(uint32_t ms)
 {
         (void)ms;
         return false;
 }
 
-dboolean I_FadeInPlaySong(UINT32 ms, dboolean looping)
+dboolean I_FadeInPlaySong(uint32_t ms, dboolean looping)
 {
         (void)ms;
         (void)looping;

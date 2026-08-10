@@ -42,7 +42,7 @@ static std::vector<stun_callback_t> stun_callbacks;
 #define BIND_REQUEST  0x0001
 #define BIND_RESPONSE 0x0101
 
-static const UINT32 MAGIC_COOKIE = MSBF_LONG (0x2112A442);
+static const uint32_t MAGIC_COOKIE = MSBF_LONG (0x2112A442);
 
 static char transaction_id[12];
 
@@ -54,10 +54,10 @@ static char transaction_id[12];
 
 #define STUN_IPV4 0x01
 
-static SINT8
+static int8_t
 STUN_node (void)
 {
-	SINT8 node;
+	int8_t node;
 
 	char * const colon = strchr(cv_stunserver.zstring, ':');
 
@@ -109,9 +109,9 @@ STUN_bind (stun_callback_t callback)
 {
 	/* 6. STUN Message Structure */
 
-	const UINT16 type = MSBF_SHORT (BIND_REQUEST);
+	const uint16_t type = MSBF_SHORT (BIND_REQUEST);
 
-	const SINT8 node = STUN_node();
+	const int8_t node = STUN_node();
 
 	doomcom->remotenode = node;
 	doomcom->datalength = 20;
@@ -132,8 +132,8 @@ STUN_bind (stun_callback_t callback)
 static size_t
 STUN_xor_mapped_address (const char * const value)
 {
-	const UINT32 xaddr = *(const UINT32 *)&value[4];
-	const UINT32  addr = xaddr ^ MAGIC_COOKIE;
+	const uint32_t xaddr = *(const uint32_t *)&value[4];
+	const uint32_t  addr = xaddr ^ MAGIC_COOKIE;
 
 	for (auto &callback : stun_callbacks)
 	{
@@ -153,8 +153,8 @@ static size_t
 STUN_parse_attribute (const char * const attribute)
 {
 	/* 15. STUN Attributes */
-	const UINT16 type   = MSBF_SHORT (*(const UINT16 *)&attribute[0]);
-	const UINT16 length = MSBF_SHORT (*(const UINT16 *)&attribute[2]);
+	const uint16_t type   = MSBF_SHORT (*(const uint16_t *)&attribute[0]);
+	const uint16_t length = MSBF_SHORT (*(const uint16_t *)&attribute[2]);
 
 	/* 15.2 XOR-MAPPED-ADDRESS */
 	if (
@@ -178,8 +178,8 @@ STUN_got_response
 
 	const char * p = &buffer[20];
 
-	UINT16 type;
-	UINT16 length;
+	uint16_t type;
+	uint16_t length;
 
 	/*
 	Check for STUN response.
@@ -199,11 +199,11 @@ STUN_got_response
 	/* 6. STUN Message Structure */
 
 	if (
-			*(const UINT32 *)&buffer[4] == MAGIC_COOKIE &&
+			*(const uint32_t *)&buffer[4] == MAGIC_COOKIE &&
 			memcmp(&buffer[8], transaction_id, 12U) == 0
 	){
-		type   = MSBF_SHORT (*(const UINT16 *)&buffer[0]);
-		length = MSBF_SHORT (*(const UINT16 *)&buffer[2]);
+		type   = MSBF_SHORT (*(const uint16_t *)&buffer[0]);
+		length = MSBF_SHORT (*(const uint16_t *)&buffer[2]);
 
 		if (
 				(type >> 14)    == 0U &&

@@ -39,7 +39,7 @@ menu_t OPTIONS_ProfilesDef = {
 	NULL,
 };
 
-void M_ProfileSelectInit(INT32 choice)
+void M_ProfileSelectInit(int32_t choice)
 {
 	(void)choice;
 	optionsmenu.profilemenu = true;
@@ -49,7 +49,7 @@ void M_ProfileSelectInit(INT32 choice)
 }
 
 // Select the current profile for menu use and go to maindef.
-void M_FirstPickProfile(INT32 c)
+void M_FirstPickProfile(int32_t c)
 {
 	if (c == MA_YES)
 	{
@@ -71,10 +71,10 @@ void M_FirstPickProfile(INT32 c)
 }
 
 // Start menu edition. Call this with MA_YES if not used with a textbox.
-void M_StartEditProfile(INT32 c)
+void M_StartEditProfile(int32_t c)
 {
 
-	const INT32 maxp = PR_GetNumProfiles();
+	const int32_t maxp = PR_GetNumProfiles();
 
 	if (c == MA_YES)
 	{
@@ -152,10 +152,10 @@ void M_StartEditProfile(INT32 c)
 	}
 }
 
-void M_HandleProfileSelect(INT32 ch)
+void M_HandleProfileSelect(int32_t ch)
 {
-	const UINT8 pid = 0;
-	INT32 maxp = PR_GetNumProfiles();
+	const uint8_t pid = 0;
+	int32_t maxp = PR_GetNumProfiles();
 	dboolean creatable = (maxp < MAXPROFILES);
 	(void) ch;
 

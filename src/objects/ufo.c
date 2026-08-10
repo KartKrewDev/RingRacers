@@ -175,14 +175,14 @@ static void UFOUpdateDistanceToFinish(mobj_t *ufo)
 		if (pathfindsuccess == true)
 		{
 			// Add euclidean distance to the next waypoint to the distancetofinish
-			UINT32 adddist;
+			uint32_t adddist;
 			fixed_t disttowaypoint =
 				P_AproxDistance(
 					(ufo->x >> FRACBITS) - (nextWaypoint->mobj->x >> FRACBITS),
 					(ufo->y >> FRACBITS) - (nextWaypoint->mobj->y >> FRACBITS));
 			disttowaypoint = P_AproxDistance(disttowaypoint, (ufo->z >> FRACBITS) - (nextWaypoint->mobj->z >> FRACBITS));
 
-			adddist = (UINT32)disttowaypoint;
+			adddist = (uint32_t)disttowaypoint;
 
 			ufo_distancetofinish(ufo) = pathtofinish.totaldist + adddist;
 			Z_Free(pathtofinish.array);
@@ -194,21 +194,21 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 {
 	const fixed_t mapspeedscale = FixedMul(mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const fixed_t baseSpeed = FixedMul(UFO_BASE_SPEED, K_GetKartGameSpeedScalar(gamespeed));
-	const UINT32 deadzone = FixedMul(UFO_DEADZONE, mapspeedscale) >> FRACBITS;
+	const uint32_t deadzone = FixedMul(UFO_DEADZONE, mapspeedscale) >> FRACBITS;
 
-	UINT32 spacing = FixedMul(UFO_SPACING, mapspeedscale) >> FRACBITS;
-	UINT32 distanceNerf = FixedMul(UFO_PITY_BRAKES, mapspeedscale) >> FRACBITS;
+	uint32_t spacing = FixedMul(UFO_SPACING, mapspeedscale) >> FRACBITS;
+	uint32_t distanceNerf = FixedMul(UFO_PITY_BRAKES, mapspeedscale) >> FRACBITS;
 
 	// Best values of all of the players.
-	UINT32 bestDist = UINT32_MAX;
+	uint32_t bestDist = UINT32_MAX;
 	fixed_t bestSpeed = 0;
 
 	// Desired values for the UFO itself.
-	UINT32 wantedDist = UINT32_MAX;
+	uint32_t wantedDist = UINT32_MAX;
 	fixed_t wantedSpeed = ufo_speed(ufo);
 	fixed_t speedDelta = 0;
 
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -249,12 +249,12 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 	}
 	else
 	{
-		INT32 distDelta = 0;
+		int32_t distDelta = 0;
 
 		if (bestDist < UFO_PITY_DIST && UFOEmeraldChase(ufo))
 		{
-			INT32 brakeDelta = UFO_PITY_DIST - bestDist;
-			INT32 distPerNerf = UFO_PITY_DIST / distanceNerf; // Doing this in the sensible way integer overflows. Sorry.
+			int32_t brakeDelta = UFO_PITY_DIST - bestDist;
+			int32_t distPerNerf = UFO_PITY_DIST / distanceNerf; // Doing this in the sensible way integer overflows. Sorry.
 			spacing = spacing - (brakeDelta / distPerNerf);
 		}
 
@@ -330,7 +330,7 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 static void UFOUpdateAngle(mobj_t *ufo)
 {
 	angle_t dest = K_MomentumAngle(ufo);
-	INT32 delta = AngleDeltaSigned(ufo->angle, dest);
+	int32_t delta = AngleDeltaSigned(ufo->angle, dest);
 	ufo->angle += delta >> 2;
 }
 
@@ -353,7 +353,7 @@ waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo)
 	return NULL;
 }
 
-static void UFOMoveToDistance(mobj_t *ufo, UINT32 distancetofinish)
+static void UFOMoveToDistance(mobj_t *ufo, uint32_t distancetofinish)
 {
 	waypoint_t *finishline = K_GetFinishLineWaypoint();
 	const dboolean useshortcuts = false;
@@ -382,8 +382,8 @@ static void UFOMoveToDistance(mobj_t *ufo, UINT32 distancetofinish)
 
 	if (node->camefrom != NULL)
 	{
-		UINT32 a_to_b = (node->gscore - node->camefrom->gscore);
-		UINT32 overshot = (node->gscore - distancetofinish);
+		uint32_t a_to_b = (node->gscore - node->camefrom->gscore);
+		uint32_t overshot = (node->gscore - distancetofinish);
 		fixed_t f = FixedDiv(overshot, max(1, a_to_b));
 
 		mobj_t *a = ((waypoint_t*)node->camefrom->nodedata)->mobj;
@@ -514,7 +514,7 @@ static void UFOMove(mobj_t *ufo)
 
 			// Now moving to the next waypoint.
 			curWaypoint = (waypoint_t *)pathtofinish.array[pathIndex].nodedata;
-			ufo_waypoint(ufo) = (INT32)K_GetWaypointHeapIndex(curWaypoint);
+			ufo_waypoint(ufo) = (int32_t)K_GetWaypointHeapIndex(curWaypoint);
 		}
 	}
 
@@ -540,7 +540,7 @@ static void UFOMove(mobj_t *ufo)
 
 static void UFOEmeraldVFX(mobj_t *emerald)
 {
-	const INT32 bobS = 32;
+	const int32_t bobS = 32;
 	const angle_t bobA = (leveltime & (bobS - 1)) * (ANGLE_MAX / bobS);
 	const fixed_t bobH = 16 * emerald->scale;
 
@@ -550,7 +550,7 @@ static void UFOEmeraldVFX(mobj_t *emerald)
 }
 
 static dboolean UFOHumPlaying(mobj_t *ufo) {
-	INT32 i;
+	int32_t i;
 	for (i = 0; i <= maxhum; i++)
 	{
 		if (S_SoundPlaying(ufo, hums[i]))
@@ -560,8 +560,8 @@ static dboolean UFOHumPlaying(mobj_t *ufo) {
 }
 
 static void UFOUpdateSound(mobj_t *ufo) {
-	INT32 maxhealth = max(mobjinfo[MT_SPECIAL_UFO].spawnhealth, 1);
-	INT32 healthlevel = maxhum * ufo->health / maxhealth;
+	int32_t maxhealth = max(mobjinfo[MT_SPECIAL_UFO].spawnhealth, 1);
+	int32_t healthlevel = maxhum * ufo->health / maxhealth;
 
 	if (!UFOEmeraldChase(ufo) && !UFOHumPlaying(ufo))
 	{
@@ -570,7 +570,7 @@ static void UFOUpdateSound(mobj_t *ufo) {
 	}
 }
 
-static void UFODebugSetHealth(mobj_t *ufo, UINT8 health)
+static void UFODebugSetHealth(mobj_t *ufo, uint8_t health)
 {
 	if (ufo->health == health + 1 || UFOEmeraldChase(ufo) == true)
 	{
@@ -579,7 +579,7 @@ static void UFODebugSetHealth(mobj_t *ufo, UINT8 health)
 
 	extern consvar_t cv_ufo_follow;
 
-	UINT8 pnum = max(1, cv_ufo_follow.value) - 1;
+	uint8_t pnum = max(1, cv_ufo_follow.value) - 1;
 	mobj_t *source = players[pnum].mo;
 
 	if (playeringame[pnum] == false || P_MobjWasRemoved(source) == true)
@@ -653,8 +653,8 @@ spawn_shard
 	const fixed_t h = FixedDiv(
 			ufo->height, ufo->scale);
 
-	const UINT16 rad = (ufo->radius / ufo->scale) / 4;
-	const UINT16 tall = (h / FRACUNIT);
+	const uint16_t rad = (ufo->radius / ufo->scale) / 4;
+	const uint16_t tall = (h / FRACUNIT);
 
 	// note: determinate random argument eval order
 	fixed_t rand_z = P_RandomKey(PR_ITEM_DEBRIS, tall + 1);
@@ -695,11 +695,11 @@ spawn_shard
 static void
 set_flickerframe (mobj_t *ufo, mobj_t *piece)
 {
-	INT32 healthcalc = (UFO_NUM_GLASSFRAMES - 1);
+	int32_t healthcalc = (UFO_NUM_GLASSFRAMES - 1);
 
 	if (ufo && !P_MobjWasRemoved(ufo))
 	{
-		INT32 maxhealth = mobjinfo[MT_SPECIAL_UFO].spawnhealth;
+		int32_t maxhealth = mobjinfo[MT_SPECIAL_UFO].spawnhealth;
 		healthcalc = (maxhealth - ufo->health);
 
 		if (healthcalc > 0)
@@ -731,7 +731,7 @@ spawn_debris (mobj_t *part)
 {
 	mobj_t *ufo = ufo_piece_owner(part);
 
-	INT32 i;
+	int32_t i;
 
 	for (i = ufo->health;
 		i <= mobjinfo[ufo->type].spawnhealth; i += 5)
@@ -820,9 +820,9 @@ static void UFOKillPieces(mobj_t *ufo)
 	}
 }
 
-static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
+static uint8_t GetUFODamage(mobj_t *inflictor, uint8_t damageType)
 {
-	UINT8 ret = 0;
+	uint8_t ret = 0;
 	targetdamaging_t targetdamaging = UFOD_GENERIC;
 
 	if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
@@ -958,10 +958,10 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 	}
 }
 
-dboolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType)
+dboolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, uint8_t damageType)
 {
 	const fixed_t addSpeed = FixedMul(UFO_DAMAGED_SPEED, K_GetKartGameSpeedScalar(gamespeed));
-	UINT8 damage = 1;
+	uint8_t damage = 1;
 
 	if (UFOEmeraldChase(ufo) == true)
 	{
@@ -978,7 +978,7 @@ dboolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UI
 
 	if (source->player)
 	{
-		UINT32 skinflags = (demo.playback)
+		uint32_t skinflags = (demo.playback)
 			? demo.skinlist[demo.currentskinid[(source->player-players)]].flags
 			: skins[source->player->skin]->flags;
 		if (skinflags & SF_IRONMAN)
@@ -1290,7 +1290,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	{
 		// Create with a proper waypoint track!
 		ufo = P_SpawnMobj(start->mobj->x, start->mobj->y, start->mobj->z, MT_SPECIAL_UFO);
-		ufo_waypoint(ufo) = (INT32)K_GetWaypointHeapIndex(start);
+		ufo_waypoint(ufo) = (int32_t)K_GetWaypointHeapIndex(start);
 		UFOUpdateDistanceToFinish(ufo);
 		specialstageinfo.maxDist = ufo_distancetofinish(ufo);
 	}
@@ -1299,7 +1299,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	// (...Except if you're on Master difficulty!)
 	if (grandprixinfo.gp && grandprixinfo.specialDamage && grandprixinfo.masterbots == false)
 	{
-		ufo->health -= min(2*(UINT32)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/12);
+		ufo->health -= min(2*(uint32_t)mobjinfo[MT_SPECIAL_UFO].spawnhealth/10, grandprixinfo.specialDamage/12);
 		// Use this if you want to spy on what the health ends up being:
 		//CONS_Printf("the UFO weeps: %d hp\n", ufo->health );
 	}
@@ -1439,13 +1439,13 @@ mobj_t *Obj_CreateSpecialUFO(void)
 	return InitSpecialUFO(K_GetStartingWaypoint());
 }
 
-UINT32 K_GetSpecialUFODistance(void)
+uint32_t K_GetSpecialUFODistance(void)
 {
 	if (specialstageinfo.valid == true)
 	{
 		if (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false)
 		{
-			return (UINT32)ufo_distancetofinish(specialstageinfo.ufo);
+			return (uint32_t)ufo_distancetofinish(specialstageinfo.ufo);
 		}
 	}
 

@@ -234,7 +234,7 @@ dboolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 static mobj_t *grenade;
 static fixed_t explodedist;
 static dboolean explodespin;
-static INT32 minehitlag;
+static int32_t minehitlag;
 
 static inline dboolean PIT_SSMineChecks(mobj_t *thing)
 {
@@ -301,7 +301,7 @@ static inline BlockItReturn_t PIT_SSMineSearch(mobj_t *thing)
 
 void K_DoMineSearch(mobj_t *actor, fixed_t size)
 {
-	INT32 bx, by, xl, xh, yl, yh;
+	int32_t bx, by, xl, xh, yl, yh;
 
 	explodedist = FixedMul(size, actor->scale);
 	grenade = actor;
@@ -320,8 +320,8 @@ void K_DoMineSearch(mobj_t *actor, fixed_t size)
 
 static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 {
-	const INT32 oldhitlag = thing->hitlag;
-	INT32 lagadded;
+	const int32_t oldhitlag = thing->hitlag;
+	int32_t lagadded;
 
 	if (grenade == NULL || P_MobjWasRemoved(grenade))
 		return BMIT_ABORT; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
@@ -355,7 +355,7 @@ static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 
 tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, dboolean spin)
 {
-	INT32 bx, by, xl, xh, yl, yh;
+	int32_t bx, by, xl, xh, yl, yh;
 
 	explodespin = spin;
 	explodedist = FixedMul(size, actor->scale);
@@ -461,7 +461,7 @@ dboolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
-		const INT32 oldhitlag = t2->hitlag;
+		const int32_t oldhitlag = t2->hitlag;
 
 		if (t2->player->flashing)
 			return true;
@@ -555,7 +555,7 @@ dboolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 dboolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 {
 	mobj_t *draggeddroptarget = (t1->type == MT_DROPTARGET_SHIELD) ? t1->target : NULL;
-	UINT8 strength;
+	uint8_t strength;
 
 	if (((t1->target == t2) || (t1->target == t2->target)) && ((t1->threshold > 0 && t2->type == MT_PLAYER) || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
@@ -670,7 +670,7 @@ dboolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 
 	{
 		mobj_t *ghost = P_SpawnGhostMobj(t1);
-		UINT8 i;
+		uint8_t i;
 
 		P_SetScale(ghost, 3*ghost->destscale/2);
 		ghost->destscale = 15*ghost->destscale/2;
@@ -824,7 +824,7 @@ static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 
 void K_LightningShieldAttack(mobj_t *actor, fixed_t size)
 {
-	INT32 bx, by, xl, xh, yl, yh;
+	int32_t bx, by, xl, xh, yl, yh;
 
 	lightningDist = FixedMul(size, actor->scale);
 	lightningSource = actor;
@@ -1242,7 +1242,7 @@ dboolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		return false;
 	};
 
-	auto doDamage = [](UINT8 damageType)
+	auto doDamage = [](uint8_t damageType)
 	{
 		return [damageType](mobj_t *t1, mobj_t *t2)
 		{
@@ -1459,8 +1459,8 @@ dboolean K_PuntCollide(mobj_t *t1, mobj_t *t2)
 		K_MakeObjectReappear(t1);
 
 		// copied from MT_ITEMCAPSULE
-		UINT8 i;
-		INT16 spacing = (t1->radius >> 1) / t1->scale;
+		uint8_t i;
+		int16_t spacing = (t1->radius >> 1) / t1->scale;
 		// dust effects
 		for (i = 0; i < 10; i++)
 		{

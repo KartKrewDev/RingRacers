@@ -51,7 +51,7 @@ typedef struct
 // a convex 'plane' polygon, clockwise order
 typedef struct
 {
-	INT32 numpts;
+	int32_t numpts;
 	polyvertex_t pts[];
 } poly_t;
 
@@ -82,26 +82,26 @@ typedef struct gl_vissprite_s
 	float spritexscale, spriteyscale;
 	float spritexoffset, spriteyoffset;
 
-	UINT32 renderflags;
-	UINT8 rotateflags;
+	uint32_t renderflags;
+	uint8_t rotateflags;
 
 	dboolean flip, vflip;
 	dboolean precip; // Tails 08-25-2002
 	dboolean bbox;
 	dboolean rotated;
-	UINT8 translucency;       //alpha level 0-255
+	uint8_t translucency;       //alpha level 0-255
 
 	angle_t angle; // for splats
 
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
-	UINT8 *colormap;
-	INT32 dispoffset; // copy of info->dispoffset, affects ordering but not drawing
+	uint8_t *colormap;
+	int32_t dispoffset; // copy of info->dispoffset, affects ordering but not drawing
 
 	patch_t *gpatch;
 	mobj_t *mobj; // NOTE: This is a precipmobj_t if precip is true !!! Watch out.
 } gl_vissprite_t;
 
-void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32 *lightlevel, dboolean model);
+void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, int32_t *lightlevel, dboolean model);
 
 // --------
 // hw_bsp.c
@@ -121,15 +121,15 @@ void HWR_InitMapTextures(void);
 void HWR_LoadMapTextures(size_t pnumtextures);
 void HWR_FreeMapTextures(void);
 
-patch_t *HWR_GetCachedGLPatchPwad(UINT16 wad, UINT16 lump);
+patch_t *HWR_GetCachedGLPatchPwad(uint16_t wad, uint16_t lump);
 patch_t *HWR_GetCachedGLPatch(lumpnum_t lumpnum);
 
 void HWR_GetPatch(patch_t *patch);
-void HWR_GetMappedPatch(patch_t *patch, const UINT8 *colormap);
+void HWR_GetMappedPatch(patch_t *patch, const uint8_t *colormap);
 void HWR_GetFadeMask(lumpnum_t fademasklumpnum);
 patch_t *HWR_GetPic(lumpnum_t lumpnum);
 
-GLMapTexture_t *HWR_GetTexture(INT32 tex, INT32 basetex);
+GLMapTexture_t *HWR_GetTexture(int32_t tex, int32_t basetex);
 void HWR_GetLevelFlat(levelflat_t *levelflat, dboolean noencoremap);
 void HWR_GetRawFlat(lumpnum_t flatlumpnum, dboolean noencoremap);
 
@@ -146,8 +146,8 @@ void HWR_SetPalette(RGBA_t *palette);
 // --------
 // hw_draw.c
 // --------
-extern INT32 patchformat;
-extern INT32 textureformat;
+extern int32_t patchformat;
+extern int32_t textureformat;
 
 #ifdef __cplusplus
 } // extern "C"

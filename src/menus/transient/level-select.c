@@ -56,7 +56,7 @@ levellist_t restorelevellist;
 //
 // Determines whether to show a given map in the various level-select lists.
 //
-dboolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
+dboolean M_CanShowLevelInList(int16_t mapnum, levelsearch_t *levelsearch)
 {
 	if (!levelsearch)
 		return false;
@@ -128,9 +128,9 @@ dboolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	return true;
 }
 
-UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
+uint16_t M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 {
-	INT16 i, count = 0;
+	int16_t i, count = 0;
 
 	if (!levelsearch)
 		return 0;
@@ -140,7 +140,7 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
 			return 0;
 
-		const INT16 limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
+		const int16_t limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
 		for (i = 0; i < limit; i++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[i], levelsearch))
@@ -161,9 +161,9 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 	return count;
 }
 
-UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
+uint16_t M_GetFirstLevelInList(uint8_t *i, levelsearch_t *levelsearch)
 {
-	UINT16 mapnum = NEXTMAP_INVALID;
+	uint16_t mapnum = NEXTMAP_INVALID;
 
 	if (!levelsearch)
 		return NEXTMAP_INVALID;
@@ -178,7 +178,7 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 
 		*i = 0;
 		mapnum = NEXTMAP_INVALID;
-		const INT16 limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
+		const int16_t limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
 		for (; *i < limit; (*i)++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
@@ -200,7 +200,7 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 	return mapnum;
 }
 
-UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
+uint16_t M_GetNextLevelInList(uint16_t mapnum, uint8_t *i, levelsearch_t *levelsearch)
 {
 	if (!levelsearch)
 		return NEXTMAP_INVALID;
@@ -209,7 +209,7 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 	{
 		mapnum = NEXTMAP_INVALID;
 		(*i)++;
-		const INT16 limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
+		const int16_t limit = (levelsearch->grandprix ? CUPCACHE_SPECIAL : CUPCACHE_PODIUM);
 		for (; *i < limit; (*i)++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
@@ -230,8 +230,8 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 
 void M_LevelSelectScrollDest(void)
 {
-	UINT16 m = levellist.mapcount-1;
-	UINT16 dest = (6*levellist.cursor);
+	uint16_t m = levellist.mapcount-1;
+	uint16_t dest = (6*levellist.cursor);
 
 	if (dest < 3)
 		dest = 3;
@@ -252,10 +252,10 @@ void M_LevelSelectScrollDest(void)
 
 // Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
 // A gt of -1 means the menu is being restored.
-dboolean M_LevelListFromGametype(INT16 gt)
+dboolean M_LevelListFromGametype(int16_t gt)
 {
 	static dboolean first = true;
-	UINT8 temp = 0;
+	uint8_t temp = 0;
 	dboolean invalidatedcursor = false;
 
 	if (gt != -1)
@@ -327,7 +327,7 @@ dboolean M_LevelListFromGametype(INT16 gt)
 				NULL
 			};
 
-			INT16 i, j;
+			int16_t i, j;
 			for (i = 0; remap_menus[i]; i++)
 			{
 				remap_menus[i]->music = music;
@@ -587,7 +587,7 @@ dboolean M_LevelListFromGametype(INT16 gt)
 
 	levellist.levelsearch.cup = NULL;
 
-	UINT16 test = M_GetFirstLevelInList(&temp, &levellist.levelsearch);
+	uint16_t test = M_GetFirstLevelInList(&temp, &levellist.levelsearch);
 
 	if (test == NEXTMAP_INVALID)
 	{
@@ -600,7 +600,7 @@ dboolean M_LevelListFromGametype(INT16 gt)
 	if (levellist.levelsearch.tutorial && levellist.levelsearch.checklocked)
 	{
 		// Find the first level we haven't played.
-		UINT16 possiblecursor = 0;
+		uint16_t possiblecursor = 0;
 		while (test < nummapheaders && (mapheaderinfo[test]->records.mapvisited & MV_BEATEN))
 		{
 			test = M_GetNextLevelInList(test, &temp, &levellist.levelsearch);
@@ -643,9 +643,9 @@ dboolean M_LevelListFromGametype(INT16 gt)
 // For the online MP version used to START HOSTING A GAME, see M_MPSetupNetgameMapSelect()
 // (We still use this one midgame)
 
-void M_LevelSelectInit(INT32 choice)
+void M_LevelSelectInit(int32_t choice)
 {
-	INT32 gt = currentMenu->menuitems[itemOn].mvar2;
+	int32_t gt = currentMenu->menuitems[itemOn].mvar2;
 
 	(void)choice;
 
@@ -695,7 +695,7 @@ void M_LevelSelectInit(INT32 choice)
 
 	if (levellist.levelsearch.timeattack && gt == GT_RACE)
 	{
-		const INT32 skinid = R_SkinAvailableEx(cv_skin[0].string, false);
+		const int32_t skinid = R_SkinAvailableEx(cv_skin[0].string, false);
 		if (skinid >= 0 && (skins[skinid]->flags & SF_HIVOLT))
 		{
 			M_StartMessage("A long-forgotten power...", "You are using a \x82prototype engine\x80.\nRecords will not be saved.", NULL, MM_NOTHING, NULL, NULL);
@@ -710,7 +710,7 @@ void M_LevelSelectInit(INT32 choice)
 	}
 }
 
-void M_MenuToLevelPreamble(UINT8 ssplayers, dboolean nowipe)
+void M_MenuToLevelPreamble(uint8_t ssplayers, dboolean nowipe)
 {
 	cht_debug = 0;
 
@@ -744,10 +744,10 @@ void M_MenuToLevelPreamble(UINT8 ssplayers, dboolean nowipe)
 	SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 }
 
-INT16 M_LevelFromScrolledList(INT16 add)
+int16_t M_LevelFromScrolledList(int16_t add)
 {
-	UINT8 i = 0;
-	INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
+	uint8_t i = 0;
+	int16_t map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
 
 	while (add > 0)
 	{
@@ -764,9 +764,9 @@ INT16 M_LevelFromScrolledList(INT16 add)
 	return map;
 }
 
-void M_LevelSelected(INT16 add, dboolean menuupdate)
+void M_LevelSelected(int16_t add, dboolean menuupdate)
 {
-	INT16 map = M_LevelFromScrolledList(add);
+	int16_t map = M_LevelFromScrolledList(add);
 
 	if (map >= nummapheaders)
 	{
@@ -829,7 +829,7 @@ void M_LevelSelected(INT16 add, dboolean menuupdate)
 	}
 }
 
-static void M_MenuQueueStopSend(INT32 ch)
+static void M_MenuQueueStopSend(int32_t ch)
 {
 	(void)ch;
 
@@ -840,7 +840,7 @@ static void M_MenuQueueStopSend(INT32 ch)
 
 static void M_MenuQueueSelectedLocal(void)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 
 	for (; i < menuqueue.size; i++)
 	{
@@ -910,10 +910,10 @@ static void M_MenuQueueSelectedLocal(void)
 // Copy-pasted and edited from G_GPCupIntoRoundQueue
 void M_CupQueueHandler(cupheader_t *cup)
 {
-	UINT8 i, levelindex = 0, bonusindex = 0;
-	UINT8 bonusmodulo = max(1, (cup->numlevels+1)/(cup->numbonus+1));
-	UINT16 cupLevelNum;
-	INT32 gtcheck;
+	uint8_t i, levelindex = 0, bonusindex = 0;
+	uint8_t bonusmodulo = max(1, (cup->numlevels+1)/(cup->numbonus+1));
+	uint16_t cupLevelNum;
+	int32_t gtcheck;
 
 	// We shouldn't get to this point while there's rounds queued, but if we do, get outta there.
 	if (roundqueue.size)
@@ -1047,7 +1047,7 @@ dboolean M_LevelSelectCupSwitch(dboolean next, dboolean skipones)
 			continue;
 		}
 
-		UINT16 count = M_CountLevelsToShowInList(&templevelsearch);
+		uint16_t count = M_CountLevelsToShowInList(&templevelsearch);
 
 		if (count == 0
 		// The following isn't ideal, but in addition to the
@@ -1074,7 +1074,7 @@ dboolean M_LevelSelectCupSwitch(dboolean next, dboolean skipones)
 	}
 }
 
-static void M_MenuQueueResponse(INT32 ch)
+static void M_MenuQueueResponse(int32_t ch)
 {
 	M_ClearMenus(false);
 
@@ -1125,7 +1125,7 @@ void M_LevelConfirmHandler(void)
 	}
 }
 
-static void M_ClearQueueResponse(INT32 ch)
+static void M_ClearQueueResponse(int32_t ch)
 {
 	if (ch != MA_YES)
 		return;
@@ -1184,9 +1184,9 @@ void M_ClearQueueHandler(void)
 	}
 }
 
-void M_LevelSelectHandler(INT32 choice)
+void M_LevelSelectHandler(int32_t choice)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
 	(void)choice;
 
@@ -1242,7 +1242,7 @@ void M_LevelSelectHandler(INT32 choice)
 	{
 		// Adding to queue
 
-		INT16 map = NEXTMAP_INVALID;
+		int16_t map = NEXTMAP_INVALID;
 
 		M_SetMenuDelay(pid);
 
@@ -1304,7 +1304,7 @@ void M_LevelSelectTick(void)
 		if (!netgame)
 			return;
 
-		const UINT8 idcount = (roundqueue.size - menuqueue.anchor);
+		const uint8_t idcount = (roundqueue.size - menuqueue.anchor);
 
 		if (idcount == menuqueue.sending-1)
 		{

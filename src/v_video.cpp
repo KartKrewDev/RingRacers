@@ -52,7 +52,7 @@
 using namespace srb2;
 
 // Each screen is [vid.width*vid.height];
-UINT8 *screens[5];
+uint8_t *screens[5];
 // screens[0] = main display window
 // screens[1] = back screen, alternative blitting
 // screens[2] = screenshot buffer, gif movie buffer
@@ -78,7 +78,7 @@ hwr2::Twodee srb2::g_2d;
 
 static size_t currentPaletteSize;
 
-static UINT8 softwaretranstohwr[11]    = {  0, 25, 51, 76,102,127,153,178,204,229,255};
+static uint8_t softwaretranstohwr[11]    = {  0, 25, 51, 76,102,127,153,178,204,229,255};
 
 /*
 The following was an extremely helpful resource when developing my Colour Cube LUT.
@@ -94,7 +94,7 @@ dboolean Cubeapply = false;
 static dboolean InitCube(void)
 {
 	dboolean apply = false;
-	UINT8 q;
+	uint8_t q;
 	float working[2][2][2][3] = // the initial positions of the corners of the colour cube!
 	{
 		{
@@ -276,7 +276,7 @@ static dboolean InitCube(void)
 	return true;
 }
 
-UINT32 V_GammaCorrect(UINT32 input, double power)
+uint32_t V_GammaCorrect(uint32_t input, double power)
 {
 	RGBA_t result;
 	double linear;
@@ -285,13 +285,13 @@ UINT32 V_GammaCorrect(UINT32 input, double power)
 
 	linear = ((double)result.s.red)/255.0f;
 	linear = pow(linear, power)*255.0f;
-	result.s.red = (UINT8)(linear);
+	result.s.red = (uint8_t)(linear);
 	linear = ((double)result.s.green)/255.0f;
 	linear = pow(linear, power)*255.0f;
-	result.s.green = (UINT8)(linear);
+	result.s.green = (uint8_t)(linear);
 	linear = ((double)result.s.blue)/255.0f;
 	linear = pow(linear, power)*255.0f;
-	result.s.blue = (UINT8)(linear);
+	result.s.blue = (uint8_t)(linear);
 
 	return result.rgba;
 }
@@ -301,7 +301,7 @@ static void LoadPalette(const char *lumpname)
 {
 	lumpnum_t lumpnum = W_GetNumForName(lumpname);
 	size_t i, palsize;
-	UINT8 *pal;
+	uint8_t *pal;
 
 	currentPaletteSize = W_LumpLength(lumpnum);
 	palsize = currentPaletteSize / 3;
@@ -320,7 +320,7 @@ static void LoadPalette(const char *lumpname)
 		pLocalPalette = pMasterPalette;
 	pGammaCorrectedPalette = static_cast<RGBA_t*>(Z_Malloc(sizeof (*pGammaCorrectedPalette)*palsize, PU_STATIC, NULL));
 
-	pal = static_cast<UINT8*>(W_CacheLumpNum(lumpnum, PU_CACHE));
+	pal = static_cast<uint8_t*>(W_CacheLumpNum(lumpnum, PU_CACHE));
 	for (i = 0; i < palsize; i++)
 	{
 		pMasterPalette[i].s.red = *pal++;
@@ -342,7 +342,7 @@ void V_CubeApply(RGBA_t *input)
 {
 	float working[4][3];
 	float linear;
-	UINT8 q;
+	uint8_t q;
 
 	if (!Cubeapply)
 		return;
@@ -373,12 +373,12 @@ void V_CubeApply(RGBA_t *input)
 	}
 #undef dolerp
 
-	(*input).s.red = (UINT8)(working[0][0]);
-	(*input).s.green = (UINT8)(working[0][1]);
-	(*input).s.blue = (UINT8)(working[0][2]);
+	(*input).s.red = (uint8_t)(working[0][0]);
+	(*input).s.green = (uint8_t)(working[0][1]);
+	(*input).s.blue = (uint8_t)(working[0][2]);
 }
 
-const char *R_GetPalname(UINT16 num)
+const char *R_GetPalname(uint16_t num)
 {
 	static char palname[9];
 	char newpal[9] = "PLAYPAL";
@@ -422,7 +422,7 @@ void V_ReloadPalette(void)
 // V_SetPalette : Set the current palette to use for palettized graphics
 //              :
 // -------------+
-void V_SetPalette(INT32 palettenum)
+void V_SetPalette(int32_t palettenum)
 {
 	if (!pLocalPalette)
 		V_ReloadPalette();
@@ -471,7 +471,7 @@ void CV_palette_OnChange(void)
 }; // extern "C"
 
 #if defined (__GNUC__) && defined (__i386__) && !defined (NOASM) && !defined (__APPLE__) && !defined (NORUSEASM)
-void VID_BlitLinearScreen_ASM(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT32 height, size_t srcrowbytes,
+void VID_BlitLinearScreen_ASM(const uint8_t *srcptr, uint8_t *destptr, int32_t width, int32_t height, size_t srcrowbytes,
 	size_t destrowbytes);
 #define HAVE_VIDCOPY
 #endif
@@ -491,7 +491,7 @@ void CV_constextsize_OnChange(void)
 // --------------------------------------------------------------------------
 // Copy a rectangular area from one bitmap to another (8bpp)
 // --------------------------------------------------------------------------
-void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT32 height, size_t srcrowbytes,
+void VID_BlitLinearScreen(const uint8_t *srcptr, uint8_t *destptr, int32_t width, int32_t height, size_t srcrowbytes,
 	size_t destrowbytes)
 {
 #ifdef HAVE_VIDCOPY
@@ -512,14 +512,14 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 #endif
 }
 
-void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy)
+void V_AdjustXYWithSnap(int32_t *x, int32_t *y, uint32_t options, int32_t dupx, int32_t dupy)
 {
 	// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx
-	INT32 screenwidth = vid.width;
-	INT32 screenheight = vid.height;
-	INT32 basewidth = BASEVIDWIDTH * dupx;
-	INT32 baseheight = BASEVIDHEIGHT * dupy;
-	SINT8 player = R_GetViewNumber();
+	int32_t screenwidth = vid.width;
+	int32_t screenheight = vid.height;
+	int32_t basewidth = BASEVIDWIDTH * dupx;
+	int32_t baseheight = BASEVIDHEIGHT * dupy;
+	int8_t player = R_GetViewNumber();
 
 	if (r_splitscreen > 0)
 	{
@@ -537,7 +537,7 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	}
 	else if ((options & (V_SLIDEIN|V_SNAPTOBOTTOM)) == (V_SLIDEIN|V_SNAPTOBOTTOM))
 	{
-		INT32 slide = K_GetDialogueSlide(51 * FRACUNIT);
+		int32_t slide = K_GetDialogueSlide(51 * FRACUNIT);
 		if (slide)
 		{
 			*y -= FixedMul(slide, dupy);
@@ -586,7 +586,7 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 				dboolean slidefromright = false;
 
 				const fixed_t offsetAmount = (screenwidth * FRACUNIT/2);
-				INT32 offset = (offsetAmount - FixedMul(offsetAmount, st_fadein)) / FRACUNIT;
+				int32_t offset = (offsetAmount - FixedMul(offsetAmount, st_fadein)) / FRACUNIT;
 
 				if (r_splitscreen > 1)
 				{
@@ -609,7 +609,7 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 			else
 			{
 				const fixed_t offsetAmount = (screenheight * FRACUNIT/2);
-				INT32 offset = (offsetAmount - FixedMul(offsetAmount, st_fadein)) / FRACUNIT;
+				int32_t offset = (offsetAmount - FixedMul(offsetAmount, st_fadein)) / FRACUNIT;
 
 				if (options & V_SNAPTOBOTTOM)
 				{
@@ -634,7 +634,7 @@ const cliprect_t *V_GetClipRect(void)
 	return &cliprect;
 }
 
-void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, INT32 flags)
+void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, int32_t flags)
 {
 	// Adjust position.
 	if (!(flags & V_NOSCALESTART))
@@ -727,30 +727,30 @@ void V_RestoreClipRect(const cliprect_t *copy)
 	cliprect = *copy;
 }
 
-static UINT8 hudplusalpha[11]  = { 10,  8,  6,  4,  2,  0,  0,  0,  0,  0,  0};
-static UINT8 hudminusalpha[11] = { 10,  9,  9,  8,  8,  7,  7,  6,  6,  5,  5};
+static uint8_t hudplusalpha[11]  = { 10,  8,  6,  4,  2,  0,  0,  0,  0,  0,  0};
+static uint8_t hudminusalpha[11] = { 10,  9,  9,  8,  8,  7,  7,  6,  6,  5,  5};
 
-static const UINT8 *v_colormap = NULL;
-static const UINT8 *v_translevel = NULL;
+static const uint8_t *v_colormap = NULL;
+static const uint8_t *v_translevel = NULL;
 
-static inline UINT8 standardpdraw(const UINT8 *dest, const UINT8 *source, fixed_t ofs)
+static inline uint8_t standardpdraw(const uint8_t *dest, const uint8_t *source, fixed_t ofs)
 {
 	(void)dest; return source[ofs>>FRACBITS];
 }
-static inline UINT8 mappedpdraw(const UINT8 *dest, const UINT8 *source, fixed_t ofs)
+static inline uint8_t mappedpdraw(const uint8_t *dest, const uint8_t *source, fixed_t ofs)
 {
 	(void)dest; return *(v_colormap + source[ofs>>FRACBITS]);
 }
-static inline UINT8 translucentpdraw(const UINT8 *dest, const UINT8 *source, fixed_t ofs)
+static inline uint8_t translucentpdraw(const uint8_t *dest, const uint8_t *source, fixed_t ofs)
 {
 	return *(v_translevel + ((source[ofs>>FRACBITS]<<8)&0xff00) + (*dest&0xff));
 }
-static inline UINT8 transmappedpdraw(const UINT8 *dest, const UINT8 *source, fixed_t ofs)
+static inline uint8_t transmappedpdraw(const uint8_t *dest, const uint8_t *source, fixed_t ofs)
 {
 	return *(v_translevel + (((*(v_colormap + source[ofs>>FRACBITS]))<<8)&0xff00) + (*dest&0xff));
 }
 
-UINT32 V_GetHUDTranslucency(INT32 scrn)
+uint32_t V_GetHUDTranslucency(int32_t scrn)
 {
 	if (scrn & V_SLIDEIN)
 	{
@@ -765,7 +765,7 @@ UINT32 V_GetHUDTranslucency(INT32 scrn)
 	return st_translucency;
 }
 
-static UINT32 V_GetAlphaLevel(INT32 scrn)
+static uint32_t V_GetAlphaLevel(int32_t scrn)
 {
 	switch (scrn & V_ALPHAMASK)
 	{
@@ -784,12 +784,12 @@ static UINT32 V_GetAlphaLevel(INT32 scrn)
 }
 
 // Draws a patch scaled to arbitrary size.
-void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
+void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, int32_t scrn, patch_t *patch, const uint8_t *colormap)
 {
-	UINT32 alphalevel, blendmode;
+	uint32_t alphalevel, blendmode;
 
 	fixed_t vdup;
-	INT32 dupx, dupy;
+	int32_t dupx, dupy;
 	fixed_t pwidth; // patch width
 
 	const cliprect_t *clip = V_GetClipRect();
@@ -946,7 +946,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 }
 
 // Draws a patch cropped and scaled to arbitrary size.
-void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
+void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, int32_t scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
 {
 	cliprect_t oldClip = cliprect;
 
@@ -964,7 +964,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 // V_DrawContinueIcon
 // Draw a mini player!  If we can, that is.  Otherwise we draw a star.
 //
-void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor)
+void V_DrawContinueIcon(int32_t x, int32_t y, int32_t flags, int32_t skinnum, uint16_t skincolor)
 {
 	(void)skinnum;
 	(void)skincolor;
@@ -975,10 +975,10 @@ void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 ski
 // V_DrawBlock
 // Draw a linear block of pixels into the view buffer.
 //
-void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const UINT8 *src)
+void V_DrawBlock(int32_t x, int32_t y, int32_t scrn, int32_t width, int32_t height, const uint8_t *src)
 {
-	UINT8 *dest;
-	const UINT8 *deststop;
+	uint8_t *dest;
+	const uint8_t *deststop;
 
 	if (x < 0 || x + width > vid.width || y < 0 || y + height > vid.height || (unsigned)scrn > 4)
 		I_Error("Bad V_DrawBlock");
@@ -1000,20 +1000,20 @@ void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const 
 //
 // Fills a box of pixels with a single color, NOTE: scaled to screen size
 //
-void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
+void V_DrawFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t c)
 {
 	const cliprect_t *clip = V_GetClipRect();
 
 	if (rendermode == render_none)
 		return;
 
-	UINT32 alphalevel;
+	uint32_t alphalevel;
 	if ((alphalevel = V_GetAlphaLevel(c)) >= 10)
 		return;
 
 	if (!(c & V_NOSCALESTART))
 	{
-		INT32 dupx = vid.dupx, dupy = vid.dupy;
+		int32_t dupx = vid.dupx, dupy = vid.dupy;
 
 		if (x == 0 && y == 0 && w == BASEVIDWIDTH && h == BASEVIDHEIGHT)
 		{
@@ -1056,9 +1056,9 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	c &= 255;
 
 	RGBA_t color = pLocalPalette[c];
-	UINT8 r = (color.rgba & 0xFF);
-	UINT8 g = (color.rgba & 0xFF00) >> 8;
-	UINT8 b = (color.rgba & 0xFF0000) >> 16;
+	uint8_t r = (color.rgba & 0xFF);
+	uint8_t g = (color.rgba & 0xFF00) >> 8;
+	uint8_t b = (color.rgba & 0xFF0000) >> 16;
 
 	if (clip && clip->enabled)
 	{
@@ -1071,8 +1071,8 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		if (y < clip->top)
 			y = clip->top;
 
-		w = std::max<INT32>(0, x2 - x);
-		h = std::max<INT32>(0, y2 - y);
+		w = std::max<int32_t>(0, x2 - x);
+		h = std::max<int32_t>(0, y2 - y);
 	}
 
 	g_2d.begin_quad()
@@ -1082,9 +1082,9 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		.done();
 }
 
-static UINT32 V_GetHWConsBackColor(void)
+static uint32_t V_GetHWConsBackColor(void)
 {
-	UINT32 hwcolor;
+	uint32_t hwcolor;
 	switch (cons_backcolor.value)
 	{
 		case 0:		hwcolor = 0xffffff00;	break; 	// White
@@ -1115,9 +1115,9 @@ static UINT32 V_GetHWConsBackColor(void)
 // THANK YOU MPC!!!
 // and thanks toaster for cleaning it up.
 
-void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
+void V_DrawFillConsoleMap(int32_t x, int32_t y, int32_t w, int32_t h, int32_t c)
 {
-	UINT32 alphalevel = 0;
+	uint32_t alphalevel = 0;
 
 	if (rendermode == render_none)
 		return;
@@ -1127,7 +1127,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	if (!(c & V_NOSCALESTART))
 	{
-		INT32 dupx = vid.dupx, dupy = vid.dupy;
+		int32_t dupx = vid.dupx, dupy = vid.dupy;
 
 		x *= dupx;
 		y *= dupy;
@@ -1158,7 +1158,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	c &= 255;
 
-	UINT32 hwcolor = V_GetHWConsBackColor();
+	uint32_t hwcolor = V_GetHWConsBackColor();
 	float r = ((hwcolor & 0xFF000000) >> 24) / 255.f;
 	float g = ((hwcolor & 0xFF0000) >> 16) / 255.f;
 	float b = ((hwcolor & 0xFF00) >> 8) / 255.f;
@@ -1177,16 +1177,16 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 // ..  <-- this shape only for now, i'm afraid
 // .
 //
-void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c)
+void V_DrawDiag(int32_t x, int32_t y, int32_t wh, int32_t c)
 {
-	INT32 w, h;
+	int32_t w, h;
 
 	if (rendermode == render_none)
 		return;
 
 	if (!(c & V_NOSCALESTART))
 	{
-		INT32 dupx = vid.dupx, dupy = vid.dupy;
+		int32_t dupx = vid.dupx, dupy = vid.dupy;
 
 		x *= dupx;
 		y *= dupy;
@@ -1253,14 +1253,14 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c)
 // I have kept the safety checks for strength out of this function;
 // I don't trust Lua users with it, so it doesn't matter.
 //
-void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, UINT8 strength)
+void V_DrawFadeFill(int32_t x, int32_t y, int32_t w, int32_t h, int32_t c, uint16_t color, uint8_t strength)
 {
 	if (rendermode == render_none)
 		return;
 
 	if (!(c & V_NOSCALESTART))
 	{
-		INT32 dupx = vid.dupx, dupy = vid.dupy;
+		int32_t dupx = vid.dupx, dupy = vid.dupy;
 
 		x *= dupx;
 		y *= dupy;
@@ -1330,10 +1330,10 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 //
 // Fills a box of pixels using a flat texture as a pattern, scaled to screen size.
 //
-void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
+void V_DrawFlatFill(int32_t x, int32_t y, int32_t w, int32_t h, lumpnum_t flatnum)
 {
-	INT32 dupx;
-	INT32 dupy;
+	int32_t dupx;
+	int32_t dupy;
 	size_t size;
 	size_t lflatsize;
 
@@ -1390,8 +1390,8 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 //
 void V_DrawPatchFill(patch_t *pat)
 {
-	INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
-	INT32 x, y, pw = pat->width * dupz, ph = pat->height * dupz;
+	int32_t dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+	int32_t x, y, pw = pat->width * dupz, ph = pat->height * dupz;
 
 	for (x = 0; x < vid.width; x += pw)
 	{
@@ -1404,20 +1404,20 @@ void V_DrawVhsEffect(dboolean rewind)
 {
 	static fixed_t upbary = 100, downbary = 150;
 
-	UINT8 *buf = screens[0], *tmp = screens[4];
-	UINT16 y;
-	UINT32 x, pos = 0;
+	uint8_t *buf = screens[0], *tmp = screens[4];
+	uint16_t y;
+	uint32_t x, pos = 0;
 
-	UINT8 *normalmapstart = ((UINT8 *)transtables + (8<<FF_TRANSSHIFT|(19<<8)));
+	uint8_t *normalmapstart = ((uint8_t *)transtables + (8<<FF_TRANSSHIFT|(19<<8)));
 #ifdef HQ_VHS
-	UINT8 *tmapstart = ((UINT8 *)transtables + (6<<FF_TRANSSHIFT));
+	uint8_t *tmapstart = ((uint8_t *)transtables + (6<<FF_TRANSSHIFT));
 #endif
-	UINT8 *thismapstart;
-	SINT8 offs;
+	uint8_t *thismapstart;
+	int8_t offs;
 
-	UINT8 barsize = vid.dupy<<5;
-	UINT8 updistort = vid.dupx<<(rewind ? 5 : 3);
-	UINT8 downdistort = updistort>>1;
+	uint8_t barsize = vid.dupy<<5;
+	uint8_t updistort = vid.dupx<<(rewind ? 5 : 3);
+	uint8_t downdistort = updistort>>1;
 
 	if (rewind)
 		V_DrawVhsEffect(false); // experimentation
@@ -1469,7 +1469,7 @@ void V_DrawVhsEffect(dboolean rewind)
 // I have kept the safety checks out of this function;
 // the v.fadeScreen Lua interface handles those.
 //
-void V_DrawFadeScreen(UINT16 color, UINT8 strength)
+void V_DrawFadeScreen(uint16_t color, uint8_t strength)
 {
 	float r;
 	float g;
@@ -1529,9 +1529,9 @@ lighttable_t *V_LoadCustomFadeMap(const char *lump)
 	return NULL;
 }
 
-const UINT8 *V_OffsetIntoFadeMap(const lighttable_t *clm, UINT8 strength)
+const uint8_t *V_OffsetIntoFadeMap(const lighttable_t *clm, uint8_t strength)
 {
-	return ((const UINT8 *)clm + strength*256);
+	return ((const uint8_t *)clm + strength*256);
 }
 
 //
@@ -1539,7 +1539,7 @@ const UINT8 *V_OffsetIntoFadeMap(const lighttable_t *clm, UINT8 strength)
 // Split from V_DrawFadeScreen, because that function has
 // WAY too many options piled on top of it as is. :V
 //
-void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
+void V_DrawCustomFadeScreen(const char *lump, uint8_t strength)
 {
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
@@ -1561,9 +1561,9 @@ void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 
 		if (clm != NULL)
 		{
-			const UINT8 *fadetable = V_OffsetIntoFadeMap(clm, strength);
-			const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
-			UINT8 *buf = screens[0];
+			const uint8_t *fadetable = V_OffsetIntoFadeMap(clm, strength);
+			const uint8_t *deststop = screens[0] + vid.rowbytes * vid.height;
+			uint8_t *buf = screens[0];
 
 			// heavily simplified -- we don't need to know x or y
 			// position when we're doing a full screen fade
@@ -1577,9 +1577,9 @@ void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 }
 
 // Simple translucency with one color, over a set number of lines starting from the top.
-void V_DrawFadeConsBack(INT32 plines)
+void V_DrawFadeConsBack(int32_t plines)
 {
-	UINT32 hwcolor = V_GetHWConsBackColor();
+	uint32_t hwcolor = V_GetHWConsBackColor();
 
 	float r = ((hwcolor & 0xFF000000) >> 24) / 255.f;
 	float g = ((hwcolor & 0xFF0000) >> 16) / 255.f;
@@ -1606,7 +1606,7 @@ void V_EncoreInvertScreen(void)
 }
 
 // Very similar to F_DrawFadeConsBack, except we draw from the middle(-ish) of the screen to the bottom.
-void V_DrawPromptBack(INT32 boxheight, INT32 color)
+void V_DrawPromptBack(int32_t boxheight, int32_t color)
 {
 	if (color >= 256 && color < 512)
 	{
@@ -1623,14 +1623,14 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color)
 	if (color == INT32_MAX)
 		color = cons_backcolor.value;
 
-	UINT32 hwcolor = V_GetHWConsBackColor();
+	uint32_t hwcolor = V_GetHWConsBackColor();
 
 	float r = ((color & 0xFF000000) >> 24) / 255.f;
 	float g = ((color & 0xFF0000) >> 16) / 255.f;
 	float b = ((color & 0xFF00) >> 8) / 255.f;
 	float a = (color == 0 ? 0xC0 : 0x80) / 255.f; // make black darker, like software
 
-	INT32 real_boxheight = (boxheight * 4) + (boxheight / 2) * 5;
+	int32_t real_boxheight = (boxheight * 4) + (boxheight / 2) * 5;
 	g_2d.begin_quad()
 		.rect(0, vid.height - real_boxheight, vid.width, real_boxheight)
 		.color(r, g, b, a)
@@ -1639,7 +1639,7 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color)
 
 // Gets string colormap, used for 0x80 color codes
 //
-UINT8 *V_GetStringColormap(INT32 colorflags)
+uint8_t *V_GetStringColormap(int32_t colorflags)
 {
 #if 0 // perfect
 	switch ((colorflags & V_CHARCOLORMASK) >> V_CHARCOLORSHIFT)
@@ -1679,16 +1679,16 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 	}
 #else // optimised
 	colorflags = ((colorflags & V_CHARCOLORMASK) >> V_CHARCOLORSHIFT);
-	if (!colorflags || colorflags > 15) // INT32 is signed, but V_CHARCOLORMASK is a very restrictive mask.
+	if (!colorflags || colorflags > 15) // int32_t is signed, but V_CHARCOLORMASK is a very restrictive mask.
 		return NULL;
 	return (purplemap+((colorflags-1)<<8));
 #endif
 }
 
-INT32 V_DanceYOffset(INT32 counter)
+int32_t V_DanceYOffset(int32_t counter)
 {
-	const INT32 duration = 16;
-	const INT32 step = (I_GetTime() + counter) % duration;
+	const int32_t duration = 16;
+	const int32_t step = (I_GetTime() + counter) % duration;
 
 	return abs(step - (duration / 2)) - (duration / 4);
 }
@@ -1704,10 +1704,10 @@ void V_DrawCharacterScaled(
 	fixed_t x,
 	fixed_t y,
 	fixed_t scale,
-	INT32 flags,
+	int32_t flags,
 	int fontno,
 	int c,
-	UINT8 *colormap)
+	uint8_t *colormap)
 {
 	font_t *font = &fontv[fontno];
 	dboolean notColored = false;
@@ -1766,7 +1766,7 @@ void V_DrawCharacterScaled(
 	);
 }
 
-void V_DrawCharacter(INT32 x, INT32 y, INT32 c, dboolean lowercase)
+void V_DrawCharacter(int32_t x, int32_t y, int32_t c, dboolean lowercase)
 {
 	// Backwards compatibility
 	if (lowercase == false)
@@ -1785,7 +1785,7 @@ void V_DrawCharacter(INT32 x, INT32 y, INT32 c, dboolean lowercase)
 	);
 }
 
-void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, dboolean lowercase, UINT8 *colormap)
+void V_DrawChatCharacter(int32_t x, int32_t y, int32_t c, dboolean lowercase, uint8_t *colormap)
 {
 	// Backwards compatibility
 	if (lowercase == false)
@@ -1805,7 +1805,7 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, dboolean lowercase, UINT8 *c
 }
 
 template <bool Centered>
-static INT32 Internal_TitleCardStringOffset(const char *str, dboolean p4)
+static int32_t Internal_TitleCardStringOffset(const char *str, dboolean p4)
 {
 	int bg_font = GTOL_FONT;
 	int fg_font = GTFN_FONT;
@@ -1816,7 +1816,7 @@ static INT32 Internal_TitleCardStringOffset(const char *str, dboolean p4)
 		fg_font = GTFN4_FONT;
 	}
 
-	INT32 xoffs = 0;
+	int32_t xoffs = 0;
 	const char *ch = str;
 	char c;
 	patch_t *pp;
@@ -1842,13 +1842,13 @@ static INT32 Internal_TitleCardStringOffset(const char *str, dboolean p4)
 			c -= LT_FONTSTART;
 
 			// check if character exists, if not, it's a space.
-			if (c < 0 || c >= LT_FONTSIZE || !fontv[bg_font].font[(INT32)c])
+			if (c < 0 || c >= LT_FONTSIZE || !fontv[bg_font].font[(int32_t)c])
 			{
 				xoffs += p4 ? 5 : 10;
 				continue;
 			}
 
-			pp = fontv[fg_font].font[(INT32)c];
+			pp = fontv[fg_font].font[(int32_t)c];
 
 			xoffs += pp->width - (p4 ? 3 : 5);
 		}
@@ -1885,7 +1885,7 @@ static INT32 Internal_TitleCardStringOffset(const char *str, dboolean p4)
 			// cancel out the division.
 			xoffs *= 2;
 
-			INT32 trim = -1;
+			int32_t trim = -1;
 
 			bool reached_end = scan(
 				[&trim, &xoffs](int c)
@@ -1928,14 +1928,14 @@ static INT32 Internal_TitleCardStringOffset(const char *str, dboolean p4)
 
 // V_TitleCardStringWidth
 // Get the string's width using the titlecard font.
-INT32 V_TitleCardStringWidth(const char *str, dboolean p4)
+int32_t V_TitleCardStringWidth(const char *str, dboolean p4)
 {
 	return Internal_TitleCardStringOffset<false>(str, p4);
 }
 
 // V_CenteredTitleCardStringOffset
 // Subtract this offset from an X coordinate to center the string around that point.
-INT32 V_CenteredTitleCardStringOffset(const char *str, dboolean p4)
+int32_t V_CenteredTitleCardStringOffset(const char *str, dboolean p4)
 {
 	return Internal_TitleCardStringOffset<true>(str, p4);
 }
@@ -1943,7 +1943,7 @@ INT32 V_CenteredTitleCardStringOffset(const char *str, dboolean p4)
 // V_DrawTitleCardStringFixed.
 // see v_video.h's prototype for more information.
 //
-void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, INT32 flags, dboolean bossmode, INT32 timer, INT32 threshold, dboolean p4)
+void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, int32_t flags, dboolean bossmode, int32_t timer, int32_t threshold, dboolean p4)
 {
 	int bg_font = GTOL_FONT;
 	int fg_font = GTFN_FONT;
@@ -1954,15 +1954,15 @@ void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char 
 		fg_font = GTFN4_FONT;
 	}
 
-	INT32 xoffs = 0;
-	INT32 yoffs = 0;
-	INT32 i = 0;
+	int32_t xoffs = 0;
+	int32_t yoffs = 0;
+	int32_t i = 0;
 
 	// per-letter variables
 	fixed_t scalex;
 	fixed_t offs;
-	INT32 let_time;
-	INT32 flipflag;
+	int32_t let_time;
+	int32_t flipflag;
 	angle_t fakeang;
 
 	const char *ch = str;
@@ -2002,14 +2002,14 @@ void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char 
 		c -= LT_FONTSTART;
 
 		// check if character exists, if not, it's a space.
-		if (c < 0 || c >= LT_FONTSIZE || !fontv[fg_font].font[(INT32)c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[fg_font].font[(int32_t)c])
 		{
 			xoffs += (p4 ? 5 : 10) * scale;
 			continue;
 		}
 
-		ol = fontv[bg_font].font[(INT32)c];
-		pp = fontv[fg_font].font[(INT32)c];
+		ol = fontv[bg_font].font[(int32_t)c];
+		pp = fontv[fg_font].font[(int32_t)c];
 
 		if (bossmode)
 		{
@@ -2036,7 +2036,7 @@ void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char 
 
 				// otherwise; scalex must start at 0
 				// let's have each letter do 4 spins (360*4 + 90 = 1530 "degrees")
-				fakeang = std::min<INT32>(360 + 90, let_time*41) * ANG1;
+				fakeang = std::min<int32_t>(360 + 90, let_time*41) * ANG1;
 				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
 			}
 			else if (!bossmode && let_time > threshold)
@@ -2044,7 +2044,7 @@ void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char 
 				// Make letters disappear...
 				let_time -= threshold;
 
-				fakeang = std::max<INT32>(0, (360+90) - let_time*41)*ANG1;
+				fakeang = std::max<int32_t>(0, (360+90) - let_time*41)*ANG1;
 				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
 			}
 
@@ -2057,7 +2057,7 @@ void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char 
 
 		if (scalex && ol && pp)
 		{
-			//CONS_Printf("%d\n", (INT32)c);
+			//CONS_Printf("%d\n", (int32_t)c);
 			V_DrawStretchyFixedPatch((x + xoffs) + offs, (y+yoffs), FixedMul(abs(scalex), scale), scale, flags|flipflag, ol, NULL);
 			V_DrawStretchyFixedPatch((x + xoffs) + offs, (y+yoffs), FixedMul(abs(scalex), scale), scale, flags|flipflag, pp, NULL);
 		}
@@ -2069,8 +2069,8 @@ void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char 
 static inline fixed_t FixedCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
-		INT32    hchw,
-		INT32    dupx,
+		int32_t    hchw,
+		int32_t    dupx,
 		fixed_t *  cwp)
 {
 	(void)scale;
@@ -2083,8 +2083,8 @@ static inline fixed_t FixedCharacterDim(
 static inline fixed_t VariableCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
-		INT32    hchw,
-		INT32    dupx,
+		int32_t    hchw,
+		int32_t    dupx,
 		fixed_t *  cwp)
 {
 	(void)chw;
@@ -2097,11 +2097,11 @@ static inline fixed_t VariableCharacterDim(
 static inline fixed_t CenteredCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
-		INT32    hchw,
-		INT32    dupx,
+		int32_t    hchw,
+		int32_t    dupx,
 		fixed_t *  cwp)
 {
-	INT32 cxoff;
+	int32_t cxoff;
 	/*
 	For example, center a 4 wide patch to 8 width:
 	4/2   = 2
@@ -2117,70 +2117,70 @@ static inline fixed_t CenteredCharacterDim(
 static inline fixed_t BunchedCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
-		INT32    hchw,
-		INT32    dupx,
+		int32_t    hchw,
+		int32_t    dupx,
 		fixed_t *  cwp)
 {
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 1) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<int32_t>(1, (*cwp) - 1) << FRACBITS, scale);
 	return 0;
 }
 
 static inline fixed_t MenuCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
-		INT32    hchw,
-		INT32    dupx,
+		int32_t    hchw,
+		int32_t    dupx,
 		fixed_t *  cwp)
 {
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 2) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<int32_t>(1, (*cwp) - 2) << FRACBITS, scale);
 	return 0;
 }
 
 static inline fixed_t GamemodeCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
-		INT32    hchw,
-		INT32    dupx,
+		int32_t    hchw,
+		int32_t    dupx,
 		fixed_t *  cwp)
 {
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 2) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<int32_t>(1, (*cwp) - 2) << FRACBITS, scale);
 	return 0;
 }
 
 static inline fixed_t FileCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
-		INT32    hchw,
-		INT32    dupx,
+		int32_t    hchw,
+		int32_t    dupx,
 		fixed_t *  cwp)
 {
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 3) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<int32_t>(1, (*cwp) - 3) << FRACBITS, scale);
 	return 0;
 }
 
 static inline fixed_t LSTitleCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
-		INT32    hchw,
-		INT32    dupx,
+		int32_t    hchw,
+		int32_t    dupx,
 		fixed_t *  cwp)
 {
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul(std::max<INT32>(1, (*cwp) - 4) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max<int32_t>(1, (*cwp) - 4) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2189,12 +2189,12 @@ typedef struct
 	fixed_t    chw;
 	fixed_t spacew;
 	fixed_t    lfh;
-	fixed_t (*dim_fn)(fixed_t,fixed_t,INT32,INT32,fixed_t *);
-	UINT8 button_yofs;
-	UINT8 right_outline;
+	fixed_t (*dim_fn)(fixed_t,fixed_t,int32_t,int32_t,fixed_t *);
+	uint8_t button_yofs;
+	uint8_t right_outline;
 } fontspec_t;
 
-static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
+static void V_GetFontSpecification(int fontno, int32_t flags, fontspec_t *result)
 {
 	/*
 	Hardcoded until a better system can be implemented
@@ -2207,7 +2207,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 
 	result->right_outline = 1;
 
-	const INT32 spacing = ( flags & V_SPACINGMASK );
+	const int32_t spacing = ( flags & V_SPACINGMASK );
 
 	switch (fontno)
 	{
@@ -2420,9 +2420,9 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 	}
 }
 
-static UINT8 V_GetButtonCodeWidth(UINT8 c, dboolean largebutton)
+static uint8_t V_GetButtonCodeWidth(uint8_t c, dboolean largebutton)
 {
-	UINT8 x = 14;
+	uint8_t x = 14;
 
 	switch (c & 0x0F)
 	{
@@ -2461,9 +2461,9 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c, dboolean largebutton)
 	return x;
 }
 
-static UINT8 V_GetGenericButtonCodeWidth(UINT8 c, dboolean largebutton)
+static uint8_t V_GetGenericButtonCodeWidth(uint8_t c, dboolean largebutton)
 {
-	UINT8 x = 16;
+	uint8_t x = 16;
 
 	switch ((c & 0x0F) | gb_mask)
 	{
@@ -2511,15 +2511,15 @@ void V_DrawStringScaled(
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
-		INT32      flags,
-		const UINT8 *colormap,
+		int32_t      flags,
+		const uint8_t *colormap,
 		int        fontno,
 		const char *s)
 {
-	INT32     hchw;/* half-width for centering */
+	int32_t     hchw;/* half-width for centering */
 
-	INT32     dupx;
-	INT32     dupy;
+	int32_t     dupx;
+	int32_t     dupy;
 
 	fixed_t  right;
 	fixed_t    bot;
@@ -2528,18 +2528,18 @@ void V_DrawStringScaled(
 
 	dboolean uppercase;
 	dboolean notcolored;
-	UINT8 boxed = 0;
+	uint8_t boxed = 0;
 	dboolean descriptive = false;
 
 	dboolean debugalternation = false;
-	UINT8 debugcolor1 = 181;
-	UINT8 debugcolor2 = 96;
+	uint8_t debugcolor1 = 181;
+	uint8_t debugcolor2 = 96;
 
 	dboolean   dance;
 	dboolean nodanceoverride;
-	INT32     dancecounter;
+	int32_t     dancecounter;
 
-	INT32 boxedflags = ((flags) & (~V_HUDTRANS)) | (V_40TRANS);
+	int32_t boxedflags = ((flags) & (~V_HUDTRANS)) | (V_40TRANS);
 
 	dboolean largebutton = false;
 
@@ -2651,8 +2651,8 @@ void V_DrawStringScaled(
 			case '\xED':
 			case '\xEC':
 			{
-				UINT8 anim_duration = 16;
-				UINT8 anim = 0;
+				uint8_t anim_duration = 16;
+				uint8_t anim = 0;
 
 				if (c == '\xEC') // Pressed
 					anim = 1;
@@ -2755,7 +2755,7 @@ void V_DrawStringScaled(
 
 							struct BtConf
 							{
-								UINT8 x, y;
+								uint8_t x, y;
 								Draw::Button type;
 							};
 
@@ -2867,7 +2867,7 @@ void V_DrawStringScaled(
 
 							struct BtConf
 							{
-								UINT8 x, y;
+								uint8_t x, y;
 								Draw::GenericButton type;
 							};
 
@@ -2991,13 +2991,13 @@ fixed_t V_StringScaledWidth(
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
-		INT32      flags,
+		int32_t      flags,
 		int        fontno,
 		const char *s)
 {
-	INT32     hchw;/* half-width for centering */
+	int32_t     hchw;/* half-width for centering */
 
-	INT32     dupx;
+	int32_t     dupx;
 
 	font_t   *font;
 
@@ -3150,13 +3150,13 @@ char * V_ScaledWordWrap(
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
-		INT32      flags,
+		int32_t      flags,
 		int        fontno,
 		const char *s)
 {
-	INT32     hchw;/* half-width for centering */
+	int32_t     hchw;/* half-width for centering */
 
-	INT32     dupx;
+	int32_t     dupx;
 
 	font_t   *font;
 
@@ -3340,61 +3340,61 @@ char * V_ScaledWordWrap(
 	return newstring;
 }
 
-void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_StringWidth(string, option)/2;
 	V_DrawString(x, y, option, string);
 }
 
-void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_StringWidth(string, option);
 	V_DrawString(x, y, option, string);
 }
 
-void V_DrawCenteredSmallString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredSmallString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_SmallStringWidth(string, option)/2;
 	V_DrawSmallString(x, y, option, string);
 }
 
-void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedSmallString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_SmallStringWidth(string, option);
 	V_DrawSmallString(x, y, option, string);
 }
 
-void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredThinString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_ThinStringWidth(string, option)/2;
 	V_DrawThinString(x, y, option, string);
 }
 
-void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedThinString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_ThinStringWidth(string, option);
 	V_DrawThinString(x, y, option, string);
 }
 
-void V_DrawCenteredStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
+void V_DrawCenteredStringAtFixed(fixed_t x, fixed_t y, int32_t option, const char *string)
 {
 	x -= (V_ThinStringWidth(string, option) / 2) * FRACUNIT;
 	V_DrawThinStringAtFixed(x, y, option, string);
 }
 
-void V_DrawRightAlignedStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
+void V_DrawRightAlignedStringAtFixed(fixed_t x, fixed_t y, int32_t option, const char *string)
 {
 	x -= V_StringWidth(string, option) * FRACUNIT;
 	V_DrawStringAtFixed(x, y, option, string);
 }
 
-void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
+void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, int32_t option, const char *string)
 {
 	x -= (V_StringWidth(string, option) / 2) * FRACUNIT;
 	V_DrawStringAtFixed(x, y, option, string);
 }
 
-void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
+void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, int32_t option, const char *string)
 {
 	x -= V_ThinStringWidth(string, option) * FRACUNIT;
 	V_DrawThinStringAtFixed(x, y, option, string);
@@ -3403,7 +3403,7 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 // Draws a number using the PING font thingy.
 // TODO: Merge number drawing functions into one with "font name" selection.
 
-fixed_t V_DrawPingNum(fixed_t x, fixed_t y, INT32 flags, INT32 num, const UINT8 *colormap)
+fixed_t V_DrawPingNum(fixed_t x, fixed_t y, int32_t flags, int32_t num, const uint8_t *colormap)
 {
 	// this SHOULD always be 5 but I guess custom graphics exist.
 	const fixed_t w = (fontv[PINGNUM_FONT].font[0]->width) * FRACUNIT;
@@ -3423,82 +3423,82 @@ fixed_t V_DrawPingNum(fixed_t x, fixed_t y, INT32 flags, INT32 num, const UINT8 
 	return x;
 }
 
-void V_DrawCenteredTimerString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredTimerString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_TimerStringWidth(string, option)/2;
 	V_DrawTimerString(x, y, option, string);
 }
 
-void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedTimerString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_TimerStringWidth(string, option);
 	V_DrawTimerString(x, y, option, string);
 }
 
-void V_DrawCenteredMenuString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredMenuString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_MenuStringWidth(string, option)/2;
 	V_DrawMenuString(x, y, option, string);
 }
 
-void V_DrawRightAlignedMenuString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedMenuString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_MenuStringWidth(string, option);
 	V_DrawMenuString(x, y, option, string);
 }
 
-void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string)
+void V_DrawCenteredGamemodeString(int32_t x, int32_t y, int32_t option, const uint8_t *colormap, const char *string)
 {
 	x -= V_GamemodeStringWidth(string, option)/2;
 	V_DrawGamemodeString(x, y, option, colormap, string);
 }
 
-void V_DrawRightAlignedGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string)
+void V_DrawRightAlignedGamemodeString(int32_t x, int32_t y, int32_t option, const uint8_t *colormap, const char *string)
 {
 	x -= V_GamemodeStringWidth(string, option);
 	V_DrawGamemodeString(x, y, option, colormap, string);
 }
 
-void V_DrawCenteredFileString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredFileString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_FileStringWidth(string, option)/2;
 	V_DrawFileString(x, y, option, string);
 }
 
-void V_DrawRightAlignedFileString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedFileString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_FileStringWidth(string, option);
 	V_DrawFileString(x, y, option, string);
 }
 
-void V_DrawCenteredLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredLSTitleHighString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_LSTitleHighStringWidth(string, option)/2;
 	V_DrawLSTitleHighString(x, y, option, string);
 }
 
-void V_DrawRightAlignedLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedLSTitleHighString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_LSTitleHighStringWidth(string, option);
 	V_DrawLSTitleHighString(x, y, option, string);
 }
 
-void V_DrawCenteredLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredLSTitleLowString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_LSTitleLowStringWidth(string, option)/2;
 	V_DrawLSTitleLowString(x, y, option, string);
 }
 
-void V_DrawRightAlignedLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedLSTitleLowString(int32_t x, int32_t y, int32_t option, const char *string)
 {
 	x -= V_LSTitleLowStringWidth(string, option);
 	V_DrawLSTitleLowString(x, y, option, string);
 }
 
 // Draws a tallnum.  Replaces two functions in y_inter and st_stuff
-void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
+void V_DrawTallNum(int32_t x, int32_t y, int32_t flags, int32_t num)
 {
-	INT32 w = LSBF_SHORT(fontv[TALLNUM_FONT].font[0]->width);
+	int32_t w = LSBF_SHORT(fontv[TALLNUM_FONT].font[0]->width);
 	dboolean neg;
 
 	if (flags & V_NOSCALESTART)
@@ -3522,9 +3522,9 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 
 // Draws a number with a set number of digits.
 // Does not handle negative numbers in a special way, don't try to feed it any.
-void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
+void V_DrawPaddedTallNum(int32_t x, int32_t y, int32_t flags, int32_t num, int32_t digits)
 {
-	INT32 w = fontv[TALLNUM_FONT].font[0]->width;
+	int32_t w = fontv[TALLNUM_FONT].font[0]->width;
 
 	if (flags & V_NOSCALESTART)
 		w *= vid.dupx;
@@ -3541,10 +3541,10 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 	} while (--digits);
 }
 
-void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num)
+void V_DrawProfileNum(int32_t x, int32_t y, int32_t flags, uint8_t num)
 {
-	UINT8 digits = 3;
-	INT32 w = fontv[PROFNUM_FONT].font[0]->width;
+	uint8_t digits = 3;
+	int32_t w = fontv[PROFNUM_FONT].font[0]->width;
 
 	if (flags & V_NOSCALESTART)
 		w *= vid.dupx;
@@ -3560,9 +3560,9 @@ void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num)
 
 // Find max height of the string
 //
-INT32 V_LevelNameHeight(const char *string)
+int32_t V_LevelNameHeight(const char *string)
 {
-	INT32 c, w = 0;
+	int32_t c, w = 0;
 	size_t i;
 
 	for (i = 0; string[i]; i++)
@@ -3585,7 +3585,7 @@ void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, dboolean makecolors)
 
 	if (!lut->init || memcmp(lut->palette, palette, palsize))
 	{
-		INT32 i;
+		int32_t i;
 
 		lut->init = true;
 		memcpy(lut->palette, palette, palsize);
@@ -3595,7 +3595,7 @@ void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, dboolean makecolors)
 
 		if (makecolors)
 		{
-			UINT8 r, g, b;
+			uint8_t r, g, b;
 
 			for (r = 0; r < 0xFF; r++)
 			for (g = 0; g < 0xFF; g++)
@@ -3609,17 +3609,17 @@ void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, dboolean makecolors)
 	}
 }
 
-UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b)
+uint8_t GetColorLUT(colorlookup_t *lut, uint8_t r, uint8_t g, uint8_t b)
 {
-	INT32 i = CLUTINDEX(r, g, b);
+	int32_t i = CLUTINDEX(r, g, b);
 	if (lut->table[i] == 0xFFFF)
 		lut->table[i] = NearestPaletteColor(r, g, b, lut->palette);
 	return lut->table[i];
 }
 
-UINT8 GetColorLUTDirect(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b)
+uint8_t GetColorLUTDirect(colorlookup_t *lut, uint8_t r, uint8_t g, uint8_t b)
 {
-	INT32 i = CLUTINDEX(r, g, b);
+	int32_t i = CLUTINDEX(r, g, b);
 	return lut->table[i];
 }
 
@@ -3629,9 +3629,9 @@ UINT8 GetColorLUTDirect(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b)
 // WARNING: called at runtime (don't init cvar here)
 void V_Init(void)
 {
-	INT32 i;
-	UINT8 *base = vid.buffer;
-	const INT32 screensize = vid.rowbytes * vid.height;
+	int32_t i;
+	uint8_t *base = vid.buffer;
+	const int32_t screensize = vid.rowbytes * vid.height;
 
 	for (i = 0; i < NUMSCREENS; i++)
 		screens[i] = NULL;
@@ -3671,15 +3671,15 @@ void V_Recalc(void)
 #endif
 		vid.fdupx = vid.fdupy = (vid.fdupx < vid.fdupy ? vid.fdupx : vid.fdupy);
 
-	vid.meddupx = (UINT8)(vid.dupx >> 1) + 1;
-	vid.meddupy = (UINT8)(vid.dupy >> 1) + 1;
+	vid.meddupx = (uint8_t)(vid.dupx >> 1) + 1;
+	vid.meddupy = (uint8_t)(vid.dupy >> 1) + 1;
 #ifdef HWRENDER
 	vid.fmeddupx = vid.meddupx*FRACUNIT;
 	vid.fmeddupy = vid.meddupy*FRACUNIT;
 #endif
 
-	vid.smalldupx = (UINT8)(vid.dupx / 3) + 1;
-	vid.smalldupy = (UINT8)(vid.dupy / 3) + 1;
+	vid.smalldupx = (uint8_t)(vid.dupx / 3) + 1;
+	vid.smalldupy = (uint8_t)(vid.dupy / 3) + 1;
 #ifdef HWRENDER
 	vid.fsmalldupx = vid.smalldupx*FRACUNIT;
 	vid.fsmalldupy = vid.smalldupy*FRACUNIT;

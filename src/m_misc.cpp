@@ -164,7 +164,7 @@ char joinedIP[MAX_LOGIP];
 // This initializes the above array to have NULL evrywhere it should.
 void M_InitJoinedIPArray(void)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i=0; i < NUMLOGIP; i++)
 	{
 		joinedIPlist[i][0][0] = joinedIPlist[i][1][0] = '\0';
@@ -174,7 +174,7 @@ void M_InitJoinedIPArray(void)
 // This adds an entry to the above array
 void M_AddToJoinedIPs(char *address, char *servname)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 
 	// Check for dupes...
 	for (i = 0; i < NUMLOGIP-1; i++) // intentionally not < NUMLOGIP
@@ -270,11 +270,11 @@ dboolean FIL_WriteFile(char const *name, const void *source, size_t length)
   * \return Number of bytes read, not counting the zero byte added to the end,
   *         or 0 on error.
   */
-size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag)
+size_t FIL_ReadFileTag(char const *name, uint8_t **buffer, int32_t tag)
 {
 	FILE *handle = NULL;
 	size_t count, length;
-	UINT8 *buf;
+	uint8_t *buf;
 
 	if (FIL_ReadFileOK(name))
 		handle = fopen(name, "rb");
@@ -286,7 +286,7 @@ size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag)
 	length = ftell(handle);
 	fseek(handle,0,SEEK_SET);
 
-	buf = static_cast<UINT8*>(Z_Malloc(length + 1, tag, NULL));
+	buf = static_cast<uint8_t*>(Z_Malloc(length + 1, tag, NULL));
 	count = fread(buf, 1, length, handle);
 	fclose(handle);
 
@@ -312,7 +312,7 @@ dboolean FIL_ConvertTextFileToBinary(const char *textfilename, const char *binfi
 {
 	FILE *textfile;
 	FILE *binfile;
-	UINT8 buffer[1024];
+	uint8_t buffer[1024];
 	size_t count;
 	dboolean success;
 
@@ -455,7 +455,7 @@ dboolean FIL_CheckExtension(const char *in)
 void M_SaveJoinedIPs(void)
 {
 	FILE *f = NULL;
-	UINT8 i;
+	uint8_t i;
 	const char *filepath = va("%s" PATHSEP "%s", srb2home, IPLOGFILE);
 
 	if (!*joinedIPlist[0][0])
@@ -485,7 +485,7 @@ void M_SaveJoinedIPs(void)
 void M_LoadJoinedIPs(void)
 {
 	FILE *f = NULL;
-	UINT8 i = 0;
+	uint8_t i = 0;
 	char *filepath;
 	char *s;
 	char buffer[2*(MAX_LOGIP+1)];
@@ -511,7 +511,7 @@ void M_LoadJoinedIPs(void)
 
 		if (s)
 		{
-			UINT16 j = 1;
+			uint16_t j = 1;
 			//strcpy(joinedIPlist[i][1], s); -- get rid of \n too...
 			char *c = joinedIPlist[i][1];
 			while (*s && *s != '\n' && j < MAX_LOGIP)
@@ -570,7 +570,7 @@ void Command_SaveConfig_f(void)
   */
 void Command_LoadConfig_f(void)
 {
-	UINT8 i;
+	uint8_t i;
 
 	if (COM_Argc() != 2)
 	{
@@ -626,7 +626,7 @@ extern "C" struct CVarList* cvlist_execversion;
   */
 void M_FirstLoadConfig(void)
 {
-	UINT8 i;
+	uint8_t i;
 
 	// configfile is initialised by d_main when searching for the wad?
 
@@ -781,15 +781,15 @@ void M_SaveConfig(const char *filename)
 // ==========================================================================
 //                              SCREENSHOTS
 // ==========================================================================
-static UINT8 screenshot_palette[768];
+static uint8_t screenshot_palette[768];
 static void M_CreateScreenShotPalette(void)
 {
 	size_t i, j;
 	for (i = 0, j = 0; i < 768; i += 3, j++)
 	{
 		RGBA_t locpal = ((cv_screenshot_colorprofile.value)
-		? pLocalPalette[(std::max<INT32>(st_palette,0)*256)+j]
-		: pMasterPalette[(std::max<INT32>(st_palette,0)*256)+j]);
+		? pLocalPalette[(std::max<int32_t>(st_palette,0)*256)+j]
+		: pMasterPalette[(std::max<int32_t>(st_palette,0)*256)+j]);
 		screenshot_palette[i] = locpal.s.red;
 		screenshot_palette[i+1] = locpal.s.green;
 		screenshot_palette[i+2] = locpal.s.blue;
@@ -1159,7 +1159,7 @@ static dboolean M_SetupaPNG(png_const_charp filename, png_bytep pal)
 static inline moviemode_t M_StartMovieAPNG(const char *pathname)
 {
 #ifdef USE_APNG
-	UINT8 *palette = NULL;
+	uint8_t *palette = NULL;
 	const char *freename = NULL;
 	dboolean ret = false;
 
@@ -1395,7 +1395,7 @@ void M_StopMovie(void)
 
 			fclose(apng_FILE);
 			apng_FILE = NULL;
-			CONS_Printf("aPNG closed; wrote %u frames\n", (UINT32)apng_frames);
+			CONS_Printf("aPNG closed; wrote %u frames\n", (uint32_t)apng_frames);
 			apng_frames = 0;
 			break;
 #else
@@ -1429,7 +1429,7 @@ void M_StopMovie(void)
   * \param palette  Palette of image data.
   *  \note if palette is NULL, BGR888 format
   */
-dboolean M_SavePNG(const char *filename, const void *data, int width, int height, const UINT8 *palette)
+dboolean M_SavePNG(const char *filename, const void *data, int width, int height, const uint8_t *palette)
 {
 	png_structp png_ptr;
 	png_infop png_info_ptr;
@@ -1513,23 +1513,23 @@ dboolean M_SavePNG(const char *filename, const void *data, int width, int height
   */
 typedef struct
 {
-	UINT8 manufacturer;
-	UINT8 version;
-	UINT8 encoding;
-	UINT8 bits_per_pixel;
+	uint8_t manufacturer;
+	uint8_t version;
+	uint8_t encoding;
+	uint8_t bits_per_pixel;
 
-	UINT16 xmin, ymin;
-	UINT16 xmax, ymax;
-	UINT16 hres, vres;
-	UINT8  palette[48];
+	uint16_t xmin, ymin;
+	uint16_t xmax, ymax;
+	uint16_t hres, vres;
+	uint8_t  palette[48];
 
-	UINT8 reserved;
-	UINT8 color_planes;
-	UINT16 bytes_per_line;
-	UINT16 palette_type;
+	uint8_t reserved;
+	uint8_t color_planes;
+	uint16_t bytes_per_line;
+	uint16_t palette_type;
 
 	char filler[58];
-	UINT8 data; ///< Unbounded; used for all picture data.
+	uint8_t data; ///< Unbounded; used for all picture data.
 } pcx_t;
 
 /** Writes a PCX file to disk.
@@ -1541,12 +1541,12 @@ typedef struct
   * \param palette  Palette of image data
   */
 #if NUMSCREENS > 2
-static dboolean WritePCXfile(const char *filename, const UINT8 *data, int width, int height, const UINT8 *pal)
+static dboolean WritePCXfile(const char *filename, const uint8_t *data, int width, int height, const uint8_t *pal)
 {
 	int i;
 	size_t length;
 	pcx_t *pcx;
-	UINT8 *pack;
+	uint8_t *pack;
 
 	pcx = Z_Malloc(width*height*2 + 1000, PU_STATIC, NULL);
 
@@ -1594,7 +1594,7 @@ static dboolean WritePCXfile(const char *filename, const UINT8 *data, int width,
 	}
 
 	// write output file
-	length = pack - (UINT8 *)pcx;
+	length = pack - (uint8_t *)pcx;
 	i = FIL_WriteFile(filename, pcx, length);
 
 	Z_Free(pcx);
@@ -1614,7 +1614,7 @@ void M_ScreenShot(void)
   *
   * \sa HWR_ScreenShot
   */
-void M_DoScreenShot(UINT32 width, UINT32 height, std::span<const std::byte> data)
+void M_DoScreenShot(uint32_t width, uint32_t height, std::span<const std::byte> data)
 {
 #if NUMSCREENS > 2
 	const char *freename = NULL;
@@ -1678,7 +1678,7 @@ failure:
 #endif
 }
 
-void M_SaveMapThumbnail(UINT32 width, UINT32 height, std::span<const std::byte> data)
+void M_SaveMapThumbnail(uint32_t width, uint32_t height, std::span<const std::byte> data)
 {
 #ifdef USE_PNG
 #if NUMSCREENS > 2
@@ -1720,7 +1720,7 @@ void M_SaveMapThumbnail(UINT32 width, UINT32 height, std::span<const std::byte> 
 
 void M_ScreenshotTicker(void)
 {
-	const UINT8 pid = 0; // TODO: should splitscreen players be allowed to use this too?
+	const uint8_t pid = 0; // TODO: should splitscreen players be allowed to use this too?
 
 	if (M_MenuButtonPressed(pid, MBT_SCREENSHOT))
 	{
@@ -1757,7 +1757,7 @@ void M_MinimapGenerate(void)
 	dboolean ret = false;
 	minigen_t *minigen = NULL;
 	size_t option_scale;
-	INT32 mul = 1;
+	int32_t mul = 1;
 
 	if (gamestate != GS_LEVEL)
 	{
@@ -1927,13 +1927,13 @@ void strcatbf(char *s1, const char *s2, const char *s3)
   * \param hexStg Hexadecimal string.
   * \return an Integer based off the contents of the string.
   */
-INT32 axtoi(const char *hexStg)
+int32_t axtoi(const char *hexStg)
 {
-	INT32 n = 0;
-	INT32 m = 0;
-	INT32 count;
-	INT32 intValue = 0;
-	INT32 digit[8];
+	int32_t n = 0;
+	int32_t m = 0;
+	int32_t count;
+	int32_t intValue = 0;
+	int32_t digit[8];
 	while (n < 8)
 	{
 		if (hexStg[n] == '\0')
@@ -1962,8 +1962,8 @@ INT32 axtoi(const char *hexStg)
 
 // Token parser variables
 
-static UINT32 oldendPos = 0; // old value of endPos, used by M_UnGetToken
-static UINT32 endPos = 0; // now external to M_GetToken, but still static
+static uint32_t oldendPos = 0; // old value of endPos, used by M_UnGetToken
+static uint32_t endPos = 0; // now external to M_GetToken, but still static
 
 /** Token parser for TEXTURES, ANIMDEFS, and potentially other lumps later down the line.
   * Was originally R_GetTexturesToken when I was coding up the TEXTURES parser, until I realized I needed it for ANIMDEFS too.
@@ -1978,12 +1978,12 @@ static UINT32 endPos = 0; // now external to M_GetToken, but still static
 char *M_GetToken(const char *inputString)
 {
 	static const char *stringToUse = NULL; // Populated if inputString != NULL; used otherwise
-	static UINT32 startPos = 0;
-//	static UINT32 endPos = 0;
-	static UINT32 stringLength = 0;
-	static UINT8 inComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
+	static uint32_t startPos = 0;
+//	static uint32_t endPos = 0;
+	static uint32_t stringLength = 0;
+	static uint8_t inComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
 	char *texturesToken = NULL;
-	UINT32 texturesTokenLength = 0;
+	uint32_t texturesTokenLength = 0;
 
 	if (inputString != NULL)
 	{
@@ -2154,19 +2154,19 @@ void M_UnGetToken(void)
 
 /** Returns the current token's position.
  */
-UINT32 M_GetTokenPos(void)
+uint32_t M_GetTokenPos(void)
 {
 	return endPos;
 }
 
 #define NUMTOKENS 2
 static const char *tokenizerInput = NULL;
-static UINT32 tokenCapacity[NUMTOKENS] = {0};
+static uint32_t tokenCapacity[NUMTOKENS] = {0};
 static char *tokenizerToken[NUMTOKENS] = {NULL};
-static UINT32 tokenizerStartPos = 0;
-static UINT32 tokenizerEndPos = 0;
-static UINT32 tokenizerInputLength = 0;
-static UINT8 tokenizerInComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
+static uint32_t tokenizerStartPos = 0;
+static uint32_t tokenizerEndPos = 0;
+static uint32_t tokenizerInputLength = 0;
+static uint8_t tokenizerInComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
 static dboolean tokenizerIsString = false; // did we strip quotes from this token?
 
 void M_TokenizerOpen(const char *inputString, size_t inputLength)
@@ -2195,7 +2195,7 @@ void M_TokenizerClose(void)
 	tokenizerIsString = false;
 }
 
-static void M_DetectComment(UINT32 *pos)
+static void M_DetectComment(uint32_t *pos)
 {
 	if (tokenizerInComment)
 		return;
@@ -2214,9 +2214,9 @@ static void M_DetectComment(UINT32 *pos)
 		tokenizerInComment = 2;
 }
 
-static void M_ReadTokenString(UINT32 i)
+static void M_ReadTokenString(uint32_t i)
 {
-	UINT32 tokenLength = tokenizerEndPos - tokenizerStartPos;
+	uint32_t tokenLength = tokenizerEndPos - tokenizerStartPos;
 	if (tokenLength + 1 > tokenCapacity[i])
 	{
 		tokenCapacity[i] = tokenLength + 1;
@@ -2231,7 +2231,7 @@ static void M_ReadTokenString(UINT32 i)
 	tokenizerToken[i][tokenLength] = '\0';
 }
 
-const char *M_TokenizerRead(UINT32 i)
+const char *M_TokenizerRead(uint32_t i)
 {
 	if (!tokenizerInput)
 		return NULL;
@@ -2324,12 +2324,12 @@ const char *M_TokenizerRead(UINT32 i)
 	return tokenizerToken[i];
 }
 
-UINT32 M_TokenizerGetEndPos(void)
+uint32_t M_TokenizerGetEndPos(void)
 {
 	return tokenizerEndPos;
 }
 
-void M_TokenizerSetEndPos(UINT32 newPos)
+void M_TokenizerSetEndPos(uint32_t newPos)
 {
 	tokenizerEndPos = newPos;
 }
@@ -2341,9 +2341,9 @@ dboolean M_TokenizerJustReadString(void)
 
 /** Count bits in a number.
   */
-UINT8 M_CountBits(UINT32 num, UINT8 size)
+uint8_t M_CountBits(uint32_t num, uint8_t size)
 {
-	UINT8 i, sum = 0;
+	uint8_t i, sum = 0;
 
 	for (i = 0; i < size; ++i)
 		if (num & (1 << i))

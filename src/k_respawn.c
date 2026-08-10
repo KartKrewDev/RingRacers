@@ -208,14 +208,14 @@ void K_DoIngameRespawn(player_t *player)
 		{
 			waypoint_t *prevWP = player->respawn.wp;
 
-			const UINT32 dist = (player->airtime * 48);
+			const uint32_t dist = (player->airtime * 48);
 			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
 
 			K_RespawnAtWaypoint(player, prevWP);
 		}
 		else
 		{
-			const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
+			const uint32_t dist = RESPAWN_DIST + (player->airtime * 48);
 			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
 			K_RespawnAtWaypoint(player, player->respawn.wp);
 		}
@@ -241,9 +241,9 @@ void K_DoIngameRespawn(player_t *player)
 	}
 	else
 	{
-		UINT32 bestdist = UINT32_MAX;
+		uint32_t bestdist = UINT32_MAX;
 		mapthing_t *beststart = NULL;
-		UINT8 numstarts = 0;
+		uint8_t numstarts = 0;
 		mapthing_t **starts;
 
 		if (gametyperules & GTR_BATTLESTARTS)
@@ -259,14 +259,14 @@ void K_DoIngameRespawn(player_t *player)
 
 		if (numstarts > 0)
 		{
-			UINT8 i = 0;
+			uint8_t i = 0;
 
 			if (gametype == GT_TUTORIAL)
 			{
 				// In tutorial, spawnpoints are player ID locked.
 				// ...but returning from Test Track can do funny things,
 				// so we use relative ID instead of literal slot number.
-				UINT8 spos = 0;
+				uint8_t spos = 0;
 				for (; i < MAXPLAYERS; i++)
 				{
 					if (i == player-players)
@@ -280,12 +280,12 @@ void K_DoIngameRespawn(player_t *player)
 			}
 			else for (i = 0; i < numstarts; i++)
 			{
-				UINT32 dist = UINT32_MAX;
+				uint32_t dist = UINT32_MAX;
 				mapthing_t *checkstart = NULL;
 
 				checkstart = starts[i];
 
-				dist = (UINT32)P_AproxDistance((player->mo->x >> FRACBITS) - checkstart->x,
+				dist = (uint32_t)P_AproxDistance((player->mo->x >> FRACBITS) - checkstart->x,
 					(player->mo->y >> FRACBITS) - checkstart->y);
 
 				if (dist < bestdist)
@@ -407,15 +407,15 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 {
 	const int airCompensation = 128;
 	fixed_t realstepamt = (64 * mapobjectscale);
-	UINT32 returntime = TICRATE;
+	uint32_t returntime = TICRATE;
 	fixed_t stepamt;
 
 	vector3_t dest, step, laser;
 	angle_t stepha, stepva;
 	fixed_t dist, fulldist;
 
-	UINT8 lasersteps = 4;
-	UINT32 laserdist;
+	uint8_t lasersteps = 4;
+	uint32_t laserdist;
 	waypoint_t *laserwp;
 	dboolean laserflip;
 
@@ -750,9 +750,9 @@ static void K_DropDashWait(player_t *player)
 
 	if (leveltime % 8 == 0)
 	{
-		const UINT8 ns = 8;
+		const uint8_t ns = 8;
 		const angle_t sidediff = FixedAngle((360 / ns) * FRACUNIT);
-		UINT8 i;
+		uint8_t i;
 
 		if (!mapreset)
 		{
@@ -810,7 +810,7 @@ static void K_DropDashWait(player_t *player)
 --------------------------------------------------*/
 static dboolean K_CanDropDash(player_t *player)
 {
-	const UINT16 buttons = K_GetKartButtons(player);
+	const uint16_t buttons = K_GetKartButtons(player);
 
 	if (!(buttons & BT_ACCELERATE))
 	{
@@ -846,7 +846,7 @@ static dboolean K_CanDropDash(player_t *player)
 --------------------------------------------------*/
 static void K_HandleDropDash(player_t *player)
 {
-	const UINT16 buttons = K_GetKartButtons(player);
+	const uint16_t buttons = K_GetKartButtons(player);
 
 	if (player->growshrinktimer < 0)
 	{

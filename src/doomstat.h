@@ -44,27 +44,27 @@ extern "C" {
 // The roundqueue itself is resident in g_game.h
 
 // Selected by user.
-extern INT16 gamemap;
+extern int16_t gamemap;
 extern dboolean g_reloadingMap;
 extern char mapmusname[7];
-extern UINT32 mapmusposition;
-extern UINT32 mapmusresume;
-extern UINT8 mapmusrng;
+extern uint32_t mapmusposition;
+extern uint32_t mapmusresume;
+extern uint8_t mapmusrng;
 #define MUSIC_TRACKMASK   0x0FFF // ----************
 #define MUSIC_RELOADRESET 0x8000 // *---------------
 #define MUSIC_FORCERESET  0x4000 // -*--------------
 // Use other bits if necessary.
 
-extern UINT32 maptol;
+extern uint32_t maptol;
 
-extern INT32 cursaveslot;
-extern UINT8 gamecomplete;
+extern int32_t cursaveslot;
+extern uint8_t gamecomplete;
 
 #define CUPMENU_COLUMNS 7
 #define CUPMENU_ROWS 2
 
 // Extra abilities/settings for skins (combinable stuff)
-typedef INT32 marathonmode_t;
+typedef int32_t marathonmode_t;
 #define MA_RUNNING     (1)    // In action
 #define MA_INIT        (1<<1) // Initialisation
 #define MA_NOCUTSCENES (1<<2) // No cutscenes
@@ -74,8 +74,8 @@ extern marathonmode_t marathonmode;
 extern tic_t marathontime;
 
 #define maxgameovers 13
-extern UINT8 numgameovers;
-extern SINT8 startinglivesbalance[maxgameovers+1];
+extern uint8_t numgameovers;
+extern int8_t startinglivesbalance[maxgameovers+1];
 
 #define NUMPRECIPFREESLOTS 64
 
@@ -96,7 +96,7 @@ typedef enum
 	MAXPRECIP
 } preciptype_t;
 
-typedef INT32 precipeffect_t;
+typedef int32_t precipeffect_t;
 #define PRECIPFX_THUNDER (1)
 #define PRECIPFX_LIGHTNING (1<<1)
 #define PRECIPFX_WATERPARTICLES (1<<2)
@@ -119,17 +119,17 @@ extern preciptype_t curWeather;
 
 struct skinrecord_t
 {
-	UINT32 wins;
-	UINT32 rounds;
-	UINT32 timeplayed;
-	UINT32 modetimeplayed[GDGT_MAX];
-	UINT32 tumbletime;
+	uint32_t wins;
+	uint32_t rounds;
+	uint32_t timeplayed;
+	uint32_t modetimeplayed[GDGT_MAX];
+	uint32_t tumbletime;
 };
 
 struct unloaded_skin_t
 {
 	char name[SKINNAMESIZE+1];
-	UINT32 namehash;
+	uint32_t namehash;
 
 	skinrecord_t records;
 
@@ -141,7 +141,7 @@ extern unloaded_skin_t *unloadedskins;
 struct skinreference_t
 {
 	unloaded_skin_t *unloaded;
-	UINT16 id;
+	uint16_t id;
 };
 
 // mapvisited is now a set of flags that says what we've done in the map.
@@ -163,17 +163,17 @@ struct recordtimes_t
 
 struct recorddata_t
 {
-	UINT8 mapvisited; ///< Generalised flags
+	uint8_t mapvisited; ///< Generalised flags
 	recordtimes_t timeattack; ///< Best times for Time Attack
 	recordtimes_t spbattack; ///< Best times for SPB Attack
-	UINT16 spraycan; ///< Associated spraycan id
-	UINT32 timeplayed;
-	UINT32 netgametimeplayed;
-	UINT32 modetimeplayed[GDGT_MAX];
-	UINT32 timeattacktimeplayed;
-	UINT32 spbattacktimeplayed;
-	UINT32 rounds;
-	UINT32 wins;
+	uint16_t spraycan; ///< Associated spraycan id
+	uint32_t timeplayed;
+	uint32_t netgametimeplayed;
+	uint32_t modetimeplayed[GDGT_MAX];
+	uint32_t timeattacktimeplayed;
+	uint32_t spbattacktimeplayed;
+	uint32_t rounds;
+	uint32_t wins;
 };
 
 #define KARTSPEED_AUTO -1
@@ -196,7 +196,7 @@ typedef enum
 
 struct cupwindata_t
 {
-	UINT8 best_placement;
+	uint8_t best_placement;
 	gp_rank_e best_grade;
 	dboolean got_emerald;
 	skinreference_t best_skin;
@@ -205,8 +205,8 @@ struct cupwindata_t
 // Set if homebrew PWAD stuff has been added.
 extern dboolean modifiedgame;
 extern dboolean majormods;
-extern UINT16 mainwads;
-extern UINT16 musicwads;
+extern uint16_t mainwads;
+extern uint16_t musicwads;
 extern dboolean savemoddata; // This mod saves time/emblem data.
 extern dboolean usedCheats;
 extern dboolean imcontinuing; // Temporary flag while continuing
@@ -215,13 +215,13 @@ extern dboolean imcontinuing; // Temporary flag while continuing
 #define ATTACKING_TIME	1
 #define ATTACKING_LAP	(1<<1)
 #define ATTACKING_SPB	(1<<2)
-extern UINT8 modeattacking;
+extern uint8_t modeattacking;
 const char *M_GetRecordMode(void);
 
 // menu demo things
-extern UINT8  numDemos;
-extern UINT32 demoDelayTime;
-extern UINT32 demoIdleTime;
+extern uint8_t  numDemos;
+extern uint32_t demoDelayTime;
+extern uint32_t demoIdleTime;
 
 // Netgame? only true in a netgame
 extern dboolean netgame;
@@ -229,23 +229,23 @@ extern dboolean addedtogame; // true after the server has added you
 // Only true if >1 player. netgame => multiplayer but not (multiplayer=>netgame)
 extern dboolean multiplayer;
 
-extern UINT8 splitscreen;
+extern uint8_t splitscreen;
 extern int r_splitscreen;
 
 extern dboolean forceresetplayers, deferencoremode, forcespecialstage;
 extern dboolean staffsync;
-extern UINT32 staffsync_map, staffsync_ghost, staffsync_done, staffsync_total, staffsync_failed;
+extern uint32_t staffsync_map, staffsync_ghost, staffsync_done, staffsync_total, staffsync_failed;
 
 struct staffsync_t
 {
-	UINT32 map;
+	uint32_t map;
 	char name[MAXPLAYERNAME+1];
-	UINT32 reason;
-	UINT32 extra;
+	uint32_t reason;
+	uint32_t extra;
 	fixed_t totalerror;
-	UINT32 numerror;
-	UINT32 rngerror_presync[32];
-	UINT32 rngerror_postsync[32];
+	uint32_t numerror;
+	uint32_t rngerror_presync[32];
+	uint32_t rngerror_postsync[32];
 };
 extern staffsync_t staffsync_results[1024];
 
@@ -263,25 +263,25 @@ extern dboolean g_voice_disabled;
 //
 
 extern dboolean menuactive; // Menu overlaid?
-extern UINT8 paused; // Game paused?
-extern UINT8 window_notinfocus; // are we in focus? (backend independant -- handles auto pausing and display of "focus lost" message)
-extern INT32 window_x;
-extern INT32 window_y;
+extern uint8_t paused; // Game paused?
+extern uint8_t window_notinfocus; // are we in focus? (backend independant -- handles auto pausing and display of "focus lost" message)
+extern int32_t window_x;
+extern int32_t window_y;
 
 extern dboolean nodrawers;
 extern dboolean noblit;
 extern dboolean lastdraw;
 extern postimg_t postimgtype[MAXSPLITSCREENPLAYERS];
-extern INT32 postimgparam[MAXSPLITSCREENPLAYERS];
+extern int32_t postimgparam[MAXSPLITSCREENPLAYERS];
 
-extern INT32 viewwindowx, viewwindowy;
-extern INT32 viewwidth, scaledviewwidth;
+extern int32_t viewwindowx, viewwindowy;
+extern int32_t viewwidth, scaledviewwidth;
 
 // Player taking events, and displaying.
-extern INT32 consoleplayer;
-extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
+extern int32_t consoleplayer;
+extern int32_t displayplayers[MAXSPLITSCREENPLAYERS];
 /* g_localplayers[0] = consoleplayer */
-extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
+extern int32_t g_localplayers[MAXSPLITSCREENPLAYERS];
 
 extern char * titlemap;
 extern dboolean hidetitlepics;
@@ -292,7 +292,7 @@ extern char * podiummap; // map to load for podium
 
 extern char * tutorialplaygroundmap; // map to load for playground
 extern char * tutorialchallengemap; // map to load for tutorial skip
-extern UINT8 tutorialchallenge;
+extern uint8_t tutorialchallenge;
 #define TUTORIALSKIP_NONE 0
 #define TUTORIALSKIP_FAILED 1
 #define TUTORIALSKIP_INPROGRESS 2
@@ -301,30 +301,30 @@ extern dboolean exitfadestarted;
 
 struct scene_t
 {
-	UINT8 numpics;
+	uint8_t numpics;
 	char picname[8][8];
-	UINT8 pichires[8];
+	uint8_t pichires[8];
 	char *text;
-	UINT16 xcoord[8];
-	UINT16 ycoord[8];
-	UINT16 picduration[8];
-	UINT8 musicloop;
-	UINT16 textxpos;
-	UINT16 textypos;
+	uint16_t xcoord[8];
+	uint16_t ycoord[8];
+	uint16_t picduration[8];
+	uint8_t musicloop;
+	uint16_t textxpos;
+	uint16_t textypos;
 
 	char   musswitch[7];
-	UINT16 musswitchflags;
-	UINT32 musswitchposition;
+	uint16_t musswitchflags;
+	uint32_t musswitchposition;
 
-	UINT8 fadecolor; // Color number for fade, 0 means don't do the first fade
-	UINT8 fadeinid;  // ID of the first fade, to a color -- ignored if fadecolor is 0
-	UINT8 fadeoutid; // ID of the second fade, to the new screen
+	uint8_t fadecolor; // Color number for fade, 0 means don't do the first fade
+	uint8_t fadeinid;  // ID of the first fade, to a color -- ignored if fadecolor is 0
+	uint8_t fadeoutid; // ID of the second fade, to the new screen
 }; // TODO: It would probably behoove us to implement subsong/track selection here, too, but I'm lazy -SH
 
 struct cutscene_t
 {
 	scene_t scene[128]; // 128 scenes per cutscene.
-	INT32 numscenes; // Number of scenes in this cutscene
+	int32_t numscenes; // Number of scenes in this cutscene
 };
 
 extern cutscene_t *cutscenes[128];
@@ -342,53 +342,53 @@ extern cutscene_t *cutscenes[128];
 #define MAX_PROMPT_PICS 8
 struct textpage_t
 {
-	UINT8 numpics;
-	UINT8 picmode; // sequence mode after displaying last pic, 0 = persist, 1 = loop, 2 = destroy
-	UINT8 pictoloop; // if picmode == loop, which pic to loop to?
-	UINT8 pictostart; // initial pic number to show
+	uint8_t numpics;
+	uint8_t picmode; // sequence mode after displaying last pic, 0 = persist, 1 = loop, 2 = destroy
+	uint8_t pictoloop; // if picmode == loop, which pic to loop to?
+	uint8_t pictostart; // initial pic number to show
 	char picname[MAX_PROMPT_PICS][8];
-	UINT8 pichires[MAX_PROMPT_PICS];
-	UINT16 xcoord[MAX_PROMPT_PICS]; // gfx
-	UINT16 ycoord[MAX_PROMPT_PICS]; // gfx
-	UINT16 picduration[MAX_PROMPT_PICS];
+	uint8_t pichires[MAX_PROMPT_PICS];
+	uint16_t xcoord[MAX_PROMPT_PICS]; // gfx
+	uint16_t ycoord[MAX_PROMPT_PICS]; // gfx
+	uint16_t picduration[MAX_PROMPT_PICS];
 
 	char   musswitch[7];
-	UINT16 musswitchflags;
-	UINT8 musicloop;
+	uint16_t musswitchflags;
+	uint8_t musicloop;
 
 	char tag[33]; // page tag
 	char name[34]; // narrator name, extra char for color
 	char iconname[8]; // narrator icon lump
 	dboolean rightside; // narrator side, false = left, true = right
 	dboolean iconflip; // narrator flip icon horizontally
-	UINT8 hidehud; // hide hud, 0 = show all, 1 = hide depending on prompt position (top/bottom), 2 = hide all
-	UINT8 lines; // # of lines to show. If name is specified, name takes one of the lines. If 0, defaults to 4.
-	INT32 backcolor; // see CON_SetupBackColormap: 0-11, INT32_MAX for user-defined (CONS_BACKCOLOR)
-	UINT8 align; // text alignment, 0 = left, 1 = right, 2 = center
-	UINT8 verticalalign; // vertical text alignment, 0 = top, 1 = bottom, 2 = middle
-	UINT8 textspeed; // text speed, delay in tics between characters.
+	uint8_t hidehud; // hide hud, 0 = show all, 1 = hide depending on prompt position (top/bottom), 2 = hide all
+	uint8_t lines; // # of lines to show. If name is specified, name takes one of the lines. If 0, defaults to 4.
+	int32_t backcolor; // see CON_SetupBackColormap: 0-11, INT32_MAX for user-defined (CONS_BACKCOLOR)
+	uint8_t align; // text alignment, 0 = left, 1 = right, 2 = center
+	uint8_t verticalalign; // vertical text alignment, 0 = top, 1 = bottom, 2 = middle
+	uint8_t textspeed; // text speed, delay in tics between characters.
 	sfxenum_t textsfx; // sfx_ id for printing text
-	UINT8 nextprompt; // next prompt to jump to, one-based. 0 = current prompt
-	UINT8 nextpage; // next page to jump to, one-based. 0 = next page within prompt->numpages
+	uint8_t nextprompt; // next prompt to jump to, one-based. 0 = current prompt
+	uint8_t nextpage; // next page to jump to, one-based. 0 = next page within prompt->numpages
 	char nexttag[33]; // next tag to jump to. If set, this overrides nextprompt and nextpage.
-	INT32 timetonext; // time in tics to jump to next page automatically. 0 = don't jump automatically
+	int32_t timetonext; // time in tics to jump to next page automatically. 0 = don't jump automatically
 	char *text;
 };
 
 struct textprompt_t
 {
 	textpage_t page[MAX_PAGES];
-	INT32 numpages; // Number of pages in this prompt
+	int32_t numpages; // Number of pages in this prompt
 };
 
 extern textprompt_t *textprompts[MAX_PROMPTS];
 
 // For the Custom Exit linedef.
-extern UINT16 nextmapoverride;
-extern UINT8 skipstats;
+extern uint16_t nextmapoverride;
+extern uint8_t skipstats;
 
 // Fun extra stuff
-extern INT16 lastmap; // Last level you were at (returning from special stages).
+extern int16_t lastmap; // Last level you were at (returning from special stages).
 
 // A single point in space.
 struct mappoint_t
@@ -433,38 +433,38 @@ struct customoption_t
 
 struct cupheader_t
 {
-	UINT16 id;								///< Cup ID
-	UINT8 monitor;							///< Monitor graphic 1-9 or A-Z
+	uint16_t id;								///< Cup ID
+	uint8_t monitor;							///< Monitor graphic 1-9 or A-Z
 
 	char name[MAXCUPNAME];					///< Cup title
-	UINT32 namehash;						///< Cup title hash
+	uint32_t namehash;						///< Cup title hash
 
 	char realname[MAXCUPNAME];				///< Cup nomme de gurre
 
 	char icon[9];							///< Name of the icon patch
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
-	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
-	UINT8 numlevels;						///< Number of levels defined in levellist
-	UINT8 numbonus;							///< Number of bonus stages defined
-	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+	int16_t cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
+	uint8_t numlevels;						///< Number of levels defined in levellist
+	uint8_t numbonus;							///< Number of bonus stages defined
+	uint8_t emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
 
 	// Modifiable in mainwads only
 	dboolean playcredits;					///< Play the credits?
-	UINT16 hintcondition;					///< Hint condition for 2.4 Super Cup
+	uint16_t hintcondition;					///< Hint condition for 2.4 Super Cup
 
 	// Truly internal data
-	UINT16 cache_cuplock;					///< Cached Unlockable ID
+	uint16_t cache_cuplock;					///< Cached Unlockable ID
 	cupwindata_t windata[4];				///< Data for cup visitation
 	cupheader_t *next;						///< Next cup in linked list
 };
 
 extern cupheader_t *kartcupheaders; // Start of cup linked list
-extern UINT16 numkartcupheaders, basenumkartcupheaders;
+extern uint16_t numkartcupheaders, basenumkartcupheaders;
 
 struct unloaded_cupheader_t
 {
 	char name[MAXCUPNAME];
-	UINT32 namehash;
+	uint32_t namehash;
 
 	cupwindata_t windata[4];
 
@@ -477,8 +477,8 @@ extern unloaded_cupheader_t *unloadedcupheaders;
 
 struct staffbrief_t
 {
-	UINT16 wad;
-	UINT16 lump;
+	uint16_t wad;
+	uint16_t lump;
 	char name[MAXPLAYERNAME+1];
 	tic_t time;
 	tic_t lap;
@@ -490,8 +490,8 @@ struct staffbrief_t
 
 struct mapheader_lighting_t
 {
-	UINT8 light_contrast;				///< Range of wall lighting. 0 is no lighting.
-	SINT8 sprite_backlight;				///< Subtract from wall lighting for sprites only.
+	uint8_t light_contrast;				///< Range of wall lighting. 0 is no lighting.
+	int8_t sprite_backlight;				///< Subtract from wall lighting for sprites only.
 	dboolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
 	angle_t light_angle;				///< Angle of directional wall lighting.
 };
@@ -502,7 +502,7 @@ struct mapheader_t
 {
 	// Core game information, not user-modifiable directly
 	char *lumpname;						///< Lump name can be really long
-	UINT32 lumpnamehash;				///< quickncasehash(->lumpname, MAXMAPLUMPNAME)
+	uint32_t lumpnamehash;				///< quickncasehash(->lumpname, MAXMAPLUMPNAME)
 	lumpnum_t lumpnum;       			///< Lump number for the map, used by vres_GetMap
 
 	void *thumbnailPic;					///< Lump data for the level select thumbnail.
@@ -511,8 +511,8 @@ struct mapheader_t
 	void *tweakLump;					///< Lump data for the palette tweak remap.
 
 	// Staff Ghost information
-	UINT8 ghostCount;					///< Count of valid staff ghosts
-	UINT32 ghostBriefSize;              ///< Size of ghostBrief vector allocation
+	uint8_t ghostCount;					///< Count of valid staff ghosts
+	uint32_t ghostBriefSize;              ///< Size of ghostBrief vector allocation
 	staffbrief_t **ghostBrief;			///< Valid staff ghosts, pointers are owned
 	tic_t automedaltime[4];             ///< Auto Medal times derived from ghost times, best to worst
 
@@ -527,41 +527,41 @@ struct mapheader_t
 	char lvlttl[22];					///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
 	char menuttl[22];					///< Menu title for level
 	char zonttl[22];					///< "ZONE" replacement name
-	UINT8 actnum;						///< Act number or 0 for none.
+	uint8_t actnum;						///< Act number or 0 for none.
 
 	// Selection metadata
 	char keywords[33];					///< Keywords separated by space to search for. 32 characters.
 
-	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
-	UINT16 menuflags;					///< LF2_flags: options that affect record attack menus
-	UINT8 playerLimit;					///< This map does not appear in multiplayer vote if there are too many players
+	uint8_t levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
+	uint16_t menuflags;					///< LF2_flags: options that affect record attack menus
+	uint8_t playerLimit;					///< This map does not appear in multiplayer vote if there are too many players
 
 	// Operational metadata
-	UINT16 levelflags;					///< LF_flags:  merged booleans into one UINT16 for space, see below
-	UINT32 typeoflevel;					///< Combination of typeoflevel flags.
-	UINT8 numlaps;						///< Number of laps in circuit mode, unless overridden.
-	UINT8 lapspersection;				///< Number of laps per section in hybrid section-circuit maps.
+	uint16_t levelflags;					///< LF_flags:  merged booleans into one uint16_t for space, see below
+	uint32_t typeoflevel;					///< Combination of typeoflevel flags.
+	uint8_t numlaps;						///< Number of laps in circuit mode, unless overridden.
+	uint8_t lapspersection;				///< Number of laps per section in hybrid section-circuit maps.
 	fixed_t gravity;					///< Map-wide gravity.
 	char relevantskin[SKINNAMESIZE+1];	///< Skin to use for tutorial (if not provided, uses Eggman.)
 
 	// Music information
 	char musname[MAXMUSNAMES][7];			///< Music tracks to play. First dimension is the track number, second is the music string. "" for no music.
 	char encoremusname[MAXMUSNAMES][7];	///< Music tracks to play in Encore. First dimension is the track number, second is the music string. "" for no music.
-	UINT16 cache_muslock[MAXMUSNAMES-1];	///< Cached Alt Music IDs
+	uint16_t cache_muslock[MAXMUSNAMES-1];	///< Cached Alt Music IDs
 	char associatedmus[MAXMUSNAMES][7];		///< Associated music tracks for sound test unlock.
 	char positionmus[7];					///< Custom Position track. Doesn't play in Encore or other fun game-controlled contexts
-	UINT8 musname_size;						///< Number of music tracks defined
-	UINT8 encoremusname_size;				///< Number of Encore music tracks defined
-	UINT8 associatedmus_size;				///< Number of associated music tracks defined
-	UINT16 mustrack;						///< Subsong to play. Only really relevant for music modules and specific formats supported by GME. 0 to ignore.
-	UINT32 muspos;							///< Music position to jump to.
+	uint8_t musname_size;						///< Number of music tracks defined
+	uint8_t encoremusname_size;				///< Number of Encore music tracks defined
+	uint8_t associatedmus_size;				///< Number of associated music tracks defined
+	uint16_t mustrack;						///< Subsong to play. Only really relevant for music modules and specific formats supported by GME. 0 to ignore.
+	uint32_t muspos;							///< Music position to jump to.
 
 	// Sky information
-	UINT8 weather;						///< See preciptype_t
+	uint8_t weather;						///< See preciptype_t
 	char skytexture[9];					///< Sky texture to use.
-	INT16 skybox_scalex;				///< Skybox X axis scale. (0 = no movement, 1 = 1:1 movement, 16 = 16:1 slow movement, -4 = 1:4 fast movement, etc.)
-	INT16 skybox_scaley;				///< Skybox Y axis scale.
-	INT16 skybox_scalez;				///< Skybox Z axis scale.
+	int16_t skybox_scalex;				///< Skybox X axis scale. (0 = no movement, 1 = 1:1 movement, 16 = 16:1 slow movement, -4 = 1:4 fast movement, etc.)
+	int16_t skybox_scaley;				///< Skybox Y axis scale.
+	int16_t skybox_scalez;				///< Skybox Z axis scale.
 
 	fixed_t darkness;					///< Pohbee darkness multiplier
 
@@ -570,8 +570,8 @@ struct mapheader_t
 	fixed_t default_waypoint_radius;	///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
 	// Visual information
-	UINT16 palette;						///< PAL lump to use on this map
-	UINT16 encorepal;					///< PAL for encore mode
+	uint16_t palette;						///< PAL lump to use on this map
+	uint16_t encorepal;					///< PAL for encore mode
 
 	mapheader_lighting_t lighting;			///< Wall and sprite lighting
 	mapheader_lighting_t lighting_encore;	///< Alternative lighting for Encore mode
@@ -580,24 +580,24 @@ struct mapheader_t
 	fixed_t cameraHeight;					///< Player camera height to use on this map
 
 	// Audience information
-	UINT8 numFollowers;					///< Internal. For audience support.
-	INT16 *followers;					///< List of audience followers in this level. Allocated dynamically for space reasons. Be careful.
+	uint8_t numFollowers;					///< Internal. For audience support.
+	int16_t *followers;					///< List of audience followers in this level. Allocated dynamically for space reasons. Be careful.
 
 	// Script information
 	char runsoc[33];					///< SOC to execute at start of level (32 character limit instead of 63)
 	char scriptname[33];				///< Script to use when the map is switched to. (32 character limit instead of 191)
 
 	// Cutscene information
-	UINT8 precutscenenum;				///< Cutscene number to play BEFORE a level starts.
-	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
+	uint8_t precutscenenum;				///< Cutscene number to play BEFORE a level starts.
+	uint8_t cutscenenum;					///< Cutscene number to use, 0 for none.
 
 	mobjtype_t destroyforchallenge[MAXDESTRUCTIBLES];	///< Assistive for UCRP_MAPDESTROYOBJECTS
-	UINT8 destroyforchallenge_size;						///< Number for above
+	uint8_t destroyforchallenge_size;						///< Number for above
 
-	UINT16 cache_maplock;				///< Cached Unlockable ID
+	uint16_t cache_maplock;				///< Cached Unlockable ID
 
 	// Lua information
-	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.
+	uint8_t numCustomOptions;				///< Internal. For Lua custom value support.
 	customoption_t *customopts;			///< Custom options. Allocated dynamically for space reasons. Be careful.
 };
 
@@ -614,12 +614,12 @@ struct mapheader_t
 #define LF2_FINISHNEEDED	(1<<3) ///< Not available in Time Attack modes until you beat the level
 
 extern mapheader_t** mapheaderinfo;
-extern INT32 nummapheaders, basenummapheaders, mapallocsize;
+extern int32_t nummapheaders, basenummapheaders, mapallocsize;
 
 struct unloaded_mapheader_t
 {
 	char *lumpname;
-	UINT32 lumpnamehash;
+	uint32_t lumpnamehash;
 
 	recorddata_t records;
 
@@ -654,23 +654,23 @@ struct gametype_t
 {
 	const char *name;
 	const char *constant;
-	UINT32 rules;
-	UINT32 tol;
-	UINT8 intermission;
-	SINT8 speed;
-	INT32 pointlimit;
-	INT32 timelimit;
+	uint32_t rules;
+	uint32_t tol;
+	uint8_t intermission;
+	int8_t speed;
+	int32_t pointlimit;
+	int32_t timelimit;
 	char gppic[9];
 	char gppicmini[9];
 };
 
 extern gametype_t *gametypes[MAXGAMETYPES+1];
-extern INT16 numgametypes;
+extern int16_t numgametypes;
 
-extern INT16 gametype, g_lastgametype;
+extern int16_t gametype, g_lastgametype;
 
 // Gametype rules
-typedef INT32 GameTypeRules;
+typedef int32_t GameTypeRules;
 #define GTR_CIRCUIT				(1)		// Enables the finish line, laps, and the waypoint system.
 #define GTR_BOTS				(1<<1)		// Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
 
@@ -716,7 +716,7 @@ typedef INT32 GameTypeRules;
 #define gametyperules (gametypes[gametype]->rules)
 
 // TypeOfLevel things
-typedef INT32 TypeOfLevel;
+typedef int32_t TypeOfLevel;
 #define TOL_RACE	 (0x0001) ///< Race
 #define TOL_BATTLE	 (0x0002) ///< Battle
 #define TOL_SPECIAL	 (0x0004) ///< Special Stage (variant of race, but forbidden)
@@ -734,15 +734,15 @@ typedef INT32 TypeOfLevel;
 struct tolinfo_t
 {
 	const char *name;
-	UINT32 flag;
+	uint32_t flag;
 };
 extern tolinfo_t TYPEOFLEVEL[NUMTOLNAMES];
-extern UINT32 lastcustomtol;
+extern uint32_t lastcustomtol;
 
-extern UINT8 stagefailed;
+extern uint8_t stagefailed;
 
 // Emeralds stored as bits to throw savegame hackers off.
-typedef INT32 emeraldflags_t;
+typedef int32_t emeraldflags_t;
 #define EMERALD_CHAOS1 (1)
 #define EMERALD_CHAOS2 (1<<1)
 #define EMERALD_CHAOS3 (1<<2)
@@ -767,13 +767,13 @@ typedef INT32 emeraldflags_t;
 #define ALLSUPEREMERALDS(v) ((v & EMERALD_ALLSUPER) == EMERALD_ALLSUPER)
 #define ALLEMERALDS(v) ((v & EMERALD_ALL) == EMERALD_ALL)
 
-#define NUM_LUABANKS 16 // please only make this number go up between versions, never down. you'll break saves otherwise. also, must fit in UINT8
-extern INT32 luabanks[NUM_LUABANKS];
+#define NUM_LUABANKS 16 // please only make this number go up between versions, never down. you'll break saves otherwise. also, must fit in uint8_t
+extern int32_t luabanks[NUM_LUABANKS];
 
-extern INT32 nummaprings; //keep track of spawned rings/coins
+extern int32_t nummaprings; //keep track of spawned rings/coins
 
-extern UINT8 nummapspraycans;
-extern UINT16 numchallengedestructibles;
+extern uint8_t nummapspraycans;
+extern uint16_t numchallengedestructibles;
 
 // Teamplay
 typedef enum
@@ -788,11 +788,11 @@ struct teaminfo_t
 {
 	const char *name;
 	skincolornum_t color;
-	UINT32 chat_color;
+	uint32_t chat_color;
 };
 
 extern teaminfo_t g_teaminfo[TEAM__MAX];
-extern UINT32 g_teamscores[TEAM__MAX];
+extern uint32_t g_teamscores[TEAM__MAX];
 
 // Eliminates unnecessary searching.
 extern dboolean CheckForBustableBlocks;
@@ -803,41 +803,41 @@ extern dboolean CheckForFloatBob;
 extern dboolean CheckForReverseGravity;
 
 // Powerup durations
-extern UINT16 invulntics;
-extern UINT16 sneakertics;
-extern UINT16 flashingtics;
-extern UINT16 tailsflytics;
-extern UINT16 underwatertics;
-extern UINT16 spacetimetics;
-extern UINT16 extralifetics;
-extern UINT16 nightslinktics;
+extern uint16_t invulntics;
+extern uint16_t sneakertics;
+extern uint16_t flashingtics;
+extern uint16_t tailsflytics;
+extern uint16_t underwatertics;
+extern uint16_t spacetimetics;
+extern uint16_t extralifetics;
+extern uint16_t nightslinktics;
 
 // SRB2kart
 extern tic_t introtime;
 extern tic_t starttime;
 
 extern const tic_t bulbtime;
-extern UINT8 numbulbs;
+extern uint8_t numbulbs;
 
-extern INT32 hyudorotime;
-extern INT32 stealtime;
-extern INT32 sneakertime;
-extern INT32 itemtime;
-extern INT32 bubbletime;
-extern INT32 comebacktime;
-extern INT32 bumptime;
-extern INT32 ebraketime;
-extern INT32 greasetics;
-extern INT32 wipeoutslowtime;
-extern INT32 wantedreduce;
-extern INT32 wantedfrequency;
+extern int32_t hyudorotime;
+extern int32_t stealtime;
+extern int32_t sneakertime;
+extern int32_t itemtime;
+extern int32_t bubbletime;
+extern int32_t comebacktime;
+extern int32_t bumptime;
+extern int32_t ebraketime;
+extern int32_t greasetics;
+extern int32_t wipeoutslowtime;
+extern int32_t wantedreduce;
+extern int32_t wantedfrequency;
 
-extern UINT8 introtoplay;
-extern UINT8 g_credits_cutscene;
-extern UINT8 useSeal;
+extern uint8_t introtoplay;
+extern uint8_t g_credits_cutscene;
+extern uint8_t useSeal;
 
-extern UINT8 use1upSound;
-extern UINT8 maxXtraLife; // Max extra lives from rings
+extern uint8_t use1upSound;
+extern uint8_t maxXtraLife; // Max extra lives from rings
 
 struct exitcondition_t
 {
@@ -868,15 +868,15 @@ extern fixed_t mapobjectscale;
 
 extern struct maplighting
 {
-	UINT8 contrast;
-	SINT8 backlight;
+	uint8_t contrast;
+	int8_t backlight;
 	dboolean directional;
 	angle_t angle;
 } maplighting;
 
 // SRB2kart
-extern UINT8 numlaps;
-extern UINT8 gamespeed;
+extern uint8_t numlaps;
+extern uint8_t gamespeed;
 extern dboolean franticitems;
 extern dboolean encoremode, prevencoremode;
 extern dboolean g_teamplay;
@@ -886,12 +886,12 @@ extern tic_t wantedcalcdelay;
 extern tic_t itemCooldowns[NUMKARTITEMS - 1];
 extern tic_t mapreset;
 extern dboolean thwompsactive;
-extern UINT8 lastLowestLap;
-extern SINT8 spbplace;
+extern uint8_t lastLowestLap;
+extern int8_t spbplace;
 extern dboolean rainbowstartavailable;
 extern tic_t attacktimingstarted;
 extern dboolean inDuel;
-extern UINT8 overtimecheckpoints;
+extern uint8_t overtimecheckpoints;
 
 extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
 extern dboolean legitimateexit;
@@ -905,9 +905,9 @@ extern dboolean comebackshowninfo;
 #define VOTE_TIMEOUT_LOSER (MAXPLAYERS+1) // not a real vote ID
 #define VOTE_TIMEOUT_WINNER (MAXPLAYERS+2) // ditto
 
-extern UINT16 g_voteLevels[VOTE_NUM_LEVELS][2];
-extern SINT8 g_votes[VOTE_TOTAL];
-extern SINT8 g_pickedVote;
+extern uint16_t g_voteLevels[VOTE_NUM_LEVELS][2];
+extern int8_t g_votes[VOTE_TOTAL];
+extern int8_t g_pickedVote;
 extern dboolean g_votes_striked[VOTE_NUM_LEVELS];
 
 // ===========================
@@ -928,15 +928,15 @@ extern mapthing_t *faultstart; // Kart Fault
 #define TUBEWAYPOINTSEQUENCESIZE 256
 #define NUMTUBEWAYPOINTSEQUENCES 256
 extern mobj_t *tubewaypoints[NUMTUBEWAYPOINTSEQUENCES][TUBEWAYPOINTSEQUENCESIZE];
-extern UINT16 numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
+extern uint16_t numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
 
-void P_AddTubeWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint);
-mobj_t *P_GetFirstTubeWaypoint(UINT8 sequence);
-mobj_t *P_GetLastTubeWaypoint(UINT8 sequence);
+void P_AddTubeWaypoint(uint8_t sequence, uint8_t id, mobj_t *waypoint);
+mobj_t *P_GetFirstTubeWaypoint(uint8_t sequence);
+mobj_t *P_GetLastTubeWaypoint(uint8_t sequence);
 mobj_t *P_GetPreviousTubeWaypoint(mobj_t *current, dboolean wrap);
 mobj_t *P_GetNextTubeWaypoint(mobj_t *current, dboolean wrap);
-mobj_t *P_GetClosestTubeWaypoint(UINT8 sequence, mobj_t *mo);
-dboolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence);
+mobj_t *P_GetClosestTubeWaypoint(uint8_t sequence, mobj_t *mo);
+dboolean P_IsDegeneratedTubeWaypointSequence(uint8_t sequence);
 
 // =====================================
 // Internal parameters, used for engine.
@@ -955,7 +955,7 @@ dboolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence);
 
 #ifdef DEBUGFILE
 extern FILE *debugfile;
-extern INT32 debugload;
+extern int32_t debugload;
 #endif
 
 // if true, load all graphics at level load
@@ -964,8 +964,8 @@ extern dboolean precache;
 // wipegamestate can be set to -1
 //  to force a wipe on the next draw
 extern gamestate_t wipegamestate;
-extern INT16 wipetypepre;
-extern INT16 wipetypepost;
+extern int16_t wipetypepre;
+extern int16_t wipetypepost;
 
 // debug flag to cancel adaptiveness
 extern dboolean g_singletics;
@@ -985,8 +985,8 @@ extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
 extern consvar_t cv_jointimeout;
 extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
-extern INT32 serverplayer;
-extern INT32 adminplayers[MAXPLAYERS];
+extern int32_t serverplayer;
+extern int32_t adminplayers[MAXPLAYERS];
 
 /// \note put these in d_clisrv outright?
 

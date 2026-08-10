@@ -200,7 +200,7 @@ static int follower_num(lua_State *L)
 
 static int lib_iterateFollowers(lua_State *L)
 {
-	INT32 i;
+	int32_t i;
 
 	if (lua_gettop(L) < 2)
 	{
@@ -212,7 +212,7 @@ static int lib_iterateFollowers(lua_State *L)
 	lua_remove(L, 1); // state is unused.
 
 	if (!lua_isnil(L, 1))
-		i = (INT32)(*((follower_t **)luaL_checkudata(L, 1, META_FOLLOWER)) - followers) + 1;
+		i = (int32_t)(*((follower_t **)luaL_checkudata(L, 1, META_FOLLOWER)) - followers) + 1;
 	else
 		i = 0;
 
@@ -229,7 +229,7 @@ static int lib_iterateFollowers(lua_State *L)
 static int lib_getFollower(lua_State *L)
 {
 	const char *field;
-	INT32 i;
+	int32_t i;
 
 	// find follower by number
 	if (lua_type(L, 2) == LUA_TNUMBER)

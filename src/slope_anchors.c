@@ -115,7 +115,7 @@ nearest_point
 	return v;
 }
 
-static INT16
+static int16_t
 anchor_height
 (
 		const mapthing_t * a,
@@ -191,7 +191,7 @@ get_anchor
 		mapthing_t               **      anchors,
 		fixed_t                     distances[3],
 		const struct anchor_list  * list,
-		const INT32                 group,
+		const int32_t                 group,
 		const vertex_t            * v
 ){
 	size_t i;
@@ -241,7 +241,7 @@ get_sector_anchors
 		mapthing_t               **      anchors,
 		fixed_t                     distances[3],
 		const struct anchor_list  * list,
-		const INT32                 group,
+		const int32_t                 group,
 		const sector_t            * sector
 ){
 	size_t i;
@@ -258,7 +258,7 @@ find_closest_anchors
 (
 		const sector_t           * sector,
 		const struct anchor_list * list,
-		const INT32                group
+		const int32_t                group
 ){
 	fixed_t distances[3] = { INT32_MAX, INT32_MAX, INT32_MAX };
 
@@ -339,7 +339,7 @@ static pslope_t *
 new_vertex_slope
 (
 		mapthing_t  ** anchors,
-		const INT16    flags
+		const int16_t    flags
 ){
 	pslope_t * slope = Z_Calloc(sizeof (pslope_t), PU_LEVEL, NULL);
 	const vector3_t anchorVertices[3] = {
@@ -401,9 +401,9 @@ slope_sector
 		pslope_t                ** slope,
 		pslope_t                ** alt,
 		sector_t                 * sector,
-		const INT16                flags,
+		const int16_t                flags,
 		const struct anchor_list * list,
-		const INT32                group
+		const int32_t                group
 ){
 	mapthing_t ** anchors = find_closest_anchors(sector, list, group);
 
@@ -427,13 +427,13 @@ make_anchored_slope
 		const line_t * line,
 		const int      plane
 ){
-	INT16 flags = line->args[1];
+	int16_t flags = line->args[1];
 
 	const int side = ( flags & TMSAF_BACKSIDE ) != 0;
 
 	sector_t   *  s;
 
-	INT32 group = line->args[2];
+	int32_t group = line->args[2];
 
 	if (side == 0 || (line->flags & ML_TWOSIDED))
 	{
@@ -464,8 +464,8 @@ make_anchored_slope_from_sector
 		sector_t * s,
 		const int      plane
 ){
-	INT16 flags = s->args[1];
-	INT32 group = s->args[2];
+	int16_t flags = s->args[1];
+	int32_t group = s->args[2];
 
 	if (plane == (TMSA_FLOOR|TMSA_CEILING))
 	{

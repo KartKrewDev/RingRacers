@@ -30,14 +30,14 @@
 struct grandprixinfo grandprixinfo;
 
 /*--------------------------------------------------
-	UINT8 K_BotStartingDifficulty(SINT8 value)
+	uint8_t K_BotStartingDifficulty(int8_t value)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT8 K_BotStartingDifficulty(SINT8 value)
+uint8_t K_BotStartingDifficulty(int8_t value)
 {
 	// startingdifficulty: Easy = 3, Normal = 6, Hard = 9
-	SINT8 difficulty = (value + 1) * 3;
+	int8_t difficulty = (value + 1) * 3;
 
 	if (difficulty > MAXBOTDIFFICULTY)
 	{
@@ -52,13 +52,13 @@ UINT8 K_BotStartingDifficulty(SINT8 value)
 }
 
 /*--------------------------------------------------
-	INT16 K_CalculateGPRankPoints(UINT16 diplayexp, UINT8 position, UINT8 numplayers)
+	int16_t K_CalculateGPRankPoints(uint16_t diplayexp, uint8_t position, uint8_t numplayers)
 
 		See header file for description.
 --------------------------------------------------*/
-INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers)
+int16_t K_CalculateGPRankPoints(uint16_t exp, uint8_t position, uint8_t numplayers)
 {
-	INT16 points;
+	int16_t points;
 
 	if (position > numplayers || position == 0)
 	{
@@ -80,21 +80,21 @@ INT16 K_CalculateGPRankPoints(UINT16 exp, UINT8 position, UINT8 numplayers)
 }
 
 /*--------------------------------------------------
-	UINT8 K_GetGPPlayerCount(UINT8 humans)
+	uint8_t K_GetGPPlayerCount(uint8_t humans)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT8 K_GetGPPlayerCount(UINT8 humans)
+uint8_t K_GetGPPlayerCount(uint8_t humans)
 {
 	// 1P -> 8 total
 	// 2P -> 8 total
 	// 3P -> 12 total
 	// 4P -> 16 total
-	return std::clamp<UINT8>(humans * 4, 8, MAXPLAYERS);
+	return std::clamp<uint8_t>(humans * 4, 8, MAXPLAYERS);
 }
 
 // Kind of hate unsigned types
-static UINT8 K_GetOffsetStartingDifficulty(const UINT8 startingdifficulty, UINT8 offset)
+static uint8_t K_GetOffsetStartingDifficulty(const uint8_t startingdifficulty, uint8_t offset)
 {
 	if (offset >= startingdifficulty)
 		return 1;
@@ -102,7 +102,7 @@ static UINT8 K_GetOffsetStartingDifficulty(const UINT8 startingdifficulty, UINT8
 }
 
 /*--------------------------------------------------
-	static INT16 K_RivalScore(player_t *bot)
+	static int16_t K_RivalScore(player_t *bot)
 
 		Creates a "rival score" for a bot, used to determine which bot is the
 		most deserving of the rival status.
@@ -113,14 +113,14 @@ static UINT8 K_GetOffsetStartingDifficulty(const UINT8 startingdifficulty, UINT8
 	Return:-
 		"Rival score" value.
 --------------------------------------------------*/
-static INT16 K_RivalScore(player_t *bot)
+static int16_t K_RivalScore(player_t *bot)
 {
-	const UINT16 difficulty = bot->botvars.difficulty;
-	const UINT16 score = bot->score;
-	SINT8 roundnum = 1, roundsleft = 1;
-	UINT16 lowestscore = UINT16_MAX;
-	UINT8 lowestdifficulty = MAXBOTDIFFICULTY;
-	UINT8 i;
+	const uint16_t difficulty = bot->botvars.difficulty;
+	const uint16_t score = bot->score;
+	int8_t roundnum = 1, roundsleft = 1;
+	uint16_t lowestscore = UINT16_MAX;
+	uint8_t lowestdifficulty = MAXBOTDIFFICULTY;
+	uint8_t i;
 
 	if (grandprixinfo.cup != NULL && roundqueue.size > 0)
 	{
@@ -175,7 +175,7 @@ void K_AssignFoes(void)
 	std::vector<player_t *> bots;
 	dboolean addedplayer = false;
 
-	for (UINT8 i = 0; i < MAXPLAYERS; i++)
+	for (uint8_t i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false)
 			continue;
@@ -196,7 +196,7 @@ void K_AssignFoes(void)
 
 	std::stable_sort(bots.begin(), bots.end(), CompareRivals);
 
-	UINT8 i = 0;
+	uint8_t i = 0;
 	for (auto &bot : bots)
 	{
 		if (bot != NULL)
@@ -215,25 +215,25 @@ void K_AssignFoes(void)
 --------------------------------------------------*/
 void K_InitGrandPrixBots(void)
 {
-	const UINT16 defaultbotskin = R_BotDefaultSkin();
+	const uint16_t defaultbotskin = R_BotDefaultSkin();
 
-	const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
-	UINT8 difficultylevels[MAXPLAYERS];
+	const uint8_t startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
+	uint8_t difficultylevels[MAXPLAYERS];
 
-	UINT8 playercount = 8;
-	UINT8 wantedbots = 0;
+	uint8_t playercount = 8;
+	uint8_t wantedbots = 0;
 
-	UINT8 numplayers = 0;
-	UINT8 competitors[MAXSPLITSCREENPLAYERS];
+	uint8_t numplayers = 0;
+	uint8_t competitors[MAXSPLITSCREENPLAYERS];
 
-	UINT16 usableskins, skincount = (demo.playback ? demo.numskins : numskins);;
-	UINT16 grabskins[MAXSKINS+1];
+	uint16_t usableskins, skincount = (demo.playback ? demo.numskins : numskins);;
+	uint16_t grabskins[MAXSKINS+1];
 
-	UINT16 botskinlist[MAXPLAYERS];
-	UINT8 botskinlistpos = 0;
+	uint16_t botskinlist[MAXPLAYERS];
+	uint8_t botskinlistpos = 0;
 
-	UINT8 newplayernum = 0;
-	UINT16 i, j;
+	uint8_t newplayernum = 0;
+	uint16_t i, j;
 
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
 	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
@@ -311,13 +311,13 @@ void K_InitGrandPrixBots(void)
 			{
 				player_t *p = &players[competitors[j]];
 				const char *rivalname = skins[p->skin]->rivals[i];
-				INT32 rivalnum = R_SkinAvailable(rivalname);
+				int32_t rivalnum = R_SkinAvailable(rivalname);
 
 				// Intentionally referenced before (currently dummied out) unlock check. Such a tease!
-				if (rivalnum != -1 && grabskins[(UINT16)rivalnum] != MAXSKINS)
+				if (rivalnum != -1 && grabskins[(uint16_t)rivalnum] != MAXSKINS)
 				{
-					botskinlist[botskinlistpos++] = (UINT16)rivalnum;
-					grabskins[(UINT16)rivalnum] = MAXSKINS;
+					botskinlist[botskinlistpos++] = (uint16_t)rivalnum;
+					grabskins[(uint16_t)rivalnum] = MAXSKINS;
 				}
 			}
 		}
@@ -345,11 +345,11 @@ void K_InitGrandPrixBots(void)
 	{
 		while (botskinlistpos < wantedbots)
 		{
-			UINT16 skinnum = defaultbotskin;
+			uint16_t skinnum = defaultbotskin;
 
 			if (usableskins > 0)
 			{
-				UINT16 index = P_RandomKey(PR_BOTS, usableskins);
+				uint16_t index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}
@@ -391,7 +391,7 @@ void K_LoadGrandPrixSaveGame(void)
 	players[consoleplayer].score = savedata.score;
 	players[consoleplayer].totalring = savedata.totalring;
 
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -417,8 +417,8 @@ void K_UpdateGrandPrixBots(void)
 {
 	player_t *oldrival = NULL;
 	player_t *newrival = NULL;
-	UINT16 newrivalscore = 0;
-	UINT8 i;
+	uint16_t newrivalscore = 0;
+	uint8_t i;
 
 	if (K_PodiumSequence() == true)
 	{
@@ -486,7 +486,7 @@ void K_UpdateGrandPrixBots(void)
 	// Find the bot with the best average of score & difficulty.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		UINT16 ns = 0;
+		uint16_t ns = 0;
 
 		if (!playeringame[i] || players[i].spectator || !players[i].bot)
 		{
@@ -507,7 +507,7 @@ void K_UpdateGrandPrixBots(void)
 	{
 		if (oldrival != NULL)
 		{
-			UINT16 os = K_RivalScore(oldrival);
+			uint16_t os = K_RivalScore(oldrival);
 
 			if (newrivalscore < os + 5)
 			{
@@ -526,7 +526,7 @@ void K_UpdateGrandPrixBots(void)
 }
 
 /*--------------------------------------------------
-	static UINT8 K_BotExpectedStanding(player_t *bot)
+	static uint8_t K_BotExpectedStanding(player_t *bot)
 
 		Predicts what placement a bot was expected to be in.
 		Used for determining if a bot's difficulty should raise.
@@ -537,10 +537,10 @@ void K_UpdateGrandPrixBots(void)
 	Return:-
 		Position number the bot was expected to be in.
 --------------------------------------------------*/
-static UINT8 K_BotExpectedStanding(player_t *bot)
+static uint8_t K_BotExpectedStanding(player_t *bot)
 {
-	UINT8 pos = 1;
-	UINT8 i;
+	uint8_t pos = 1;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -580,19 +580,19 @@ static UINT8 K_BotExpectedStanding(player_t *bot)
 --------------------------------------------------*/
 void K_IncreaseBotDifficulty(player_t *bot)
 {
-	UINT8 playerCount = 0;
-	UINT8 wonCount = 0;
+	uint8_t playerCount = 0;
+	uint8_t wonCount = 0;
 
-	UINT8 humanThatBeatUs = 0;
-	INT16 beatenDelta = 0;
+	uint8_t humanThatBeatUs = 0;
+	int16_t beatenDelta = 0;
 
-	UINT8 winnerHuman = UINT8_MAX;
-	INT16 winnerDelta = 0;
+	uint8_t winnerHuman = UINT8_MAX;
+	int16_t winnerDelta = 0;
 
-	UINT8 statusQuo = 1;
-	INT16 disruptDelta = 0;
+	uint8_t statusQuo = 1;
+	int16_t disruptDelta = 0;
 
-	INT16 increase = 1;
+	int16_t increase = 1;
 	size_t i = SIZE_MAX;
 
 	bot->botvars.diffincrease = 0;
@@ -656,12 +656,12 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	increase = (beatenDelta + winnerDelta + disruptDelta - 2) / 3;
 
-	SINT8 rankNudge = 1; // Generally, we want bots to rank up at least once, but...
+	int8_t rankNudge = 1; // Generally, we want bots to rank up at least once, but...
 
 	// If humans are struggling, we want to back off, or even derank if it's dire.
 	// Average human ranks to determine general bot "rank inertia".
-	SINT8 totalRank = 0;
-	SINT8 humanPlayers = 0;
+	int8_t totalRank = 0;
+	int8_t humanPlayers = 0;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		player_t *human = NULL;
@@ -684,7 +684,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	if (humanPlayers)
 	{
-		SINT8 averageRank = totalRank / humanPlayers;
+		int8_t averageRank = totalRank / humanPlayers;
 
 		// RELAXED MODE:
 		// Continues don't drop bot difficulty, because we always advance.
@@ -785,7 +785,7 @@ static dboolean CompareReplacements(player_t *a, player_t *b)
 --------------------------------------------------*/
 void K_RetireBots(void)
 {
-	UINT16 i;
+	uint16_t i;
 
 	if (grandprixinfo.gp == true
 		&& grandprixinfo.eventmode != GPEVENT_NONE)
@@ -867,8 +867,8 @@ void K_RetireBots(void)
 	{
 		// While joiners and players still exist, insert joiners.
 
-		//UINT8 replacements = max_lobby_size / 2; // Only replace bottom half
-		UINT8 replacements = 1; // Only replace a single player.
+		//uint8_t replacements = max_lobby_size / 2; // Only replace bottom half
+		uint8_t replacements = 1; // Only replace a single player.
 
 		while (replacements > 0)
 		{
@@ -940,11 +940,11 @@ void K_RetireBots(void)
 
 	// Okay, now this is essentially the original contents of K_RetireBots with cpp swag
 
-	const UINT16 defaultbotskin = R_BotDefaultSkin();
-	SINT8 newDifficulty;
+	const uint16_t defaultbotskin = R_BotDefaultSkin();
+	int8_t newDifficulty;
 
-	UINT16 usableskins, skincount = (demo.playback ? demo.numskins : numskins);
-	UINT16 grabskins[MAXSKINS+1];
+	uint16_t usableskins, skincount = (demo.playback ? demo.numskins : numskins);
+	uint16_t grabskins[MAXSKINS+1];
 
 	// Handle adjusting difficulty for new bots
 	{
@@ -956,7 +956,7 @@ void K_RetireBots(void)
 			}
 			else
 			{
-				const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
+				const uint8_t startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
 				newDifficulty = startingdifficulty - 4;
 				if (roundqueue.size > 0)
 				{
@@ -1018,16 +1018,16 @@ void K_RetireBots(void)
 	// Replace nocontested bots.
 	for (player_t *bot : bots)
 	{
-		UINT16 skinnum = defaultbotskin;
+		uint16_t skinnum = defaultbotskin;
 
 		if (usableskins > 0)
 		{
-			UINT16 index = P_RandomKey(PR_BOTS, usableskins);
+			uint16_t index = P_RandomKey(PR_BOTS, usableskins);
 			skinnum = grabskins[index];
 			grabskins[index] = grabskins[--usableskins];
 		}
 
-		memcpy(&bot->availabilities, R_GetSkinAvailabilities(false, skinnum), MAXAVAILABILITY*sizeof(UINT8));
+		memcpy(&bot->availabilities, R_GetSkinAvailabilities(false, skinnum), MAXAVAILABILITY*sizeof(uint8_t));
 
 		bot->botvars.difficulty = newDifficulty;
 		bot->botvars.diffincrease = 0;
@@ -1053,11 +1053,11 @@ void K_RetireBots(void)
 --------------------------------------------------*/
 void K_FakeBotResults(player_t *bot)
 {
-	const UINT32 distfactor = FixedMul(32 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
-	UINT32 worstdist = 0;
+	const uint32_t distfactor = FixedMul(32 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	uint32_t worstdist = 0;
 	tic_t besttime = UINT32_MAX;
-	UINT8 numplayers = 0;
-	UINT8 i;
+	uint8_t numplayers = 0;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

@@ -48,21 +48,21 @@ size_t numspritelumps, max_spritelumps;
 sprcache_t *spritecachedinfo;
 
 lighttable_t *colormaps;
-UINT8 *encoremap;
+uint8_t *encoremap;
 
 // for debugging/info purposes
 size_t flatmemory, spritememory, texturememory;
 
 // highcolor stuff
-INT16 color8to16[256]; // remap color index to highcolor rgb value
-INT16 *hicolormaps; // test a 32k colormap remaps high -> high
+int16_t color8to16[256]; // remap color index to highcolor rgb value
+int16_t *hicolormaps; // test a 32k colormap remaps high -> high
 
 // Blends two pixels together, using the equation
 // that matches the specified alpha style.
-UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alpha)
+uint32_t ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, uint8_t alpha)
 {
 	RGBA_t output;
-	INT16 fullalpha = (alpha - (0xFF - foreground.s.alpha));
+	int16_t fullalpha = (alpha - (0xFF - foreground.s.alpha));
 	if (style == AST_TRANSLUCENT)
 	{
 		if (fullalpha <= 0)
@@ -72,7 +72,7 @@ UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alph
 			// don't go too high
 			if (fullalpha >= 0xFF)
 				fullalpha = 0xFF;
-			alpha = (UINT8)fullalpha;
+			alpha = (uint8_t)fullalpha;
 
 			// if the background pixel is empty,
 			// match software and don't blend anything
@@ -86,7 +86,7 @@ UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alph
 			}
 			else
 			{
-				UINT8 beta = (0xFF - alpha);
+				uint8_t beta = (0xFF - alpha);
 				output.s.red = ((background.s.red * beta) + (foreground.s.red * alpha)) / 0xFF;
 				output.s.green = ((background.s.green * beta) + (foreground.s.green * alpha)) / 0xFF;
 				output.s.blue = ((background.s.blue * beta) + (foreground.s.blue * alpha)) / 0xFF;
@@ -140,10 +140,10 @@ UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alph
 	return 0;
 }
 
-INT32 ASTTextureBlendingThreshold[2] = {255/11, (10*255/11)};
+int32_t ASTTextureBlendingThreshold[2] = {255/11, (10*255/11)};
 
 // Blends a pixel for a texture patch.
-UINT32 ASTBlendTexturePixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alpha)
+uint32_t ASTBlendTexturePixel(RGBA_t background, RGBA_t foreground, int style, uint8_t alpha)
 {
 	// Alpha style set to translucent?
 	if (style == AST_TRANSLUCENT)
@@ -166,7 +166,7 @@ UINT32 ASTBlendTexturePixel(RGBA_t background, RGBA_t foreground, int style, UIN
 
 // Blends two palette indexes for a texture patch, then
 // finds the nearest palette index from the blended output.
-UINT8 ASTBlendPaletteIndexes(UINT8 background, UINT8 foreground, int style, UINT8 alpha)
+uint8_t ASTBlendPaletteIndexes(uint8_t background, uint8_t foreground, int style, uint8_t alpha)
 {
 	// Alpha style set to translucent?
 	if (style == AST_TRANSLUCENT)
@@ -174,8 +174,8 @@ UINT8 ASTBlendPaletteIndexes(UINT8 background, UINT8 foreground, int style, UINT
 		// Is the alpha small enough for translucency?
 		if (alpha <= ASTTextureBlendingThreshold[1])
 		{
-			UINT8 *mytransmap;
-			INT32 trans;
+			uint8_t *mytransmap;
+			int32_t trans;
 
 			// Is the patch way too translucent? Don't blend then.
 			if (alpha < ASTTextureBlendingThreshold[0])
@@ -215,7 +215,7 @@ static size_t numcolormaplumps = 0;
 static inline lumpnum_t R_CheckNumForNameList(const char *name, lumplist_t *list, size_t listsize)
 {
 	size_t i;
-	UINT16 lump;
+	uint16_t lump;
 
 	for (i = listsize - 1; i < INT16_MAX; i--)
 	{
@@ -231,7 +231,7 @@ static inline lumpnum_t R_CheckNumForNameList(const char *name, lumplist_t *list
 static void R_InitExtraColormaps(void)
 {
 	lumpnum_t startnum, endnum;
-	UINT16 cfile, clump;
+	uint16_t cfile, clump;
 	static size_t maxcolormaplumps = 16;
 
 	for (cfile = clump = 0; cfile < numwadfiles; cfile++, clump = 0)
@@ -287,7 +287,7 @@ void R_InitColormaps(void)
 #endif
 }
 
-void R_ReInitColormaps(UINT16 num, void *newencoremap, size_t encoremapsize)
+void R_ReInitColormaps(uint16_t num, void *newencoremap, size_t encoremapsize)
 {
 	char colormap[9] = "COLORMAP";
 	lumpnum_t lump;
@@ -463,10 +463,10 @@ void R_AddColormapToList(extracolormap_t *extra_colormap)
 //
 #ifdef EXTRACOLORMAPLUMPS
 dboolean R_CheckDefaultColormapByValues(dboolean checkrgba, dboolean checkfadergba, dboolean checkparams,
-	INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags, lumpnum_t lump)
+	int32_t rgba, int32_t fadergba, uint8_t fadestart, uint8_t fadeend, uint8_t flags, lumpnum_t lump)
 #else
 dboolean R_CheckDefaultColormapByValues(dboolean checkrgba, dboolean checkfadergba, dboolean checkparams,
-	INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags)
+	int32_t rgba, int32_t fadergba, uint8_t fadestart, uint8_t fadeend, uint8_t flags)
 #endif
 {
 	return (
@@ -528,13 +528,13 @@ dboolean R_CheckEqualColormaps(extracolormap_t *exc_a, extracolormap_t *exc_b, d
 // NOTE: Returns NULL if no match is found
 //
 #ifdef EXTRACOLORMAPLUMPS
-extracolormap_t *R_GetColormapFromListByValues(INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags, lumpnum_t lump)
+extracolormap_t *R_GetColormapFromListByValues(int32_t rgba, int32_t fadergba, uint8_t fadestart, uint8_t fadeend, uint8_t flags, lumpnum_t lump)
 #else
-extracolormap_t *R_GetColormapFromListByValues(INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags)
+extracolormap_t *R_GetColormapFromListByValues(int32_t rgba, int32_t fadergba, uint8_t fadestart, uint8_t fadeend, uint8_t flags)
 #endif
 {
 	extracolormap_t *exc;
-	UINT32 dbg_i = 0;
+	uint32_t dbg_i = 0;
 
 	for (exc = extra_colormaps; exc; exc = exc->next)
 	{
@@ -623,7 +623,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 	double maskamt = 0, othermask = 0;
 	double fmaskamt = 0, fothermask = 0;
 
-	UINT8 cr = R_GetRgbaR(extra_colormap->rgba),
+	uint8_t cr = R_GetRgbaR(extra_colormap->rgba),
 		cg = R_GetRgbaG(extra_colormap->rgba),
 		cb = R_GetRgbaB(extra_colormap->rgba),
 		ca = R_GetRgbaA(extra_colormap->rgba),
@@ -632,7 +632,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 		cfb = R_GetRgbaB(extra_colormap->fadergba),
 		cfa = R_GetRgbaA(extra_colormap->fadergba);
 
-	UINT8 fadestart = extra_colormap->fadestart,
+	uint8_t fadestart = extra_colormap->fadestart,
 		fadedist = extra_colormap->fadeend - extra_colormap->fadestart;
 
 	lighttable_t *lighttable = NULL;
@@ -720,7 +720,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 		// Now allocate memory for the actual colormap array itself!
 		// aligned on 8 bit for asm code
 		colormap_p = Z_MallocAlign((COLORMAP_SIZE * (encoremap ? 2 : 1)) + 10, PU_LEVEL, NULL, 8);
-		lighttable = (UINT8 *)colormap_p;
+		lighttable = (uint8_t *)colormap_p;
 
 		// Calculate the palette index for each palette index, for each light level
 		// (as well as the two unused colormap lines we inherited from Doom)
@@ -728,12 +728,12 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 		{
 			for (i = 0; i < 256; i++)
 			{
-				*colormap_p = NearestColor((UINT8)RoundUp(map[i][0]),
-					(UINT8)RoundUp(map[i][1]),
-					(UINT8)RoundUp(map[i][2]));
+				*colormap_p = NearestColor((uint8_t)RoundUp(map[i][0]),
+					(uint8_t)RoundUp(map[i][1]),
+					(uint8_t)RoundUp(map[i][2]));
 				colormap_p++;
 
-				if ((UINT32)p < fadestart)
+				if ((uint32_t)p < fadestart)
 					continue;
 
 				// Add/subtract towards the destination color.
@@ -782,12 +782,12 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 extracolormap_t *R_CreateColormapFromLinedef(char *p1, char *p2, char *p3)
 {
 	// default values
-	UINT8 cr = 0, cg = 0, cb = 0, ca = 0, cfr = 0, cfg = 0, cfb = 0, cfa = 25;
-	UINT32 fadestart = 0, fadeend = 31;
-	UINT8 flags = 0;
-	INT32 rgba = 0, fadergba = 0x19000000;
+	uint8_t cr = 0, cg = 0, cb = 0, ca = 0, cfr = 0, cfg = 0, cfb = 0, cfa = 25;
+	uint32_t fadestart = 0, fadeend = 31;
+	uint8_t flags = 0;
+	int32_t rgba = 0, fadergba = 0x19000000;
 
-#define HEX2INT(x) (UINT32)(x >= '0' && x <= '9' ? x - '0' : x >= 'a' && x <= 'f' ? x - 'a' + 10 : x >= 'A' && x <= 'F' ? x - 'A' + 10 : 0)
+#define HEX2INT(x) (uint32_t)(x >= '0' && x <= '9' ? x - '0' : x >= 'a' && x <= 'f' ? x - 'a' + 10 : x >= 'A' && x <= 'F' ? x - 'A' + 10 : 0)
 #define ALPHA2INT(x) (x >= 'a' && x <= 'z' ? x - 'a' : x >= 'A' && x <= 'Z' ? x - 'A' : x >= '0' && x <= '9' ? 25 : 0)
 
 	// Get base colormap value
@@ -900,7 +900,7 @@ extracolormap_t *R_CreateColormapFromLinedef(char *p1, char *p2, char *p3)
 
 	if (encoremap)
 	{
-		UINT8 j = encoremap[NearestColor((UINT8)cr, (UINT8)cg, (UINT8)cb)];
+		uint8_t j = encoremap[NearestColor((uint8_t)cr, (uint8_t)cg, (uint8_t)cb)];
 		//CONS_Printf("R_CreateColormap: encoremap[%d] = %d\n", j, encoremap[j]);
 		cr = pLocalPalette[j].s.red;
 		cg = pLocalPalette[j].s.green;
@@ -915,7 +915,7 @@ extracolormap_t *R_CreateColormapFromLinedef(char *p1, char *p2, char *p3)
 	return R_CreateColormap(rgba, fadergba, fadestart, fadeend, flags);
 }
 
-extracolormap_t *R_CreateColormap(INT32 rgba, INT32 fadergba, UINT8 fadestart, UINT8 fadeend, UINT8 flags)
+extracolormap_t *R_CreateColormap(int32_t rgba, int32_t fadergba, uint8_t fadestart, uint8_t fadeend, uint8_t flags)
 {
 	extracolormap_t *extra_colormap;
 
@@ -941,8 +941,8 @@ extracolormap_t *R_CreateColormap(INT32 rgba, INT32 fadergba, UINT8 fadestart, U
 
 	extra_colormap = Z_Calloc(sizeof(*extra_colormap), PU_LEVEL, NULL);
 
-	extra_colormap->fadestart = (UINT16)fadestart;
-	extra_colormap->fadeend = (UINT16)fadeend;
+	extra_colormap->fadestart = (uint16_t)fadestart;
+	extra_colormap->fadeend = (uint16_t)fadeend;
 	extra_colormap->flags = flags;
 
 	extra_colormap->rgba = rgba;
@@ -973,7 +973,7 @@ extracolormap_t *R_AddColormaps(extracolormap_t *exc_augend, extracolormap_t *ex
 	dboolean subFadeStart, dboolean subFadeEnd, dboolean ignoreFlags,
 	dboolean lighttable)
 {
-	INT16 red, green, blue, alpha;
+	int16_t red, green, blue, alpha;
 
 	// exc_augend is added (or subtracted) onto by exc_addend
 	// In Rennaisance times, the first number was considered the augend, the second number the addend
@@ -1071,7 +1071,7 @@ extracolormap_t *R_AddColormaps(extracolormap_t *exc_augend, extracolormap_t *ex
 
 // Thanks to quake2 source!
 // utils3/qdata/images.c
-UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette)
+uint8_t NearestPaletteColor(uint8_t r, uint8_t g, uint8_t b, RGBA_t *palette)
 {
 	int dr, dg, db;
 	int distortion, bestdistortion = 256 * 256 * 4, bestcolor = 0, i;
@@ -1089,14 +1089,14 @@ UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette)
 		if (distortion < bestdistortion)
 		{
 			if (!distortion)
-				return (UINT8)i;
+				return (uint8_t)i;
 
 			bestdistortion = distortion;
 			bestcolor = i;
 		}
 	}
 
-	return (UINT8)bestcolor;
+	return (uint8_t)bestcolor;
 }
 
 // Rounds off floating numbers and checks for 0 - 255 bounds

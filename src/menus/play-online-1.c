@@ -24,7 +24,7 @@
 
 static dboolean firstDismissedNagThisBoot = true;
 
-static void M_HandleMasterServerResetChoice(INT32 ch)
+static void M_HandleMasterServerResetChoice(int32_t ch)
 {
 	if (ch == MA_YES)
 	{
@@ -45,13 +45,13 @@ static void M_HandleMasterServerResetChoice(INT32 ch)
 	}
 }
 
-static void M_PreMPHostInitChoice(INT32 ch)
+static void M_PreMPHostInitChoice(int32_t ch)
 {
 	M_HandleMasterServerResetChoice(ch);
 	M_MPHostInit(0);
 }
 
-static void M_PreMPHostInit(INT32 choice)
+static void M_PreMPHostInit(int32_t choice)
 {
 	(void)choice;
 
@@ -64,13 +64,13 @@ static void M_PreMPHostInit(INT32 choice)
 	M_MPHostInit(0);
 }
 
-static void M_PreMPRoomSelectInitChoice(INT32 ch)
+static void M_PreMPRoomSelectInitChoice(int32_t ch)
 {
 	M_HandleMasterServerResetChoice(ch);
 	M_MPRoomSelectInit(0);
 }
 
-static void M_PreMPRoomSelectInit(INT32 choice)
+static void M_PreMPRoomSelectInit(int32_t choice)
 {
 	(void)choice;
 
@@ -103,7 +103,7 @@ static consvar_t *ip_cvar(void)
 	return &cv_dummyipselect;
 }
 
-static void confirm_ip_select(INT32 choice)
+static void confirm_ip_select(int32_t choice)
 {
 	if (choice == MA_YES)
 	{
@@ -112,7 +112,7 @@ static void confirm_ip_select(INT32 choice)
 	}
 }
 
-static void find_ip(INT32 add)
+static void find_ip(int32_t add)
 {
 	consvar_t *cv = ip_cvar();
 	for (int i = 0; i < NUMLOGIP; ++i)
@@ -123,10 +123,10 @@ static void find_ip(INT32 add)
 	}
 }
 
-static void direct_join_routine(INT32 choice)
+static void direct_join_routine(int32_t choice)
 {
 	consvar_t *cv = ip_cvar();
-	INT32 index = cv->value;
+	int32_t index = cv->value;
 
 	if (choice == 2)
 			ip_entry();
@@ -189,7 +189,7 @@ static void init_routine(void)
 		it->status = IT_STRING | IT_CALL;
 }
 
-static dboolean input_routine(INT32 key)
+static dboolean input_routine(int32_t key)
 {
 	uses_gamepad = (key == -1);
 	return false;
@@ -222,7 +222,7 @@ struct mpmenu_s mpmenu;
 // Use this as a quit routine within the HOST GAME and JOIN BY IP "sub" menus
 dboolean M_MPResetOpts(void)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 
 	for (; i < 3; i++)
 		mpmenu.modewinextend[i][0] = 0;	// Undo this
@@ -230,10 +230,10 @@ dboolean M_MPResetOpts(void)
 	return true;
 }
 
-void M_MPOptSelectInit(INT32 choice)
+void M_MPOptSelectInit(int32_t choice)
 {
-	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
-	const UINT32 forbidden = GTR_FORBIDMP;
+	int16_t arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
+	const uint32_t forbidden = GTR_FORBIDMP;
 
 #ifndef TESTERS
 	if (choice != -1 && !M_SecretUnlocked(SECRET_ONLINE, true))
@@ -267,7 +267,7 @@ void M_MPOptSelectInit(INT32 choice)
 
 void M_MPOptSelectTick(void)
 {
-	UINT8 i = 0;
+	uint8_t i = 0;
 
 	// 3 Because we have 3 options in the menu
 	for (; i < 3; i++)

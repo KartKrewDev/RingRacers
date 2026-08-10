@@ -21,36 +21,36 @@
 extern "C" {
 #endif
 
-#define SWAP_SHORT(x) ((INT16)(\
-(((UINT16)(x) & (UINT16)0x00ffU) << 8) \
+#define SWAP_SHORT(x) ((int16_t)(\
+(((uint16_t)(x) & (uint16_t)0x00ffU) << 8) \
 | \
-(((UINT16)(x) & (UINT16)0xff00U) >> 8))) \
+(((uint16_t)(x) & (uint16_t)0xff00U) >> 8))) \
 
-#define SWAP_LONG(x) ((INT32)(\
-(((UINT32)(x) & (UINT32)0x000000ffUL) << 24) \
+#define SWAP_LONG(x) ((int32_t)(\
+(((uint32_t)(x) & (uint32_t)0x000000ffUL) << 24) \
 | \
-(((UINT32)(x) & (UINT32)0x0000ff00UL) <<  8) \
+(((uint32_t)(x) & (uint32_t)0x0000ff00UL) <<  8) \
 | \
-(((UINT32)(x) & (UINT32)0x00ff0000UL) >>  8) \
+(((uint32_t)(x) & (uint32_t)0x00ff0000UL) >>  8) \
 | \
-(((UINT32)(x) & (UINT32)0xff000000UL) >> 24)))
+(((uint32_t)(x) & (uint32_t)0xff000000UL) >> 24)))
 
-#define SWAP_LONGLONG(x) ((INT64)(\
-(((UINT64)(x) & (UINT64)0x00000000000000ffULL) << 56) \
+#define SWAP_LONGLONG(x) ((int64_t)(\
+(((uint64_t)(x) & (uint64_t)0x00000000000000ffULL) << 56) \
 | \
-(((UINT64)(x) & (UINT64)0x000000000000ff00ULL) << 40) \
+(((uint64_t)(x) & (uint64_t)0x000000000000ff00ULL) << 40) \
 | \
-(((UINT64)(x) & (UINT64)0x0000000000ff0000ULL) << 24) \
+(((uint64_t)(x) & (uint64_t)0x0000000000ff0000ULL) << 24) \
 | \
-(((UINT64)(x) & (UINT64)0x00000000ff000000ULL) <<  8) \
+(((uint64_t)(x) & (uint64_t)0x00000000ff000000ULL) <<  8) \
 | \
-(((UINT64)(x) & (UINT64)0x000000ff00000000ULL) >>  8) \
+(((uint64_t)(x) & (uint64_t)0x000000ff00000000ULL) >>  8) \
 | \
-(((UINT64)(x) & (UINT64)0x0000ff0000000000ULL) >> 24) \
+(((uint64_t)(x) & (uint64_t)0x0000ff0000000000ULL) >> 24) \
 | \
-(((UINT64)(x) & (UINT64)0x00ff000000000000ULL) >> 40) \
+(((uint64_t)(x) & (uint64_t)0x00ff000000000000ULL) >> 40) \
 | \
-(((UINT64)(x) & (UINT64)0xff00000000000000ULL) >> 56)))
+(((uint64_t)(x) & (uint64_t)0xff00000000000000ULL) >> 56)))
 
 // Endianess handling.
 // WAD files are stored little endian.
@@ -58,13 +58,13 @@ extern "C" {
 #define LSBF_SHORT SWAP_SHORT
 #define LSBF_LONG SWAP_LONG
 #define LSBF_LONGLONG SWAP_LONGLONG
-#define MSBF_SHORT(x) ((INT16)(x))
-#define MSBF_LONG(x) ((INT32)(x))
-#define MSBF_LONGLONG(x) ((INT64)(x))
+#define MSBF_SHORT(x) ((int16_t)(x))
+#define MSBF_LONG(x) ((int32_t)(x))
+#define MSBF_LONGLONG(x) ((int64_t)(x))
 #else
-#define LSBF_SHORT(x) ((INT16)(x))
-#define LSBF_LONG(x)	((INT32)(x))
-#define LSBF_LONGLONG(x) ((INT64)(x))
+#define LSBF_SHORT(x) ((int16_t)(x))
+#define LSBF_LONG(x)	((int32_t)(x))
+#define LSBF_LONGLONG(x) ((int64_t)(x))
 #define MSBF_SHORT SWAP_SHORT
 #define MSBF_LONG SWAP_LONG
 #define MSBF_LONGLONG SWAP_LONGLONG
@@ -72,11 +72,11 @@ extern "C" {
 
 // Big to little endian
 #ifdef SRB2_LITTLE_ENDIAN
-	#define BIGENDIAN_LONG(x) ((INT32)(((x)>>24)&0xff)|(((x)<<8)&0xff0000)|(((x)>>8)&0xff00)|(((x)<<24)&0xff000000))
-	#define BIGENDIAN_SHORT(x) ((INT16)(((x)>>8)|((x)<<8)))
+	#define BIGENDIAN_LONG(x) ((int32_t)(((x)>>24)&0xff)|(((x)<<8)&0xff0000)|(((x)>>8)&0xff00)|(((x)<<24)&0xff000000))
+	#define BIGENDIAN_SHORT(x) ((int16_t)(((x)>>8)|((x)<<8)))
 #else
-	#define BIGENDIAN_LONG(x) ((INT32)(x))
-	#define BIGENDIAN_SHORT(x) ((INT16)(x))
+	#define BIGENDIAN_LONG(x) ((int32_t)(x))
+	#define BIGENDIAN_SHORT(x) ((int16_t)(x))
 #endif
 
 #ifdef __cplusplus

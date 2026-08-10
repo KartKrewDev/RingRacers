@@ -41,7 +41,7 @@ SaveBuffer::int_type SaveBuffer::overflow(SaveBuffer::int_type ch)
 		return traits_type::eof();
 	}
 
-	*save->p = static_cast<UINT8>(ch);
+	*save->p = static_cast<uint8_t>(ch);
 	save->p++;
 
 	return ch;
@@ -54,7 +54,7 @@ SaveBuffer::int_type SaveBuffer::underflow()
 		return traits_type::eof();
 	}
 
-	UINT8 ret = *save->p;
+	uint8_t ret = *save->p;
 	save->p++;
 
 	// Allow the streambuf internal funcs to work

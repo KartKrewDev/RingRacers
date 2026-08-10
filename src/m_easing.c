@@ -49,8 +49,8 @@ static fixed_t logtabdec[FRACBITS] =
 
 static fixed_t fixlog2(fixed_t a)
 {
-	UINT32 x = a, y = 0;
-	INT32 t, i, shift = 8;
+	uint32_t x = a, y = 0;
+	int32_t t, i, shift = 8;
 
 	if (x > FRACUNIT)
 		x = FixedDiv(FRACUNIT, x);
@@ -95,9 +95,9 @@ static fixed_t fixlog2(fixed_t a)
 }
 
 // Notice how this is symmetric to fixlog2.
-static INT32 fixexp(fixed_t a)
+static int32_t fixexp(fixed_t a)
 {
-	UINT32 x, y;
+	uint32_t x, y;
 	fixed_t t, i, shift = 8;
 
 	// Underflow prevention.
@@ -475,11 +475,11 @@ fixed_t FixedRescale(fixed_t value, fixed_t inmin, fixed_t inmax, easingfunc_t e
 }
 
 /*--------------------------------------------------
-	INT16 IntRescale(INT16 value, INT16 inmin, INT16 inmax, easingfunc_t easing_func, INT16 outmin, INT16 outmax)
+	int16_t IntRescale(int16_t value, int16_t inmin, int16_t inmax, easingfunc_t easing_func, int16_t outmin, int16_t outmax)
 
 		Rescales a feature value from [min, max] to [start, end] using
 		a custom easing function pointer.
-		Can only take in up to INT16 because it uses fixed_t internally
+		Can only take in up to int16_t because it uses fixed_t internally
 
 	Input Arguments:-
 		value - The input value to rescale
@@ -492,7 +492,7 @@ fixed_t FixedRescale(fixed_t value, fixed_t inmin, fixed_t inmax, easingfunc_t e
 	Return:-
 		The rescaled value using the specified easing function.
 --------------------------------------------------*/
-INT16 IntRescale(INT16 value, INT16 inmin, INT16 inmax, easingfunc_t easing_func, INT16 outmin, INT16 outmax)
+int16_t IntRescale(int16_t value, int16_t inmin, int16_t inmax, easingfunc_t easing_func, int16_t outmin, int16_t outmax)
 {
 	// Handle edge case where min == max
 	if (inmin == inmax)

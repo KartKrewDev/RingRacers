@@ -64,7 +64,7 @@ void Obj_EggBallThink(mobj_t *mo)
 
 		if (mo->threshold && mo->threshold < -10*mapobjectscale)
 		{
-			UINT8 i;
+			uint8_t i;
 
 			mo->momz = (fixed_t)(-mo->threshold)/8;
 

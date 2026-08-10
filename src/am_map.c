@@ -28,17 +28,17 @@
 #endif
 
 // For use if I do walls with outsides/insides
-static const UINT8 REDS        = (2*16);
-static const UINT8 REDRANGE    = 16;
-static const UINT8 GRAYS       = (1*16);
-static const UINT8 GRAYSRANGE  = 16;
-static const UINT8 BROWNS      = (15*16);
-static const UINT8 YELLOWS     = (5*16)+8;
-static const UINT8 GREENS      = (6*16);
-static const UINT8 CYANS       = (8*16);
-static const UINT8 BLUES       = (9*16);
-static const UINT8 DBLACK      = 31;
-static const UINT8 DWHITE      = 0;
+static const uint8_t REDS        = (2*16);
+static const uint8_t REDRANGE    = 16;
+static const uint8_t GRAYS       = (1*16);
+static const uint8_t GRAYSRANGE  = 16;
+static const uint8_t BROWNS      = (15*16);
+static const uint8_t YELLOWS     = (5*16)+8;
+static const uint8_t GREENS      = (6*16);
+static const uint8_t CYANS       = (8*16);
+static const uint8_t BLUES       = (9*16);
+static const uint8_t DBLACK      = 31;
+static const uint8_t DWHITE      = 0;
 
 
 // Automap colors
@@ -156,10 +156,10 @@ dboolean am_recalc = false; //added : 05-02-98 : true when screen size changes
 static dboolean am_stopped = true;
 static dboolean am_minigen = false;
 
-static UINT8 *am_buf = NULL;
+static uint8_t *am_buf = NULL;
 
-static INT32 f_x, f_y;	// location of window on screen (always zero for both)
-static INT32 f_w, f_h;	// size of window on screen (always the screen width and height respectively)
+static int32_t f_x, f_y;	// location of window on screen (always zero for both)
+static int32_t f_w, f_h;	// size of window on screen (always the screen width and height respectively)
 
 static dboolean m_keydown[4]; // which window panning keys are being pressed down?
 static mpoint_t m_paninc; // how far the window pans each tic (map coords)
@@ -204,11 +204,11 @@ static player_t *plr; // the player represented by an arrow
 static dboolean followplayer = true; // specifies whether to follow the player around
 
 // function for drawing lines, depends on rendermode
-typedef void (*AMDRAWFLINEFUNC) (const fline_t *fl, INT32 color);
+typedef void (*AMDRAWFLINEFUNC) (const fline_t *fl, int32_t color);
 static AMDRAWFLINEFUNC AM_drawFline;
 
-static void AM_drawPixel(INT32 xx, INT32 yy, INT32 cc);
-static void AM_drawFline_soft(const fline_t *fl, INT32 color);
+static void AM_drawPixel(int32_t xx, int32_t yy, int32_t cc);
+static void AM_drawFline_soft(const fline_t *fl, int32_t color);
 
 static void AM_activateNewScale(void)
 {
@@ -301,7 +301,7 @@ static void AM_changeWindowLoc(void)
 
 static void AM_initVariables(void)
 {
-	INT32 pnum;
+	int32_t pnum;
 
 	automapactive = true;
 	f_oldloc.x = INT32_MAX;
@@ -374,7 +374,7 @@ void AM_Stop(void)
   */
 void AM_Start(void)
 {
-	static INT32 lastlevel = -1;
+	static int32_t lastlevel = -1;
 
 	if (!am_stopped)
 		AM_Stop();
@@ -441,7 +441,7 @@ static void AM_setWindowPanning(void)
   */
 dboolean AM_Responder(event_t *ev)
 {
-	INT32 rc = false;
+	int32_t rc = false;
 
 	if (devparm || cht_debug) // only automap in Debug Tails 01-19-2001
 	{
@@ -636,7 +636,7 @@ void AM_Ticker(void)
   *
   * \param color Color to erase to.
   */
-static void AM_clearFB(INT32 color)
+static void AM_clearFB(int32_t color)
 {
 	V_DrawFill(f_x, f_y, f_w, f_h, color|V_NOSCALESTART);
 }
@@ -660,9 +660,9 @@ static dboolean AM_clipMline(const mline_t *ml, fline_t *fl)
 		TOP    = 8
 	};
 
-	register INT32 outcode1 = 0, outcode2 = 0, outside;
+	register int32_t outcode1 = 0, outcode2 = 0, outside;
 	fpoint_t tmp ={0,0};
-	INT32 dx, dy;
+	int32_t dx, dy;
 
 #define DOOUTCODE(oc, mx, my) \
 	(oc) = 0; \
@@ -771,7 +771,7 @@ static dboolean AM_clipMline(const mline_t *ml, fline_t *fl)
 //
 // Draws a pixel.
 //
-static void AM_drawPixel(INT32 xx, INT32 yy, INT32 cc)
+static void AM_drawPixel(int32_t xx, int32_t yy, int32_t cc)
 {
 	if (xx < 0 || yy < 0 || xx >= f_w || yy >= f_h)
 		return; // off the screen
@@ -781,12 +781,12 @@ static void AM_drawPixel(INT32 xx, INT32 yy, INT32 cc)
 //
 // Classic Bresenham w/ whatever optimizations needed for speed
 //
-static void AM_drawFline_soft(const fline_t *fl, INT32 color)
+static void AM_drawFline_soft(const fline_t *fl, int32_t color)
 {
-	INT32 x, y, dx, dy, sx, sy, ax, ay, d;
+	int32_t x, y, dx, dy, sx, sy, ax, ay, d;
 
 #ifdef _DEBUG
-	static INT32 num = 0;
+	static int32_t num = 0;
 
 	// For debugging only
 	if (fl->a.x < 0 || fl->a.x >= f_w
@@ -849,7 +849,7 @@ static void AM_drawFline_soft(const fline_t *fl, INT32 color)
 //
 // Clip lines, draw visible parts of lines.
 //
-static void AM_drawMline(const mline_t *ml, INT32 color)
+static void AM_drawMline(const mline_t *ml, int32_t color)
 {
 	static fline_t fl;
 
@@ -860,7 +860,7 @@ static void AM_drawMline(const mline_t *ml, INT32 color)
 //
 // Draws flat (floor/ceiling tile) aligned grid lines.
 //
-static void AM_drawGrid(INT32 color)
+static void AM_drawGrid(int32_t color)
 {
 	fixed_t x, y;
 	fixed_t start, end;
@@ -982,7 +982,7 @@ static ffloor_t *AM_CompareFOFs(size_t i, ffloor_t *rover, ffloor_t *secondaryst
 // Determines visible lines, draws them.
 // This is LineDef based, not LineSeg based.
 //
-static void AM_drawWalls(UINT8 pass)
+static void AM_drawWalls(uint8_t pass)
 {
 	size_t i;
 	static mline_t l;
@@ -1093,7 +1093,7 @@ static void AM_drawWalls(UINT8 pass)
 			{
 				terrain_t *terrain1 = NULL;
 				terrain_t *terrain2 = NULL;
-				UINT8 defercol = GRIDCOLORS;
+				uint8_t defercol = GRIDCOLORS;
 
 				if (lines[i].frontsector->floorpic != lines[i].backsector->floorpic)
 				{
@@ -1189,7 +1189,7 @@ static void AM_rotate(fixed_t *x, fixed_t *y, angle_t a)
 }
 
 static void AM_drawLineCharacter(const mline_t *lineguy, size_t lineguylines, fixed_t scale, angle_t angle,
-	INT32 color, fixed_t x, fixed_t y)
+	int32_t color, fixed_t x, fixed_t y)
 {
 	size_t i;
 	mline_t l;
@@ -1237,9 +1237,9 @@ static void AM_drawLineCharacter(const mline_t *lineguy, size_t lineguylines, fi
 
 static inline void AM_drawPlayers(void)
 {
-	INT32 i;
+	int32_t i;
 	player_t *p;
-	INT32 color = GREENS;
+	int32_t color = GREENS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1254,7 +1254,7 @@ static inline void AM_drawPlayers(void)
 	}
 }
 
-static inline void AM_drawThings(UINT8 colors)
+static inline void AM_drawThings(uint8_t colors)
 {
 	size_t i;
 	mobj_t *t;
@@ -1271,7 +1271,7 @@ static inline void AM_drawThings(UINT8 colors)
 	}
 }
 
-static inline void AM_drawSpecialThingsOnly(UINT8 colors)
+static inline void AM_drawSpecialThingsOnly(uint8_t colors)
 {
 	size_t i;
 
@@ -1313,7 +1313,7 @@ static inline void AM_drawSpecialThingsOnly(UINT8 colors)
   *
   * \param color Color for the crosshair.
   */
-static inline void AM_drawCrosshair(UINT8 color)
+static inline void AM_drawCrosshair(uint8_t color)
 {
 	const fixed_t scale = 4<<FRACBITS;
 	size_t i;
@@ -1357,7 +1357,7 @@ void AM_Drawer(void)
 	if (!followplayer) AM_drawCrosshair(XHAIRCOLORS);
 }
 
-minigen_t *AM_MinimapGenerate(INT32 mul)
+minigen_t *AM_MinimapGenerate(int32_t mul)
 {
 	static minigen_t ret = {0};
 

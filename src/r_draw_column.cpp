@@ -32,7 +32,7 @@ enum DrawColumnType
 };
 
 template<DrawColumnType Type>
-static constexpr UINT8 R_GetColumnTranslated(drawcolumndata_t* dc, UINT8 col)
+static constexpr uint8_t R_GetColumnTranslated(drawcolumndata_t* dc, uint8_t col)
 {
 	if constexpr (Type & DrawColumnType::DC_COLORMAP)
 	{
@@ -45,7 +45,7 @@ static constexpr UINT8 R_GetColumnTranslated(drawcolumndata_t* dc, UINT8 col)
 }
 
 template<DrawColumnType Type>
-static constexpr UINT8 R_GetColumnBrightmapped(drawcolumndata_t* dc, UINT32 bit, UINT8 col)
+static constexpr uint8_t R_GetColumnBrightmapped(drawcolumndata_t* dc, uint32_t bit, uint8_t col)
 {
 	col = R_GetColumnTranslated<Type>(dc, col);
 
@@ -61,7 +61,7 @@ static constexpr UINT8 R_GetColumnBrightmapped(drawcolumndata_t* dc, UINT32 bit,
 }
 
 template<DrawColumnType Type>
-static constexpr UINT8 R_GetColumnTranslucent(drawcolumndata_t* dc, UINT8 *dest, UINT32 bit, UINT8 col)
+static constexpr uint8_t R_GetColumnTranslucent(drawcolumndata_t* dc, uint8_t *dest, uint32_t bit, uint8_t col)
 {
 	col = R_GetColumnBrightmapped<Type>(dc, bit, col);
 
@@ -76,9 +76,9 @@ static constexpr UINT8 R_GetColumnTranslucent(drawcolumndata_t* dc, UINT8 *dest,
 }
 
 template<DrawColumnType Type>
-static constexpr UINT8 R_DrawColumnPixel(drawcolumndata_t* dc, UINT8 *dest, UINT32 bit)
+static constexpr uint8_t R_DrawColumnPixel(drawcolumndata_t* dc, uint8_t *dest, uint32_t bit)
 {
-	UINT8 col = dc->source[bit];
+	uint8_t col = dc->source[bit];
 
 	if constexpr (Type & DrawColumnType::DC_HOLES)
 	{
@@ -97,8 +97,8 @@ static constexpr UINT8 R_DrawColumnPixel(drawcolumndata_t* dc, UINT8 *dest, UINT
 template<DrawColumnType Type>
 static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 {
-	INT32 count;
-	UINT8 *dest;
+	int32_t count;
+	uint8_t *dest;
 
 	count = dc->yh - dc->yl;
 
@@ -115,7 +115,7 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 	if constexpr (Type & DrawColumnType::DC_LIGHTLIST)
 	{
 		constexpr DrawColumnType NewType = static_cast<DrawColumnType>(Type & ~DC_LIGHTLIST);
-		INT32 i, realyh, height, bheight = 0, solid = 0;
+		int32_t i, realyh, height, bheight = 0, solid = 0;
 		drawcolumndata_t dc_copy = *dc;
 
 		realyh = dc_copy.yh;
@@ -138,7 +138,7 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 					// even including cases where the top and bottom heights
 					// should actually be the same!
 					// swap the height values as a workaround for this quirk
-					INT32 temp = height;
+					int32_t temp = height;
 					height = bheight;
 					bheight = temp;
 				}
@@ -201,9 +201,9 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 	{
 		fixed_t fracstep;
 		fixed_t frac;
-		INT32 heightmask;
-		INT32 npow2min;
-		INT32 npow2max;
+		int32_t heightmask;
+		int32_t npow2min;
+		int32_t npow2max;
 
 		// Framebuffer destination address.
 		// Use ylookup LUT to avoid multiply with ScreenWidth.
@@ -258,7 +258,7 @@ static void R_DrawColumnTemplate(drawcolumndata_t *dc)
 					// Faster than ternaries, faster than std::min/std::max. Don't ask me why.
 					// I tested by viewing a non-PO2 texture from a consistent distance so it covered the entire screen.
 					// The framerate difference was about 50 frames at 640x400.
-					INT32 n = frac >> FRACBITS;
+					int32_t n = frac >> FRACBITS;
 					if (n < npow2min)
 						n = npow2min;
 					if (n > npow2max)
@@ -332,8 +332,8 @@ void R_DrawFogColumn(drawcolumndata_t *dc)
 {
 	ZoneScoped;
 
-	INT32 count;
-	UINT8 *dest;
+	int32_t count;
+	uint8_t *dest;
 
 	count = dc->yh - dc->yl;
 
@@ -370,8 +370,8 @@ void R_DrawDropShadowColumn(drawcolumndata_t *dc)
 	// needed for the current design of the shadows, so this function bypasses the issue
 	// by not using those variables at all.
 
-	INT32 count;
-	UINT8 *dest;
+	int32_t count;
+	uint8_t *dest;
 
 	count = dc->yh - dc->yl + 1;
 
@@ -380,7 +380,7 @@ void R_DrawDropShadowColumn(drawcolumndata_t *dc)
 
 	dest = &topleft[dc->yl*vid.width + dc->x];
 
-	const UINT8 *transmap_offset = dc->transmap + (dc->shadowcolor << 8);
+	const uint8_t *transmap_offset = dc->transmap + (dc->shadowcolor << 8);
 	while ((count -= 2) >= 0)
 	{
 		*dest = *(transmap_offset + (*dest));
@@ -397,9 +397,9 @@ void R_DrawColumn_Flat(drawcolumndata_t *dc)
 {
 	ZoneScoped;
 
-	INT32 count;
-	UINT8 color = dc->lightmap[dc->r8_flatcolor];
-	UINT8 *dest;
+	int32_t count;
+	uint8_t color = dc->lightmap[dc->r8_flatcolor];
+	uint8_t *dest;
 
 	count = dc->yh - dc->yl;
 

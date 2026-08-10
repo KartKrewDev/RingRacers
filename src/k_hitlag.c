@@ -24,7 +24,7 @@
 
 // Use for adding hitlag that should be mostly ignored by impervious players.
 // (Currently only called in power clash, but in the future...?)
-void K_AddHitLagFromCollision(mobj_t *mo, INT32 tics)
+void K_AddHitLagFromCollision(mobj_t *mo, int32_t tics)
 {
 	dboolean doAnything = true;
 
@@ -43,11 +43,11 @@ void K_AddHitLagFromCollision(mobj_t *mo, INT32 tics)
 }
 
 /*--------------------------------------------------
-	void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage)
+	void K_AddHitLag(mobj_t *mo, int32_t tics, dboolean fromDamage)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage)
+void K_AddHitLag(mobj_t *mo, int32_t tics, dboolean fromDamage)
 {
 	if (mo == NULL || P_MobjWasRemoved(mo) || (mo->flags & MF_NOHITLAGFORME && mo->type != MT_PLAYER))
 	{
@@ -76,7 +76,7 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage)
 	static void K_SpawnSingleHitLagSpark(
 		mobj_t *parent,
 		vector3_t *offset, fixed_t scale,
-		UINT8 tics, UINT8 pause,
+		uint8_t tics, uint8_t pause,
 		skincolornum_t color)
 
 		Spawns a set of damage hitlag spark papersprites.
@@ -95,10 +95,10 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage)
 void K_SpawnSingleHitLagSpark(
 	mobj_t *parent,
 	vector3_t *offset, fixed_t scale,
-	UINT8 tics, UINT8 pause,
+	uint8_t tics, uint8_t pause,
 	skincolornum_t color)
 {
-	INT32 i;
+	int32_t i;
 
 	if (tics == 0)
 	{
@@ -153,7 +153,7 @@ void K_SpawnSingleHitLagSpark(
 }
 
 /*--------------------------------------------------
-	static void K_PlayHitLagSFX(mobj_t *victim, UINT8 tics)
+	static void K_PlayHitLagSFX(mobj_t *victim, uint8_t tics)
 
 		Plays a damage sound for a player.
 
@@ -164,7 +164,7 @@ void K_SpawnSingleHitLagSpark(
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void K_PlayHitLagSFX(mobj_t *victim, UINT8 tics)
+static void K_PlayHitLagSFX(mobj_t *victim, uint8_t tics)
 {
 	sfxenum_t soundID = sfx_dmga1;
 
@@ -182,7 +182,7 @@ static void K_PlayHitLagSFX(mobj_t *victim, UINT8 tics)
 }
 
 /*--------------------------------------------------
-	static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, UINT8 tics)
+	static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, uint8_t tics)
 
 		Spawns several hitlag sparks for damage.
 
@@ -195,11 +195,11 @@ static void K_PlayHitLagSFX(mobj_t *victim, UINT8 tics)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, UINT8 tics)
+static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, uint8_t tics)
 {
 	vector3_t offset = { 0, 0, 0 };
 	fixed_t newScale = FRACUNIT;
-	UINT8 startTics = 0, endTics = 0;
+	uint8_t startTics = 0, endTics = 0;
 	skincolornum_t color = SKINCOLOR_NONE;
 
 	I_Assert(P_MobjWasRemoved(victim) == false);
@@ -235,7 +235,7 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 
 	while (endTics < tics)
 	{
-		UINT8 particle = max(1, FixedMul((tics * FRACUNIT) + (FRACUNIT/2), FRACUNIT*2/3) / FRACUNIT);
+		uint8_t particle = max(1, FixedMul((tics * FRACUNIT) + (FRACUNIT/2), FRACUNIT*2/3) / FRACUNIT);
 
 		// CONS_Printf("trying particle %d\n", particle);
 
@@ -245,7 +245,7 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 			// CONS_Printf("* corrected to %d (states - %d)\n", particle, NUM_HITLAG_STATES);
 		}
 
-		UINT8 ticsLeft = tics - endTics;
+		uint8_t ticsLeft = tics - endTics;
 		// CONS_Printf("? ticsleft %d\n", ticsLeft);
 
 		if (particle > ticsLeft)
@@ -272,13 +272,13 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 }
 
 /*--------------------------------------------------
-	void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, INT32 tics, dboolean fromDamage)
+	void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, int32_t tics, dboolean fromDamage)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, INT32 tics, dboolean fromDamage)
+void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, int32_t tics, dboolean fromDamage)
 {
-	INT32 finalTics = tics;
+	int32_t finalTics = tics;
 
 	if (tics <= 0)
 	{
@@ -294,7 +294,7 @@ void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, IN
 	if (P_MobjWasRemoved(victim) == false && P_MobjWasRemoved(inflictor) == false)
 	{
 		const fixed_t speedTicFactor = (mapobjectscale * 8);
-		const INT32 angleTicFactor = ANGLE_22h;
+		const int32_t angleTicFactor = ANGLE_22h;
 
 		const fixed_t victimSpeed = FixedHypot(FixedHypot(victim->momx, victim->momy), victim->momz);
 		const fixed_t inflictorSpeed = FixedHypot(FixedHypot(inflictor->momx, inflictor->momy), inflictor->momz);
@@ -304,7 +304,7 @@ void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, IN
 
 		angle_t victimAngle = K_MomentumAngle(victim);
 		angle_t inflictorAngle = K_MomentumAngle(inflictor);
-		INT32 angleDiff = 0;
+		int32_t angleDiff = 0;
 
 		if (victimSpeed > 0 && inflictorSpeed > 0)
 		{

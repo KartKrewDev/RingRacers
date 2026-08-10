@@ -25,7 +25,7 @@ extern "C" {
 
 /**	\brief Sound subsystem runing and waiting
 */
-extern UINT8 sound_started;
+extern uint8_t sound_started;
 
 /**	\brief info of samplerate
 */
@@ -77,7 +77,7 @@ void I_UpdateAudioRecorder(void);
 
 	\return	sfx handle
 */
-INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priority, INT32 channel);
+int32_t I_StartSound(sfxenum_t id, uint8_t vol, uint8_t sep, uint8_t pitch, uint8_t priority, int32_t channel);
 
 /**	\brief	Stops a sound channel.
 
@@ -85,7 +85,7 @@ INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priori
 
 	\return	void
 */
-void I_StopSound(INT32 handle);
+void I_StopSound(int32_t handle);
 
 /**	\brief Some digital sound drivers need this.
 */
@@ -97,7 +97,7 @@ void I_UpdateSound(void);
 
 	\return	0 if no longer playing, 1 if playing.
 */
-dboolean I_SoundIsPlaying(INT32 handle);
+dboolean I_SoundIsPlaying(int32_t handle);
 
 /**	\brief	Updates the sfx handle
 
@@ -108,7 +108,7 @@ dboolean I_SoundIsPlaying(INT32 handle);
 
 	\return	void
 */
-void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch);
+void I_UpdateSoundParams(int32_t handle, uint8_t vol, uint8_t sep, uint8_t pitch);
 
 /**	\brief	The I_SetSfxVolume function
 
@@ -150,13 +150,13 @@ dboolean I_SetSongSpeed(float speed);
 //  MUSIC SEEKING
 /// ------------------------
 
-UINT32 I_GetSongLength(void);
+uint32_t I_GetSongLength(void);
 
-dboolean I_SetSongLoopPoint(UINT32 looppoint);
-UINT32 I_GetSongLoopPoint(void);
+dboolean I_SetSongLoopPoint(uint32_t looppoint);
+uint32_t I_GetSongLoopPoint(void);
 
-dboolean I_SetSongPosition(UINT32 position);
-UINT32 I_GetSongPosition(void);
+dboolean I_SetSongPosition(uint32_t position);
+uint32_t I_GetSongPosition(void);
 
 void I_UpdateSongLagThreshold (void);
 void I_UpdateSongLagConditions (void);
@@ -237,7 +237,7 @@ void I_SetCurrentSongVolume(int volume);
 
 // TODO refactor fades to control Song Volume exclusively in tandem with RR musicdef volume multiplier.
 
-dboolean I_SetSongTrack(INT32 track);
+dboolean I_SetSongTrack(int32_t track);
 
 void I_SetMasterVolume(int volume);
 
@@ -245,29 +245,29 @@ void I_SetMasterVolume(int volume);
 /// MUSIC FADING
 /// ------------------------
 
-void I_SetInternalMusicVolume(UINT8 volume);
+void I_SetInternalMusicVolume(uint8_t volume);
 void I_StopFadingSong(void);
-dboolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void));
-dboolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void));
-dboolean I_FadeOutStopSong(UINT32 ms);
-dboolean I_FadeInPlaySong(UINT32 ms, dboolean looping);
+dboolean I_FadeSongFromVolume(uint8_t target_volume, uint8_t source_volume, uint32_t ms, void (*callback)(void));
+dboolean I_FadeSong(uint8_t target_volume, uint32_t ms, void (*callback)(void));
+dboolean I_FadeOutStopSong(uint32_t ms);
+dboolean I_FadeInPlaySong(uint32_t ms, dboolean looping);
 
 // AUDIO INPUT (Microphones)
 dboolean I_SoundInputIsEnabled(void);
 dboolean I_SoundInputSetEnabled(dboolean enabled);
-UINT32 I_SoundInputDequeueSamples(void *data, UINT32 len);
-UINT32 I_SoundInputRemainingSamples(void);
+uint32_t I_SoundInputDequeueSamples(void *data, uint32_t len);
+uint32_t I_SoundInputRemainingSamples(void);
 
 // VOICE CHAT
 
 /// Queue a frame of samples of voice data from a player. Voice format is MONO F32 SYSTEM ENDIANNESS.
 /// If there is too much data being queued, old samples will be truncated
-void I_QueueVoiceFrameFromPlayer(INT32 playernum, void *data, UINT32 len, dboolean terminal);
+void I_QueueVoiceFrameFromPlayer(int32_t playernum, void *data, uint32_t len, dboolean terminal);
 
-void I_SetPlayerVoiceProperties(INT32 playernum, float volume, float sep);
+void I_SetPlayerVoiceProperties(int32_t playernum, float volume, float sep);
 
 /// Reset the voice queue for the given player. Use when server connection ends
-void I_ResetVoiceQueue(INT32 playernum);
+void I_ResetVoiceQueue(int32_t playernum);
 
 #ifdef __cplusplus
 } // extern "C"

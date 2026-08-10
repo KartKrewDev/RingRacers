@@ -34,7 +34,7 @@
 char *FREE_STATES[NUMSTATEFREESLOTS];
 char *FREE_MOBJS[NUMMOBJFREESLOTS];
 char *FREE_SKINCOLORS[NUMCOLORFREESLOTS];
-UINT8 used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
+uint8_t used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
 
 // IMPORTANT!
 // DO NOT FORGET TO SYNC THIS LIST WITH THE ACTIONNUM ENUM IN INFO.H
@@ -4597,7 +4597,7 @@ struct int_const_s const INT_CONST[] = {
 	// the value to 0 or something.
 
 	// integer type limits, from doomtype.h
-	// INT64 and UINT64 limits not included, they're too big for most purposes anyway
+	// int64_t and uint64_t limits not included, they're too big for most purposes anyway
 	// signed
 	{"INT8_MIN",INT8_MIN},
 	{"INT16_MIN",INT16_MIN},

@@ -34,7 +34,7 @@
 
 void Obj_DLZRocketThink(mobj_t *mo)
 {
-	UINT8 i;
+	uint8_t i;
 	angle_t an = mo->angle + ANGLE_90;
 
 	if (mo->extravalue1)
@@ -93,7 +93,7 @@ void Obj_playerDLZRocket(player_t *p)
 
 	fixed_t maxspd = DLZROCKETSPEED;
 	angle_t visangle;
-	UINT8 i, j;
+	uint8_t i, j;
 
 	p->dlzrocket++;
 
@@ -127,7 +127,7 @@ void Obj_playerDLZRocket(player_t *p)
 		p->dlzrocketangle = p->mo->angle;
 	else
 	{
-		SINT8 turndir = 0;
+		int8_t turndir = 0;
 		P_SetPlayerAngle(p->mo->player, p->dlzrocketangle);
 
 		if (p->cmd.turning > 0)

@@ -68,9 +68,9 @@ size_t COM_CheckPartialParm(const char *check);
 size_t COM_FirstOption(void);
 
 // match existing command or NULL
-const char *COM_CompleteCommand(const char *partial, INT32 skips);
+const char *COM_CompleteCommand(const char *partial, int32_t skips);
 
-const char *COM_CompleteAlias(const char *partial, INT32 skips);
+const char *COM_CompleteAlias(const char *partial, int32_t skips);
 
 // insert at queu (at end of other command)
 #define COM_BufAddText(s) COM_BufAddTextEx(s, 0)
@@ -100,7 +100,7 @@ struct vsbuf_t
 {
 	dboolean allowoverflow; // if false, do a I_Error
 	dboolean overflowed; // set to true if the buffer size failed
-	UINT8 *data;
+	uint8_t *data;
 	size_t maxsize;
 	size_t cursize;
 };
@@ -123,7 +123,7 @@ void VS_Print(vsbuf_t *buf, const char *data); // strcats onto the sizebuf
 
 // flags for console vars
 
-typedef INT32 cvflags_t;
+typedef int32_t cvflags_t;
 #define CV_SAVE (1)   // save to config when quit game
 #define CV_CALL (2)   // call function on change
 #define CV_NETVAR (4) // send it when change (see logboris.txt at 12-4-2000)
@@ -145,7 +145,7 @@ typedef INT32 cvflags_t;
 
 struct CV_PossibleValue_t
 {
-	INT32 value;
+	int32_t value;
 	const char *strvalue;
 };
 
@@ -153,12 +153,12 @@ struct consvar_t //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 {
 	const char *name;
 	const char *defaultvalue;
-	INT32 flags;            // flags see cvflags_t above
+	int32_t flags;            // flags see cvflags_t above
 	CV_PossibleValue_t *PossibleValue; // table of possible values
 	void (*func)(void);   // called on change, if CV_CALL set
-	INT32 step_amount;
+	int32_t step_amount;
 	const char *description;
-	INT32 value;            // for INT32 and fixed_t
+	int32_t value;            // for int32_t and fixed_t
 	const char *string;   // value in string
 	char *zstring;        // Either NULL or same as string.
 	                      // If non-NULL, must be Z_Free'd later.
@@ -172,7 +172,7 @@ struct consvar_t //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 		} v;
 	} revert;             // value of netvar before joining netgame
 
-	UINT16 netid; // used internaly : netid for send end receive
+	uint16_t netid; // used internaly : netid for send end receive
 	                      // used only with CV_NETVAR
 	char changed;         // has variable been changed by the user? 0 = no, 1 = yes
 	consvar_t *next;
@@ -195,7 +195,7 @@ struct consvar_t //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 	consvar_t(
 			const char* const name_,
 			const char* const defaultvalue_,
-			INT32 const flags_,
+			int32_t const flags_,
 			CV_PossibleValue_t* const PossibleValue_,
 			void (*const func_)(void)
 	) :
@@ -252,48 +252,48 @@ consvar_t *CV_FindVar(const char *name);
 void CV_ClearChangedFlags(void);
 
 // returns the name of the nearest console variable name found
-const char *CV_CompleteVar(char *partial, INT32 skips);
+const char *CV_CompleteVar(char *partial, int32_t skips);
 
 // Returns true if valstrp is within the PossibleValues of
 // var. If an exact string value exists, it is returned in
 // valstrp. An integer value is returned in intval if it
 // is not NULL.
-dboolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval);
+dboolean CV_CompleteValue(consvar_t *var, const char **valstrp, int32_t *intval);
 
 // equivalent to "<varname> <value>" typed at the console
 void CV_Set(consvar_t *var, const char *value);
 
 // expands value to a string and calls CV_Set
-void CV_SetValue(consvar_t *var, INT32 value);
+void CV_SetValue(consvar_t *var, int32_t value);
 
 // avoids calling the function if it is CV_CALL
-void CV_StealthSetValue(consvar_t *var, INT32 value);
+void CV_StealthSetValue(consvar_t *var, int32_t value);
 void CV_StealthSet(consvar_t *var, const char *value);
 
 // it a setvalue but with a modulo at the maximum
-void CV_AddValue(consvar_t *var, INT32 increment);
+void CV_AddValue(consvar_t *var, int32_t increment);
 
 // write all CV_SAVE variables to config file
 void CV_SaveVariables(FILE *f);
 
 // load/save gamesate (load and save option and for network join in game)
-void CV_SaveVars(UINT8 **p, dboolean in_demo);
+void CV_SaveVars(uint8_t **p, dboolean in_demo);
 
 #define CV_SaveNetVars(p) CV_SaveVars(p, false)
-size_t CV_LoadNetVars(const UINT8 *p);
+size_t CV_LoadNetVars(const uint8_t *p);
 
 // then revert after leaving a netgame
 void CV_RevertNetVars(void);
 
 #define CV_SaveDemoVars(p) CV_SaveVars(p, true)
-size_t CV_LoadDemoVars(const UINT8 *p);
+size_t CV_LoadDemoVars(const uint8_t *p);
 
 // reset cheat netvars after cheats is deactivated
 void CV_CheatsChanged(void);
 
 dboolean CV_IsSetToDefault(consvar_t *v);
 dboolean CV_CheatsEnabled(void);
-void CV_CheaterWarning(UINT8 playerID, const char *command);
+void CV_CheaterWarning(uint8_t playerID, const char *command);
 
 // Returns cvar by name. Exposed here for Lua.
 consvar_t *CV_FindVar(const char *name);

@@ -32,10 +32,10 @@ extern "C" {
 struct texpatch_t
 {
 	// Block origin (always UL), which has already accounted for the internal origin of the patch.
-	INT16 originx, originy;
-	UINT16 wad, lump;
-	UINT8 flip; // 1 = flipx, 2 = flipy, 3 = both
-	UINT8 alpha; // Translucency value
+	int16_t originx, originy;
+	uint16_t wad, lump;
+	uint8_t flip; // 1 = flipx, 2 = flipy, 3 = both
+	uint8_t alpha; // Translucency value
 	patchalphastyle_t style;
 };
 
@@ -57,70 +57,70 @@ struct texture_t
 {
 	// Keep name for switch changing, etc.
 	char name[8];
-	UINT32 hash;
-	UINT8 type; // TEXTURETYPE_
-	INT16 width, height;
+	uint32_t hash;
+	uint8_t type; // TEXTURETYPE_
+	int16_t width, height;
 	dboolean holes;
-	UINT8 flip; // 1 = flipx, 2 = flipy, 3 = both
+	uint8_t flip; // 1 = flipx, 2 = flipy, 3 = both
 	void *flat; // The texture, as a flat.
 	size_t terrainID;
 
 	// All the patches[patchcount] are drawn back to front into the cached texture.
-	INT16 patchcount;
+	int16_t patchcount;
 	texpatch_t patches[];
 };
 
 // all loaded and prepared textures from the start of the game
 extern texture_t **textures;
 
-extern INT32 *texturewidth;
+extern int32_t *texturewidth;
 extern fixed_t *textureheight; // needed for texture pegging
 
-extern UINT32 **texturecolumnofs; // column offset lookup table for each texture
-extern UINT8 **texturecache; // graphics data for each generated full-size texture
-extern UINT8 **texturebrightmapcache; // graphics data for brightmap converted for use with a specific texture
+extern uint32_t **texturecolumnofs; // column offset lookup table for each texture
+extern uint8_t **texturecache; // graphics data for each generated full-size texture
+extern uint8_t **texturebrightmapcache; // graphics data for brightmap converted for use with a specific texture
 
 // Load TEXTURES definitions, create lookup tables
 void R_LoadTextures(void);
-void R_LoadTexturesPwad(UINT16 wadnum);
+void R_LoadTexturesPwad(uint16_t wadnum);
 void R_FlushTextureCache(void);
 
 // Texture generation
-UINT8 *R_GenerateTexture(size_t texnum);
-UINT8 *R_GenerateTextureAsFlat(size_t texnum);
-UINT8 *R_GenerateTextureBrightmap(size_t texnum);
-INT32 R_GetTextureNum(INT32 texnum);
-INT32 R_GetTextureBrightmap(INT32 texnum);
-dboolean R_TextureHasBrightmap(INT32 texnum);
-dboolean R_TextureCanRemap(INT32 texnum);
-void R_CheckTextureCache(INT32 tex);
+uint8_t *R_GenerateTexture(size_t texnum);
+uint8_t *R_GenerateTextureAsFlat(size_t texnum);
+uint8_t *R_GenerateTextureBrightmap(size_t texnum);
+int32_t R_GetTextureNum(int32_t texnum);
+int32_t R_GetTextureBrightmap(int32_t texnum);
+dboolean R_TextureHasBrightmap(int32_t texnum);
+dboolean R_TextureCanRemap(int32_t texnum);
+void R_CheckTextureCache(int32_t tex);
 void R_ClearTextureNumCache(dboolean btell);
 
 // Retrieve texture data.
 void *R_GetLevelFlat(drawspandata_t* ds, levelflat_t *levelflat);
-UINT8 *R_GetColumn(fixed_t tex, INT32 col);
-UINT8 *R_GetBrightmapColumn(fixed_t tex, INT32 col);
+uint8_t *R_GetColumn(fixed_t tex, int32_t col);
+uint8_t *R_GetBrightmapColumn(fixed_t tex, int32_t col);
 void *R_GetFlat(lumpnum_t flatnum);
 
 dboolean R_CheckPowersOfTwo(drawspandata_t* ds);
 void R_CheckFlatLength(drawspandata_t* ds, size_t size);
 
-void R_UpdateTextureBrightmap(INT32 tx, INT32 bm);
+void R_UpdateTextureBrightmap(int32_t tx, int32_t bm);
 
 // Returns the texture number for the texture name.
-INT32 R_TextureNumForName(const char *name);
-INT32 R_CheckTextureNumForName(const char *name);
+int32_t R_TextureNumForName(const char *name);
+int32_t R_CheckTextureNumForName(const char *name);
 lumpnum_t R_GetFlatNumForName(const char *name);
 
-void R_CheckTextureDuplicates(INT32 start, INT32 end);
+void R_CheckTextureDuplicates(int32_t start, int32_t end);
 void R_PrintTextureDuplicates(void);
 
 void R_InsertTextureWarning(const char *header, const char *warning);
 void R_PrintTextureWarnings(void);
 
-extern INT32 numtextures;
+extern int32_t numtextures;
 
-extern INT32 g_texturenum_dbgline;
+extern int32_t g_texturenum_dbgline;
 
 #ifdef __cplusplus
 } // extern "C"

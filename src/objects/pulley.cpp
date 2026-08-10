@@ -37,7 +37,7 @@ struct Hook : Mobj
 struct Pulley : Mobj
 {
 	// hook states to keep the code clean :)
-	enum class Mode : INT32
+	enum class Mode : int32_t
 	{
 		kNull = 0, // not set
 		kIdle = 1, // wait for player
@@ -64,7 +64,7 @@ struct Pulley : Mobj
 
 	void extravalue1() = delete;
 	Mode mode() const { return static_cast<Mode>(mobj_t::extravalue1); }
-	void mode(Mode n) { mobj_t::extravalue1 = static_cast<INT32>(n); }
+	void mode(Mode n) { mobj_t::extravalue1 = static_cast<int32_t>(n); }
 
 	void thing_args() = delete;
 	bool trick_bit() const { return mobj_t::thing_args[0] & 1; }

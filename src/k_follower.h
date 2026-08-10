@@ -61,7 +61,7 @@ struct follower_t
 	char name[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything..
 	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
 
-	UINT8 category;			// Category
+	uint8_t category;			// Category
 
 	skincolornum_t defaultcolor;	// default color for menus.
 	followermode_t mode;			// Follower behavior modifier.
@@ -100,7 +100,7 @@ struct follower_t
 	sfxenum_t hornsound;		// Press (B) to announce you are pressing (B)
 };
 
-extern INT32 numfollowers;
+extern int32_t numfollowers;
 extern follower_t followers[MAXFOLLOWERS];
 
 #define MAXFOLLOWERCATEGORIES 64
@@ -109,16 +109,16 @@ struct followercategory_t
 {
 	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
 	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
-	UINT8 numincategory;
+	uint8_t numincategory;
 };
 
-extern INT32 numfollowercategories;
+extern int32_t numfollowercategories;
 extern followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
 
 extern dboolean horngoner;
 
 /*--------------------------------------------------
-	INT32 K_FollowerAvailable(const char *name)
+	int32_t K_FollowerAvailable(const char *name)
 
 		Check if a follower with the specified name
 		exists or not.
@@ -131,11 +131,11 @@ extern dboolean horngoner;
 		or -1 if it doesn't exist.
 --------------------------------------------------*/
 
-INT32 K_FollowerAvailable(const char *name);
+int32_t K_FollowerAvailable(const char *name);
 
 
 /*--------------------------------------------------
-	dboolean K_FollowerUsable(INT32 followernum);
+	dboolean K_FollowerUsable(int32_t followernum);
 
 		Check if a follower is usable or not.
 
@@ -147,11 +147,11 @@ INT32 K_FollowerAvailable(const char *name);
 		otherwise false.
 --------------------------------------------------*/
 
-dboolean K_FollowerUsable(INT32 skinnum);
+dboolean K_FollowerUsable(int32_t skinnum);
 
 
 /*--------------------------------------------------
-	dboolean K_SetFollowerByName(INT32 playernum, const char *skinname)
+	dboolean K_SetFollowerByName(int32_t playernum, const char *skinname)
 
 		Updates a player's follower type via a named value.
 		Calls "K_SetFollowerByNum" internally.
@@ -165,11 +165,11 @@ dboolean K_FollowerUsable(INT32 skinnum);
 		otherwise false.
 --------------------------------------------------*/
 
-dboolean K_SetFollowerByName(INT32 playernum, const char *skinname);
+dboolean K_SetFollowerByName(int32_t playernum, const char *skinname);
 
 
 /*--------------------------------------------------
-	void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
+	void K_SetFollowerByNum(int32_t playernum, int32_t skinnum)
 
 		Updates a player's follower type via a numerical ID.
 
@@ -181,11 +181,11 @@ dboolean K_SetFollowerByName(INT32 playernum, const char *skinname);
 		None
 --------------------------------------------------*/
 
-void K_SetFollowerByNum(INT32 playernum, INT32 skinnum);
+void K_SetFollowerByNum(int32_t playernum, int32_t skinnum);
 
 
 /*--------------------------------------------------
-	UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin)
+	uint16_t K_GetEffectiveFollowerColor(uint16_t followercolor, follower_t *follower, uint16_t playercolor, skin_t *playerskin)
 
 		Updates a player's follower pointer, and does
 		its positioning and animations.
@@ -200,7 +200,7 @@ void K_SetFollowerByNum(INT32 playernum, INT32 skinnum);
 		The resultant skincolor enum for the follower
 --------------------------------------------------*/
 
-UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin);
+uint16_t K_GetEffectiveFollowerColor(uint16_t followercolor, follower_t *follower, uint16_t playercolor, skin_t *playerskin);
 
 
 /*--------------------------------------------------
@@ -249,7 +249,7 @@ void K_RemoveFollower(player_t *player);
 void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmelodyspecial);
 
 /*--------------------------------------------------
-	INT32 K_GetEffectiveFollowerSkin(const player_t *player)
+	int32_t K_GetEffectiveFollowerSkin(const player_t *player)
 
 		Returns the player's follower, set by profile or as
 		a fallback.
@@ -261,7 +261,7 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmel
 		The resultant skin id for the follower, or -1 for None
 --------------------------------------------------*/
 
-INT32 K_GetEffectiveFollowerSkin(const player_t *player);
+int32_t K_GetEffectiveFollowerSkin(const player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"

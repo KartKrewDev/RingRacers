@@ -70,11 +70,11 @@ extern tic_t demostarttime;
 
 struct democharlist_t {
 	char name[SKINNAMESIZE+1];
-	UINT32 namehash;
-	UINT16 mapping; // No, this isn't about levels. It maps to loaded character ID.
-	UINT8 kartspeed;
-	UINT8 kartweight;
-	UINT32 flags;
+	uint32_t namehash;
+	uint16_t mapping; // No, this isn't about levels. It maps to loaded character ID.
+	uint8_t kartspeed;
+	uint8_t kartweight;
+	uint32_t flags;
 	dboolean unlockrequired;
 };
 
@@ -82,9 +82,9 @@ struct democharlist_t {
 struct demovars_s {
 	char titlename[65];
 	dboolean recording, playback, timing;
-	UINT16 version; // Current file format of the demo being played
-	UINT8 attract; // Attract demo can be cancelled by any key
-	UINT8 simplerewind;
+	uint16_t version; // Current file format of the demo being played
+	uint8_t attract; // Attract demo can be cancelled by any key
+	uint8_t simplerewind;
 
 	dboolean loadfiles, ignorefiles; // Demo file loading options
 	dboolean quitafterplaying; // quit after playing a demo from cmdline
@@ -97,9 +97,9 @@ struct demovars_s {
 
 	dboolean freecam;
 
-	UINT16 numskins;
+	uint16_t numskins;
 	democharlist_t *skinlist;
-	UINT16 currentskinid[MAXPLAYERS];
+	uint16_t currentskinid[MAXPLAYERS];
 
 	const savebuffer_t *buffer; // debug, valid only if recording or playback
 };
@@ -119,18 +119,18 @@ struct menudemo_t {
 	menudemotype_e type;
 
 	char title[65]; // Null-terminated for string prints
-	UINT16 map;
-	UINT8 addonstatus; // What do we need to do addon-wise to play this demo?
-	INT16 gametype;
-	SINT8 kartspeed; // Add OR DF_ENCORE for encore mode, idk
-	UINT8 numlaps;
-	UINT8 gp;
+	uint16_t map;
+	uint8_t addonstatus; // What do we need to do addon-wise to play this demo?
+	int16_t gametype;
+	int8_t kartspeed; // Add OR DF_ENCORE for encore mode, idk
+	uint8_t numlaps;
+	uint8_t gp;
 
 	struct {
-		UINT8 ranking;
+		uint8_t ranking;
 		char name[MAXPLAYERNAME+1];
-		UINT16 skin, color;
-		UINT32 timeorscore;
+		uint16_t skin, color;
+		uint32_t timeorscore;
 	} standings[MAXPLAYERS];
 };
 
@@ -140,8 +140,8 @@ void G_RecordDemo(const char *name);
 void G_BeginRecording(void);
 
 // Only called by shutdown code.
-void G_SetDemoTime(UINT32 ptime, UINT32 plap);
-UINT8 G_CmpDemoTime(char *oldname, char *newname);
+void G_SetDemoTime(uint32_t ptime, uint32_t plap);
+uint8_t G_CmpDemoTime(char *oldname, char *newname);
 
 typedef enum
 {
@@ -150,8 +150,8 @@ typedef enum
 	GHC_SUPER
 } ghostcolor_t;
 
-extern UINT8 demo_extradata[MAXPLAYERS];
-extern UINT8 demo_writerng;
+extern uint8_t demo_extradata[MAXPLAYERS];
+extern uint8_t demo_writerng;
 
 #define DXD_JOINDATA   0x01 // join-specific data
 #define DXD_PLAYSTATE  0x02 // state changed between playing, spectating, or not in-game
@@ -170,23 +170,23 @@ extern UINT8 demo_writerng;
 
 #define MAXSPLITS (32)
 
-dboolean G_CompatLevel(UINT16 level);
+dboolean G_CompatLevel(uint16_t level);
 
 // Record/playback tics
 dboolean G_ConsiderEndingDemoRead(void);
 dboolean G_ConsiderEndingDemoWrite(void);
 void G_ReadDemoExtraData(void);
 void G_WriteDemoExtraData(void);
-void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum);
-void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum);
-void G_GhostAddColor(INT32 playernum, ghostcolor_t color);
-void G_GhostAddFlip(INT32 playernum);
-void G_GhostAddScale(INT32 playernum, fixed_t scale);
-void G_GhostAddHit(INT32 playernum, mobj_t *victim);
+void G_ReadDemoTiccmd(ticcmd_t *cmd, int32_t playernum);
+void G_WriteDemoTiccmd(ticcmd_t *cmd, int32_t playernum);
+void G_GhostAddColor(int32_t playernum, ghostcolor_t color);
+void G_GhostAddFlip(int32_t playernum);
+void G_GhostAddScale(int32_t playernum, fixed_t scale);
+void G_GhostAddHit(int32_t playernum, mobj_t *victim);
 void G_WriteAllGhostTics(void);
-void G_WriteGhostTic(mobj_t *ghost, INT32 playernum);
+void G_WriteGhostTic(mobj_t *ghost, int32_t playernum);
 void G_ConsAllGhostTics(void);
-void G_ConsGhostTic(INT32 playernum);
+void G_ConsGhostTic(int32_t playernum);
 void G_GhostTicker(void);
 
 struct DemoBufferSizes
@@ -200,13 +200,13 @@ struct DemoBufferSizes
 // Your naming conventions are stupid and useless.
 // There is no conflict here.
 struct demoghost {
-	UINT8 checksum[16];
-	UINT8 *buffer, *p, color;
-	UINT16 initialskin;
-	UINT16 initialcolor;
-	UINT8 fadein;
-	UINT16 version;
-	UINT16 numskins;
+	uint8_t checksum[16];
+	uint8_t *buffer, *p, color;
+	uint16_t initialskin;
+	uint16_t initialcolor;
+	uint8_t fadein;
+	uint16_t version;
+	uint16_t numskins;
 	tic_t attackstart;
 	tic_t splits[MAXSPLITS];
 	dboolean done;
@@ -230,7 +230,7 @@ void G_DoPlayDemoEx(const char *defdemoname, lumpnum_t deflumpnum);
 #define G_DoPlayDemo(defdemoname) G_DoPlayDemoEx(defdemoname, LUMPERROR)
 void G_TimeDemo(const char *name);
 void G_AddGhost(savebuffer_t *buffer, const char *defdemoname);
-staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer);
+staffbrief_t *G_GetStaffGhostBrief(uint8_t *buffer);
 void G_FreeGhosts(void);
 void G_DoneLevelLoad(void);
 
@@ -244,7 +244,7 @@ void G_SaveDemo(void);
 void G_ResetDemoRecording(void);
 
 void G_SetDemoAttackTiming(tic_t time);
-void G_SetDemoCheckpointTiming(player_t *player, tic_t time, UINT8 checkpoint);
+void G_SetDemoCheckpointTiming(player_t *player, tic_t time, uint8_t checkpoint);
 
 dboolean G_CheckDemoTitleEntry(void);
 
@@ -262,7 +262,7 @@ typedef enum
 	DEMO_REWIND_PAUSE
 } demoRewindMode_t;
 
-void G_SyncDemoParty(INT32 rem, INT32 newsplitscreen);
+void G_SyncDemoParty(int32_t rem, int32_t newsplitscreen);
 
 #ifdef __cplusplus
 } // extern "C"

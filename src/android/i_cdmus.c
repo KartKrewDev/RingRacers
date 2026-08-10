@@ -16,7 +16,7 @@
 // CD MUSIC I/O
 //
 
-UINT8 cdaudio_started = 0;
+uint8_t cdaudio_started = 0;
 
 consvar_t cd_volume = CVAR_INIT ("cd_volume","18",CV_SAVE,soundvolume_cons_t, NULL);
 consvar_t cdUpdate  = CVAR_INIT ("cd_update","1",CV_SAVE, NULL, NULL);
@@ -34,13 +34,13 @@ void I_ShutdownCD(void){}
 
 void I_UpdateCD(void){}
 
-void I_PlayCD(UINT8 track, UINT8 looping)
+void I_PlayCD(uint8_t track, uint8_t looping)
 {
         (void)track;
         (void)looping;
 }
 
-dboolean I_SetVolumeCD(INT32 volume)
+dboolean I_SetVolumeCD(int32_t volume)
 {
         (void)volume;
         return false;

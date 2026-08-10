@@ -200,7 +200,7 @@ void Obj_AnimateEndlessMineRocks(mobj_t *mo)
 	constexpr int kDiff = kFrames - 2;
 	constexpr int kTotal = kFrames + kDiff;
 
-	UINT8 f = ((leveltime / 6) % kTotal);
+	uint8_t f = ((leveltime / 6) % kTotal);
 
 	if (f >= kFrames)
 	{

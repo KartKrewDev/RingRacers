@@ -34,26 +34,26 @@ struct banrecord_t
 {
     uint8_t public_key[PUBKEYLENGTH];
     mysockaddr_t *address;
-    UINT8 mask;
+    uint8_t mask;
 
     time_t expires;
 
     char username[MAXBANUSERNAME+1];
     char reason[MAXBANREASON+1];
 
-    UINT32 hash; // Not persisted! Used for early outs during key comparisons
+    uint32_t hash; // Not persisted! Used for early outs during key comparisons
     dboolean deleted; // Not persisted! Deleted records are ignored and not written back to file.
     dboolean matchesquery; // Not persisted! Used when filtering listbans/unban searches.
 };
 
 banrecord_t *SV_GetBanByKey(uint8_t *key);
-banrecord_t *SV_GetBanByAddress(UINT8 node);
+banrecord_t *SV_GetBanByAddress(uint8_t node);
 
 void SV_LoadBans(void);
 void SV_SaveBans(void);
 void SV_BanPlayer(int pnum, time_t duration, char *reason);
-dboolean SV_BanIP(const char *address, UINT8 mask, uint8_t *public_key, time_t expires, const char *username, const char *reason);
-void SV_Ban(mysockaddr_t address, UINT8 mask, uint8_t *public_key, time_t expires, const char *username, const char *reason);
+dboolean SV_BanIP(const char *address, uint8_t mask, uint8_t *public_key, time_t expires, const char *username, const char *reason);
+void SV_Ban(mysockaddr_t address, uint8_t mask, uint8_t *public_key, time_t expires, const char *username, const char *reason);
 
 void Command_Listbans(void);
 void Command_Unban(void);

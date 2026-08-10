@@ -16,7 +16,7 @@
 namespace srb2::r_debug
 {
 
-void add_texture_to_frame_list(INT32 texnum);
+void add_texture_to_frame_list(int32_t texnum);
 void clear_frame_list();
 void draw_frame_list();
 

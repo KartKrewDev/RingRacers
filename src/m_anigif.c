@@ -33,7 +33,7 @@
 #ifdef HAVE_ANIGIF
 static dboolean gif_optimize = false; // So nobody can do something dumb
 static dboolean gif_downscale = false; // like changing cvars mid output
-static UINT8 gif_dynamicdelay = (UINT8)0; // and messing something up
+static uint8_t gif_dynamicdelay = (uint8_t)0; // and messing something up
 
 // Palette handling
 static dboolean gif_localcolortable = false;
@@ -42,10 +42,10 @@ static RGBA_t *gif_headerpalette = NULL;
 static RGBA_t *gif_framepalette = NULL;
 
 static FILE *gif_out = NULL;
-static INT32 gif_frames = 0;
+static int32_t gif_frames = 0;
 static precise_t gif_prevframetime = 0;
-static UINT32 gif_delayus = 0; // "us" is microseconds
-static UINT8 gif_writeover = 0;
+static uint32_t gif_delayus = 0; // "us" is microseconds
+static uint8_t gif_writeover = 0;
 
 
 
@@ -59,14 +59,14 @@ static UINT8 gif_writeover = 0;
 // modified input 'left': returns leftmost known changed pixel
 // modified input 'right': returns rightmost known changed pixel
 //
-static UINT8 GIF_optimizecmprow(const UINT8 *dst, const UINT8 *src, INT32 row,
-	INT32 *last, INT32 *left, INT32 *right)
+static uint8_t GIF_optimizecmprow(const uint8_t *dst, const uint8_t *src, int32_t row,
+	int32_t *last, int32_t *left, int32_t *right)
 {
-	const UINT8 *dp = dst + (vid.width * row);
-	const UINT8 *sp = src + (vid.width * row);
-	const UINT8 *dtmp, *stmp;
-	UINT8 doleft = 1, doright = 1;
-	INT32 i = 0;
+	const uint8_t *dp = dst + (vid.width * row);
+	const uint8_t *sp = src + (vid.width * row);
+	const uint8_t *dtmp, *stmp;
+	uint8_t doleft = 1, doright = 1;
+	int32_t i = 0;
 
 	if (!memcmp(sp, dp, vid.width))
 		return 0; // unchanged.
@@ -129,14 +129,14 @@ static UINT8 GIF_optimizecmprow(const UINT8 *dst, const UINT8 *src, INT32 row,
 // modified input 'w': returns optimal width
 // modified input 'h': returns optimal height
 //
-static void GIF_optimizeregion(const UINT8 *dst, const UINT8 *src,
-	INT32 *x, INT32 *y, INT32 *w, INT32 *h)
+static void GIF_optimizeregion(const uint8_t *dst, const uint8_t *src,
+	int32_t *x, int32_t *y, int32_t *w, int32_t *h)
 {
-	INT32 st = 0, sb = vid.height - 1; // work from both directions
-	INT32 firstchg_t = -1, firstchg_b = -1; // store first changed row.
-	INT32 lastchg_t = -1, lastchg_b = -1; // Store last row... just in case
-	INT32 lmpix = -1, rmpix = -1; // store left and rightmost change
-	UINT8 stopt = 0, stopb = 0;
+	int32_t st = 0, sb = vid.height - 1; // work from both directions
+	int32_t firstchg_t = -1, firstchg_b = -1; // store first changed row.
+	int32_t lastchg_t = -1, lastchg_b = -1; // Store last row... just in case
+	int32_t lmpix = -1, rmpix = -1; // store left and rightmost change
+	uint8_t stopt = 0, stopb = 0;
 
 	while ((!stopt || !stopb) && st < sb)
 	{
@@ -181,13 +181,13 @@ static void GIF_optimizeregion(const UINT8 *dst, const UINT8 *src,
 
 // GIF Bit WRiter
 // ---
-static UINT8 *gifbwr_buf = NULL;
-static UINT8 *gifbwr_cur;
-static UINT8 gifbwr_bufsize = 0;
+static uint8_t *gifbwr_buf = NULL;
+static uint8_t *gifbwr_cur;
+static uint8_t gifbwr_bufsize = 0;
 
-static UINT32 gifbwr_bits_buf = 0;
-static INT32 gifbwr_bits_num = 0;
-static UINT8 gifbwr_bits_min = 9;
+static uint32_t gifbwr_bits_buf = 0;
+static int32_t gifbwr_bits_num = 0;
+static uint8_t gifbwr_bits_min = 9;
 
 //
 // GIF_bwr_flush
@@ -197,7 +197,7 @@ static void GIF_bwrflush(void)
 {
 	if (gifbwr_bits_num > 0) // will be between 1 and 7
 	{
-		WRITEUINT8(gifbwr_cur, (UINT8)(gifbwr_bits_buf&0xFF));
+		WRITEUINT8(gifbwr_cur, (uint8_t)(gifbwr_bits_buf&0xFF));
 		++gifbwr_bufsize;
 	}
 	gifbwr_bits_buf = gifbwr_bits_num = 0;
@@ -208,13 +208,13 @@ static void GIF_bwrflush(void)
 // writes bits into bit buffer,
 // writes into buffer when whole bytes obtained
 //
-static void GIF_bwrwrite(UINT32 idata)
+static void GIF_bwrwrite(uint32_t idata)
 {
 	gifbwr_bits_buf |= (idata << gifbwr_bits_num);
 	gifbwr_bits_num += gifbwr_bits_min;
 	while (gifbwr_bits_num >= 8)
 	{
-		WRITEUINT8(gifbwr_cur, (UINT8)(gifbwr_bits_buf&0xFF));
+		WRITEUINT8(gifbwr_cur, (uint8_t)(gifbwr_bits_buf&0xFF));
 		gifbwr_bits_buf >>= 8;
 		gifbwr_bits_num -= 8;
 		++gifbwr_bufsize;
@@ -225,11 +225,11 @@ static void GIF_bwrwrite(UINT32 idata)
 
 // SCReen BUFfer (obviously)
 // ---
-static UINT8 *scrbuf_pos;
-static UINT8 *scrbuf_linebegin;
-static UINT8 *scrbuf_lineend;
-static UINT8 *scrbuf_writeend;
-static INT16 scrbuf_downscaleamt = 1;
+static uint8_t *scrbuf_pos;
+static uint8_t *scrbuf_linebegin;
+static uint8_t *scrbuf_lineend;
+static uint8_t *scrbuf_writeend;
+static int16_t scrbuf_downscaleamt = 1;
 
 
 
@@ -240,9 +240,9 @@ static INT16 scrbuf_downscaleamt = 1;
 #define GIFLZW_DICTSTART 0x102
 #define GIFLZW_MAXCODE 4096
 
-static UINT16 giflzw_workingCode;
-static UINT16 giflzw_nextCodeToAssign;
-static UINT32 *giflzw_hashTable = NULL; // 16384 required
+static uint16_t giflzw_workingCode;
+static uint16_t giflzw_nextCodeToAssign;
+static uint32_t *giflzw_hashTable = NULL; // 16384 required
 
 //
 // GIF_prepareLZW
@@ -254,17 +254,17 @@ static void GIF_prepareLZW(void)
 	giflzw_nextCodeToAssign = GIFLZW_DICTSTART;
 
 	if (!giflzw_hashTable)
-		giflzw_hashTable = Z_Malloc(16384*sizeof(UINT32), PU_STATIC, NULL);
-	memset(giflzw_hashTable, 0, 16384*sizeof(UINT32));
+		giflzw_hashTable = Z_Malloc(16384*sizeof(uint32_t), PU_STATIC, NULL);
+	memset(giflzw_hashTable, 0, 16384*sizeof(uint32_t));
 }
 
 //
 // GIF_searchHash
 // searches the LZW hash table for a match
 //
-static char GIF_searchHash(UINT32 key, UINT32 *pOutput)
+static char GIF_searchHash(uint32_t key, uint32_t *pOutput)
 {
-	UINT32 entry, position = (key >> 6) & 0x3FFF;
+	uint32_t entry, position = (key >> 6) & 0x3FFF;
 
 	while (giflzw_hashTable[position] != 0)
 	{
@@ -285,9 +285,9 @@ static char GIF_searchHash(UINT32 key, UINT32 *pOutput)
 // GIF_addHash
 // stores a hash in the hash table
 //
-static void GIF_addHash(UINT32 key, UINT32 value)
+static void GIF_addHash(uint32_t key, uint32_t value)
 {
-	UINT32 position = (key >> 6) & 0x3FFF;
+	uint32_t position = (key >> 6) & 0x3FFF;
 
 	for (;;)
 	{
@@ -306,9 +306,9 @@ static void GIF_addHash(UINT32 key, UINT32 value)
 // feeds bytes into the working code,
 // and to the hash table or output from there.
 //
-static void GIF_feedByte(UINT8 pbyte)
+static void GIF_feedByte(uint8_t pbyte)
 {
-	UINT32 key, hashOutput = 0;
+	uint32_t key, hashOutput = 0;
 
 	// Prepare a code with this byte if we have none
 	if (giflzw_workingCode == UINT16_MAX)
@@ -396,8 +396,8 @@ static void GIF_lzw(void)
 
 // GIF HEADer (okay yeah)
 // ---
-const UINT8 gifhead_base[6] = {0x47,0x49,0x46,0x38,0x39,0x61}; // GIF89a
-const UINT8 gifhead_nsid[19] = {0x21,0xFF,0x0B, // extension block + size
+const uint8_t gifhead_base[6] = {0x47,0x49,0x46,0x38,0x39,0x61}; // GIF89a
+const uint8_t gifhead_nsid[19] = {0x21,0xFF,0x0B, // extension block + size
 	0x4E,0x45,0x54,0x53,0x43,0x41,0x50,0x45,0x32,0x2E,0x30, // NETSCAPE2.0
 	0x03,0x01,0xFF,0xFF,0x00}; // sub-block, repetitions
 
@@ -422,9 +422,9 @@ static RGBA_t *GIF_getpalette(size_t palnum)
 // writes the gif palette.
 // used both for the header and local color tables.
 //
-static UINT8 *GIF_palwrite(UINT8 *p, RGBA_t *pal)
+static uint8_t *GIF_palwrite(uint8_t *p, RGBA_t *pal)
 {
-	INT32 i;
+	int32_t i;
 	for (i = 0; i < 256; i++)
 	{
 		WRITEUINT8(p, pal[i].s.red);
@@ -440,9 +440,9 @@ static UINT8 *GIF_palwrite(UINT8 *p, RGBA_t *pal)
 //
 static void GIF_headwrite(void)
 {
-	UINT8 *gifhead = Z_Malloc(800, PU_STATIC, NULL);
-	UINT8 *p = gifhead;
-	UINT16 rwidth, rheight;
+	uint8_t *gifhead = Z_Malloc(800, PU_STATIC, NULL);
+	uint8_t *p = gifhead;
+	uint16_t rwidth, rheight;
 
 	if (!gif_out)
 		return;
@@ -486,9 +486,9 @@ static void GIF_headwrite(void)
 
 // GIF FRAME (surprise!)
 // ---
-const UINT8 gifframe_gchead[4] = {0x21,0xF9,0x04,0x04}; // GCE, bytes, packed byte (no trans = 0 | no input = 0 | don't remove = 4)
+const uint8_t gifframe_gchead[4] = {0x21,0xF9,0x04,0x04}; // GCE, bytes, packed byte (no trans = 0 | no input = 0 | don't remove = 4)
 
-static UINT8 *gifframe_data = NULL;
+static uint8_t *gifframe_data = NULL;
 static size_t gifframe_size = 8192;
 
 //
@@ -498,9 +498,9 @@ static size_t gifframe_size = 8192;
 #ifdef HWRENDER
 static colorlookup_t gif_colorlookup;
 
-static void GIF_rgbconvert(const UINT8 *linear, UINT8 *scr)
+static void GIF_rgbconvert(const uint8_t *linear, uint8_t *scr)
 {
-	UINT8 r, g, b;
+	uint8_t r, g, b;
 	size_t src = 0, dest = 0;
 	size_t size = (vid.width * vid.height * 3);
 
@@ -508,9 +508,9 @@ static void GIF_rgbconvert(const UINT8 *linear, UINT8 *scr)
 
 	while (src < size)
 	{
-		r = (UINT8)linear[src];
-		g = (UINT8)linear[src + 1];
-		b = (UINT8)linear[src + 2];
+		r = (uint8_t)linear[src];
+		g = (uint8_t)linear[src + 1];
+		b = (uint8_t)linear[src + 2];
 		scr[dest] = GetColorLUTDirect(&gif_colorlookup, r, g, b);
 		src += (3 * scrbuf_downscaleamt);
 		dest += scrbuf_downscaleamt;
@@ -522,11 +522,11 @@ static void GIF_rgbconvert(const UINT8 *linear, UINT8 *scr)
 // GIF_framewrite
 // writes a frame into the file.
 //
-static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *input)
+static void GIF_framewrite(int32_t input_width, int32_t input_height, const uint8_t *input)
 {
-	UINT8 *p;
-	UINT8 *movie_screen = screens[2];
-	INT32 blitx, blity, blitw, blith;
+	uint8_t *p;
+	uint8_t *movie_screen = screens[2];
+	int32_t blitx, blity, blitw, blith;
 	dboolean palchanged;
 
 	(void)input_width;
@@ -555,7 +555,7 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 	if (gif_optimize && gif_frames > 0 && (!palchanged))
 	{
 		// before blit movie_screen points to last frame, cur_screen points to this frame
-		UINT8 *cur_screen = screens[0];
+		uint8_t *cur_screen = screens[0];
 		GIF_optimizeregion(cur_screen, movie_screen, &blitx, &blity, &blitw, &blith);
 
 		// blit to temp screen
@@ -567,7 +567,7 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 #ifdef HWRENDER
 		else if (rendermode == render_opengl)
 		{
-			UINT8 *linear = HWR_GetScreenshot();
+			uint8_t *linear = HWR_GetScreenshot();
 			GIF_rgbconvert(linear, movie_screen);
 			free(linear);
 		}
@@ -583,7 +583,7 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 		// Copy the current OpenGL frame into the base screen
 		if (rendermode == render_opengl)
 		{
-			UINT8 *linear = HWR_GetScreenshot();
+			uint8_t *linear = HWR_GetScreenshot();
 			GIF_rgbconvert(linear, screens[0]);
 			free(linear);
 		}
@@ -602,13 +602,13 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 
 	// screen regions are handled in GIF_lzw
 	{
-		UINT16 delay = 0;
-		INT32 startline;
+		uint16_t delay = 0;
+		int32_t startline;
 
-		if (gif_dynamicdelay ==(UINT8) 2)
+		if (gif_dynamicdelay ==(uint8_t) 2)
 		{
 			// golden's attempt at creating a "dynamic delay"
-			UINT16 mingifdelay = 10; // minimum gif delay in milliseconds (keep at 10 because gifs can't get more precise).
+			uint16_t mingifdelay = 10; // minimum gif delay in milliseconds (keep at 10 because gifs can't get more precise).
 			gif_delayus += (I_GetPreciseTime() - gif_prevframetime) / (I_GetPrecisePrecision() / 1000000); // increase delay by how much time was spent between last measurement
 
 			if (gif_delayus/1000 >= mingifdelay) // delay is big enough to be able to effect gif frame delay?
@@ -618,14 +618,14 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 				gif_delayus -= frames*(mingifdelay*1000); // remove frames by the amount of milliseconds they take. don't reset to 0, the microseconds help consistency.
 			}
 		}
-		else if (gif_dynamicdelay ==(UINT8) 1)
+		else if (gif_dynamicdelay ==(uint8_t) 1)
 		{
 			float delayf = ceil(100.0f/NEWTICRATE);
 
-			delay = (UINT16)((I_GetPreciseTime() - gif_prevframetime)) / (I_GetPrecisePrecision() / 1000000) /10/1000;
+			delay = (uint16_t)((I_GetPreciseTime() - gif_prevframetime)) / (I_GetPrecisePrecision() / 1000000) /10/1000;
 
-			if (delay < (UINT16)(delayf))
-				delay = (UINT16)(delayf);
+			if (delay < (uint16_t)(delayf))
+				delay = (uint16_t)(delayf);
 		}
 		else
 		{
@@ -651,10 +651,10 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 		}
 
 		WRITEUINT8(p, 0x2C);
-		WRITEUINT16(p, (UINT16)(blitx / scrbuf_downscaleamt));
-		WRITEUINT16(p, (UINT16)(blity / scrbuf_downscaleamt));
-		WRITEUINT16(p, (UINT16)(blitw / scrbuf_downscaleamt));
-		WRITEUINT16(p, (UINT16)(blith / scrbuf_downscaleamt));
+		WRITEUINT16(p, (uint16_t)(blitx / scrbuf_downscaleamt));
+		WRITEUINT16(p, (uint16_t)(blity / scrbuf_downscaleamt));
+		WRITEUINT16(p, (uint16_t)(blitw / scrbuf_downscaleamt));
+		WRITEUINT16(p, (uint16_t)(blith / scrbuf_downscaleamt));
 
 		if (!gif_localcolortable)
 			WRITEUINT8(p, 0); // no local table of colors
@@ -695,7 +695,7 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 
 			if ((size_t)(p - gifframe_data) + gifbwr_bufsize + 1 >= gifframe_size)
 			{
-				INT32 temppos = p - gifframe_data;
+				int32_t temppos = p - gifframe_data;
 				gifframe_data = Z_Realloc(gifframe_data, (gifframe_size *= 2), PU_STATIC, NULL);
 				p = gifframe_data + temppos; // realloc moves gifframe_data, so p is now invalid
 			}
@@ -725,7 +725,7 @@ static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *i
 // GIF_open
 // opens a new file for writing.
 //
-INT32 GIF_open(const char *filename)
+int32_t GIF_open(const char *filename)
 {
 	gif_out = fopen(filename, "wb");
 	if (!gif_out)
@@ -733,7 +733,7 @@ INT32 GIF_open(const char *filename)
 
 	gif_optimize = (!!cv_gif_optimize.value);
 	gif_downscale = (!!cv_gif_downscale.value);
-	gif_dynamicdelay = (UINT8)cv_gif_dynamicdelay.value;
+	gif_dynamicdelay = (uint8_t)cv_gif_dynamicdelay.value;
 	gif_localcolortable = (!!cv_gif_localcolortable.value);
 	gif_colorprofile = (!!cv_screenshot_colorprofile.value);
 	gif_headerpalette = GIF_getpalette(0);
@@ -759,7 +759,7 @@ void GIF_frame(void)
 // GIF_frame_rgb24
 // writes a frame into the output gif, with existing image data
 //
-void GIF_frame_rgb24(INT32 width, INT32 height, const UINT8 *buffer)
+void GIF_frame_rgb24(int32_t width, int32_t height, const uint8_t *buffer)
 {
 	GIF_framewrite(width, height, buffer);
 }
@@ -768,7 +768,7 @@ void GIF_frame_rgb24(INT32 width, INT32 height, const UINT8 *buffer)
 // GIF_close
 // closes output GIF
 //
-INT32 GIF_close(void)
+int32_t GIF_close(void)
 {
 	if (!gif_out)
 		return 0;

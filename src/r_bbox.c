@@ -35,24 +35,24 @@ CV_PossibleValue_t renderhitbox_cons_t[] = {
 	{0}};
 
 struct bbox_col {
-	INT32 x;
-	INT32 y;
-	INT32 h;
+	int32_t x;
+	int32_t y;
+	int32_t h;
 };
 
 struct bbox_config {
 	fixed_t height;
 	fixed_t tz;
 	struct bbox_col col[4];
-	UINT8 color;
+	uint8_t color;
 };
 
 static inline void
 raster_bbox_seg
-(		INT32 x,
+(		int32_t x,
 		fixed_t y,
 		fixed_t h,
-		UINT8 pixel)
+		uint8_t pixel)
 {
 	y /= FRACUNIT;
 
@@ -108,8 +108,8 @@ draw_bbox_row
 		*a = &bb->col[p1],
 		*b = &bb->col[p2];
 
-	INT32 x1, x2; // left, right
-	INT32 dx; // width
+	int32_t x1, x2; // left, right
+	int32_t dx; // width
 
 	fixed_t y1, y2; // top, bottom
 	fixed_t s1, s2; // top and bottom increment
@@ -166,9 +166,9 @@ draw_bbox_row
 	}
 }
 
-UINT8 R_GetBoundingBoxColor(mobj_t *thing)
+uint8_t R_GetBoundingBoxColor(mobj_t *thing)
 {
-	UINT32 flags = thing->flags;
+	uint32_t flags = thing->flags;
 
 	if (thing->player)
 		return 255; // 0FF
@@ -262,7 +262,7 @@ static dboolean is_tangible (mobj_t *thing)
 
 dboolean R_ThingBoundingBoxVisible(mobj_t *thing)
 {
-	INT32 cvmode = cv_renderhitbox.value;
+	int32_t cvmode = cv_renderhitbox.value;
 
 	if (thing->type == MT_WAYPOINT)
 	{

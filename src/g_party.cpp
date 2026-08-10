@@ -254,7 +254,7 @@ final_party;
 
 }; // namespace
 
-INT32 splitscreen_invitations[MAXPLAYERS];
+int32_t splitscreen_invitations[MAXPLAYERS];
 
 void G_ObliterateParties(void)
 {
@@ -262,70 +262,70 @@ void G_ObliterateParties(void)
 	local_party = {};
 }
 
-void G_DestroyParty(UINT8 player)
+void G_DestroyParty(uint8_t player)
 {
 	local_party.reset(player);
 	final_party[player] = {};
 }
 
-void G_BuildLocalSplitscreenParty(UINT8 player)
+void G_BuildLocalSplitscreenParty(uint8_t player)
 {
 	local_party[player].add(player);
 	final_party[player] = local_party[player];
 }
 
-void G_JoinParty(UINT8 host, UINT8 guest)
+void G_JoinParty(uint8_t host, uint8_t guest)
 {
 	final_party.join(host, guest);
 }
 
-void G_LeaveParty(UINT8 player)
+void G_LeaveParty(uint8_t player)
 {
 	final_party.reset(player, local_party[player]);
 }
 
-UINT8 G_LocalSplitscreenPartySize(UINT8 player)
+uint8_t G_LocalSplitscreenPartySize(uint8_t player)
 {
 	return local_party[player].size();
 }
 
-UINT8 G_PartySize(UINT8 player)
+uint8_t G_PartySize(uint8_t player)
 {
 	return final_party[player].size();
 }
 
-dboolean G_IsPartyLocal(UINT8 player)
+dboolean G_IsPartyLocal(uint8_t player)
 {
 	return final_party[player].local();
 }
 
-UINT8 G_PartyMember(UINT8 player, UINT8 index)
+uint8_t G_PartyMember(uint8_t player, uint8_t index)
 {
 	SRB2_ASSERT(index < final_party[player].size());
 
 	return final_party[player][index];
 }
 
-const UINT8* G_PartyArray(UINT8 player)
+const uint8_t* G_PartyArray(uint8_t player)
 {
 	return final_party[player].data();
 }
 
-UINT8 G_PartyPosition(UINT8 player)
+uint8_t G_PartyPosition(uint8_t player)
 {
 	const Party& party = final_party[player];
 
 	return party.find(player) - party.begin();
 }
 
-UINT8 G_LocalSplitscreenPartyPosition(UINT8 player)
+uint8_t G_LocalSplitscreenPartyPosition(uint8_t player)
 {
 	const Party& party = local_party[player];
 
 	return party.find(player) - party.begin();
 }
 
-UINT8 G_LocalSplitscreenPartyMember(UINT8 player, UINT8 index)
+uint8_t G_LocalSplitscreenPartyMember(uint8_t player, uint8_t index)
 {
 	SRB2_ASSERT(index < local_party[player].size());
 

@@ -890,7 +890,7 @@ void EggTV::draw_grid() const
 void EggTV::draw_grid_mesh(const GridOffsets& grid) const
 {
 	const fixed_t t = gridFade_.reverse_if(mode_.next() == Mode::kGrid);
-	const INT32 transFlag = t < FRACUNIT/2 ? 0 : V_TRANSLUCENT;
+	const int32_t transFlag = t < FRACUNIT/2 ? 0 : V_TRANSLUCENT;
 
 	// FIXME, hwr2d transparency does not work for other blend modes yet
 #if 0
@@ -1082,7 +1082,7 @@ void EggTV::draw_replay_buttons() const
 
 	Draw row(x, 54);
 
-	for (INT16 i = 0; i < currentMenu->numitems; ++i)
+	for (int16_t i = 0; i < currentMenu->numitems; ++i)
 	{
 		const menuitem_t& item = currentMenu->menuitems[i];
 

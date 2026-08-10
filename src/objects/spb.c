@@ -152,7 +152,7 @@ static void SpawnSPBDust(mobj_t *spb)
 	fixed_t sy;
 	fixed_t sz = spb->floorz;
 	angle_t sa = spb->angle - ANG1*60;
-	INT32 i;
+	int32_t i;
 
 	if (spb->eflags & MFE_VERTICALFLIP)
 	{
@@ -194,7 +194,7 @@ static void SpawnSPBDust(mobj_t *spb)
 
 // dir should be either 1 or -1 to determine where to spawn the dust.
 
-static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
+static void SpawnSPBSliptide(mobj_t *spb, int8_t dir)
 {
 	fixed_t newx;
 	fixed_t newy;
@@ -268,9 +268,9 @@ static fixed_t SPBDist(mobj_t *a, mobj_t *b)
 static void SPBTurn(
 	fixed_t destSpeed, angle_t destAngle,
 	fixed_t *editSpeed, angle_t *editAngle,
-	fixed_t lerp, SINT8 *returnSliptide)
+	fixed_t lerp, int8_t *returnSliptide)
 {
-	INT32 delta = AngleDeltaSigned(destAngle, *editAngle);
+	int32_t delta = AngleDeltaSigned(destAngle, *editAngle);
 	fixed_t dampen = FRACUNIT;
 
 	// Slow down when turning; it looks better and makes U-turns not unfair
@@ -283,7 +283,7 @@ static void SPBTurn(
 	if (returnSliptide != NULL)
 	{
 		const dboolean isSliptiding =  (abs(delta) >= SPB_SLIPTIDEDELTA);
-		SINT8 sliptide = 0;
+		int8_t sliptide = 0;
 
 		if (isSliptiding == true)
 		{
@@ -348,7 +348,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 
 	fixed_t xySpeed = desiredSpeed;
 	fixed_t zSpeed = desiredSpeed;
-	SINT8 sliptide = 0;
+	int8_t sliptide = 0;
 
 	fixed_t steerDist = INT32_MAX;
 	mobj_t *steerMobj = NULL;
@@ -439,7 +439,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 	{
 		// Determine first waypoint.
 		curWaypoint = K_GetBestWaypointForMobj(spb, NULL);
-		spb_curwaypoint(spb) = (INT32)K_GetWaypointHeapIndex(curWaypoint);
+		spb_curwaypoint(spb) = (int32_t)K_GetWaypointHeapIndex(curWaypoint);
 	}
 	else
 	{
@@ -557,7 +557,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 			if (pathfindsuccess == true && curWaypoint != NULL)
 			{
 				// Update again
-				spb_curwaypoint(spb) = (INT32)K_GetWaypointHeapIndex(curWaypoint);
+				spb_curwaypoint(spb) = (int32_t)K_GetWaypointHeapIndex(curWaypoint);
 				destX = curWaypoint->mobj->x;
 				destY = curWaypoint->mobj->y;
 				destZ = curWaypoint->mobj->z;
@@ -595,7 +595,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			fixed_t ourDist = INT32_MAX;
-			INT32 ourDelta = INT32_MAX;
+			int32_t ourDelta = INT32_MAX;
 
 			if (playeringame[i] == false || players[i].spectator == true)
 			{
@@ -718,8 +718,8 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 
 	if (chasePlayer != NULL)
 	{
-		UINT8 fracmax = 32;
-		UINT8 spark = ((10 - chasePlayer->kartspeed) + chasePlayer->kartweight) / 2;
+		uint8_t fracmax = 32;
+		uint8_t spark = ((10 - chasePlayer->kartspeed) + chasePlayer->kartweight) / 2;
 		fixed_t easiness = ((chasePlayer->kartspeed + (10 - spark)) << FRACBITS) / 2;
 
 		fixed_t scaleAdjust = FRACUNIT;
@@ -903,7 +903,7 @@ void Obj_SPBThink(mobj_t *spb)
 {
 	mobj_t *ghost = NULL;
 	mobj_t *bestMobj = NULL;
-	UINT8 bestRank = UINT8_MAX;
+	uint8_t bestRank = UINT8_MAX;
 	size_t i;
 
 	if (spb->health <= 0)

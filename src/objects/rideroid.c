@@ -59,7 +59,7 @@ static void plr_resetRideroidVars(player_t *p)
 // kills the rideroid and removes it from the map.
 static void Obj_killRideroid(mobj_t *mo)
 {
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i < 32; i++)
 	{
@@ -115,7 +115,7 @@ static void Obj_explodeRideroid(mobj_t *mo)
 }
 
 // used to create a smooth trail.
-static fixed_t Obj_rideroidLerp(INT32 start, INT32 finish, INT32 percent)
+static fixed_t Obj_rideroidLerp(int32_t start, int32_t finish, int32_t percent)
 {
 	return start + FixedMul(finish-start, FRACUNIT-percent);
 }
@@ -125,7 +125,7 @@ static void Obj_rideroidTrail(mobj_t *mo)
 	mobj_t *pmo = mo->target;
 	player_t *p = NULL;
 
-	UINT8 i, j;
+	uint8_t i, j;
 
 	angle_t h_an = mo->angle + ANG1*90;
 
@@ -145,7 +145,7 @@ static void Obj_rideroidTrail(mobj_t *mo)
 	{
 		for (i = 0; i < 2; i++)
 		{
-			INT32 percent = FRACUNIT * (10-j)/10;
+			int32_t percent = FRACUNIT * (10-j)/10;
 			angle_t roll = (angle_t)Obj_rideroidLerp((angle_t)mo->cvmem, mo->rollangle, percent);
 			fixed_t x = (fixed_t)Obj_rideroidLerp((fixed_t)mo->extravalue1, mo->x, percent);
 			fixed_t y = (fixed_t)Obj_rideroidLerp((fixed_t)mo->extravalue2, mo->y, percent);
@@ -177,10 +177,10 @@ static void Obj_rideroidTrail(mobj_t *mo)
 		}
 	}
 
-	mo->extravalue1 = (INT32)mo->x;
-	mo->extravalue2 = (INT32)mo->y;
-	mo->cusval = (INT32)mo->z;
-	mo->cvmem = (INT32)mo->rollangle;
+	mo->extravalue1 = (int32_t)mo->x;
+	mo->extravalue2 = (int32_t)mo->y;
+	mo->cusval = (int32_t)mo->z;
+	mo->cvmem = (int32_t)mo->rollangle;
 }
 
 
@@ -267,7 +267,7 @@ void Obj_RideroidThink(mobj_t *mo)
 
 	if (p->draftpower)
 	{
-		UINT8 draftperc = (p->draftpower*100 / FRACUNIT);	// 0-100%
+		uint8_t draftperc = (p->draftpower*100 / FRACUNIT);	// 0-100%
 		maxspd += (draftperc/5) / 100;
 	}
 
@@ -345,12 +345,12 @@ void Obj_RideroidThink(mobj_t *mo)
 	{
 		fixed_t savemomx = pmo->momx;
 		fixed_t savemomy = pmo->momy;
-		SINT8 dir = 0;
-		INT32 a;
+		int8_t dir = 0;
+		int32_t a;
 
 		if (p->cmd.turning < -400)
 		{
-			a = (INT32)(mo->angle) - ANG1*90;
+			a = (int32_t)(mo->angle) - ANG1*90;
 			P_Thrust(pmo, mo->angle - ANGLE_90, 2*mapobjectscale);
 			p->rideroidrollangle -= ANG1*3;
 
@@ -362,7 +362,7 @@ void Obj_RideroidThink(mobj_t *mo)
 		}
 		else if (p->cmd.turning > 400)
 		{
-			a = (INT32)(mo->angle) + ANG1*90;
+			a = (int32_t)(mo->angle) + ANG1*90;
 			P_Thrust(pmo, mo->angle + ANGLE_90, 2*mapobjectscale);
 			p->rideroidrollangle += ANG1*3;
 
@@ -398,7 +398,7 @@ void Obj_RideroidThink(mobj_t *mo)
 			basemomx = pmo->momx;
 			basemomy = pmo->momy;
 
-			a = (INT32)(mo->angle) - dir*ANG1*90;
+			a = (int32_t)(mo->angle) - dir*ANG1*90;
 			P_Thrust(pmo, (angle_t)a, RIDEROIDMAXADD*3*mapobjectscale);
 
 			xthreshold = pmo->momx - basemomx;
@@ -475,8 +475,8 @@ void Obj_RideroidNodeSpawn(mobj_t *mo)
 
 	fixed_t radius = NODERADIUS*mapobjectscale;	// radius for the text to rotate at.
 	mobj_t *ptr = mo;
-	UINT8 i;
-	UINT8 j;
+	uint8_t i;
+	uint8_t j;
 
 
 	// make it bigger.
@@ -520,7 +520,7 @@ void Obj_RideroidNodeThink(mobj_t *mo)
 	fixed_t radius = NODERADIUS*mapobjectscale;	// radius for the text to rotate at.
 	mobj_t *ptr = mo->hnext;
 	mobj_t *pmo;
-	UINT8 i;
+	uint8_t i;
 
 	mo->angle -= NODEROTSPEED;	// continuously rotate.
 

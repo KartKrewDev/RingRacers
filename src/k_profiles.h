@@ -142,7 +142,7 @@ struct profile_t
 {
 
 	// Versionning
-	UINT8 version;						// Version of the profile, this can be useful for backwards compatibility reading if we ever update the profile structure/format after release.
+	uint8_t version;						// Version of the profile, this can be useful for backwards compatibility reading if we ever update the profile structure/format after release.
 										// A version of 0 can easily be checked to identify an unitialized profile.
 
 	// Profile header
@@ -154,12 +154,12 @@ struct profile_t
 	// Player data
 	char playername[MAXPLAYERNAME+1];	// Player name
 	char skinname[SKINNAMESIZE+1];		// Default Skin
-	UINT16 color;						// Default player coloUr. ...But for consistency we'll name it color.
+	uint16_t color;						// Default player coloUr. ...But for consistency we'll name it color.
 	char follower[SKINNAMESIZE+1];		// Follower
-	UINT16 followercolor;				// Follower color
+	uint16_t followercolor;				// Follower color
 
-	UINT32 wins;	// I win I win I win
-	UINT32 rounds;  // I played I played I played
+	uint32_t wins;	// I win I win I win
+	uint32_t rounds;  // I played I played I played
 
 	// Player-specific consvars.
 	// @TODO: List all of those
@@ -167,20 +167,20 @@ struct profile_t
 	dboolean autoroulette;				// cv_autoroulette
 	dboolean litesteer;					// cv_litesteer
 	dboolean strictfastfall;				// cv_strictfastfall
-	UINT8 descriptiveinput;				// cv_descriptiveinput
+	uint8_t descriptiveinput;				// cv_descriptiveinput
 	dboolean autoring;					// cv_autoring
 	dboolean rumble;						// cv_rumble
-	UINT8 fov;							// cv_fov
+	uint8_t fov;							// cv_fov
 
 	// Finally, control data itself
-	INT32 controls[num_gamecontrols][MAXINPUTMAPPING];	// Lists of all the controls, defined the same way as default inputs in g_input.c
+	int32_t controls[num_gamecontrols][MAXINPUTMAPPING];	// Lists of all the controls, defined the same way as default inputs in g_input.c
 };
 
 
 // Functions
 
 // returns how many profiles there are
-INT32 PR_GetNumProfiles(void);
+int32_t PR_GetNumProfiles(void);
 
 // PR_MakeProfile
 // Makes a profile from the supplied profile name, player name, colour, follower, followercolour and controls.
@@ -188,30 +188,30 @@ INT32 PR_GetNumProfiles(void);
 profile_t* PR_MakeProfile(
 	const char *prname,
 	const char *pname,
-	const char *sname, const UINT16 col,
-	const char *fname, const UINT16 fcol,
-	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
+	const char *sname, const uint16_t col,
+	const char *fname, const uint16_t fcol,
+	int32_t controlarray[num_gamecontrols][MAXINPUTMAPPING],
 	dboolean guest
 );
 
 // PR_MakeProfileFromPlayer
 // Makes a profile_t from the supplied profile name, player name, colour, follower and followercolour.
 // The last argument is a player number to read cvars from; as for convenience, cvars will be set directly when making a profile (since loading another one will overwrite them, this will be inconsequential)
-profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum);
+profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const uint16_t col, const char *fname, uint16_t fcol, uint8_t pnum);
 
 // PR_AddProfile(profile_t p)
 // Adds a profile to profilesList and increments numprofiles.
 // Returns true if succesful, false if not.
 dboolean PR_AddProfile(profile_t *p);
 
-// PR_GetProfile(INT32 num)
+// PR_GetProfile(int32_t num)
 // Returns a pointer to the profile you're asking for or NULL if the profile is uninitialized.
-profile_t* PR_GetProfile(INT32 num);
+profile_t* PR_GetProfile(int32_t num);
 
-// PR_DeleteProfile(INT32 n)
+// PR_DeleteProfile(int32_t n)
 // Deletes the specified profile. n cannot be 0. Returns false if the profile couldn't be deleted, true otherwise.
 // This will also move every profile back accordingly to ensure the table has no empty profiles inbetween two valid profiles.
-dboolean PR_DeleteProfile(INT32 n);
+dboolean PR_DeleteProfile(int32_t n);
 
 // PR_InitNewProfile(void)
 // Initializes the first new profile
@@ -227,39 +227,39 @@ void PR_SaveProfiles(void);
 // This also loads
 void PR_LoadProfiles(void);
 
-// PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
+// PR_ApplyProfile(uint8_t profilenum, uint8_t playernum)
 // Applies the given profile's settings to the given player.
-void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum);
+void PR_ApplyProfile(uint8_t profilenum, uint8_t playernum);
 
-// PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum)
+// PR_ApplyProfileLight(uint8_t profilenum, uint8_t playernum)
 // Similar to PR_ApplyProfile but only applies skin and follower values.
 // Controls, kickstartaccel and "current profile" data is *not* modified.
-void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum);
+void PR_ApplyProfileLight(uint8_t profilenum, uint8_t playernum);
 
-// PR_ApplyProfileToggles(UINT8 profilenum, UINT8 playernum)
+// PR_ApplyProfileToggles(uint8_t profilenum, uint8_t playernum)
 // Applies ONLY controls and kickstartaccel.
 // Exposed for menu code exclusively.
-void PR_ApplyProfileToggles(UINT8 profilenum, UINT8 playernum);
+void PR_ApplyProfileToggles(uint8_t profilenum, uint8_t playernum);
 
-// PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
+// PR_ApplyProfilePretend(uint8_t profilenum, uint8_t playernum)
 // ONLY modifies "current profile" data.
 // Exists because any other option inteferes with rapid testing.
-void PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum);
+void PR_ApplyProfilePretend(uint8_t profilenum, uint8_t playernum);
 
 // PR_GetProfileNum(profile_t *p)
 // Gets the profile's index # in profilesList
-UINT8 PR_GetProfileNum(profile_t *p);
+uint8_t PR_GetProfileNum(profile_t *p);
 
 // PR_ProfileUsedBy(profile_t *p)
 // Returns the player # this profile is used by (if any)
 // If the profile belongs to no player, then this returns -1
-SINT8 PR_ProfileUsedBy(profile_t *p);
+int8_t PR_ProfileUsedBy(profile_t *p);
 
 profile_t *PR_GetPlayerProfile(player_t *player);
 
-profile_t *PR_GetLocalPlayerProfile(INT32 player);
+profile_t *PR_GetLocalPlayerProfile(int32_t player);
 
-dboolean PR_IsLocalPlayerGuest(INT32 player);
+dboolean PR_IsLocalPlayerGuest(int32_t player);
 
 char *GetPrettyRRID(const unsigned char *bin, dboolean brief);
 unsigned char *FromPrettyRRID(unsigned char *bin, const char *text);

@@ -52,7 +52,7 @@ menuitem_t MainMenu[] =
 menu_t MainDef = KARTGAMEMODEMENU(MainMenu, NULL);
 
 // Quit Game
-static INT32 quitsounds[] =
+static int32_t quitsounds[] =
 {
 	// holy shit we're changing things up!
 	// srb2kart: you ain't seen nothing yet
@@ -86,7 +86,7 @@ static INT32 quitsounds[] =
 	sfx_screec
 };
 
-void M_QuitSRB2(INT32 choice)
+void M_QuitSRB2(int32_t choice)
 {
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
@@ -103,7 +103,7 @@ void M_QuitSRB2(INT32 choice)
 
 	if (!M_GameAboutToStart() && M_GameTrulyStarted())
 	{
-		INT32 mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
+		int32_t mrand = M_RandomKey(sizeof(quitsounds) / sizeof(int32_t));
 		if (quitsounds[mrand])
 			S_StartSound(NULL, quitsounds[mrand]);
 
@@ -127,7 +127,7 @@ void M_QuitSRB2(INT32 choice)
 	);
 }
 
-void M_QuitResponse(INT32 ch)
+void M_QuitResponse(int32_t ch)
 {
 	if (ch == MA_YES)
 	{

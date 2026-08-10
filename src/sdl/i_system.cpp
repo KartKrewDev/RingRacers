@@ -218,7 +218,7 @@ SDLJoyInfo_t JoyInfo[MAXSPLITSCREENPLAYERS];
 bool consolevent = false;
 bool framebuffer = false;
 
-UINT8 keyboard_started = false;
+uint8_t keyboard_started = false;
 dboolean g_in_exiting_signal_handler = false;
 
 #ifdef UNIXBACKTRACE
@@ -229,7 +229,7 @@ dboolean g_in_exiting_signal_handler = false;
 		write(fd, string, strlen(string));\
 	I_OutputMsg("%s", string)
 
-static void write_backtrace(INT32 signal)
+static void write_backtrace(int32_t signal)
 {
 	int fd = -1;
 	size_t size;
@@ -663,7 +663,7 @@ exit:
 #endif
 
 #if !defined(NEWSIGNALHANDLER) && !defined(USE_DBGHELP)
-static ATTRNORETURN void signal_handler(INT32 num)
+static ATTRNORETURN void signal_handler(int32_t num)
 {
 	g_in_exiting_signal_handler = true;
 
@@ -711,11 +711,11 @@ feild_t tty_con;
 // when printing general stuff to stdout stderr (Sys_Printf)
 //   we need to disable the tty console stuff
 // this increments so we can recursively disable
-static INT32 ttycon_hide = 0;
+static int32_t ttycon_hide = 0;
 // some key codes that the terminal may be using
 // TTimo NOTE: I'm not sure how relevant this is
-static INT32 tty_erase;
-static INT32 tty_eof;
+static int32_t tty_erase;
+static int32_t tty_eof;
 
 static struct termios tty_tc;
 
@@ -991,7 +991,7 @@ void I_GetConsoleEvents(void)
 static void I_StartupConsole(void)
 {
 	HANDLE ci, co;
-	const INT32 ded = M_CheckParm("-dedicated");
+	const int32_t ded = M_CheckParm("-dedicated");
 	BOOL gotConsole = FALSE;
 	if (M_CheckParm("-console") || ded)
 		gotConsole = AllocConsole();
@@ -1079,7 +1079,7 @@ static void I_RegisterSignals (void)
 }
 
 #ifdef NEWSIGNALHANDLER
-static void signal_handler_child(INT32 num)
+static void signal_handler_child(int32_t num)
 {
 	G_DirtyGameData();
 
@@ -1219,11 +1219,11 @@ void I_OutputMsg(const char *fmt, ...)
 //
 // I_GetKey
 //
-INT32 I_GetKey (void)
+int32_t I_GetKey (void)
 {
 	// Warning: I_GetKey empties the event queue till next keypress
 	event_t *ev;
-	INT32 rc = 0;
+	int32_t rc = 0;
 
 	G_ResetAllDeviceResponding();
 
@@ -1287,7 +1287,7 @@ void I_JoyScale4(void)
 	JoyInfo[3].scale = Joystick[3].bGamepadStyle?1:cv_joyscale[1].value;
 }
 
-void I_SetGamepadPlayerIndex(INT32 device_id, INT32 player)
+void I_SetGamepadPlayerIndex(int32_t device_id, int32_t player)
 {
 	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
 	I_Assert(player >= 0 && player < MAXSPLITSCREENPLAYERS);
@@ -1301,7 +1301,7 @@ void I_SetGamepadPlayerIndex(INT32 device_id, INT32 player)
 	SDL_SetGamepadPlayerIndex(controller, player);
 }
 
-void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue)
+void I_SetGamepadIndicatorColor(int32_t device_id, uint8_t red, uint8_t green, uint8_t blue)
 {
 	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
 
@@ -1314,7 +1314,7 @@ void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 b
 	SDL_SetGamepadLED(controller, red, green, blue);
 }
 
-void I_GetGamepadGuid(INT32 device_id, char *out, int out_len)
+void I_GetGamepadGuid(int32_t device_id, char *out, int out_len)
 {
 	SDL_Gamepad *controller;
 	SDL_Joystick *joystick;
@@ -1347,7 +1347,7 @@ void I_GetGamepadGuid(INT32 device_id, char *out, int out_len)
 	SDL_GUIDToString(guid, out, out_len);
 }
 
-void I_GetGamepadName(INT32 device_id, char *out, int out_len)
+void I_GetGamepadName(int32_t device_id, char *out, int out_len)
 {
 	SDL_Gamepad *controller;
 	const char *name;
@@ -1367,7 +1367,7 @@ void I_GetGamepadName(INT32 device_id, char *out, int out_len)
 	snprintf(out, out_len, "%s", name);
 }
 
-void I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength)
+void I_GamepadRumble(int32_t device_id, uint16_t low_strength, uint16_t high_strength)
 {
 	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
 
@@ -1380,7 +1380,7 @@ void I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength)
 	SDL_RumbleGamepad(controller, low_strength, high_strength, 0);
 }
 
-void I_GamepadRumbleTriggers(INT32 device_id, UINT16 left_strength, UINT16 right_strength)
+void I_GamepadRumbleTriggers(int32_t device_id, uint16_t left_strength, uint16_t right_strength)
 {
 	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
 
@@ -1456,9 +1456,9 @@ static void I_ShutdownInput(void)
 	}
 }
 
-INT32 I_NumJoys(void)
+int32_t I_NumJoys(void)
 {
-	INT32 numjoy = 0;
+	int32_t numjoy = 0;
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
 	{
 		int count = 0;
@@ -1471,7 +1471,7 @@ INT32 I_NumJoys(void)
 
 static char joyname[255]; // joystick name is straight from the driver
 
-const char *I_GetJoyName(INT32 joyindex)
+const char *I_GetJoyName(int32_t joyindex)
 {
 	const char *tempname = NULL;
 	SDL_Joystick* joystick;
@@ -1511,7 +1511,7 @@ const char *I_GetJoyName(INT32 joyindex)
 
 static struct mumble_s {
 #ifdef WINMUMBLE
-	UINT32 uiVersion;
+	uint32_t uiVersion;
 	DWORD uiTick;
 #else
 	Uint32 uiVersion;
@@ -1526,7 +1526,7 @@ static struct mumble_s {
 	float fCameraTop[3]; // defaults to Y-is-up (only used for leaning)
 	wchar_t identity[256]; // player id
 #ifdef WINMUMBLE
-	UINT32 context_len;
+	uint32_t context_len;
 #else
 	Uint32 context_len;
 #endif
@@ -1588,10 +1588,10 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 	}
 
 	{
-		UINT8 *p = mumble->context;
+		uint8_t *p = mumble->context;
 		WRITEMEM(p, server_context, 8);
 		WRITEINT16(p, gamemap);
-		mumble->context_len = (UINT32)(p - mumble->context);
+		mumble->context_len = (uint32_t)(p - mumble->context);
 	}
 
 	if (mobj) {
@@ -1670,18 +1670,18 @@ precise_t I_GetPreciseTime(void)
 	return SDL_GetPerformanceCounter();
 }
 
-UINT64 I_GetPrecisePrecision(void)
+uint64_t I_GetPrecisePrecision(void)
 {
 	return SDL_GetPerformanceFrequency();
 }
 
-static UINT32 frame_rate;
+static uint32_t frame_rate;
 
 static double frame_frequency;
-static UINT64 frame_epoch;
+static uint64_t frame_epoch;
 static double elapsed_frames;
 
-static void I_InitFrameTime(const UINT64 now, const UINT32 cap)
+static void I_InitFrameTime(const uint64_t now, const uint32_t cap)
 {
 	frame_rate = cap;
 	frame_epoch = now;
@@ -1700,8 +1700,8 @@ static void I_InitFrameTime(const UINT64 now, const UINT32 cap)
 
 double I_GetFrameTime(void)
 {
-	const UINT64 now = SDL_GetPerformanceCounter();
-	const UINT32 cap = R_GetFramerateCap();
+	const uint64_t now = SDL_GetPerformanceCounter();
+	const uint32_t cap = R_GetFramerateCap();
 
 	if (cap != frame_rate)
 	{
@@ -1734,7 +1734,7 @@ void I_StartupTimer(void)
 	elapsed_frames  = 0.0;
 }
 
-void I_Sleep(UINT32 ms)
+void I_Sleep(uint32_t ms)
 {
 	SDL_Delay(ms);
 }
@@ -1820,7 +1820,7 @@ static void I_Fork(void)
 }
 #endif/*NEWSIGNALHANDLER*/
 
-INT32 I_StartupSystem(void)
+int32_t I_StartupSystem(void)
 {
 	Uint32 SDLcompiled = SDL_VERSION;
 	Uint32 SDLlinked = SDL_GetVersion();
@@ -1905,7 +1905,7 @@ death:
 	exit(0);
 }
 
-void I_WaitVBL(INT32 count)
+void I_WaitVBL(int32_t count)
 {
 	count = 1;
 	SDL_Delay(count);
@@ -1924,7 +1924,7 @@ void I_EndRead(void)
 //
 /**	\brief phuck recursive errors
 */
-static INT32 errorcount = 0;
+static int32_t errorcount = 0;
 
 /**	\brief recursive error detecting
 */
@@ -2028,7 +2028,7 @@ FUNCIERROR void ATTRNORETURN I_Error(const char *error, ...)
 	W_Shutdown();
 
 #if defined (PARANOIA) || defined (DEVELOP)
-	*(volatile INT32 *)0 = 4; //Alam: Debug!
+	*(volatile int32_t *)0 = 4; //Alam: Debug!
 #endif
 
 	exit(-1);
@@ -2043,7 +2043,7 @@ static quitfuncptr quit_funcs[MAX_QUIT_FUNCS]; /* initialized to all bits 0 */
 //
 void I_AddExitFunc(void (*func)())
 {
-	INT32 c;
+	int32_t c;
 
 	for (c = 0; c < MAX_QUIT_FUNCS; c++)
 	{
@@ -2062,7 +2062,7 @@ void I_AddExitFunc(void (*func)())
 //
 void I_RemoveExitFunc(void (*func)())
 {
-	INT32 c;
+	int32_t c;
 
 	for (c = 0; c < MAX_QUIT_FUNCS; c++)
 	{
@@ -2130,7 +2130,7 @@ static void Shittylogcopy(void)
 //
 void I_ShutdownSystem(void)
 {
-	INT32 c;
+	int32_t c;
 
 #ifdef NEWSIGNALHANDLER
 	if (M_CheckParm("-nofork"))
@@ -2154,7 +2154,7 @@ void I_ShutdownSystem(void)
 
 }
 
-void I_GetDiskFreeSpace(INT64 *freespace)
+void I_GetDiskFreeSpace(int64_t *freespace)
 {
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #if defined (SOLARIS) || defined (__HAIKU__)
@@ -2234,7 +2234,7 @@ char *I_GetUserName(void)
 	return NULL; // dummy for platform independent version
 }
 
-INT32 I_mkdir(const char *dirname, INT32 unixright)
+int32_t I_mkdir(const char *dirname, int32_t unixright)
 {
 //[segabor]
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__)
@@ -2249,7 +2249,7 @@ INT32 I_mkdir(const char *dirname, INT32 unixright)
 #endif
 }
 
-INT32 I_ChDir(const char *path)
+int32_t I_ChDir(const char *path)
 {
 #ifdef _WIN32
 	return (SetCurrentDirectoryA(path) ? 0 : -1);
@@ -2276,7 +2276,7 @@ char *I_GetEnv(const char *name)
 #endif
 }
 
-INT32 I_PutEnv(char *variable)
+int32_t I_PutEnv(char *variable)
 {
 #ifdef NEED_SDL_GETENV
 	return SDL_putenv(variable);
@@ -2285,7 +2285,7 @@ INT32 I_PutEnv(char *variable)
 #endif
 }
 
-INT32 I_ClipboardCopy(const char *data, size_t size)
+int32_t I_ClipboardCopy(const char *data, size_t size)
 {
 	char storage[256];
 	if (size > 255)
@@ -2564,7 +2564,7 @@ static long get_entry(const char* name, const char* buf)
 }
 #endif
 
-UINT64 I_GetFreeMem(UINT64 *total)
+uint64_t I_GetFreeMem(uint64_t *total)
 {
 #ifdef FREEBSD
 	struct vmmeter sum;
@@ -2599,8 +2599,8 @@ UINT64 I_GetFreeMem(UINT64 *total)
 	kvm_close(kd);
 
 	if (total)
-		*total = (UINT64)sum.v_page_count * sum.v_page_size;
-	return (UINT64)sum.v_free_count * sum.v_page_size;
+		*total = (uint64_t)sum.v_page_count * sum.v_page_size;
+	return (uint64_t)sum.v_free_count * sum.v_page_size;
 #elif defined (SOLARIS)
 	/* Just guess */
 	if (total)
@@ -2612,16 +2612,16 @@ UINT64 I_GetFreeMem(UINT64 *total)
 	info.dwLength = sizeof (MEMORYSTATUSEX);
 	GlobalMemoryStatusEx( &info );
 	if (total)
-		*total = (UINT64)info.ullTotalPhys;
-	return (UINT64)info.ullAvailPhys;
+		*total = (uint64_t)info.ullTotalPhys;
+	return (uint64_t)info.ullAvailPhys;
 #elif defined (__linux__)
 	/* Linux */
 	char buf[1024];
 	char *memTag;
-	UINT64 freeKBytes;
-	UINT64 totalKBytes;
-	INT32 n;
-	INT32 meminfo_fd = -1;
+	uint64_t freeKBytes;
+	uint64_t totalKBytes;
+	int32_t n;
+	int32_t meminfo_fd = -1;
 	long Cached;
 	long MemFree;
 	long Buffers;
@@ -2704,8 +2704,8 @@ UINT64 I_GetFreeMem(UINT64 *total)
 		free_mem = 0;
 
 	if (total)
-		*total = (UINT64)total_mem;
-	return (UINT64)free_mem;
+		*total = (uint64_t)total_mem;
+	return (uint64_t)free_mem;
 #else
 	// Guess 48 MB.
 	if (total)

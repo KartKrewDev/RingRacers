@@ -183,7 +183,7 @@ static inline int lib_freeslot(lua_State *L)
 
 			// We don't, so allocate a new one.
 			if (TYPEOFLEVEL[i].name == NULL) {
-				if (lastcustomtol == (UINT32)MAXTOL) // Unless you have way too many, since they're flags.
+				if (lastcustomtol == (uint32_t)MAXTOL) // Unless you have way too many, since they're flags.
 					CONS_Alert(CONS_WARNING, "Ran out of free typeoflevel slots!\n");
 				else {
 					CONS_Printf("TypeOfLevel TOL_%s allocated.\n",word);
@@ -229,8 +229,8 @@ static int action_call(lua_State *L)
 	//actionf_t *action = lua_touserdata(L,lua_upvalueindex(1));
 	actionf_t *action = *((actionf_t **)luaL_checkudata(L, 1, META_ACTION));
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	var1 = (INT32)luaL_optinteger(L, 3, 0);
-	var2 = (INT32)luaL_optinteger(L, 4, 0);
+	var1 = (int32_t)luaL_optinteger(L, 3, 0);
+	var2 = (int32_t)luaL_optinteger(L, 4, 0);
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	action->acp1(actor);
@@ -240,7 +240,7 @@ static int action_call(lua_State *L)
 // Hardcoded A_Action name to call for super() or NULL if super() would be invalid.
 // Set in lua_infolib.
 const char *superactions[MAXRECURSION];
-UINT8 superstack = 0;
+uint8_t superstack = 0;
 
 static int lib_dummysuper(lua_State *L)
 {

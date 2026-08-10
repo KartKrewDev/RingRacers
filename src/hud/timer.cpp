@@ -22,7 +22,7 @@ using srb2::Draw;
 namespace
 {
 
-constexpr INT32 kHudFlags = V_HUDTRANS | V_SLIDEIN;
+constexpr int32_t kHudFlags = V_HUDTRANS | V_SLIDEIN;
 
 tic_t player_timer(const player_t* player)
 {

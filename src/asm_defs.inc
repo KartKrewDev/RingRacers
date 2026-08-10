@@ -30,7 +30,7 @@
 
 /* This is a more readable way to access the arguments passed from C code   */
 /* PLEASE NOTE: it is supposed that all arguments passed from C code are    */
-/*              32bit integer (INT32, long, and most *pointers)               */
+/*              32bit integer (int32_t, long, and most *pointers)               */
 #define ARG1      8(%ebp)
 #define ARG2      12(%ebp)
 #define ARG3      16(%ebp)

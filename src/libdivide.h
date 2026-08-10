@@ -767,7 +767,7 @@ static LIBDIVIDE_INLINE uint64_t libdivide_128_div_128_to_64(
 #endif
 }
 
-////////// UINT16
+////////// uint16_t
 
 static LIBDIVIDE_INLINE struct libdivide_u16_t libdivide_internal_u16_gen(
     uint16_t d, int branchfree) {
@@ -931,7 +931,7 @@ static LIBDIVIDE_INLINE uint16_t libdivide_u16_branchfree_recover(const struct l
     }
 }
 
-////////// UINT32
+////////// uint32_t
 
 static LIBDIVIDE_INLINE struct libdivide_u32_t libdivide_internal_u32_gen(
     uint32_t d, int branchfree) {
@@ -1092,7 +1092,7 @@ static LIBDIVIDE_INLINE uint32_t libdivide_u32_branchfree_recover(const struct l
     }
 }
 
-////////// UINT64
+////////// uint64_t
 
 static LIBDIVIDE_INLINE struct libdivide_u64_t libdivide_internal_u64_gen(
     uint64_t d, int branchfree) {
@@ -1910,7 +1910,7 @@ static LIBDIVIDE_INLINE int64x2_t libdivide_mullhi_s64_vec128(int64x2_t x, int64
     return p;
 }
 
-////////// UINT16
+////////// uint16_t
 
 uint16x8_t libdivide_u16_do_vec128(uint16x8_t numers, const struct libdivide_u16_t *denom){
     SIMPLE_VECTOR_DIVISION(uint16_t, uint16x8_t, u16)}
@@ -1919,7 +1919,7 @@ uint16x8_t libdivide_u16_branchfree_do_vec128(
     uint16x8_t numers, const struct libdivide_u16_branchfree_t *denom){
     SIMPLE_VECTOR_DIVISION(uint16_t, uint16x8_t, u16_branchfree)}
 
-////////// UINT32
+////////// uint32_t
 
 uint32x4_t libdivide_u32_do_vec128(uint32x4_t numers, const struct libdivide_u32_t *denom) {
     uint8_t more = denom->more;
@@ -1947,7 +1947,7 @@ uint32x4_t libdivide_u32_branchfree_do_vec128(
     return libdivide_u32_neon_srl(t, denom->more);
 }
 
-////////// UINT64
+////////// uint64_t
 
 uint64x2_t libdivide_u64_do_vec128(uint64x2_t numers, const struct libdivide_u64_t *denom) {
     uint8_t more = denom->more;
@@ -2186,7 +2186,7 @@ static LIBDIVIDE_INLINE __m512i libdivide_mullhi_s64_vec512(__m512i x, __m512i y
     return p;
 }
 
-////////// UINT16
+////////// uint16_t
 
 __m512i libdivide_u16_do_vec512(__m512i numers, const struct libdivide_u16_t *denom){
     SIMPLE_VECTOR_DIVISION(uint16_t, __m512i, u16)}
@@ -2195,7 +2195,7 @@ __m512i libdivide_u16_branchfree_do_vec512(
     __m512i numers, const struct libdivide_u16_branchfree_t *denom){
     SIMPLE_VECTOR_DIVISION(uint16_t, __m512i, u16_branchfree)}
 
-////////// UINT32
+////////// uint32_t
 
 __m512i libdivide_u32_do_vec512(__m512i numers, const struct libdivide_u32_t *denom) {
     uint8_t more = denom->more;
@@ -2222,7 +2222,7 @@ __m512i libdivide_u32_branchfree_do_vec512(
     return _mm512_srli_epi32(t, denom->more);
 }
 
-////////// UINT64
+////////// uint64_t
 
 __m512i libdivide_u64_do_vec512(__m512i numers, const struct libdivide_u64_t *denom) {
     uint8_t more = denom->more;
@@ -2466,7 +2466,7 @@ static LIBDIVIDE_INLINE __m256i libdivide_mullhi_s64_vec256(__m256i x, __m256i y
     return p;
 }
 
-////////// UINT16
+////////// uint16_t
 
 __m256i libdivide_u16_do_vec256(__m256i numers, const struct libdivide_u16_t *denom) {
     uint8_t more = denom->more;
@@ -2490,7 +2490,7 @@ __m256i libdivide_u16_branchfree_do_vec256(
     return _mm256_srli_epi16(t, denom->more);
 }
 
-////////// UINT32
+////////// uint32_t
 
 __m256i libdivide_u32_do_vec256(__m256i numers, const struct libdivide_u32_t *denom) {
     uint8_t more = denom->more;
@@ -2517,7 +2517,7 @@ __m256i libdivide_u32_branchfree_do_vec256(
     return _mm256_srli_epi32(t, denom->more);
 }
 
-////////// UINT64
+////////// uint64_t
 
 __m256i libdivide_u64_do_vec256(__m256i numers, const struct libdivide_u64_t *denom) {
     uint8_t more = denom->more;
@@ -2843,7 +2843,7 @@ __m128i libdivide_u16_branchfree_do_vec128(
     return _mm_srli_epi16(t, denom->more);
 }
 
-////////// UINT32
+////////// uint32_t
 
 __m128i libdivide_u32_do_vec128(__m128i numers, const struct libdivide_u32_t *denom) {
     uint8_t more = denom->more;
@@ -2870,7 +2870,7 @@ __m128i libdivide_u32_branchfree_do_vec128(
     return _mm_srli_epi32(t, denom->more);
 }
 
-////////// UINT64
+////////// uint64_t
 
 __m128i libdivide_u64_do_vec128(__m128i numers, const struct libdivide_u64_t *denom) {
     uint8_t more = denom->more;

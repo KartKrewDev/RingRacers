@@ -26,10 +26,10 @@
 #include "s_sound.h"
 #include "m_cond.h"
 
-INT32 numfollowers = 0;
+int32_t numfollowers = 0;
 follower_t followers[MAXFOLLOWERS];
 
-INT32 numfollowercategories = 0;
+int32_t numfollowercategories = 0;
 followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
 
 dboolean horngoner = false;
@@ -37,13 +37,13 @@ dboolean horngoner = false;
 CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
 /*--------------------------------------------------
-	INT32 K_FollowerAvailable(const char *name)
+	int32_t K_FollowerAvailable(const char *name)
 
 		See header file for description.
 --------------------------------------------------*/
-INT32 K_FollowerAvailable(const char *name)
+int32_t K_FollowerAvailable(const char *name)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 0; i < numfollowers; i++)
 	{
@@ -55,16 +55,16 @@ INT32 K_FollowerAvailable(const char *name)
 }
 
 /*--------------------------------------------------
-	INT32 K_FollowerUsable(INT32 followernum)
+	int32_t K_FollowerUsable(int32_t followernum)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean K_FollowerUsable(INT32 skinnum)
+dboolean K_FollowerUsable(int32_t skinnum)
 {
 	// Unlike R_SkinUsable, not netsynced.
 	// Solely used to prevent an invalid value being sent over the wire.
-	UINT16 i;
-	INT32 fid;
+	uint16_t i;
+	int32_t fid;
 
 	if (skinnum == -1 || demo.playback)
 	{
@@ -99,13 +99,13 @@ dboolean K_FollowerUsable(INT32 skinnum)
 }
 
 /*--------------------------------------------------
-	dboolean K_SetFollowerByName(INT32 playernum, const char *skinname)
+	dboolean K_SetFollowerByName(int32_t playernum, const char *skinname)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean K_SetFollowerByName(INT32 playernum, const char *skinname)
+dboolean K_SetFollowerByName(int32_t playernum, const char *skinname)
 {
-	INT32 i;
+	int32_t i;
 	player_t *player = &players[playernum];
 
 	if (stricmp("None", skinname) == 0)
@@ -168,11 +168,11 @@ void K_RemoveFollower(player_t *player)
 }
 
 /*--------------------------------------------------
-	void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
+	void K_SetFollowerByNum(int32_t playernum, int32_t skinnum)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
+void K_SetFollowerByNum(int32_t playernum, int32_t skinnum)
 {
 	player_t *player = &players[playernum];
 
@@ -252,11 +252,11 @@ static void K_SetFollowerState(mobj_t *f, statenum_t state)
 }
 
 /*--------------------------------------------------
-	UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin)
+	uint16_t K_GetEffectiveFollowerColor(uint16_t followercolor, follower_t *follower, uint16_t playercolor, skin_t *playerskin)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin)
+uint16_t K_GetEffectiveFollowerColor(uint16_t followercolor, follower_t *follower, uint16_t playercolor, skin_t *playerskin)
 {
 	if (followercolor == SKINCOLOR_NONE && follower != NULL) // "Default"
 	{
@@ -310,7 +310,7 @@ static void K_UpdateFollowerState(mobj_t *f, statenum_t state, followerstate_t t
 		return;
 	}
 
-	if (f->extravalue1 != (INT32)type)
+	if (f->extravalue1 != (int32_t)type)
 	{
 		K_SetFollowerState(f, state);
 		f->extravalue1 = type;
@@ -330,15 +330,15 @@ void K_HandleFollower(player_t *player)
 	fixed_t ourheight;
 	fixed_t sx, sy, sz, deltaz;
 	fixed_t fh = INT32_MIN, ch = INT32_MAX;
-	UINT16 color;
+	uint16_t color;
 
 	fixed_t bubble; // bubble scale (0 if no bubble)
 	mobj_t *bmobj; // temp bubble mobj
 
 	angle_t destAngle;
-	INT32 angleDiff;
+	int32_t angleDiff;
 
-	INT32 followerskin;
+	int32_t followerskin;
 
 	if (player->followerready == false)
 	{
@@ -755,7 +755,7 @@ void K_HandleFollower(player_t *player)
 void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmelodyspecial)
 {
 	// special case for checking for fallback follower for autoring
-	const INT32 followerskin = K_GetEffectiveFollowerSkin(taunter);
+	const int32_t followerskin = K_GetEffectiveFollowerSkin(taunter);
 
 	// Basic checks
 	if (
@@ -878,7 +878,7 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmel
 			honk->flags2 |= MF2_AMBUSH;
 		}
 
-		UINT32 dontdrawflag = K_GetPlayerDontDrawFlag(victim);
+		uint32_t dontdrawflag = K_GetPlayerDontDrawFlag(victim);
 
 		// A display player is affected!
 		if (dontdrawflag != 0)
@@ -895,9 +895,9 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, dboolean mysticmel
 }
 
 #define AUTORINGFOLLOWERNAME "goddess"
-static INT32 K_AutoRingFollower(void)
+static int32_t K_AutoRingFollower(void)
 {
-	static INT32 autoringfollower = -2;
+	static int32_t autoringfollower = -2;
 
 	if (autoringfollower == -2)
 	{
@@ -910,16 +910,16 @@ static INT32 K_AutoRingFollower(void)
 		}
 	}
 
-	return (INT32)autoringfollower;
+	return (int32_t)autoringfollower;
 }
 #undef AUTORINGFOLLOWERNAME
 
 /*--------------------------------------------------
-	INT32 K_GetEffectiveFollowerSkin(const player_t *player);
+	int32_t K_GetEffectiveFollowerSkin(const player_t *player);
 
 		See header file for description.
 --------------------------------------------------*/
-INT32 K_GetEffectiveFollowerSkin(const player_t *player)
+int32_t K_GetEffectiveFollowerSkin(const player_t *player)
 {
 	if (player->followerskin == -1 && ((player->pflags & PF_AUTORING) == PF_AUTORING))
 		return K_AutoRingFollower();

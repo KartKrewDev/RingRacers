@@ -62,13 +62,13 @@ char rng_class_names[34][30] = {
 // RNG functions (not synched)
 // ---------------------------
 
-ATTRINLINE static UINT32 FUNCINLINE __external_prng__(void)
+ATTRINLINE static uint32_t FUNCINLINE __external_prng__(void)
 {
-	UINT32 rnd = rand();
+	uint32_t rnd = rand();
 
 #if RAND_MAX < 65535
 	// Compensate for especially bad randomness.
-	UINT32 rndv = (rand() & 1) << 15;
+	uint32_t rndv = (rand() & 1) << 15;
 	rnd ^= rndv;
 #endif
 
@@ -80,13 +80,13 @@ ATTRINLINE static UINT32 FUNCINLINE __external_prng__(void)
 	return (rnd * 36548569);
 }
 
-ATTRINLINE static UINT32 FUNCINLINE __external_prng_bound__(UINT32 bound)
+ATTRINLINE static uint32_t FUNCINLINE __external_prng_bound__(uint32_t bound)
 {
 	// Do rejection sampling to remove the modulo bias.
-	UINT32 threshold = -bound % bound;
+	uint32_t threshold = -bound % bound;
 	for (;;)
 	{
-		UINT32 r = __external_prng__();
+		uint32_t r = __external_prng__();
 		if (r >= threshold)
 		{
 			return r % bound;
@@ -99,7 +99,7 @@ ATTRINLINE static UINT32 FUNCINLINE __external_prng_bound__(UINT32 bound)
   *
   * \return A random 32-bit number.
   */
-UINT32 M_Random(void)
+uint32_t M_Random(void)
 {
 	return __external_prng__();
 }
@@ -119,9 +119,9 @@ fixed_t M_RandomFixed(void)
   *
   * \return A random integer from [0, 255].
   */
-UINT8 M_RandomByte(void)
+uint8_t M_RandomByte(void)
 {
-	return (UINT8)(__external_prng_bound__(UINT8_MAX+1));
+	return (uint8_t)(__external_prng_bound__(UINT8_MAX+1));
 }
 
 /** Provides a random integer for picking random elements from an array.
@@ -131,7 +131,7 @@ UINT8 M_RandomByte(void)
   * \param a Number of items in array.
   * \return A random integer from [0,a).
   */
-UINT32 M_RandomKey(UINT32 a)
+uint32_t M_RandomKey(uint32_t a)
 {
 	return __external_prng_bound__(a);
 }
@@ -144,9 +144,9 @@ UINT32 M_RandomKey(UINT32 a)
   * \param b Upper bound.
   * \return A random integer from [a,b].
   */
-INT32 M_RandomRange(INT32 a, INT32 b)
+int32_t M_RandomRange(int32_t a, int32_t b)
 {
-	return (INT32)(__external_prng_bound__((b - a) + 1)) + a;
+	return (int32_t)(__external_prng_bound__((b - a) + 1)) + a;
 }
 
 
@@ -159,8 +159,8 @@ INT32 M_RandomRange(INT32 a, INT32 b)
 
 typedef struct
 {
-	UINT32 seed[PRNUMCLASS]; // Holds each block's current seed.
-	UINT32 init[PRNUMCLASS]; // Holds the INITIAL seed value. Used for demos, possibly other debugging
+	uint32_t seed[PRNUMCLASS]; // Holds each block's current seed.
+	uint32_t init[PRNUMCLASS]; // Holds the INITIAL seed value. Used for demos, possibly other debugging
 } rng_t;
 
 static rng_t rng; // The entire PRNG state
@@ -170,7 +170,7 @@ static rng_t rng; // The entire PRNG state
   *
   * \return A random, uniformly distributed number from [0,UINT32_MAX].
   */
-ATTRINLINE static UINT32 FUNCINLINE __internal_prng__(pr_class_t pr_class)
+ATTRINLINE static uint32_t FUNCINLINE __internal_prng__(pr_class_t pr_class)
 {
 	rng.seed[pr_class] ^= rng.seed[pr_class] >> 13;
 	rng.seed[pr_class] ^= rng.seed[pr_class] >> 11;
@@ -182,13 +182,13 @@ ATTRINLINE static UINT32 FUNCINLINE __internal_prng__(pr_class_t pr_class)
   *
   * \return A random, uniformly distributed integer from [0,bound).
   */
-ATTRINLINE static UINT32 FUNCINLINE __internal_prng_bound__(pr_class_t pr_class, UINT32 bound)
+ATTRINLINE static uint32_t FUNCINLINE __internal_prng_bound__(pr_class_t pr_class, uint32_t bound)
 {
 	// Do rejection sampling to remove the modulo bias.
-	UINT32 threshold = -bound % bound;
+	uint32_t threshold = -bound % bound;
 	for (;;)
 	{
-		UINT32 r = __internal_prng__(pr_class);
+		uint32_t r = __internal_prng__(pr_class);
 		if (r >= threshold)
 		{
 			return r % bound;
@@ -202,10 +202,10 @@ ATTRINLINE static UINT32 FUNCINLINE __internal_prng_bound__(pr_class_t pr_class,
   * \return A random fixed point number from [0,UINT32_MAX].
   */
 #ifndef DEBUGRANDOM
-UINT32 P_Random(pr_class_t pr_class)
+uint32_t P_Random(pr_class_t pr_class)
 {
 #else
-UINT32 P_RandomD(const char *rfile, INT32 rline, pr_class_t pr_class)
+uint32_t P_RandomD(const char *rfile, int32_t rline, pr_class_t pr_class)
 {
 	CONS_Printf("P_Random(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
@@ -220,7 +220,7 @@ UINT32 P_RandomD(const char *rfile, INT32 rline, pr_class_t pr_class)
 fixed_t P_RandomFixed(pr_class_t pr_class)
 {
 #else
-fixed_t P_RandomFixedD(const char *rfile, INT32 rline, pr_class_t pr_class)
+fixed_t P_RandomFixedD(const char *rfile, int32_t rline, pr_class_t pr_class)
 {
 	CONS_Printf("P_RandomFixed(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
@@ -235,14 +235,14 @@ fixed_t P_RandomFixedD(const char *rfile, INT32 rline, pr_class_t pr_class)
   * \sa __internal_prng__
   */
 #ifndef DEBUGRANDOM
-UINT8 P_RandomByte(pr_class_t pr_class)
+uint8_t P_RandomByte(pr_class_t pr_class)
 {
 #else
-UINT8 P_RandomByteD(const char *rfile, INT32 rline, pr_class_t pr_class)
+uint8_t P_RandomByteD(const char *rfile, int32_t rline, pr_class_t pr_class)
 {
 	CONS_Printf("P_RandomByte(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
-	return (UINT8)(__internal_prng_bound__(pr_class, UINT8_MAX+1));
+	return (uint8_t)(__internal_prng_bound__(pr_class, UINT8_MAX+1));
 }
 
 /** Provides a random integer for picking random elements from an array.
@@ -254,10 +254,10 @@ UINT8 P_RandomByteD(const char *rfile, INT32 rline, pr_class_t pr_class)
   * \sa __internal_prng__
   */
 #ifndef DEBUGRANDOM
-UINT32 P_RandomKey(pr_class_t pr_class, UINT32 a)
+uint32_t P_RandomKey(pr_class_t pr_class, uint32_t a)
 {
 #else
-UINT32 P_RandomKeyD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 a)
+uint32_t P_RandomKeyD(const char *rfile, int32_t rline, pr_class_t pr_class, uint32_t a)
 {
 	CONS_Printf("P_RandomKey(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
@@ -273,14 +273,14 @@ UINT32 P_RandomKeyD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 
   * \sa __internal_prng__
   */
 #ifndef DEBUGRANDOM
-INT32 P_RandomRange(pr_class_t pr_class, INT32 a, INT32 b)
+int32_t P_RandomRange(pr_class_t pr_class, int32_t a, int32_t b)
 {
 #else
-INT32 P_RandomRangeD(const char *rfile, INT32 rline, pr_class_t pr_class, INT32 a, INT32 b)
+int32_t P_RandomRangeD(const char *rfile, int32_t rline, pr_class_t pr_class, int32_t a, int32_t b)
 {
 	CONS_Printf("P_RandomRange(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
-	return (INT32)(__internal_prng_bound__(pr_class, (b - a) + 1)) + a;
+	return (int32_t)(__internal_prng_bound__(pr_class, (b - a) + 1)) + a;
 }
 
 
@@ -295,10 +295,10 @@ INT32 P_RandomRangeD(const char *rfile, INT32 rline, pr_class_t pr_class, INT32 
   * \return A 'random' number from [0,UINT32_MAX]
   * \sa __internal_prng__
   */
-UINT32 P_RandomPeek(pr_class_t pr_class)
+uint32_t P_RandomPeek(pr_class_t pr_class)
 {
-	UINT32 r = rng.seed[pr_class];
-	UINT32 ret = __internal_prng__(pr_class);
+	uint32_t r = rng.seed[pr_class];
+	uint32_t ret = __internal_prng__(pr_class);
 	rng.seed[pr_class] = r;
 	return ret;
 }
@@ -309,10 +309,10 @@ UINT32 P_RandomPeek(pr_class_t pr_class)
   * \sa P_SetRandSeed
   */
 #ifndef DEBUGRANDOM
-UINT32 P_GetRandSeed(pr_class_t pr_class)
+uint32_t P_GetRandSeed(pr_class_t pr_class)
 {
 #else
-UINT32 P_GetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class)
+uint32_t P_GetRandSeedD(const char *rfile, int32_t rline, pr_class_t pr_class)
 {
 	CONS_Printf("P_GetRandSeed(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
@@ -325,10 +325,10 @@ UINT32 P_GetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class)
   * \sa P_SetRandSeed
   */
 #ifndef DEBUGRANDOM
-UINT32 P_GetInitSeed(pr_class_t pr_class)
+uint32_t P_GetInitSeed(pr_class_t pr_class)
 {
 #else
-UINT32 P_GetInitSeedD(const char *rfile, INT32 rline, pr_class_t pr_class)
+uint32_t P_GetInitSeedD(const char *rfile, int32_t rline, pr_class_t pr_class)
 {
 	CONS_Printf("P_GetInitSeed(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
@@ -343,10 +343,10 @@ UINT32 P_GetInitSeedD(const char *rfile, INT32 rline, pr_class_t pr_class)
   * \sa P_GetRandSeed
   */
 #ifndef DEBUGRANDOM
-void P_SetRandSeed(pr_class_t pr_class, UINT32 seed)
+void P_SetRandSeed(pr_class_t pr_class, uint32_t seed)
 {
 #else
-void P_SetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 seed)
+void P_SetRandSeedD(const char *rfile, int32_t rline, pr_class_t pr_class, uint32_t seed)
 {
 	CONS_Printf("P_SetRandSeed(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
@@ -365,10 +365,10 @@ void P_SetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 
   * \sa P_SetRandSeed
   */
 #ifndef DEBUGRANDOM
-void P_SetRandSeedNet(pr_class_t pr_class, UINT32 init, UINT32 seed)
+void P_SetRandSeedNet(pr_class_t pr_class, uint32_t init, uint32_t seed)
 {
 #else
-void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 init, UINT32 seed)
+void P_SetRandSeedNetD(const char *rfile, int32_t rline, pr_class_t pr_class, uint32_t init, uint32_t seed)
 {
 	CONS_Printf("P_SetRandSeedNet(%u) at: %sp %d\n", pr_class, rfile, rline);
 #endif
@@ -388,7 +388,7 @@ void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT
 void P_ResetInterpHudRandSeed(dboolean newframe)
 {
 #else
-void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, dboolean newframe)
+void P_ResetInterpHudRandSeedD(const char *rfile, int32_t rline, dboolean newframe)
 {
 	CONS_Printf("P_ResetInterpHudRandSeed(%c) at: %sp %d\n", (newframe ? 'T' : 'F'), rfile, rline);
 #endif
@@ -416,7 +416,7 @@ void P_ResetInterpHudRandSeedD(const char *rfile, INT32 rline, dboolean newframe
   * \param rindex New random index.
   * \sa P_SetRandSeed
   */
-void P_ClearRandom(UINT32 seed)
+void P_ClearRandom(uint32_t seed)
 {
 	size_t i;
 
@@ -438,7 +438,7 @@ void P_ClearRandom(UINT32 seed)
   *
   * \sa P_GetRandSeed
   */
-UINT32 M_RandomizedSeed(void)
+uint32_t M_RandomizedSeed(void)
 {
 	return ((gamedata->totalplaytime & 0xFFFF) << 16) | M_RandomFixed();
 }

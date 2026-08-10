@@ -255,7 +255,7 @@ void Obj_JawzThink(mobj_t *th)
 
 void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, fixed_t dir)
 {
-	INT32 lastTarg = -1;
+	int32_t lastTarg = -1;
 	player_t *owner = NULL;
 
 	if (jawz_owner(th) != NULL && P_MobjWasRemoved(jawz_owner(th)) == false

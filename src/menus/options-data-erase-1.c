@@ -61,7 +61,7 @@ menu_t OPTIONS_DataEraseDef = {
 	NULL,
 };
 
-static void M_EraseDataResponse(INT32 ch)
+static void M_EraseDataResponse(int32_t ch)
 {
 	if (ch == MA_NO)
 		return;
@@ -91,12 +91,12 @@ static void M_EraseDataResponse(INT32 ch)
 	M_ClearMenus(true);
 }
 
-void M_EraseData(INT32 choice)
+void M_EraseData(int32_t choice)
 {
 	const char *eschoice, *esstr = M_GetText("Are you sure you want\nto erase %s?\n");
 	(void)choice;
 
-	optionsmenu.erasecontext = (UINT8)currentMenu->menuitems[itemOn].mvar1;
+	optionsmenu.erasecontext = (uint8_t)currentMenu->menuitems[itemOn].mvar1;
 
 	if (optionsmenu.erasecontext == EC_CHALLENGES)
 		eschoice = M_GetText("Challenges data");

@@ -36,9 +36,9 @@ menu_t PLAY_MP_RoomSelectDef = {
 	NULL
 };
 
-void M_MPRoomSelect(INT32 choice)
+void M_MPRoomSelect(int32_t choice)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	(void) choice;
 
 	if (M_MenuBackPressed(pid))
@@ -64,7 +64,7 @@ void M_MPRoomSelectTick(void)
 	mpmenu.ticker++;
 }
 
-void M_MPRoomSelectInit(INT32 choice)
+void M_MPRoomSelectInit(int32_t choice)
 {
 	(void)choice;
 

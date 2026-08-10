@@ -131,12 +131,12 @@ void P_ClosestPointOnLine3D(const vector3_t *p, const vector3_t *Line, vector3_t
 // killough 5/3/98: reformatted, cleaned up
 // ioanch 20151228: made line const
 //
-INT32 P_PointOnLineSide(fixed_t x, fixed_t y, const line_t *line)
+int32_t P_PointOnLineSide(fixed_t x, fixed_t y, const line_t *line)
 {
 	return
 		!line->dx ? x <= line->v1->x ? line->dy > 0 : line->dy < 0 :
 		!line->dy ? y <= line->v1->y ? line->dx < 0 : line->dx > 0 :
-		((INT64)y - line->v1->y) * line->dx >= line->dy * ((INT64)x - line->v1->x);
+		((int64_t)y - line->v1->y) * line->dx >= line->dy * ((int64_t)x - line->v1->x);
 }
 
 //
@@ -146,9 +146,9 @@ INT32 P_PointOnLineSide(fixed_t x, fixed_t y, const line_t *line)
 //
 // killough 5/3/98: reformatted, cleaned up
 //
-INT32 P_BoxOnLineSide(const fixed_t *tmbox, const line_t *ld)
+int32_t P_BoxOnLineSide(const fixed_t *tmbox, const line_t *ld)
 {
-	INT32 p;
+	int32_t p;
 
 	switch (ld->slopetype)
 	{
@@ -178,13 +178,13 @@ INT32 P_BoxOnLineSide(const fixed_t *tmbox, const line_t *ld)
 //
 // killough 5/3/98: reformatted, cleaned up
 //
-static INT32 P_PointOnDivlineSide(fixed_t x, fixed_t y, const divline_t *line)
+static int32_t P_PointOnDivlineSide(fixed_t x, fixed_t y, const divline_t *line)
 {
 	return
 		line->dx == 0 ? x <= line->x ? line->dy > 0 : line->dy < 0 :
 		line->dy == 0 ? y <= line->y ? line->dx < 0 : line->dx > 0 :
 		(line->dy ^ line->dx ^ (x -= line->x) ^ (y -= line->y)) < 0 ? (line->dy ^ x) < 0 :
-		(INT64)(y) * line->dx >= (INT64)(line->dy) * x;
+		(int64_t)(y) * line->dx >= (int64_t)(line->dy) * x;
 }
 
 //
@@ -212,7 +212,7 @@ fixed_t P_InterceptVector(const divline_t *v2, const divline_t *v1)
 {
 	// This is from PRBoom+ by Colin Phipps , GPL 2
 	// no precision/overflow problems
-	INT64 den = (INT64)(v1->dy) * v2->dx - (INT64)(v1->dx) * v2->dy;
+	int64_t den = (int64_t)(v1->dy) * v2->dx - (int64_t)(v1->dx) * v2->dy;
 	den >>= 16;
 
 	if (!den)
@@ -220,7 +220,7 @@ fixed_t P_InterceptVector(const divline_t *v2, const divline_t *v1)
 		return 0;
 	}
 
-	return (fixed_t)(((INT64)(v1->x - v2->x) * v1->dy - (INT64)(v1->y - v2->y) * v1->dx) / den);
+	return (fixed_t)(((int64_t)(v1->x - v2->x) * v1->dy - (int64_t)(v1->y - v2->y) * v1->dx) / den);
 }
 
 static fixed_t dist2line(const line_t *ld, const fixed_t x, const fixed_t y)
@@ -257,12 +257,12 @@ line_t * P_FindNearestLine
 (		const fixed_t    x,
 		const fixed_t    y,
 		const sector_t * sector,
-		const INT32      special)
+		const int32_t      special)
 {
 	fixed_t nearest = INT32_MAX;
 	line_t *near_line = NULL;
 	size_t i;
-	INT32 line = -1;
+	int32_t line = -1;
 
 	if (special == -1)
 	{
@@ -453,7 +453,7 @@ P_GetMidtextureTopBottom
 	side_t *side = &sides[linedef->sidenum[0]];
 	fixed_t textop, texbottom, texheight;
 	//Attempt to decouple collision from animation
-	INT32 texnum = side->midtexture; // make sure the texture is actually valid
+	int32_t texnum = side->midtexture; // make sure the texture is actually valid
 	//Sanity check on toaster's suggestion
 	if (texnum < 0 || texnum >= numtextures)
 		texnum = 0;
@@ -1100,8 +1100,8 @@ void P_UnsetPrecipThingPosition(precipmobj_t *thing)
 
 static void P_LinkToBlockMap(mobj_t *thing, mobj_t **bmap)
 {
-	const INT32 blockx = (unsigned)(thing->x - bmaporgx) >> MAPBLOCKSHIFT;
-	const INT32 blocky = (unsigned)(thing->y - bmaporgy) >> MAPBLOCKSHIFT;
+	const int32_t blockx = (unsigned)(thing->x - bmaporgx) >> MAPBLOCKSHIFT;
+	const int32_t blocky = (unsigned)(thing->y - bmaporgy) >> MAPBLOCKSHIFT;
 
 	if (blockx >= 0 && blockx < bmapwidth
 		&& blocky >= 0 && blocky < bmapheight)
@@ -1269,10 +1269,10 @@ void P_SetPrecipitationThingPosition(precipmobj_t *thing)
 // to P_BlockLinesIterator, then make one or more calls
 // to it.
 //
-dboolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(line_t *))
+dboolean P_BlockLinesIterator(int32_t x, int32_t y, BlockItReturn_t (*func)(line_t *))
 {
-	INT32 offset;
-	const INT32 *list; // Big blockmap
+	int32_t offset;
+	const int32_t *list; // Big blockmap
 	polymaplink_t *plink; // haleyjd 02/22/06
 	line_t *ld;
 
@@ -1347,7 +1347,7 @@ dboolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(line_t *
 //
 // P_BlockThingsIterator
 //
-dboolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(mobj_t *))
+dboolean P_BlockThingsIterator(int32_t x, int32_t y, BlockItReturn_t (*func)(mobj_t *))
 {
 	mobj_t *mobj, *bnext = NULL;
 
@@ -1420,7 +1420,7 @@ static void P_CheckIntercepts(void)
 //
 static BlockItReturn_t PIT_AddLineIntercepts(line_t *ld)
 {
-	INT32 s1, s2;
+	int32_t s1, s2;
 	fixed_t frac;
 	divline_t dl;
 
@@ -1473,7 +1473,7 @@ static BlockItReturn_t PIT_AddThingIntercepts(mobj_t *thing)
 {
 	size_t numfronts = 0;
 	divline_t line;
-	INT32 i;
+	int32_t i;
 
 	// [RH] Don't check a corner to corner crossection for hit.
 	// Instead, check against the actual bounding box
@@ -1634,11 +1634,11 @@ static dboolean P_TraverseIntercepts(traverser_t func, fixed_t maxfrac)
 // for all lines.
 //
 dboolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
-	INT32 flags, traverser_t trav)
+	int32_t flags, traverser_t trav)
 {
 	fixed_t xt1, yt1, xt2, yt2;
 	fixed_t xstep, ystep, partialx, partialy, xintercept, yintercept;
-	INT32 mapx, mapy, mapxstep, mapystep, count;
+	int32_t mapx, mapy, mapxstep, mapystep, count;
 
 	validcount++;
 	intercept_p = intercepts;
@@ -1834,8 +1834,8 @@ dboolean P_PathTraverse(fixed_t px1, fixed_t py1, fixed_t px2, fixed_t py2,
 dboolean P_RadiusLinesCheck(fixed_t radius, fixed_t x, fixed_t y,
 	dboolean (*func)(line_t *))
 {
-	INT32 xl, xh, yl, yh;
-	INT32 bx, by;
+	int32_t xl, xh, yl, yh;
+	int32_t bx, by;
 
 	g_tm.bbox[BOXTOP] = y + radius;
 	g_tm.bbox[BOXBOTTOM] = y - radius;

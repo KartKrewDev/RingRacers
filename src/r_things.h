@@ -32,28 +32,28 @@ extern "C" {
 
 #define FEETADJUST (4<<FRACBITS) // R_AddSingleSpriteDef
 
-dboolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16 wadnum, UINT16 startlump, UINT16 endlump);
+dboolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, uint16_t wadnum, uint16_t startlump, uint16_t endlump);
 
 //faB: find sprites in wadfile, replace existing, add new ones
 //     (only sprites from namelist are added or replaced)
-void R_AddSpriteDefs(UINT16 wadnum);
+void R_AddSpriteDefs(uint16_t wadnum);
 
 // ---------------------
 // MASKED COLUMN DRAWING
 // ---------------------
 
 // vars for R_DrawMaskedColumn
-extern INT16 *mfloorclip;
-extern INT16 *mceilingclip;
+extern int16_t *mfloorclip;
+extern int16_t *mceilingclip;
 extern fixed_t spryscale;
 extern fixed_t sprtopscreen;
 extern fixed_t sprbotscreen;
 extern fixed_t windowtop;
 extern fixed_t windowbottom;
-extern INT32 lengthcol;
+extern int32_t lengthcol;
 
-void R_DrawMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *brightmap, INT32 baseclip);
-void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *brightmap, INT32 baseclip);
+void R_DrawMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *brightmap, int32_t baseclip);
+void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t *brightmap, int32_t baseclip);
 
 // ----------------
 // SPRITE RENDERING
@@ -61,19 +61,19 @@ void R_DrawFlippedMaskedColumn(drawcolumndata_t* dc, column_t *column, column_t 
 
 // Constant arrays used for psprite clipping
 //  and initializing clipping.
-extern INT16 negonearray[MAXVIDWIDTH];
-extern INT16 screenheightarray[MAXVIDWIDTH];
+extern int16_t negonearray[MAXVIDWIDTH];
+extern int16_t screenheightarray[MAXVIDWIDTH];
 
 fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
 fixed_t R_GetSpriteDirectionalLighting(angle_t angle);
 
 //SoM: 6/5/2000: Light sprites correctly!
-void R_AddSprites(sector_t *sec, INT32 lightlevel);
+void R_AddSprites(sector_t *sec, int32_t lightlevel);
 void R_AddPrecipitationSprites(void);
 void R_InitSprites(void);
 void R_ClearSprites(void);
 
-UINT8 R_GetBoundingBoxColor(mobj_t *thing);
+uint8_t R_GetBoundingBoxColor(mobj_t *thing);
 dboolean R_ThingBoundingBoxVisible(mobj_t *thing);
 
 dboolean R_DrawPickups(void);
@@ -99,7 +99,7 @@ dboolean R_ThingIsFlashing(mobj_t *thing);
 
 dboolean R_ThingIsUsingBakedOffsets(mobj_t *thing);
 
-INT32 R_ThingLightLevel(mobj_t *thing);
+int32_t R_ThingLightLevel(mobj_t *thing);
 dboolean R_SplatSlope(mobj_t *thing, vector3_t position, pslope_t *slope);
 dboolean R_CustomShadowZ(mobj_t *thing, fixed_t *return_z, pslope_t **return_slope);
 
@@ -118,7 +118,7 @@ struct maskcount_t
 	sector_t* viewsector;
 };
 
-void R_DrawMasked(maskcount_t* masks, INT32 nummasks);
+void R_DrawMasked(maskcount_t* masks, int32_t nummasks);
 
 // ----------
 // VISSPRITES
@@ -132,7 +132,7 @@ void R_DrawMasked(maskcount_t* masks, INT32 nummasks);
 #define VISSPRITESPERCHUNK (1 << VISSPRITECHUNKBITS)
 #define VISSPRITEINDEXMASK (VISSPRITESPERCHUNK - 1)
 
-typedef INT32 spritecut_e;
+typedef int32_t spritecut_e;
 // actual cuts
 #define SC_NONE          (0)
 #define SC_TOP           (1)
@@ -169,8 +169,8 @@ struct vissprite_t
 
 	mobj_t *mobj; // for easy access
 
-	INT32 x1, x2;
-	INT32 x1test, x2test;
+	int32_t x1, x2;
+	int32_t x1test, x2test;
 	fixed_t xiscaletest;
 	fixed_t startfractest;
 
@@ -197,7 +197,7 @@ struct vissprite_t
 
 	struct {
 		fixed_t tan; // The amount to shear the sprite vertically per row
-		INT32 offset; // The center of the shearing location offset from x1
+		int32_t offset; // The center of the shearing location offset from x1
 	} shear;
 
 	fixed_t texturemid;
@@ -207,11 +207,11 @@ struct vissprite_t
 	lighttable_t *colormap; // for color translation and shadow draw
 	                        // maxbright frames as well
 
-	UINT8 *transmap; // which translucency table to use
+	uint8_t *transmap; // which translucency table to use
 
-	INT32 mobjflags;
+	int32_t mobjflags;
 
-	INT32 heightsec; // height sector for underwater/fake ceiling support
+	int32_t heightsec; // height sector for underwater/fake ceiling support
 
 	extracolormap_t *extra_colormap; // global colormaps
 
@@ -220,33 +220,33 @@ struct vissprite_t
 	sector_t *sector; // The sector containing the thing.
 
 	// Precalculated top and bottom screen coords for the sprite.
-	INT16 sz, szt;
+	int16_t sz, szt;
 
 	spritecut_e cut;
-	UINT32 renderflags;
-	UINT8 rotateflags;
+	uint32_t renderflags;
+	uint8_t rotateflags;
 
 	fixed_t spritexscale, spriteyscale;
 	fixed_t spritexoffset, spriteyoffset;
 
 	fixed_t shadowscale;
-	UINT8 color; // palette index
+	uint8_t color; // palette index
 
-	INT16 clipbot[MAXVIDWIDTH], cliptop[MAXVIDWIDTH];
+	int16_t clipbot[MAXVIDWIDTH], cliptop[MAXVIDWIDTH];
 
-	INT32 dispoffset; // copy of info->dispoffset, affects ordering but not drawing
+	int32_t dispoffset; // copy of info->dispoffset, affects ordering but not drawing
 
 	fixed_t floorclip; // Cut off your tires in tall grass
 };
 
-extern UINT32 visspritecount;
+extern uint32_t visspritecount;
 
 void R_ClipSprites(drawseg_t* dsstart, portal_t* portal);
-void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal);
+void R_ClipVisSprite(vissprite_t *spr, int32_t x1, int32_t x2, portal_t* portal);
 
 void R_DrawThingBoundingBox(vissprite_t *spr);
 
-UINT8 *R_GetSpriteTranslation(vissprite_t *vis);
+uint8_t *R_GetSpriteTranslation(vissprite_t *vis);
 
 // ----------
 // DRAW NODES
@@ -279,7 +279,7 @@ void R_InitDrawNodes(void);
 // as much as possible while also defining all 64 slots in a sane manner
 // 2.1:    [[ ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~   ]]
 // Future: [[ ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz!@ ]]
-FUNCMATH FUNCINLINE static ATTRINLINE char R_Frame2Char(UINT8 frame)
+FUNCMATH FUNCINLINE static ATTRINLINE char R_Frame2Char(uint8_t frame)
 {
 #if 0 // 2.1 compat
 	return 'A' + frame;
@@ -293,7 +293,7 @@ FUNCMATH FUNCINLINE static ATTRINLINE char R_Frame2Char(UINT8 frame)
 #endif
 }
 
-FUNCMATH FUNCINLINE static ATTRINLINE UINT8 R_Char2Frame(char cn)
+FUNCMATH FUNCINLINE static ATTRINLINE uint8_t R_Char2Frame(char cn)
 {
 #if 0 // 2.1 compat
 	if (cn == '+') return '\\' - 'A'; // PK3 can't use backslash, so use + instead
@@ -312,7 +312,7 @@ FUNCMATH FUNCINLINE static ATTRINLINE UINT8 R_Char2Frame(char cn)
 #define ROT_L 17
 #define ROT_R 18
 
-FUNCMATH FUNCINLINE static ATTRINLINE char R_Rotation2Char(UINT8 rot)
+FUNCMATH FUNCINLINE static ATTRINLINE char R_Rotation2Char(uint8_t rot)
 {
 	if (rot <=     9) return '0' + rot;
 	if (rot <=    16) return 'A' + (rot - 10);
@@ -321,7 +321,7 @@ FUNCMATH FUNCINLINE static ATTRINLINE char R_Rotation2Char(UINT8 rot)
 	return '\xFF';
 }
 
-FUNCMATH FUNCINLINE static ATTRINLINE UINT8 R_Char2Rotation(char cn)
+FUNCMATH FUNCINLINE static ATTRINLINE uint8_t R_Char2Rotation(char cn)
 {
 	if (cn >= '0' && cn <= '9') return (cn - '0');
 	if (cn >= 'A' && cn <= 'G') return (cn - 'A') + 10;

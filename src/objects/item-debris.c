@@ -39,7 +39,7 @@ struct debris_config {
 	angle_t angle;
 	fixed_t speed;
 	fixed_t scale;
-	UINT8 type;
+	uint8_t type;
 };
 
 static fixed_t
@@ -52,7 +52,7 @@ get_speed_ratio (mobj_t *thing)
 static void
 spawn_debris
 (		const struct debris_config * config,
-		INT32 angle)
+		int32_t angle)
 {
 	const fixed_t height_table[NUM_DEBRIS_TYPES] = {
 		35*FRACUNIT,
@@ -100,10 +100,10 @@ spawn_cloud
 	const fixed_t scale = FixedDiv(
 			max(base_speed, min_speed), min_speed);
 
-	const INT16 spacing =
+	const int16_t spacing =
 		(collectible->radius / 2) / collectible->scale;
 
-	INT32 i;
+	int32_t i;
 
 	// Most of this code is from p_inter.c, MT_ITEMCAPSULE
 
@@ -151,7 +151,7 @@ spawn_cloud
 static void
 rotate3d (mobj_t *debris)
 {
-	const UINT8 steps = 30;
+	const uint8_t steps = 30;
 
 	debris->rollangle =
 		M_RandomKey(steps) * (ANGLE_MAX / steps);
@@ -203,7 +203,7 @@ Obj_SpawnItemDebrisEffects
 void
 Obj_ItemDebrisThink (mobj_t *debris)
 {
-	const UINT8 frame = (debris->frame & FF_FRAMEMASK);
+	const uint8_t frame = (debris->frame & FF_FRAMEMASK);
 
 	if (debris->momz == 0)
 	{

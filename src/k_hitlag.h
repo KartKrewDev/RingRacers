@@ -26,10 +26,10 @@ extern "C" {
 #define NUM_HITLAG_STATES (9)
 #define NUM_HITLAG_SOUNDS (4)
 
-void K_AddHitLagFromCollision(mobj_t *mo, INT32 tics);
+void K_AddHitLagFromCollision(mobj_t *mo, int32_t tics);
 
 /*--------------------------------------------------
-	void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage);
+	void K_AddHitLag(mobj_t *mo, int32_t tics, dboolean fromDamage);
 
 		Adds hitlag to an object.
 
@@ -42,11 +42,11 @@ void K_AddHitLagFromCollision(mobj_t *mo, INT32 tics);
 		N/A
 --------------------------------------------------*/
 
-void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage);
+void K_AddHitLag(mobj_t *mo, int32_t tics, dboolean fromDamage);
 
 
 /*--------------------------------------------------
-	void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, INT32 tics, dboolean fromDamage);
+	void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, int32_t tics, dboolean fromDamage);
 
 		Sets the hitlag for two objects, victim and inflictor,
 		in a touch-related interaction (typically damage).
@@ -62,8 +62,8 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, dboolean fromDamage);
 		N/A
 --------------------------------------------------*/
 
-void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, INT32 tics, dboolean fromDamage);
-void K_SpawnSingleHitLagSpark(mobj_t *parent, vector3_t *offset, fixed_t scale, UINT8 tics, UINT8 pause, skincolornum_t color);
+void K_SetHitLagForObjects(mobj_t *victim, mobj_t *inflictor, mobj_t *source, int32_t tics, dboolean fromDamage);
+void K_SpawnSingleHitLagSpark(mobj_t *parent, vector3_t *offset, fixed_t scale, uint8_t tics, uint8_t pause, skincolornum_t color);
 
 
 #ifdef __cplusplus

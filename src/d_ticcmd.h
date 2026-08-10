@@ -25,7 +25,7 @@ extern "C" {
 #define MAXPREDICTTICS 30
 
 // Button/action code definitions.
-typedef INT32 buttoncode_t;
+typedef int32_t buttoncode_t;
 #define BT_ACCELERATE	  (1)		// Accelerate
 #define BT_DRIFT		  (1<<2)	// Drift (direction is cmd->turning)
 #define BT_BRAKE		  (1<<3)	// Brake
@@ -72,19 +72,19 @@ typedef INT32 buttoncode_t;
 
 struct ticcmd_t
 {
-	SINT8 forwardmove; // -MAXPLMOVE to MAXPLMOVE (50)
-	INT16 turning; // Turn speed
-	INT16 angle; // Predicted angle, use me if you can!
-	INT16 throwdir; // Aiming direction
-	INT16 aiming; // vertical aiming, see G_BuildTicCmd
-	UINT16 buttons;
-	UINT8 latency; // Netgames: how many tics ago was this ticcmd generated from this player's end?
-	UINT8 flags;
+	int8_t forwardmove; // -MAXPLMOVE to MAXPLMOVE (50)
+	int16_t turning; // Turn speed
+	int16_t angle; // Predicted angle, use me if you can!
+	int16_t throwdir; // Aiming direction
+	int16_t aiming; // vertical aiming, see G_BuildTicCmd
+	uint16_t buttons;
+	uint8_t latency; // Netgames: how many tics ago was this ticcmd generated from this player's end?
+	uint8_t flags;
 	struct
 	{
-		SINT8 turnconfirm;
-		SINT8 spindashconfirm;
-		SINT8 itemconfirm;
+		int8_t turnconfirm;
+		int8_t spindashconfirm;
+		int8_t itemconfirm;
 	} bot;
 } ATTRPACK;
 

@@ -48,12 +48,12 @@ void Obj_CloudSpawn(mobj_t *mobj)
 
 	mobj_t *cloud = P_SpawnMobj(mobj->x, mobj->y, mobj->z, cloudtype);
 	angle_t ang = mobj->angle;
-	UINT8 dist = 128;
+	uint8_t dist = 128;
 
 	cloud->destscale = cloud->scale * 2;
 	P_SetScale(cloud, cloud->destscale);
 
-	for (UINT8 i = 0; i < 4; i++)
+	for (uint8_t i = 0; i < 4; i++)
 	{
 		fixed_t x = mobj->x + FixedMul(mapobjectscale, dist * FINECOSINE(ang >> ANGLETOFINESHIFT));
 		fixed_t y = mobj->y + FixedMul(mapobjectscale, dist * FINESINE(ang >> ANGLETOFINESHIFT));
@@ -206,7 +206,7 @@ void Obj_PlayerBulbThink(player_t *player)
 
 		S_StartSound(mo, sfx_s3k81);
 
-		for (UINT8 i = 1; i < 16; i++)
+		for (uint8_t i = 1; i < 16; i++)
 		{
 			mobj_t *d = P_SpawnMobj(mo->x, mo->y, mo->z, MT_DRIFTDUST);
 			d->angle = ANGLE_MAX/16 * i;
@@ -238,7 +238,7 @@ void Obj_CloudTouched(mobj_t *special, mobj_t *toucher)
 	player->cloud = TICRATE/8;
 	player->cloudbuf = TICRATE/3;
 
-	for (UINT8 i = 1; i < 6; i++)
+	for (uint8_t i = 1; i < 6; i++)
 	{
 		fixed_t rand_x;
 		fixed_t rand_y;

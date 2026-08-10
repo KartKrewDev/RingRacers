@@ -20,9 +20,9 @@ extern "C" {
 #endif
 
 transnum_t R_GetLinedefTransTable(fixed_t alpha);
-void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2);
-void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pffloor);
-void R_StoreWallRange(INT32 start, INT32 stop);
+void R_RenderMaskedSegRange(drawseg_t *ds, int32_t x1, int32_t x2);
+void R_RenderThickSideRange(drawseg_t *ds, int32_t x1, int32_t x2, ffloor_t *pffloor);
+void R_StoreWallRange(int32_t start, int32_t stop);
 
 #ifdef __cplusplus
 } // extern "C"

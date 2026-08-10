@@ -63,7 +63,7 @@ static brightmapStorage_t *K_GetBrightmapStorageByIndex(size_t checkIndex)
 --------------------------------------------------*/
 static brightmapStorage_t *K_GetBrightmapStorageByTextureName(const char *checkName)
 {
-	UINT32 checkHash = quickncasehash(checkName, 8);
+	uint32_t checkHash = quickncasehash(checkName, 8);
 	size_t i;
 
 	if (maxBrightmapStorage == 0)
@@ -166,13 +166,13 @@ static dboolean K_BRIGHTLumpParser(char *data, size_t size)
 }
 
 /*--------------------------------------------------
-	void K_InitBrightmapsPwad(INT32 wadNum)
+	void K_InitBrightmapsPwad(int32_t wadNum)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_InitBrightmapsPwad(INT32 wadNum)
+void K_InitBrightmapsPwad(int32_t wadNum)
 {
-	UINT16 lumpNum;
+	uint16_t lumpNum;
 	size_t i;
 
 	I_Assert(brightmapStorage == NULL);
@@ -182,7 +182,7 @@ void K_InitBrightmapsPwad(INT32 wadNum)
 
 	while (lumpNum != INT16_MAX)
 	{
-		UINT8 *data = (UINT8 *)W_CacheLumpNumPwad(wadNum, lumpNum, PU_CACHE);
+		uint8_t *data = (uint8_t *)W_CacheLumpNumPwad(wadNum, lumpNum, PU_CACHE);
 
 		if (data != NULL)
 		{
@@ -212,7 +212,7 @@ void K_InitBrightmapsPwad(INT32 wadNum)
 			free(name);
 		}
 
-		lumpNum = W_CheckNumForNamePwad("BRIGHT", (UINT16)wadNum, lumpNum + 1);
+		lumpNum = W_CheckNumForNamePwad("BRIGHT", (uint16_t)wadNum, lumpNum + 1);
 	}
 
 	if (maxBrightmapStorage == 0)
@@ -224,7 +224,7 @@ void K_InitBrightmapsPwad(INT32 wadNum)
 	for (i = 0; i < maxBrightmapStorage; i++)
 	{
 		brightmapStorage_t *bms = K_GetBrightmapStorageByIndex(i);
-		INT32 texNum, bmNum;
+		int32_t texNum, bmNum;
 
 		if (bms == NULL)
 		{
@@ -255,7 +255,7 @@ void K_InitBrightmapsPwad(INT32 wadNum)
 --------------------------------------------------*/
 void K_InitBrightmaps(void)
 {
-	INT32 wadNum;
+	int32_t wadNum;
 
 	for (wadNum = 0; wadNum < numwadfiles; wadNum++)
 	{

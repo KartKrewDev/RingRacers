@@ -22,7 +22,7 @@
 
 #define AMP_ARCTIME (8)
 
-static UINT8 interlacedfuckingthing[] = {6,1,7,2,8,3,9,2,1,1,1,2,1,3,1,2,10,1,11,2,4,3,5,2,1,1,1,2,1,3,1,2};
+static uint8_t interlacedfuckingthing[] = {6,1,7,2,8,3,9,2,1,1,1,2,1,3,1,2,10,1,11,2,4,3,5,2,1,1,1,2,1,3,1,2};
 
 void Obj_AmpsThink (mobj_t *amps)
 {
@@ -41,7 +41,7 @@ void Obj_AmpsThink (mobj_t *amps)
         fixed_t dist, fakez;
         angle_t hang, vang;
 
-        UINT8 damper = 3;
+        uint8_t damper = 3;
 
         dist = P_AproxDistance(P_AproxDistance(amps->x - mo->x, amps->y - mo->y), amps->z - mo->z);
 

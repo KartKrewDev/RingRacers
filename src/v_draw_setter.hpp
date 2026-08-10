@@ -35,7 +35,7 @@ inline Draw::Chain& Draw::Chain::xy(float x, float y)
 	return *this;
 }
 
-inline Draw::Chain& Draw::Chain::flags(INT32 flags)
+inline Draw::Chain& Draw::Chain::flags(int32_t flags)
 {
 	flags_ |= flags;
 	return *this;
@@ -106,23 +106,23 @@ inline Draw::Chain& Draw::Chain::clip(bool yes)
 	return *this;
 }
 
-inline Draw::Chain& Draw::Chain::colormap(const UINT8* colormap)
+inline Draw::Chain& Draw::Chain::colormap(const uint8_t* colormap)
 {
 	colormap_ = colormap;
 	return *this;
 }
 
-inline Draw::Chain& Draw::Chain::colormap(UINT16 color)
+inline Draw::Chain& Draw::Chain::colormap(uint16_t color)
 {
 	return colormap(R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(color), GTC_CACHE));
 }
 
-inline Draw::Chain& Draw::Chain::colormap(INT32 skin, UINT16 color)
+inline Draw::Chain& Draw::Chain::colormap(int32_t skin, uint16_t color)
 {
 	return colormap(R_GetTranslationColormap(skin, static_cast<skincolornum_t>(color), GTC_CACHE));
 }
 
-inline Draw::Chain& Draw::Chain::colorize(UINT16 color)
+inline Draw::Chain& Draw::Chain::colorize(uint16_t color)
 {
 	return colormap(R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(color), GTC_CACHE));
 }

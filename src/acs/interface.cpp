@@ -408,7 +408,7 @@ void ACS_Tick(void)
 }
 
 /*--------------------------------------------------
-	static std::vector<ACSVM::Word> ACS_MixArgs(std::span<const INT32> args, std::span<const char* const> stringArgs)
+	static std::vector<ACSVM::Word> ACS_MixArgs(std::span<const int32_t> args, std::span<const char* const> stringArgs)
 
 		Convert strings to ACS arguments and position them
 		correctly among integer arguments.
@@ -420,7 +420,7 @@ void ACS_Tick(void)
 	Return:-
 		Final argument vector.
 --------------------------------------------------*/
-static std::vector<ACSVM::Word> ACS_MixArgs(std::span<const INT32> args, std::span<const char* const> stringArgs)
+static std::vector<ACSVM::Word> ACS_MixArgs(std::span<const int32_t> args, std::span<const char* const> stringArgs)
 {
 	std::vector<ACSVM::Word> argV;
 	size_t first = std::min(args.size(), stringArgs.size());
@@ -460,11 +460,11 @@ static std::vector<ACSVM::Word> ACS_MixArgs(std::span<const INT32> args, std::sp
 }
 
 /*--------------------------------------------------
-	dboolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+	dboolean ACS_Execute(const char *name, const int32_t *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+dboolean ACS_Execute(const char *name, const int32_t *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 {
 	Environment *env = &ACSEnv;
 
@@ -481,11 +481,11 @@ dboolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const 
 }
 
 /*--------------------------------------------------
-	dboolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+	dboolean ACS_ExecuteAlways(const char *name, const int32_t *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+dboolean ACS_ExecuteAlways(const char *name, const int32_t *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 {
 	Environment *env = &ACSEnv;
 
@@ -502,11 +502,11 @@ dboolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, 
 }
 
 /*--------------------------------------------------
-	dboolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+	dboolean ACS_ExecuteResult(const char *name, const int32_t *args, size_t numArgs, activator_t *activator)
 
 		See header file for description.
 --------------------------------------------------*/
-dboolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+dboolean ACS_ExecuteResult(const char *name, const int32_t *args, size_t numArgs, activator_t *activator)
 {
 	Environment *env = &ACSEnv;
 

@@ -53,7 +53,7 @@ const char* mode_strings[kNumModes] = {
 };
 
 std::vector<menuitem_t> g_menu;
-std::vector<INT32> g_menu_offsets;
+std::vector<int32_t> g_menu_offsets;
 int g_menu_cursors[kNumModes];
 
 int menu_mode()
@@ -88,8 +88,8 @@ void list_cvars()
 		if (!admin_mode() != !(var->flags & CV_NETVAR)) // LOL.
 			continue;
 
-		UINT16 status = IT_STRING | IT_CVAR;
-		INT32 height = 8;
+		uint16_t status = IT_STRING | IT_CVAR;
+		int32_t height = 8;
 
 		if (!var->PossibleValue && !(var->flags & CV_FLOAT))
 		{
@@ -103,8 +103,8 @@ void list_cvars()
 
 void list_commands()
 {
-	static const auto call = [](INT32 idx) { COM_ImmedExecute(currentMenu->menuitems[idx].text); };
-	UINT16 flags;
+	static const auto call = [](int32_t idx) { COM_ImmedExecute(currentMenu->menuitems[idx].text); };
+	uint16_t flags;
 
 	for (xcommand_t* cmd = com_commands; cmd; cmd = cmd->next)
 	{
@@ -135,7 +135,7 @@ void list_commands()
 		if (lua_isboolean(gL, -1))
 			flags = (lua_toboolean(gL, -1) ? COM_ADMIN : 0);
 		else
-			flags = (UINT16)lua_tointeger(gL, -1);
+			flags = (uint16_t)lua_tointeger(gL, -1);
 		lua_pop(gL, 1); // pop flags
 
 		lua_pop(gL, 1); // pop command info table
@@ -206,7 +206,7 @@ void menu_open()
 
 	group_menu();
 
-	INT32 y = 0;
+	int32_t y = 0;
 
 	for (menuitem_t& item : g_menu)
 	{
@@ -229,7 +229,7 @@ dboolean menu_close()
 	return true;
 }
 
-dboolean menu_input(INT32)
+dboolean menu_input(int32_t)
 {
 	// C button: cycle through modes
 	if (M_MenuButtonPressed(0, MBT_Y))
@@ -268,7 +268,7 @@ void draw_menu()
 	// K_drawButton((draw.x() + 8) * FRACUNIT, (draw.y() + 8) * FRACUNIT, 0, kp_button_y[0], M_MenuButtonHeld(0, MBT_Y));
 	draw = draw.y(32 + kMargin);
 
-	currentMenu->y = std::min(static_cast<INT32>(draw.y()), (BASEVIDHEIGHT/2) - g_menu_offsets[itemOn]);
+	currentMenu->y = std::min(static_cast<int32_t>(draw.y()), (BASEVIDHEIGHT/2) - g_menu_offsets[itemOn]);
 
 	V_SetClipRect(0, draw.y() * FRACUNIT, BASEVIDWIDTH * FRACUNIT, (BASEVIDHEIGHT - draw.y() - kMargin) * FRACUNIT, 0);
 	M_DrawGenericMenu();

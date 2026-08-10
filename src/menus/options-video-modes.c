@@ -44,8 +44,8 @@ menu_t OPTIONS_VideoModesDef = {
 // setup video mode menu
 static void M_VideoModeMenu(void)
 {
-	INT32 i, j, vdup, nummodes;
-	UINT32 width, height;
+	int32_t i, j, vdup, nummodes;
+	uint32_t width, height;
 	const char *desc;
 
 	memset(optionsmenu.modedescs, 0, sizeof(optionsmenu.modedescs));
@@ -112,10 +112,10 @@ static void M_VideoModeMenu(void)
 }
 
 // special menuitem key handler for video mode list
-void M_HandleVideoModes(INT32 ch)
+void M_HandleVideoModes(int32_t ch)
 {
 
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	(void)ch;
 
 	if (optionsmenu.vidm_testingmode > 0)

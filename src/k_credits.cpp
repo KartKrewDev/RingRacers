@@ -87,13 +87,13 @@ struct credits_star_s
 {
 	fixed_t x, y;
 	fixed_t vel_x, vel_y;
-	INT32 frame;
+	int32_t frame;
 };
 
 static struct credits_s
 {
 	size_t current_slide;
-	srb2::Vector<UINT16> demo_maps;
+	srb2::Vector<uint16_t> demo_maps;
 	dboolean skip;
 
 	srb2::Vector<struct credits_star_s> stars;
@@ -108,8 +108,8 @@ static struct credits_s
 	size_t split_slide_id;
 	tic_t split_slide_delay;
 
-	UINT64 scroll_timer;
-	UINT64 scroll_timer_prev;
+	uint64_t scroll_timer;
+	uint64_t scroll_timer_prev;
 
 	int tyler_fade;
 
@@ -478,11 +478,11 @@ void F_ContinueCredits(void)
 	F_CreditsNextSlide();
 }
 
-static UINT16 F_PickRandomCreditsDemoMap(void)
+static uint16_t F_PickRandomCreditsDemoMap(void)
 {
-	srb2::Vector<UINT16> allowedMaps;
+	srb2::Vector<uint16_t> allowedMaps;
 
-	for (INT32 i = 0; i < basenummapheaders; i++) // Only take from the base game.
+	for (int32_t i = 0; i < basenummapheaders; i++) // Only take from the base game.
 	{
 		if (mapheaderinfo[i] == NULL || mapheaderinfo[i]->lumpnum == LUMPERROR)
 		{
@@ -548,14 +548,14 @@ static dboolean F_CreditsPlayDemo(void)
 		return false;
 	}
 
-	UINT16 map_id = F_PickRandomCreditsDemoMap();
+	uint16_t map_id = F_PickRandomCreditsDemoMap();
 	if (map_id == UINT16_MAX)
 	{
 		return false;
 	}
 	g_credits.demo_maps.push_back(map_id);
 
-	UINT8 ghost_id = M_RandomKey( mapheaderinfo[map_id]->ghostCount );
+	uint8_t ghost_id = M_RandomKey( mapheaderinfo[map_id]->ghostCount );
 	brief = mapheaderinfo[map_id]->ghostBrief[ghost_id];
 
 	demo.attract = DEMO_ATTRACT_CREDITS;
@@ -582,7 +582,7 @@ void F_TickCreditsDemoExit(void)
 		g_credits.demo_exit = std::max<tic_t>(g_credits.demo_exit, kDemoExitTicCount - 64);
 	}
 
-	if (INT32 val = F_CreditsDemoExitFade(); val >= 0)
+	if (int32_t val = F_CreditsDemoExitFade(); val >= 0)
 	{
 		// Fade down sounds with screen fade
 		I_SetSfxVolume(cv_soundvolume.value * (31 - val) / 31);
@@ -594,10 +594,10 @@ void F_TickCreditsDemoExit(void)
 	}
 }
 
-INT32 F_CreditsDemoExitFade(void)
+int32_t F_CreditsDemoExitFade(void)
 {
-	return std::clamp<INT32>(
-		31 - ((kDemoExitTicCount - static_cast<INT32>(g_credits.demo_exit)) / 2),
+	return std::clamp<int32_t>(
+		31 - ((kDemoExitTicCount - static_cast<int32_t>(g_credits.demo_exit)) / 2),
 		-1, 31
 	);
 }
@@ -625,7 +625,7 @@ static void F_CreditsSlideFinish(void)
 static dboolean F_TickCreditsScroll(void)
 {
 	const struct credits_slide_s *slide = &g_credits_slides[ g_credits.current_slide ];
-	UINT32 scroll_max = FixedDiv(slide->strings_height + BASEVIDHEIGHT, kScrollFactor);
+	uint32_t scroll_max = FixedDiv(slide->strings_height + BASEVIDHEIGHT, kScrollFactor);
 
 	if (g_credits.skip == true)
 	{
@@ -669,7 +669,7 @@ static dboolean F_TickCreditsSlide(void)
 
 	if (g_credits.transition < FRACUNIT)
 	{
-		g_credits.transition = std::min<INT32>(g_credits.transition + (FRACUNIT / TICRATE), FRACUNIT);
+		g_credits.transition = std::min<int32_t>(g_credits.transition + (FRACUNIT / TICRATE), FRACUNIT);
 
 		if (g_credits.split_slide_id < g_credits.split_slide_strings.size())
 		{
@@ -684,8 +684,8 @@ static dboolean F_TickCreditsSlide(void)
 			y += ((BASEVIDHEIGHT * FRACUNIT) - y) / 2;
 			y -= strings_height / 2;
 
-			UINT8 side = 0;
-			UINT8 star_index = 0;
+			uint8_t side = 0;
+			uint8_t star_index = 0;
 
 			for (auto& str : g_credits.split_slide_strings[ g_credits.split_slide_id ])
 			{
@@ -1030,7 +1030,7 @@ static void F_DrawCreditsSlide(void)
 	y += ((BASEVIDHEIGHT * FRACUNIT) - y) / 2;
 	y -= strings_height / 2;
 
-	UINT8 side = 0;
+	uint8_t side = 0;
 
 	for (auto& str : g_credits.split_slide_strings[ g_credits.split_slide_id ])
 	{
@@ -1222,7 +1222,7 @@ void F_CreditDrawer(void)
 		}
 	}
 
-	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_JAWZ, GTC_CACHE);
+	uint8_t *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_JAWZ, GTC_CACHE);
 	for (auto& star : g_credits.stars)
 	{
 		V_DrawFixedPatch(

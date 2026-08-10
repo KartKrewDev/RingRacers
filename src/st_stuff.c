@@ -56,7 +56,7 @@
 #include "k_dialogue.h"
 #include "m_easing.h"
 
-UINT16 objectsdrawn = 0;
+uint16_t objectsdrawn = 0;
 
 //
 // STATUS BAR DATA
@@ -115,13 +115,13 @@ void ST_Ticker(dboolean run)
 }
 
 // 0 is default, any others are special palettes.
-INT32 st_palette = 0;
-UINT32 st_translucency = 10;
+int32_t st_palette = 0;
+uint32_t st_translucency = 10;
 fixed_t st_fadein = 0;
 
 void ST_doPaletteStuff(void)
 {
-	INT32 palette;
+	int32_t palette;
 
 	if (stplyr && stplyr->flashcount && cv_reducevfx.value == 0)
 		palette = stplyr->flashpal;
@@ -176,12 +176,12 @@ void ST_LoadGraphics(void)
 }
 
 // made separate so that skins code can reload custom face graphics
-void ST_LoadFaceGraphics(INT32 skinnum)
+void ST_LoadFaceGraphics(int32_t skinnum)
 {
 #define FACE_MAX (FACE_MINIMAP+1)
 	spritedef_t *sprdef = &skins[skinnum]->sprites[SPR2_XTRA];
 	spriteframe_t *sprframe;
-	UINT8 i = 0, maxer = min(sprdef->numframes, FACE_MAX);
+	uint8_t i = 0, maxer = min(sprdef->numframes, FACE_MAX);
 	while (i < maxer)
 	{
 		sprframe = &sprdef->spriteframes[i];
@@ -202,7 +202,7 @@ void ST_LoadFaceGraphics(INT32 skinnum)
 
 void ST_ReloadSkinFaceGraphics(void)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 0; i < numskins; i++)
 		ST_LoadFaceGraphics(i);
@@ -275,14 +275,14 @@ void ST_changeDemoView(void)
 dboolean st_overlay;
 
 /*
-static INT32 SCZ(INT32 z)
+static int32_t SCZ(int32_t z)
 {
 	return FixedInt(FixedMul(z<<FRACBITS, vid.fdupy));
 }
 */
 
 /*
-static INT32 SCY(INT32 y)
+static int32_t SCY(int32_t y)
 {
 	//31/10/99: fixed by Hurdler so it _works_ also in hardware mode
 	// do not scale to resolution for hardware accelerated
@@ -299,7 +299,7 @@ static INT32 SCY(INT32 y)
 */
 
 /*
-static INT32 STRINGY(INT32 y)
+static int32_t STRINGY(int32_t y)
 {
 	//31/10/99: fixed by Hurdler so it _works_ also in hardware mode
 	// do not scale to resolution for hardware accelerated
@@ -315,7 +315,7 @@ static INT32 STRINGY(INT32 y)
 */
 
 /*
-static INT32 SPLITFLAGS(INT32 f)
+static int32_t SPLITFLAGS(int32_t f)
 {
 	// Pass this V_SNAPTO(TOP|BOTTOM) and it'll trim them to account for splitscreen! -Red
 	if (splitscreen)
@@ -330,14 +330,14 @@ static INT32 SPLITFLAGS(INT32 f)
 */
 
 /*
-static INT32 SCX(INT32 x)
+static int32_t SCX(int32_t x)
 {
 	return FixedInt(FixedMul(x<<FRACBITS, vid.fdupx));
 }
 */
 
 #if 0
-static INT32 SCR(INT32 r)
+static int32_t SCR(int32_t r)
 {
 	fixed_t y;
 		//31/10/99: fixed by Hurdler so it _works_ also in hardware mode
@@ -360,34 +360,34 @@ static INT32 SCR(INT32 r)
 
 // Devmode information
 
-static void ST_pushRow(INT32 *height)
+static void ST_pushRow(int32_t *height)
 {
 	*height -= 4;
 }
 
-static void ST_pushDebugString(INT32 *height, const char *string)
+static void ST_pushDebugString(int32_t *height, const char *string)
 {
 	V_DrawRightAlignedSmallString(319, *height, V_MONOSPACE, string);
 	ST_pushRow(height);
 }
 
-static void ST_pushDebugStringHighlighted(INT32 *height, const char *string)
+static void ST_pushDebugStringHighlighted(int32_t *height, const char *string)
 {
 	V_DrawRightAlignedSmallString(319, *height, V_MONOSPACE | V_YELLOWMAP, string);
 	ST_pushRow(height);
 }
 
-static void ST_pushDebugTimeMS(INT32 *height, const char *label, UINT32 ms)
+static void ST_pushDebugTimeMS(int32_t *height, const char *label, uint32_t ms)
 {
 	ST_pushDebugString(height, va("%s%02d:%05.2f", label,
 				ms / 60000, ms % 60000 / 1000.f));
 }
 
-static void ST_drawMusicDebug(INT32 *height)
+static void ST_drawMusicDebug(int32_t *height)
 {
 	const char *mname = Music_CurrentSong();
 	dboolean looping = Music_CanLoop(Music_CurrentId());
-	UINT8 i = 0;
+	uint8_t i = 0;
 
 	const musicdef_t *def;
 	const char *format;
@@ -436,7 +436,7 @@ static void ST_drawMusicDebug(INT32 *height)
 	}
 }
 
-static void ST_drawRenderDebug(INT32 *height)
+static void ST_drawRenderDebug(int32_t *height)
 {
 	const struct RenderStats *i = &g_renderstats;
 
@@ -448,7 +448,7 @@ static void ST_drawRenderDebug(INT32 *height)
 	ST_pushDebugString(height, va("Skybox Portals: %4s", sizeu1(i->skybox_portals)));
 }
 
-static void ST_drawDemoDebug(INT32 *height)
+static void ST_drawDemoDebug(int32_t *height)
 {
 	if (!demo.recording && !demo.playback)
 		return;
@@ -475,9 +475,9 @@ static void ST_drawDemoDebug(INT32 *height)
 
 void ST_drawDebugInfo(void)
 {
-	INT32 height = 192;
+	int32_t height = 192;
 
-	const UINT8 screen = min(r_splitscreen, cv_devmode_screen.value - 1);
+	const uint8_t screen = min(r_splitscreen, cv_devmode_screen.value - 1);
 
 	// devmode_screen = 1..4
 	stplyr = &players[displayplayers[screen]];
@@ -627,12 +627,12 @@ static patch_t *ttext[2];
 #define FINAL_ROUNDY (16)
 #define FINAL_BANNERY (160)
 
-INT32 chev1x, chev1y, chev2x, chev2y, chevtflag;
-INT32 roundx, roundy;
-INT32 bannerx, bannery;
+int32_t chev1x, chev1y, chev2x, chev2y, chevtflag;
+int32_t roundx, roundy;
+int32_t bannerx, bannery;
 
-INT32 roundnumx, roundnumy;
-INT32 eggx1, eggx2, eggy1, eggy2;
+int32_t roundnumx, roundnumy;
+int32_t eggx1, eggx2, eggy1, eggy2;
 
 // These are all arbitrary values found by trial and error trying to align the hud lmao.
 // But they'll work.
@@ -653,7 +653,7 @@ INT32 eggx1, eggx2, eggy1, eggy2;
 //
 static void ST_cacheLevelTitle(void)
 {
-	UINT8 i;
+	uint8_t i;
 	char buf[9];
 
 	// SRB2KART
@@ -791,7 +791,7 @@ patch_t *ST_getRoundPicture(dboolean small)
 void ST_runTitleCard(void)
 {
 	dboolean run = !(paused || P_AutoPause() || (g_fast_forward > 0 && demo.simplerewind == DEMO_REWIND_OFF));
-	INT32 auxticker;
+	int32_t auxticker;
 	dboolean doroundicon = (ST_getRoundPicture(false) != NULL);
 
 	if (run && lt_fade < 16)
@@ -817,7 +817,7 @@ void ST_runTitleCard(void)
 			// Handle name info...
 			if (bossinfo.enemyname)
 			{
-				UINT32 len = strlen(bossinfo.enemyname)+1;
+				uint32_t len = strlen(bossinfo.enemyname)+1;
 				if (len > 1 && bossinfo.titleshow < len)
 				{
 					len = (lt_endtime-(TICRATE/2))/len;
@@ -826,7 +826,7 @@ void ST_runTitleCard(void)
 						char c = toupper(bossinfo.enemyname[bossinfo.titleshow]);
 						bossinfo.titleshow++;
 						c -= LT_FONTSTART;
-						if (c < 0 || c >= LT_FONTSIZE || !fontv[GTFN_FONT].font[(INT32)c] || !bossinfo.titlesound)
+						if (c < 0 || c >= LT_FONTSIZE || !fontv[GTFN_FONT].font[(int32_t)c] || !bossinfo.titlesound)
 						{
 							;
 						}
@@ -869,14 +869,14 @@ void ST_runTitleCard(void)
 			// TITLECARD START
 			if (lt_ticker < TTANIMSTART)
 			{
-				chev1x = max(BASE_CHEV1X, (BASE_CHEV1X +350) - (INT32)(lt_ticker)*50);
-				chev2x = min(BASE_CHEV2X, (BASE_CHEV2X -350) + (INT32)(lt_ticker)*50);
+				chev1x = max(BASE_CHEV1X, (BASE_CHEV1X +350) - (int32_t)(lt_ticker)*50);
+				chev2x = min(BASE_CHEV2X, (BASE_CHEV2X -350) + (int32_t)(lt_ticker)*50);
 			}
 
 			// OPEN ZIG-ZAGS 1 SECOND IN
 			if (lt_ticker > TTANIMTHRESHOLD)
 			{
-				auxticker = (INT32)(lt_ticker) - TTANIMTHRESHOLD;
+				auxticker = (int32_t)(lt_ticker) - TTANIMTHRESHOLD;
 
 				chev1x = min(320, BASE_CHEV1X + auxticker*16);
 				chev1y = max(0, BASE_CHEV1Y - auxticker*16);
@@ -891,7 +891,7 @@ void ST_runTitleCard(void)
 				// OPEN ZIG-ZAG: END OF ANIMATION (they leave the screen borders)
 				if (lt_ticker > TTANIMENDTHRESHOLD)
 				{
-					auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
+					auxticker = (int32_t)lt_ticker - TTANIMENDTHRESHOLD;
 
 					chev1x += auxticker*16;
 					chev1y -= auxticker*16;
@@ -908,12 +908,12 @@ void ST_runTitleCard(void)
 			// SLIDE BAR IN, SLIDE "ROUND" DOWNWARDS
 			if (lt_ticker <= TTANIMTHRESHOLD)
 			{
-				INT32 interptimer = (INT32)lt_ticker - TTANIMSTART;
-				// INT32 because tic_t is unsigned and we want this to be potentially negative
+				int32_t interptimer = (int32_t)lt_ticker - TTANIMSTART;
+				// int32_t because tic_t is unsigned and we want this to be potentially negative
 
 				if (interptimer >= 0)
 				{
-					INT32 interpdiff = ((TTANIMTHRESHOLD-TTANIMSTART) - interptimer);
+					int32_t interpdiff = ((TTANIMTHRESHOLD-TTANIMSTART) - interptimer);
 					interpdiff *= interpdiff;	// interpdiff^2
 
 					roundx = FINAL_ROUNDX - interpdiff;
@@ -925,7 +925,7 @@ void ST_runTitleCard(void)
 			// SLIDE BAR OUT, SLIDE "ROUND" DOWNWARDS FASTER
 			else if (lt_ticker >= TTANIMENDTHRESHOLD)
 			{
-				auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
+				auxticker = (int32_t)lt_ticker - TTANIMENDTHRESHOLD;
 
 				roundx = FINAL_ROUNDX - auxticker*24;
 				roundy = FINAL_ROUNDY + auxticker*48;
@@ -945,7 +945,7 @@ void ST_runTitleCard(void)
 			// split both halves of the egg, but only do that in grand prix!
 			if (doroundicon && lt_ticker > TTANIMTHRESHOLD + TICRATE/2)
 			{
-				auxticker = (INT32)lt_ticker - (TTANIMTHRESHOLD + TICRATE/2);
+				auxticker = (int32_t)lt_ticker - (TTANIMTHRESHOLD + TICRATE/2);
 
 				eggx1 -= auxticker*12;
 				eggy1 -= auxticker*12;
@@ -961,8 +961,8 @@ void ST_runTitleCard(void)
 			// SLIDE BANNER UPWARDS WITH A FUNNY BOUNCE (this requires trig :death:)
 			if (lt_ticker < TTANIMTHRESHOLD)
 			{
-				INT32 costimer = (INT32)lt_ticker - TTANIMSTART;
-				// INT32 because tic_t is unsigned and we want this to be potentially negative
+				int32_t costimer = (int32_t)lt_ticker - TTANIMSTART;
+				// int32_t because tic_t is unsigned and we want this to be potentially negative
 
 				if (costimer > 0)
 				{
@@ -972,8 +972,8 @@ void ST_runTitleCard(void)
 					// start at angle 355 (where y = ~230 with our params)
 					// and go to angle 131 (where y = ~160 with our params)
 
-					UINT8 basey = 190;
-					UINT8 amplitude = 45;
+					uint8_t basey = 190;
+					uint8_t amplitude = 45;
 					fixed_t ang = (355 - costimer*14)*FRACUNIT;
 
 					bannery = basey + (amplitude * FINECOSINE(FixedAngle(ang)>>ANGLETOFINESHIFT)) / FRACUNIT;
@@ -982,7 +982,7 @@ void ST_runTitleCard(void)
 			// SLIDE BANNER DOWNWARDS OUT OF THE SCREEN AT THE END
 			else if (lt_ticker >= TTANIMENDTHRESHOLD)
 			{
-				auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
+				auxticker = (int32_t)lt_ticker - TTANIMENDTHRESHOLD;
 				bannery = FINAL_BANNERY + auxticker*16;
 			}
 
@@ -1005,14 +1005,14 @@ void ST_drawTitleCard(void)
 {
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
-	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
+	uint8_t actnum = mapheaderinfo[gamemap-1]->actnum;
 
-	INT32 acttimer;
+	int32_t acttimer;
 	fixed_t actscale;
 	angle_t fakeangle;
 
-	INT32 pad = ((vid.width/vid.dupx) - BASEVIDWIDTH)/2;
-	INT32 bx = bannerx;	// We need to make a copy of that otherwise pausing will cause problems.
+	int32_t pad = ((vid.width/vid.dupx) - BASEVIDWIDTH)/2;
+	int32_t bx = bannerx;	// We need to make a copy of that otherwise pausing will cause problems.
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -1040,7 +1040,7 @@ void ST_drawTitleCard(void)
 #define HITIME 15
 
 			patch_t *localwarn;
-			INT32 transp;
+			int32_t transp;
 			dboolean encorehack = ((levelfadecol == 0) && lt_ticker <= PRELEVELTIME+4);
 
 #define DRAWBOSSWARN(pat) \
@@ -1110,7 +1110,7 @@ void ST_drawTitleCard(void)
 				// Handle subtitle.
 				else if (bossinfo.subtitle && lt_ticker >= TICRATE/2)
 				{
-					INT32 by = 80+32;
+					int32_t by = 80+32;
 					if (lt_ticker == TICRATE/2 || lt_exitticker == 1)
 					{
 						;
@@ -1270,7 +1270,7 @@ void ST_preLevelTitleCardDrawer(void)
 //
 static void ST_overlayDrawer(void)
 {
-	const UINT8 viewnum = R_GetViewNumber();
+	const uint8_t viewnum = R_GetViewNumber();
 
 	// hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
@@ -1288,10 +1288,10 @@ static void ST_overlayDrawer(void)
 			{
 				if (r_splitscreen <= 1)
 				{
-					INT32 flags = V_SNAPTOBOTTOM | V_SPLITSCREEN | V_HUDTRANS;
-					INT32 x = BASEVIDWIDTH/2;
-					INT32 y = (BASEVIDHEIGHT / (r_splitscreen + 1)) - 34;
-					INT32 width = 50;
+					int32_t flags = V_SNAPTOBOTTOM | V_SPLITSCREEN | V_HUDTRANS;
+					int32_t x = BASEVIDWIDTH/2;
+					int32_t y = (BASEVIDHEIGHT / (r_splitscreen + 1)) - 34;
+					int32_t width = 50;
 
 					const char *text = player_names[stplyr-players];
 					int font = KART_FONT;
@@ -1327,8 +1327,8 @@ static void ST_overlayDrawer(void)
 				}
 				else
 				{
-					INT32 y = BASEVIDHEIGHT/2 - 12;
-					INT32 f = V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+					int32_t y = BASEVIDHEIGHT/2 - 12;
+					int32_t f = V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SPLITSCREEN;
 					const char *s = player_names[stplyr-players];
 					if (viewnum & 1)
 						V_DrawThinString(12, y, f|V_SNAPTOLEFT, s);
@@ -1345,7 +1345,7 @@ static void ST_overlayDrawer(void)
 // MayonakaStatic: draw Midnight Channel's TV-like borders
 static void ST_MayonakaStatic(void)
 {
-	INT32 flag = (leveltime%2) ? V_90TRANS : V_70TRANS;
+	int32_t flag = (leveltime%2) ? V_90TRANS : V_70TRANS;
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT|flag, hud_tv1, NULL);
 	V_DrawFixedPatch(320<<FRACBITS, 0, FRACUNIT, V_SNAPTOTOP|V_SNAPTORIGHT|V_FLIP|flag, hud_tv1, NULL);
@@ -1369,7 +1369,7 @@ void ST_AskToJoinEnvelope(void)
 }
 #endif
 
-static INT32 ST_ServerSplash_OpacityFlag(INT32 opacity)
+static int32_t ST_ServerSplash_OpacityFlag(int32_t opacity)
 {
 	if (opacity >= NUMTRANSMAPS)
 	{
@@ -1415,8 +1415,8 @@ void ST_DrawServerSplash(dboolean timelimited)
 		return;
 	}
 
-	const INT32 splashTic = splashTime >> FRACBITS;
-	INT32 opacity = NUMTRANSMAPS;
+	const int32_t splashTic = splashTime >> FRACBITS;
+	int32_t opacity = NUMTRANSMAPS;
 	if (splashTic < NUMTRANSMAPS)
 	{
 		opacity = splashTic;
@@ -1427,7 +1427,7 @@ void ST_DrawServerSplash(dboolean timelimited)
 		opacity = (SPLASH_LEN >> FRACBITS) - splashTic;
 	}
 
-	INT32 opacityFlag = ST_ServerSplash_OpacityFlag(opacity);
+	int32_t opacityFlag = ST_ServerSplash_OpacityFlag(opacity);
 
 	patch_t *gridPatch = W_CachePatchName("MOTDBG", PU_CACHE);
 
@@ -1435,7 +1435,7 @@ void ST_DrawServerSplash(dboolean timelimited)
 	{
 		fixed_t gridX = -(splashTime / 3) % (gridPatch->width * FRACUNIT);
 		fixed_t gridY = (gridPatch->height) * FRACUNIT;
-		INT32 gridOpacity = ST_ServerSplash_OpacityFlag(opacity / 2);
+		int32_t gridOpacity = ST_ServerSplash_OpacityFlag(opacity / 2);
 		fixed_t maxX = (vid.width * FRACUNIT) / vid.dupx;
 
 		while (gridX < maxX)
@@ -1496,7 +1496,7 @@ void ST_DrawServerSplash(dboolean timelimited)
 	}
 }
 
-void ST_DrawSaveReplayHint(INT32 flags)
+void ST_DrawSaveReplayHint(int32_t flags)
 {
 	const char *text;
 	if (gamestate == GS_LEVEL && camera[0].freecam)
@@ -1604,7 +1604,7 @@ void ST_Drawer(void)
 	// the last one remaining.
 	{
 		fixed_t maxFade = 0;
-		UINT8 i;
+		uint8_t i;
 
 		for (i = 0; i <= r_splitscreen; i++)
 		{
@@ -1627,7 +1627,7 @@ void ST_Drawer(void)
 
 	if (st_overlay)
 	{
-		UINT8 i;
+		uint8_t i;
 		if (renderisnewtic)
 		{
 			LUA_HUD_ClearDrawList(luahuddrawlist_game);
@@ -1666,7 +1666,7 @@ void ST_Drawer(void)
 	{
 		tic_t fadeLength = TICRATE;
 		tic_t t = leveltime - (demo.savebutton + 3*TICRATE);
-		INT32 flags = V_SNAPTOTOP | V_SNAPTORIGHT |
+		int32_t flags = V_SNAPTOTOP | V_SNAPTORIGHT |
 			(Easing_Linear(min(t, fadeLength) * FRACUNIT / fadeLength, 9, 0) << V_ALPHASHIFT);
 
 		ST_DrawSaveReplayHint(flags);

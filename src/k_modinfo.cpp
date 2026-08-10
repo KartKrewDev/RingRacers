@@ -59,13 +59,13 @@ bool mod_metadata_t::parse_info_json(const char *contents, size_t contents_len)
 
 		if (result >= 1 && game_version_int >= 0 && game_version_int <= UINT16_MAX)
 		{
-			_game_version = static_cast<UINT16>(game_version_int);
+			_game_version = static_cast<uint16_t>(game_version_int);
 			_game_subversion = 0; // Just inputting "2" should be the same as "2.0"
 		}
 
 		if (result >= 2 && game_subversion_int >= 0 && game_subversion_int <= UINT16_MAX)
 		{
-			_game_subversion = static_cast<UINT16>(game_subversion_int);
+			_game_subversion = static_cast<uint16_t>(game_subversion_int);
 		}
 	}
 
@@ -169,12 +169,12 @@ patch_t *ModMetadata_GetIcon(mod_metadata_t *meta)
 	return meta->icon();
 }
 
-UINT16 ModMetadata_GetGameVersion(mod_metadata_t *meta)
+uint16_t ModMetadata_GetGameVersion(mod_metadata_t *meta)
 {
 	return meta->game_version();
 }
 
-UINT16 ModMetadata_GetGameSubVersion(mod_metadata_t *meta)
+uint16_t ModMetadata_GetGameSubVersion(mod_metadata_t *meta)
 {
 	return meta->game_subversion();
 }

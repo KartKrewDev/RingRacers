@@ -25,7 +25,7 @@ extern "C" {
 
 extern struct battleovertime
 {
-	UINT16 enabled; ///< Has this been initalized yet?
+	uint16_t enabled; ///< Has this been initalized yet?
 	fixed_t radius; ///< Radius of kill field
 	fixed_t initial_radius; ///< Starting radius of kill field
 	tic_t start; ///< Leveltime to decrease kill field radius from
@@ -34,34 +34,34 @@ extern struct battleovertime
 
 extern struct battleufo
 {
-	INT32 previousId;
+	int32_t previousId;
 	tic_t due;
 } g_battleufo;
 
 extern dboolean battleprisons;
-extern INT32 nummapboxes, numgotboxes; // keep track of spawned battle mode items
-extern UINT8 maptargets, numtargets;
+extern int32_t nummapboxes, numgotboxes; // keep track of spawned battle mode items
+extern uint8_t maptargets, numtargets;
 extern tic_t g_emeraldWin;
 
-INT32 K_StartingBumperCount(void);
+int32_t K_StartingBumperCount(void);
 dboolean K_IsPlayerWanted(player_t *player);
 #define K_CalculateBattleWanted() (void)0 // not nulled out so we know where we need to recalculate some other form of battle mode importance
-void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount);
+void K_SpawnBattlePoints(player_t *source, player_t *victim, uint8_t amount);
 void K_CheckBumpers(void);
 void K_CheckEmeralds(player_t *player);
-UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType);
-mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT32 emeraldType);
-mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 amount);
-void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType);
-UINT8 K_NumEmeralds(player_t *player);
+uint16_t K_GetChaosEmeraldColor(uint32_t emeraldType);
+mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, int8_t flip, uint32_t emeraldType);
+mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, int8_t flip, uint8_t amount);
+void K_DropEmeraldsFromPlayer(player_t *player, uint32_t emeraldType);
+uint8_t K_NumEmeralds(player_t *player);
 void K_RunPaperItemSpawners(void);
 void K_SpawnOvertimeBarrier(void);
 void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
 void K_SpawnPlayerBattleBumpers(player_t *p);
 void K_BattleInit(dboolean singleplayercontext);
-UINT8 K_Bumpers(player_t *player);
-INT32 K_BumpersToHealth(UINT8 bumpers);
+uint8_t K_Bumpers(player_t *player);
+int32_t K_BumpersToHealth(uint8_t bumpers);
 dboolean K_BattleOvertimeKiller(mobj_t *mobj);
 dboolean K_EndBattleRound(player_t *victor);
 

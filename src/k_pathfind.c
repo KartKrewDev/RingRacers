@@ -22,7 +22,7 @@ static const size_t DEFAULT_CLOSEDSET_CAPACITY = 8U;
 
 
 /*--------------------------------------------------
-	static UINT32 K_NodeGetFScore(const pathfindnode_t *const node)
+	static uint32_t K_NodeGetFScore(const pathfindnode_t *const node)
 
 		Gets the FScore of a node. The FScore is the GScore plus the HScore.
 
@@ -32,9 +32,9 @@ static const size_t DEFAULT_CLOSEDSET_CAPACITY = 8U;
 	Return:-
 		The FScore of the node.
 --------------------------------------------------*/
-static UINT32 K_NodeGetFScore(const pathfindnode_t *const node)
+static uint32_t K_NodeGetFScore(const pathfindnode_t *const node)
 {
-	UINT32 fscore = UINT32_MAX;
+	uint32_t fscore = UINT32_MAX;
 
 	I_Assert(node != NULL);
 
@@ -325,13 +325,13 @@ dboolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetu
 			pathfindnode_t *connectingnode         = NULL;
 			void           **connectingnodesdata   = NULL;
 			void           *checknodedata          = NULL;
-			UINT32         *connectingnodecosts    = NULL;
+			uint32_t         *connectingnodecosts    = NULL;
 			size_t         numconnectingnodes      = 0U;
 			size_t         connectingnodeheapindex = 0U;
 			size_t         nodesarraycount         = 0U;
 			size_t         closedsetcount          = 0U;
 			size_t         i                       = 0U;
-			UINT32         tentativegscore         = 0U;
+			uint32_t         tentativegscore         = 0U;
 
 			// Set the dynamic structure capacites to defaults if they are 0
 			if (pathfindsetup->nodesarraycapacity == 0U)

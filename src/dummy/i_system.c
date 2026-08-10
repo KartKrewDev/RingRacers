@@ -16,23 +16,23 @@
 
 FILE *logstream = NULL;
 
-UINT8 graphics_started = 0;
+uint8_t graphics_started = 0;
 
-UINT8 keyboard_started = 0;
+uint8_t keyboard_started = 0;
 
-UINT64 I_GetFreeMem(UINT64 *total)
+uint64_t I_GetFreeMem(uint64_t *total)
 {
 	*total = 0;
 	return 0;
 }
 
-void I_Sleep(UINT32 ms){}
+void I_Sleep(uint32_t ms){}
 
 precise_t I_GetPreciseTime(void) {
 	return 0;
 }
 
-UINT64 I_GetPrecisePrecision(void) {
+uint64_t I_GetPrecisePrecision(void) {
 	return 1000000;
 }
 
@@ -81,12 +81,12 @@ void I_InitJoystick(void){}
 
 void I_InitJoystick2(void){}
 
-INT32 I_NumJoys(void)
+int32_t I_NumJoys(void)
 {
 	return 0;
 }
 
-const char *I_GetJoyName(INT32 joyindex)
+const char *I_GetJoyName(int32_t joyindex)
 {
 	(void)joyindex;
 	return NULL;
@@ -109,7 +109,7 @@ void I_StartupMouse(void){}
 
 void I_StartupMouse2(void){}
 
-INT32 I_GetKey(void)
+int32_t I_GetKey(void)
 {
 	return 0;
 }
@@ -126,14 +126,14 @@ void I_RemoveExitFunc(void (*func)())
 	(void)func;
 }
 
-INT32 I_StartupSystem(void)
+int32_t I_StartupSystem(void)
 {
 	return -1;
 }
 
 void I_ShutdownSystem(void){}
 
-void I_GetDiskFreeSpace(INT64* freespace)
+void I_GetDiskFreeSpace(int64_t* freespace)
 {
 	*freespace = 0;
 }
@@ -143,14 +143,14 @@ char *I_GetUserName(void)
 	return NULL;
 }
 
-INT32 I_mkdir(const char *dirname, INT32 unixright)
+int32_t I_mkdir(const char *dirname, int32_t unixright)
 {
 	(void)dirname;
 	(void)unixright;
 	return -1;
 }
 
-INT32 I_ChDir(const char *path)
+int32_t I_ChDir(const char *path)
 {
 	(void)path;
 	return -1;
@@ -182,13 +182,13 @@ char *I_GetEnv(const char *name)
 	return NULL;
 }
 
-INT32 I_PutEnv(char *variable)
+int32_t I_PutEnv(char *variable)
 {
 	(void)variable;
 	return -1;
 }
 
-INT32 I_ClipboardCopy(const char *data, size_t size)
+int32_t I_ClipboardCopy(const char *data, size_t size)
 {
 	(void)data;
 	(void)size;
@@ -202,7 +202,7 @@ const char *I_ClipboardPaste(void)
 
 void I_RegisterSysCommands(void) {}
 
-void I_GetCursorPosition(INT32 *x, INT32 *y)
+void I_GetCursorPosition(int32_t *x, int32_t *y)
 {
 	(void)x;
 	(void)y;

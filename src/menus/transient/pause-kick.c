@@ -17,11 +17,11 @@
 
 struct playerkickmenu_s playerkickmenu;
 
-static void M_PlayerKickHandler(INT32 choice)
+static void M_PlayerKickHandler(int32_t choice)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
-	UINT8 kicktype = UINT8_MAX;
+	uint8_t kicktype = UINT8_MAX;
 
 	(void)choice;
 
@@ -136,7 +136,7 @@ menu_t PAUSE_KickHandlerDef = {
 	NULL,
 };
 
-void M_KickHandler(INT32 choice)
+void M_KickHandler(int32_t choice)
 {
 	playerkickmenu.adminpowered = (choice >= 0);
 

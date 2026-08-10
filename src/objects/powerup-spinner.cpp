@@ -26,14 +26,14 @@ struct Spinner : Mobj
 	static constexpr int kDuration = 40;
 
 	void extravalue1() = delete;
-	INT32 powerup() const { return mobj_t::extravalue1; }
-	void powerup(INT32 n) { mobj_t::extravalue1 = n; }
+	int32_t powerup() const { return mobj_t::extravalue1; }
+	void powerup(int32_t n) { mobj_t::extravalue1 = n; }
 
 	void extravalue2() = delete;
-	INT32 duration() const { return mobj_t::extravalue2; }
-	void duration(INT32 n) { mobj_t::extravalue2 = n; }
+	int32_t duration() const { return mobj_t::extravalue2; }
+	void duration(int32_t n) { mobj_t::extravalue2 = n; }
 
-	static void spawn(Mobj* source, INT32 powerup, tic_t duration)
+	static void spawn(Mobj* source, int32_t powerup, tic_t duration)
 	{
 		Spinner* x = Mobj::spawn<Spinner>(source->pos(), MT_GOTPOWERUP);
 		K_UpdateMobjItemOverlay(x, powerup, 1);
@@ -45,7 +45,7 @@ struct Spinner : Mobj
 
 	void think()
 	{
-		fixed_t f = FRACUNIT - std::clamp<INT32>(fuse, 0, duration()) * FRACUNIT / std::max<INT32>(duration(), 1);
+		fixed_t f = FRACUNIT - std::clamp<int32_t>(fuse, 0, duration()) * FRACUNIT / std::max<int32_t>(duration(), 1);
 
 		if (fuse == duration() - 20)
 		{
@@ -87,7 +87,7 @@ private:
 
 }; // namespace
 
-void Obj_SpawnPowerUpSpinner(mobj_t *source, INT32 powerup, tic_t duration)
+void Obj_SpawnPowerUpSpinner(mobj_t *source, int32_t powerup, tic_t duration)
 {
 	Spinner::spawn(static_cast<Mobj*>(source), powerup, duration);
 }

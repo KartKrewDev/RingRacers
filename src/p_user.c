@@ -276,7 +276,7 @@ void P_CalcHeight(player_t *player)
   * \return True if the player is considered to be moving.
   * \author Graue <graue@oceanbase.org>
   */
-dboolean P_PlayerMoving(INT32 pnum)
+dboolean P_PlayerMoving(int32_t pnum)
 {
 	player_t *p = &players[pnum];
 
@@ -296,7 +296,7 @@ dboolean P_PlayerMoving(INT32 pnum)
 //
 // Gets the number (0 based) of the next emerald to obtain
 //
-UINT8 P_GetNextEmerald(void)
+uint8_t P_GetNextEmerald(void)
 {
 	cupheader_t *cup = NULL;
 
@@ -311,7 +311,7 @@ UINT8 P_GetNextEmerald(void)
 		else
 		{
 			// Determine order from sealedswaps.
-			UINT8 i;
+			uint8_t i;
 			for (i = 0; (i < GDMAX_SEALEDSWAPS && gamedata->sealedswaps[i]); i++)
 			{
 				if (gamedata->sealedswaps[i] != grandprixinfo.cup)
@@ -327,7 +327,7 @@ UINT8 P_GetNextEmerald(void)
 
 	if (cup == NULL)
 	{
-		INT16 mapnum = gamemap-1;
+		int16_t mapnum = gamemap-1;
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
@@ -348,10 +348,10 @@ UINT8 P_GetNextEmerald(void)
 //
 // SRB2Kart, a similar function as above for finding the lowest lap
 //
-UINT8 P_FindLowestLap(void)
+uint8_t P_FindLowestLap(void)
 {
-	INT32 i;
-	UINT8 lowest = UINT8_MAX;
+	int32_t i;
+	uint8_t lowest = UINT8_MAX;
 
 	if (!(gametyperules & GTR_CIRCUIT))
 		return 0;
@@ -375,10 +375,10 @@ UINT8 P_FindLowestLap(void)
 //
 // P_FindHighestLap
 //
-UINT8 P_FindHighestLap(void)
+uint8_t P_FindHighestLap(void)
 {
-	INT32 i;
-	UINT8 highest = 0;
+	int32_t i;
+	uint8_t highest = 0;
 
 	if (!(gametyperules & GTR_CIRCUIT))
 		return 0;
@@ -445,9 +445,9 @@ void P_ResetPlayer(player_t *player)
 // Returns the number of rings successfully given (or taken).
 //
 
-INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
+int32_t P_GivePlayerRings(player_t *player, int32_t num_rings)
 {
-	INT32 test;
+	int32_t test;
 
 	if (!player->mo)
 		return 0;
@@ -479,7 +479,7 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 	return num_rings;
 }
 
-INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres)
+int32_t P_GivePlayerSpheres(player_t *player, int32_t num_spheres)
 {
 	num_spheres += player->spheres;
 
@@ -504,7 +504,7 @@ INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres)
 // Gives the player an extra life.
 // Call this function when you want to add lives to the player.
 //
-void P_GivePlayerLives(player_t *player, INT32 numlives)
+void P_GivePlayerLives(player_t *player, int32_t numlives)
 {
 	player->lives += numlives;
 
@@ -515,7 +515,7 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 }
 
 // Adds to the player's score
-void P_AddPlayerScore(player_t *player, INT32 amount)
+void P_AddPlayerScore(player_t *player, int32_t amount)
 {
 	if ((gametyperules & GTR_POINTLIMIT) == 0)
 	{
@@ -531,7 +531,7 @@ void P_AddPlayerScore(player_t *player, INT32 amount)
 
 	// Don't underflow.
 	// Don't go above MAXSCORE.
-	if (amount < 0 && (UINT32)-amount > player->roundscore)
+	if (amount < 0 && (uint32_t)-amount > player->roundscore)
 	{
 		player->roundscore = 0;
 	}
@@ -614,10 +614,10 @@ void P_StartPositionMusic(dboolean exact)
 void P_EndingMusic(void)
 {
 	const char *jingle = NULL;
-	UINT8 bestPos = UINT8_MAX;
+	uint8_t bestPos = UINT8_MAX;
 	player_t *bestPlayer = NULL;
 
-	SINT8 i = MAXPLAYERS;
+	int8_t i = MAXPLAYERS;
 
 	// See G_DoCompleted and Y_DetermineIntermissionType
 	dboolean nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
@@ -664,7 +664,7 @@ void P_EndingMusic(void)
 	// Check for if this is valid or not
 	for (i = 0; i <= r_splitscreen; i++)
 	{
-		UINT8 pos = UINT8_MAX;
+		uint8_t pos = UINT8_MAX;
 		player_t *checkPlayer = NULL;
 
 		checkPlayer = &players[displayplayers[i]];
@@ -763,10 +763,10 @@ skippingposition:
 
 void P_InvincGrowMusic(void)
 {
-	INT32 invinc = 0;
-	INT32 grow = 0;
+	int32_t invinc = 0;
+	int32_t grow = 0;
 
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i <= r_splitscreen; ++i)
 	{
@@ -1010,7 +1010,7 @@ void P_SetObjectMomZ(mobj_t *mo, fixed_t value, dboolean relative)
 //
 dboolean P_IsMachineLocalPlayer(const player_t *player)
 {
-	UINT8 i;
+	uint8_t i;
 
 	if (player == NULL)
 	{
@@ -1056,7 +1056,7 @@ dboolean P_IsPartyPlayer(const player_t *player)
 //
 dboolean P_IsDisplayPlayer(const player_t *player)
 {
-	UINT8 i;
+	uint8_t i;
 
 	if (player == NULL)
 	{
@@ -1173,7 +1173,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 //
 // Spawns a silhouette that copies its tracer and copies RF_DONTDRAW
 //
-mobj_t *P_SpawnFakeShadow(mobj_t *mobj, UINT8 offset)
+mobj_t *P_SpawnFakeShadow(mobj_t *mobj, uint8_t offset)
 {
 	mobj_t *ghost = P_SpawnMobj(mobj->x, mobj->y, mobj->z - offset*mapobjectscale, MT_FAKESHADOW);
 	ghost->threshold = offset;
@@ -1332,10 +1332,10 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 				&& grandprixinfo.eventmode != GPEVENT_SPECIAL
 				&& player->bot == false && losing == false && player->hudrings > 0)
 			{
-				const UINT8 lifethreshold = 20;
+				const uint8_t lifethreshold = 20;
 
-				const UINT8 oldExtra = player->totalring / lifethreshold;
-				const UINT8 extra = (player->totalring + player->hudrings) / lifethreshold;
+				const uint8_t oldExtra = player->totalring / lifethreshold;
+				const uint8_t extra = (player->totalring + player->hudrings) / lifethreshold;
 
 				if (extra > oldExtra)
 				{
@@ -1389,8 +1389,8 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 		if (!demo.savebutton)
 		{
-			UINT8 outstanding = splitscreen + 1;
-			for (UINT8 i = 0; i <= splitscreen; ++i)
+			uint8_t outstanding = splitscreen + 1;
+			for (uint8_t i = 0; i <= splitscreen; ++i)
 			{
 				if (players[g_localplayers[i]].exiting)
 					outstanding--;
@@ -1411,7 +1411,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 // All players exit the map via event
 void P_DoAllPlayersExit(pflags_t flags, dboolean trygivelife)
 {
-	UINT8 i;
+	uint8_t i;
 	const dboolean dofinishsound = (musiccountdown == 0) && (!K_InRaceDuel());
 
 	if (grandprixinfo.gp == false
@@ -1833,7 +1833,7 @@ static void P_CheckInvincibilityTimer(player_t *player)
 	if (player->invincibilitytimer == 1)
 	{
 		//K_KartResetPlayerColor(player); -- this gets called every tic anyways
-		G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
+		G_GhostAddColor((int32_t) (player - players), GHC_NORMAL);
 		return;
 	}
 }
@@ -1879,7 +1879,7 @@ static void P_DoBubbleBreath(player_t *player)
 
 		if (P_RandomChance(PR_BUBBLE, FixedMul(FRACUNIT/16, FRACUNIT + 3*f)))
 		{
-			UINT32 seed = P_GetRandSeed(PR_BUBBLE);
+			uint32_t seed = P_GetRandSeed(PR_BUBBLE);
 			x += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
 			y += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
 			z += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
@@ -1888,7 +1888,7 @@ static void P_DoBubbleBreath(player_t *player)
 		}
 		else if (P_RandomChance(PR_BUBBLE, FixedMul(3*FRACUNIT/256, FRACUNIT + 3*f)))
 		{
-			UINT32 seed = P_GetRandSeed(PR_BUBBLE);
+			uint32_t seed = P_GetRandSeed(PR_BUBBLE);
 			x += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
 			y += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
 			z += P_RandomRange(PR_BUBBLE, -16, 16) * player->mo->scale;
@@ -2088,8 +2088,8 @@ static void P_3dMovement(player_t *player)
 
 		if (player->curshield != KSHIELD_TOP)
 		{
-			INT32 a = K_GetUnderwaterTurnAdjust(player);
-			INT32 adj = 0;
+			int32_t a = K_GetUnderwaterTurnAdjust(player);
+			int32_t adj = 0;
 
 			if (a)
 			{
@@ -2263,16 +2263,16 @@ static void P_3dMovement(player_t *player)
 
 // For turning correction in P_UpdatePlayerAngle.
 // Given a range of possible steering inputs, finds a steering input that corresponds to the desired angle change.
-static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, INT16 lowBound, INT16 highBound)
+static int16_t P_FindClosestTurningForAngle(player_t *player, int32_t targetAngle, int16_t lowBound, int16_t highBound)
 {
-	INT16 newBound;
-	INT16 preferred = lowBound;
+	int16_t newBound;
+	int16_t preferred = lowBound;
 	int attempts = 0;
 
 	// Only works if our low bound is actually our low bound.
 	if (highBound < lowBound)
 	{
-		INT16 tmp = lowBound;
+		int16_t tmp = lowBound;
 		lowBound = highBound;
 		highBound = tmp;
 	}
@@ -2283,8 +2283,8 @@ static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, I
 	while (attempts++ < 20) // Practical calls of this function search maximum 10 times, this is solely for safety.
 	{
 		// These need to be treated as signed, or situations where boundaries straddle 0 are a mess.
-		INT32 lowAngle = K_GetKartTurnValue(player, lowBound) << TICCMD_REDUCE;
-		INT32 highAngle = K_GetKartTurnValue(player, highBound) << TICCMD_REDUCE;
+		int32_t lowAngle = K_GetKartTurnValue(player, lowBound) << TICCMD_REDUCE;
+		int32_t highAngle = K_GetKartTurnValue(player, highBound) << TICCMD_REDUCE;
 
 		// EXIT CONDITION 1: Hopeless search, target angle isn't between boundaries at all.
 		if (lowAngle >= targetAngle)
@@ -2299,7 +2299,7 @@ static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, I
 		if (newBound == lowBound || newBound == highBound)
 			break;
 
-		INT32 newAngle = K_GetKartTurnValue(player, newBound) << TICCMD_REDUCE;
+		int32_t newAngle = K_GetKartTurnValue(player, newBound) << TICCMD_REDUCE;
 
 		angle_t lowError = abs(targetAngle - lowAngle);
 		angle_t highError = abs(targetAngle - highAngle);
@@ -2341,8 +2341,8 @@ static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, I
 static void P_UpdatePlayerAngle(player_t *player)
 {
 	angle_t angleChange = ANGLE_MAX;
-	UINT8 p = UINT8_MAX;
-	UINT8 i;
+	uint8_t p = UINT8_MAX;
+	uint8_t i;
 
 	for (i = 0; i <= splitscreen; i++)
 	{
@@ -2356,7 +2356,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 	player->botvars.predictionError = 0;
 
 	// Don't apply steering just yet. If we make a correction, we'll need to adjust it.
-	INT16 targetsteering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
+	int16_t targetsteering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, targetsteering) << TICCMD_REDUCE;
 
 	if (K_PlayerUsesBotMovement(player))
@@ -2382,8 +2382,8 @@ static void P_UpdatePlayerAngle(player_t *player)
 	else
 	{
 		// With a full slam on the analog stick, how far could we steer in either direction?
-		INT16 steeringRight = K_UpdateSteeringValue(player->steering, KART_FULLTURN);
-		INT16 steeringLeft = K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
+		int16_t steeringRight = K_UpdateSteeringValue(player->steering, KART_FULLTURN);
+		int16_t steeringLeft = K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
 
 #if 1
 		// When entering/leaving drifts, allow all legal turns with no easing.
@@ -2487,7 +2487,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 	else
 	{
 		player->aiming += (player->cmd.aiming << TICCMD_REDUCE);
-		player->aiming = G_ClipAimingPitch((INT32 *)&player->aiming);
+		player->aiming = G_ClipAimingPitch((int32_t *)&player->aiming);
 	}
 
 	if (p != UINT8_MAX)
@@ -2501,7 +2501,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 void P_MovePlayer(player_t *player)
 {
 	ticcmd_t *cmd;
-	//INT32 i;
+	//int32_t i;
 
 	fixed_t runspd;
 
@@ -2545,7 +2545,7 @@ void P_MovePlayer(player_t *player)
 	// Kart frames
 	if (player->icecube.frozen)
 	{
-		INT32 spd = FixedMul(player->mo->scale, FixedHypot(player->mo->momx, player->mo->momy)) / FRACUNIT;
+		int32_t spd = FixedMul(player->mo->scale, FixedHypot(player->mo->momx, player->mo->momy)) / FRACUNIT;
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 		player->drawangle -= max(2, spd / 6) * ANG1;
 		P_ResetPitchRoll(player->mo);
@@ -2554,10 +2554,10 @@ void P_MovePlayer(player_t *player)
 	{
 		fixed_t playerSpeed = P_AproxDistance(player->mo->momx, player->mo->momy); // maybe momz too?
 
-		const UINT8 minSpinSpeed = 4;
-		UINT8 spinSpeed = max(minSpinSpeed, min(8 + minSpinSpeed, (playerSpeed / player->mo->scale) * 2));
+		const uint8_t minSpinSpeed = 4;
+		uint8_t spinSpeed = max(minSpinSpeed, min(8 + minSpinSpeed, (playerSpeed / player->mo->scale) * 2));
 
-		UINT8 rollSpeed = max(1, min(8, player->tumbleHeight / 10));
+		uint8_t rollSpeed = max(1, min(8, player->tumbleHeight / 10));
 
 		if (player->pflags & PF_TUMBLELASTBOUNCE)
 			spinSpeed = 2;
@@ -2595,7 +2595,7 @@ void P_MovePlayer(player_t *player)
 		else if (player->turbine && (player->mo->flags & MF_NOCLIP))
 			timer = TICRATE;
 
-		UINT16 speed = timer / 8;
+		uint16_t speed = timer / 8;
 
 		if (speed > 8)
 			speed = 8;
@@ -2636,7 +2636,7 @@ void P_MovePlayer(player_t *player)
 			}
 			else if (player->drift != 0)
 			{
-				INT32 a = (ANGLE_45 / 5) * player->drift;
+				int32_t a = (ANGLE_45 / 5) * player->drift;
 
 				if (player->mo->eflags & MFE_UNDERWATER)
 					a /= 2;
@@ -2815,7 +2815,7 @@ static void P_DoZoomTube(player_t *player)
 static void P_NukeAllPlayers(player_t *player)
 {
 	mobj_t *mo;
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -2890,7 +2890,7 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 /*
 static void P_ConsiderAllGone(void)
 {
-	INT32 i, lastdeadplayer = -1, deadtimercheck = INT32_MAX;
+	int32_t i, lastdeadplayer = -1, deadtimercheck = INT32_MAX;
 
 	if (countdown2)
 		return;
@@ -3048,7 +3048,7 @@ fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
-void P_DemoCameraMovement(camera_t *cam, UINT8 num)
+void P_DemoCameraMovement(camera_t *cam, uint8_t num)
 {
 	extern consvar_t cv_freecam_speed;
 
@@ -3129,8 +3129,8 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	// slowly reset it to flat.
 	if ((cam->reset_aiming && moving) || ((cmd->buttons & BT_DRIFT) && !cam->button_a_held))
 	{
-		INT32 aiming = cam->aiming;
-		INT32 smooth = FixedMul(ANGLE_11hh / 4, FCOS(cam->aiming));
+		int32_t aiming = cam->aiming;
+		int32_t smooth = FixedMul(ANGLE_11hh / 4, FCOS(cam->aiming));
 
 		if (abs(smooth) < abs(aiming))
 		{
@@ -3151,14 +3151,14 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	{
 		// Extra restriction on this so it's not possible to
 		// distort the view too much.
-		if ((INT32)cam->aiming > ANGLE_45)
+		if ((int32_t)cam->aiming > ANGLE_45)
 			cam->aiming = ANGLE_45;
-		else if ((INT32)cam->aiming < -ANGLE_45)
+		else if ((int32_t)cam->aiming < -ANGLE_45)
 			cam->aiming = -ANGLE_45;
 	}
 	else
 	{
-		G_ClipAimingPitch((INT32 *)&cam->aiming);
+		G_ClipAimingPitch((int32_t *)&cam->aiming);
 	}
 
 	cam->momx = cam->momy = cam->momz = 0;
@@ -3190,7 +3190,7 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	cam->subsector = R_PointInSubsector(cam->x, cam->y);
 }
 
-void P_ToggleDemoCamera(UINT8 viewnum)
+void P_ToggleDemoCamera(uint8_t viewnum)
 {
 	camera_t *cam = &camera[viewnum];
 
@@ -3257,14 +3257,14 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 dboolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, dboolean resetcalled)
 {
 	static dboolean lookbackactive[MAXSPLITSCREENPLAYERS];
-	static UINT8 lookbackdelay[MAXSPLITSCREENPLAYERS];
-	UINT8 num;
+	static uint8_t lookbackdelay[MAXSPLITSCREENPLAYERS];
+	uint8_t num;
 	angle_t angle = 0, focusangle = 0, focusaiming = 0, pitch = 0;
 	fixed_t x, y, z, dist, distxy, distz, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight;
 	fixed_t pan, xpan, ypan;
-	INT32 camrotate;
+	int32_t camrotate;
 	dboolean camstill, lookback, lookbackdown;
-	UINT8 timeover;
+	uint8_t timeover;
 	mobj_t *mo;
 	fixed_t f1, f2;
 	fixed_t speed;
@@ -3365,7 +3365,7 @@ dboolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, dboolean resetca
 
 		if (leveltime < introtime) // Whoooshy camera!
 		{
-			const INT32 introcam = (introtime - leveltime);
+			const int32_t introcam = (introtime - leveltime);
 			camrotate += introcam*5;
 		}
 
@@ -3481,8 +3481,8 @@ dboolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, dboolean resetca
 		tic_t accel = max(loop->pan_accel, 1);
 		fixed_t f = (min(loop_out, accel) * FRACUNIT) / accel;
 
-		INT32 turn = AngleDeltaSigned(focusangle, player->loop.yaw - loop->pan);
-		INT32 turnspeed = FixedAngle(FixedMul(f, loop->pan_speed));
+		int32_t turn = AngleDeltaSigned(focusangle, player->loop.yaw - loop->pan);
+		int32_t turnspeed = FixedAngle(FixedMul(f, loop->pan_speed));
 
 		if (turn > turnspeed)
 		{
@@ -3508,12 +3508,12 @@ dboolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, dboolean resetca
 
 	if (timeover)
 	{
-		const INT32 timeovercam = max(0, min(180, (player->karthud[khud_timeovercam] - 2*TICRATE)*15));
+		const int32_t timeovercam = max(0, min(180, (player->karthud[khud_timeovercam] - 2*TICRATE)*15));
 		camrotate += timeovercam;
 	}
 	else if (leveltime < introtime && !(modeattacking && !demo.playback)) // Whoooshy camera! (don't do this in RA when we PLAY, still do it in replays however~)
 	{
-		const INT32 introcam = (introtime - leveltime);
+		const int32_t introcam = (introtime - leveltime);
 		camrotate += introcam*5;
 		camdist += (introcam * cameraScale)*3;
 		camheight += (introcam * cameraScale)*2;
@@ -3665,8 +3665,8 @@ dboolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, dboolean resetca
 		if (player->drift != 0)
 		{
 			fixed_t panmax = (dist/5);
-			INT32 driftval = K_GetKartDriftSparkValue(player);
-			INT32 dc = player->driftcharge;
+			int32_t driftval = K_GetKartDriftSparkValue(player);
+			int32_t dc = player->driftcharge;
 
 			if (dc > driftval || dc < 0)
 				dc = driftval;
@@ -3780,7 +3780,7 @@ dboolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, dboolean resetca
 
 	if (!camstill && !timeover) // Keep the view still...
 	{
-		G_ClipAimingPitch((INT32 *)&angle);
+		G_ClipAimingPitch((int32_t *)&angle);
 
 		if (camspeed == FRACUNIT)
 			thiscam->aiming = angle;
@@ -3867,7 +3867,7 @@ static void P_CalcPostImg(player_t *player, size_t viewnum)
 {
 	sector_t *sector = player->mo->subsector->sector;
 	postimg_t *type = &postimgtype[viewnum];
-	INT32 *param = &postimgparam[viewnum];
+	int32_t *param = &postimgparam[viewnum];
 	fixed_t pviewheight;
 	size_t i;
 
@@ -3991,9 +3991,9 @@ void P_DoTimeOver(player_t *player)
 	// actually, lets not do the below, because its a suitable penalty to not be granted the increase from remaining gradingpoints
 
 	// iterate through remaining gradingpoints and update gradingfactor and exp for current position, as if you crossed all of them
-	// const UINT32 numgradingpoints = K_GetNumGradingPoints();
-	// const UINT32 remaininggradingpoints = numgradingpoints - player->gradingpointnum;
-	// for (UINT32 i = 0; i < remaininggradingpoints; i++)
+	// const uint32_t numgradingpoints = K_GetNumGradingPoints();
+	// const uint32_t remaininggradingpoints = numgradingpoints - player->gradingpointnum;
+	// for (uint32_t i = 0; i < remaininggradingpoints; i++)
 	// {
 	// 	player->gradingfactor += K_GetGradingFactorAdjustment(player, player->gradingpointnum);
 	// 	player->gradingpointnum++;
@@ -4032,7 +4032,7 @@ void P_DoTimeOver(player_t *player)
 #if 0
 
 // Get an axis of a certain ID number
-static mobj_t *P_GetAxis(INT32 num)
+static mobj_t *P_GetAxis(int32_t num)
 {
 	thinker_t *th;
 	mobj_t *mobj;
@@ -4123,25 +4123,25 @@ static void P_ParabolicMove(mobj_t *mo, fixed_t x, fixed_t y, fixed_t z, fixed_t
 	/* gaysed script from me, based on Golden's sprite slope roll */
 
 // holy SHIT
-static INT32
+static int32_t
 Quaketilt (player_t *player)
 {
 	angle_t tilt;
 	fixed_t lowb; // this threshold for speed
 	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
-	INT32 delta = (INT32)( player->mo->angle - moma );
+	int32_t delta = (int32_t)( player->mo->angle - moma );
 	fixed_t speed;
 
 	dboolean sliptiding = K_Sliptiding(player);
 
-	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
+	if (delta == (int32_t)ANGLE_180)/* FUCK YOU HAVE A HACK */
 	{
 		return 0;
 	}
 
 	// Hi! I'm "not a math guy"!
 	if (abs(delta) > ANGLE_90)
-		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
+		delta = (int32_t)(( moma + ANGLE_180 ) - player->mo->angle );
 	if (P_IsObjectOnGround(player->mo))
 	{
 		if (sliptiding)
@@ -4174,7 +4174,7 @@ Quaketilt (player_t *player)
 static void
 DoABarrelRoll (player_t *player)
 {
-	UINT8 viewnum = R_GetViewNumber();
+	uint8_t viewnum = R_GetViewNumber();
 	camera_t *cam = &camera[viewnum];
 
 	angle_t slope;
@@ -4354,7 +4354,7 @@ void P_PlayerThink(player_t *player)
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
 	{
-		const INT16 threshold = 6*KART_FULLTURN/10;
+		const int16_t threshold = 6*KART_FULLTURN/10;
 		if (cmd->throwdir > threshold)
 		{
 			player->throwdir = 1;
@@ -4503,7 +4503,7 @@ void P_PlayerThink(player_t *player)
 				else
 				{
 					/* slows down a tiny bit as it approaches the next dot */
-					const UINT8 step = (((player->typing_duration + 15) & ~15) -
+					const uint8_t step = (((player->typing_duration + 15) & ~15) -
 							player->typing_duration) / 2;
 					player->typing_duration += max(step, 4);
 				}
@@ -4690,7 +4690,7 @@ void P_PlayerThink(player_t *player)
 
 	// Random skin / "ironman"
 	{
-		UINT32 skinflags = (demo.playback)
+		uint32_t skinflags = (demo.playback)
 			? demo.skinlist[demo.currentskinid[playeri]].flags
 			: skins[player->skin]->flags;
 
@@ -4744,7 +4744,7 @@ void P_PlayerThink(player_t *player)
 //
 void P_PlayerAfterThink(player_t *player)
 {
-	UINT8 i;
+	uint8_t i;
 
 #ifdef PARANOIA
 	if (!player->mo)
@@ -4901,10 +4901,10 @@ void P_PlayerAfterThink(player_t *player)
 		player->mo->pmomz = 0;
 }
 
-void P_IncrementGriefValue(player_t *player, UINT32 *grief, const UINT32 griefMax)
+void P_IncrementGriefValue(player_t *player, uint32_t *grief, const uint32_t griefMax)
 {
 	const fixed_t requireDist = (12*player->mo->scale) / FRACUNIT;
-	INT32 progress = player->distancetofinishprev - player->distancetofinish;
+	int32_t progress = player->distancetofinishprev - player->distancetofinish;
 	dboolean exceptions = (
 		player->flashing != 0
 		|| P_MobjIsFrozen(player->mo)
@@ -4940,8 +4940,8 @@ void P_IncrementGriefValue(player_t *player, UINT32 *grief, const UINT32 griefMa
 
 void P_CheckRaceGriefing(player_t *player, dboolean dopunishment)
 {
-	const UINT32 griefMax = cv_antigrief.value * TICRATE;
-	const UINT8 n = player - players;
+	const uint32_t griefMax = cv_antigrief.value * TICRATE;
+	const uint8_t n = player - players;
 
 	// Don't punish if the cvar is turned off,
 	// otherwise NOBODY would be able to play!
@@ -4984,8 +4984,8 @@ void P_CheckRaceGriefing(player_t *player, dboolean dopunishment)
 			else
 			{
 				// Send spectate
-				UINT8 buf[2];
-				UINT8 *p = buf;
+				uint8_t buf[2];
+				uint8_t *p = buf;
 
 				WRITEUINT8(p, n);
 				WRITEUINT8(p, 0);
@@ -5004,7 +5004,7 @@ void P_SetPlayerAngle(player_t *player, angle_t angle)
 
 void P_ForceLocalAngle(player_t *player, angle_t angle)
 {
-	UINT8 i;
+	uint8_t i;
 
 	angle = angle & ~UINT16_MAX;
 
@@ -5040,7 +5040,7 @@ dboolean P_PlayerFullbright(player_t *player)
 
 void P_ResetPlayerCheats(void)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

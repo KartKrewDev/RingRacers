@@ -54,7 +54,7 @@ static const char *NET_AddrToStr(IPaddress* sk)
 	return s;
 }
 
-static const char *NET_GetNodeAddress(INT32 node)
+static const char *NET_GetNodeAddress(int32_t node)
 {
 	if (!nodeconnected[node])
 		return NULL;
@@ -80,8 +80,8 @@ static dboolean NET_CanGet(void)
 
 static void NET_Get(void)
 {
-	INT32 mystatus;
-	INT32 newnode;
+	int32_t mystatus;
+	int32_t newnode;
 	mypacket.len = MAXPACKETLENGTH;
 	if (!NET_CanGet())
 	{
@@ -150,7 +150,7 @@ static void NET_Send(void)
 	}
 }
 
-static void NET_FreeNodenum(INT32 numnode)
+static void NET_FreeNodenum(int32_t numnode)
 {
 	// can't disconnect from self :)
 	if (!numnode)
@@ -230,10 +230,10 @@ static void NET_CloseSocket(void)
 	mysocket = NULL;
 }
 
-static SINT8 NET_NetMakeNodewPort(const char *hostname, const char *port)
+static int8_t NET_NetMakeNodewPort(const char *hostname, const char *port)
 {
-	INT32 newnode;
-	UINT16 portnum = sock_port;
+	int32_t newnode;
+	uint16_t portnum = sock_port;
 	IPaddress hostnameIP;
 
 	// retrieve portnum from address!
@@ -253,7 +253,7 @@ static SINT8 NET_NetMakeNodewPort(const char *hostname, const char *port)
 	}
 	newnode++;
 	M_Memcpy(&clientaddress[newnode],&hostnameIP,sizeof (IPaddress));
-	return (SINT8)newnode;
+	return (int8_t)newnode;
 }
 
 
@@ -293,7 +293,7 @@ static dboolean NET_OpenSocket(void)
 	return true;
 }
 
-static dboolean NET_Ban(INT32 node)
+static dboolean NET_Ban(int32_t node)
 {
 	if (numbans == MAXBANS)
 		return false;
@@ -349,7 +349,7 @@ dboolean I_InitNetwork(void)
 	if (M_CheckParm("-udpport"))
 	{
 		if (M_IsNextParm())
-			sock_port = (UINT16)atoi(M_GetNextParm());
+			sock_port = (uint16_t)atoi(M_GetNextParm());
 		else
 			sock_port = 0;
 	}
@@ -368,7 +368,7 @@ dboolean I_InitNetwork(void)
 		// particular number here.
 		// FIXME: for dedicated server, numnodes needs to be set to 0 upon start
 /*		if (M_IsNextParm())
-			doomcom->numnodes = (INT16)atoi(M_GetNextParm());
+			doomcom->numnodes = (int16_t)atoi(M_GetNextParm());
 		else */if (dedicated)
 			doomcom->numnodes = 0;
 		else

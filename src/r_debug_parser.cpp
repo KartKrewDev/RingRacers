@@ -30,7 +30,7 @@ char* detail::skip_alnum(char* p, int mode)
 
 char* detail::parse_highlight_arg(char* p)
 {
-	INT32 k;
+	int32_t k;
 	const HighlightDesc* key;
 
 	const auto old = static_cast<debugrender_highlight_t>(debugrender_highlight);

@@ -48,10 +48,10 @@ emblem_t emblemlocations[MAXEMBLEMS];
 unlockable_t unlockables[MAXUNLOCKABLES];
 
 // Highest used emblem ID
-INT32 numemblems = 0;
+int32_t numemblems = 0;
 
 // The challenge that will truly let the games begin.
-UINT16 gamestartchallenge = 600; // 601
+uint16_t gamestartchallenge = 600; // 601
 
 // Create a new gamedata_t, for start-up
 void M_NewGameDataStruct(void)
@@ -63,10 +63,10 @@ void M_NewGameDataStruct(void)
 
 void M_PopulateChallengeGrid(void)
 {
-	UINT16 i, j;
-	UINT16 numunlocks = 0, nummajorunlocks = 0, numempty = 0;
-	UINT16 selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
-	UINT16 majorcompact = 2;
+	uint16_t i, j;
+	uint16_t numunlocks = 0, nummajorunlocks = 0, numempty = 0;
+	uint16_t selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	uint16_t majorcompact = 2;
 
 	if (gamedata->challengegrid != NULL)
 	{
@@ -103,7 +103,7 @@ void M_PopulateChallengeGrid(void)
 	if (nummajorunlocks)
 	{
 		// Getting the number of 2-highs you can fit into two adjacent columns.
-		UINT16 majorpad = (CHALLENGEGRIDHEIGHT/2);
+		uint16_t majorpad = (CHALLENGEGRIDHEIGHT/2);
 		numempty = nummajorunlocks%majorpad;
 		majorpad = (nummajorunlocks+(majorpad-1))/majorpad;
 
@@ -121,7 +121,7 @@ void M_PopulateChallengeGrid(void)
 	if (numunlocks > numempty)
 	{
 		// Getting the number of extra columns to store normal unlocks
-		UINT16 temp = ((numunlocks - numempty) + (CHALLENGEGRIDHEIGHT-1))/CHALLENGEGRIDHEIGHT;
+		uint16_t temp = ((numunlocks - numempty) + (CHALLENGEGRIDHEIGHT-1))/CHALLENGEGRIDHEIGHT;
 		gamedata->challengegridwidth += temp;
 		majorcompact = 1;
 		//CONS_Printf("%d normal unlocks means %d extra entries, additional width of %d\n", numunlocks, (numunlocks - numempty), temp);
@@ -133,7 +133,7 @@ void M_PopulateChallengeGrid(void)
 	}
 
 	gamedata->challengegrid = Z_Malloc(
-		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT16)),
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(uint16_t)),
 		PU_STATIC, NULL);
 
 	if (!gamedata->challengegrid)
@@ -152,10 +152,10 @@ void M_PopulateChallengeGrid(void)
 		// You lose one from CHALLENGEGRIDHEIGHT because it is impossible to place a 2-high tile on the bottom row.
 		// You lose one from the width if it doesn't loop.
 		// You divide by two if the grid is so compacted that large tiles can't be in offset columns.
-		UINT16 numspots = (gamedata->challengegridwidth - (challengegridloops ? 0 : majorcompact))
+		uint16_t numspots = (gamedata->challengegridwidth - (challengegridloops ? 0 : majorcompact))
 				* ((CHALLENGEGRIDHEIGHT-1) / majorcompact);
 		// 0 is row, 1 is column
-		INT16 *quickcheck = Z_Calloc(sizeof(INT16) * 2 * numspots, PU_STATIC, NULL);
+		int16_t *quickcheck = Z_Calloc(sizeof(int16_t) * 2 * numspots, PU_STATIC, NULL);
 
 		// Prepare the easy-grab spots.
 		for (i = 0; i < numspots; i++)
@@ -167,7 +167,7 @@ void M_PopulateChallengeGrid(void)
 		// Place in random valid locations.
 		while (nummajorunlocks > 0 && numspots > 0)
 		{
-			INT16 row, col;
+			int16_t row, col;
 			j = M_RandomKey(numspots);
 			row = quickcheck[j * 2 + 0];
 			col =  quickcheck[j * 2 + 1];
@@ -218,7 +218,7 @@ quickcheckagain:
 #if (CHALLENGEGRIDHEIGHT == 4)
 		while (nummajorunlocks > 0)
 		{
-			UINT16 unlocktomoveup = MAXUNLOCKABLES;
+			uint16_t unlocktomoveup = MAXUNLOCKABLES;
 
 			j = gamedata->challengegridwidth-1;
 
@@ -259,7 +259,7 @@ quickcheckagain:
 
 		if (nummajorunlocks > 0)
 		{
-			UINT16 widthtoprint = gamedata->challengegridwidth;
+			uint16_t widthtoprint = gamedata->challengegridwidth;
 			Z_Free(gamedata->challengegrid);
 			gamedata->challengegrid = NULL;
 
@@ -319,9 +319,9 @@ quickcheckagain:
 
 void M_SanitiseChallengeGrid(void)
 {
-	UINT8 seen[MAXUNLOCKABLES];
-	UINT16 empty[MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
-	UINT16 i, j, numempty = 0;
+	uint8_t seen[MAXUNLOCKABLES];
+	uint16_t empty[MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	uint16_t i, j, numempty = 0;
 
 	if (gamedata->challengegrid == NULL)
 		return;
@@ -399,7 +399,7 @@ badgrid:
 	gamedata->challengegridwidth = 0;
 }
 
-static void M_ChallengeGridExtraDataAdjacencyRules(challengegridextradata_t *extradata, UINT16 adjacent)
+static void M_ChallengeGridExtraDataAdjacencyRules(challengegridextradata_t *extradata, uint16_t adjacent)
 {
 	// Adjacent unlocked tile, permit hint/general key skip.
 	if (gamedata->unlocked[adjacent] == true)
@@ -415,7 +415,7 @@ static void M_ChallengeGridExtraDataAdjacencyRules(challengegridextradata_t *ext
 
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 {
-	UINT16 i, j, num, id, tempid, work;
+	uint16_t i, j, num, id, tempid, work;
 	dboolean idchange;
 
 	if (gamedata->challengegrid == NULL)
@@ -596,10 +596,10 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 	}
 }
 
-void M_AddRawCondition(UINT16 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar)
+void M_AddRawCondition(uint16_t set, uint8_t id, conditiontype_t c, int32_t r, int16_t x1, int16_t x2, char *stringvar)
 {
 	condition_t *cond;
-	UINT32 num, wnum;
+	uint32_t num, wnum;
 
 	I_Assert(set < MAXCONDITIONSETS);
 
@@ -618,7 +618,7 @@ void M_AddRawCondition(UINT16 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x
 	cond[wnum].stringvar = stringvar;
 }
 
-void M_ClearConditionSet(UINT16 set)
+void M_ClearConditionSet(uint16_t set)
 {
 	if (conditionSets[set].numconditions)
 	{
@@ -637,7 +637,7 @@ void M_ClearConditionSet(UINT16 set)
 // Clear ALL secrets.
 void M_ClearStats(void)
 {
-	UINT16 i;
+	uint16_t i;
 
 	gamedata->totalplaytime = 0;
 	gamedata->totalnetgametime = 0;
@@ -683,7 +683,7 @@ void M_ClearStats(void)
 
 	// We retain exclusively the most important stuff from maps.
 
-	UINT8 restoremapvisited;
+	uint8_t restoremapvisited;
 	recordtimes_t restoretimeattack;
 	recordtimes_t restorespbattack;
 
@@ -735,7 +735,7 @@ void M_ClearSecrets(void)
 	gamedata->thisprisoneggpickup_cached = NULL;
 	gamedata->thisprisoneggpickupgrabbed = false;
 
-	UINT16 i, j;
+	uint16_t i, j;
 	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i])
@@ -784,10 +784,10 @@ void M_ClearSecrets(void)
 }
 
 // For lack of a better idea on where to put this
-static void M_Shuffle_UINT16(UINT16 *list, size_t len)
+static void M_Shuffle_UINT16(uint16_t *list, size_t len)
 {
 	size_t i;
-	UINT16 temp;
+	uint16_t temp;
 
 	while (len > 1)
 	{
@@ -809,14 +809,14 @@ static void M_AssignSpraycans(void)
 	// ~toast 180823 (committed a day later)
 
 	// Init ordered list of skincolors
-	UINT16 tempcanlist[MAXSKINCOLORS];
-	UINT16 listlen = 0, prependlen = 0;
+	uint16_t tempcanlist[MAXSKINCOLORS];
+	uint16_t listlen = 0, prependlen = 0;
 
-	UINT32 i, j;
+	uint32_t i, j;
 	conditionset_t *c;
 	condition_t *cn;
 
-	UINT16 bonustocanmap = 0;
+	uint16_t bonustocanmap = 0;
 
 	// First, turn outstanding bonuses into existing uncollected Spray Cans.
 	while (gamedata->gotspraycans < gamedata->numspraycans)
@@ -840,7 +840,7 @@ static void M_AssignSpraycans(void)
 		gamedata->gotspraycans++;
 	}
 
-	const UINT16 prependoffset = MAXSKINCOLORS-1;
+	const uint16_t prependoffset = MAXSKINCOLORS-1;
 
 	// None of the following accounts for cans being removed, only added...
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
@@ -946,10 +946,10 @@ static void M_AssignSpraycans(void)
 static void M_InitPrisonEggPickups(void)
 {
 	// Init ordered list of skincolors
-	UINT16 temppickups[MAXCONDITIONSETS];
-	UINT16 listlen = 0;
+	uint16_t temppickups[MAXCONDITIONSETS];
+	uint16_t listlen = 0;
 
-	UINT32 i, j;
+	uint32_t i, j;
 	conditionset_t *c;
 	condition_t *cn;
 
@@ -986,7 +986,7 @@ static void M_InitPrisonEggPickups(void)
 
 	gamedata->prisoneggpickups = Z_Realloc(
 		gamedata->prisoneggpickups,
-		sizeof(UINT16) * listlen,
+		sizeof(uint16_t) * listlen,
 		PU_STATIC,
 		NULL);
 
@@ -1002,7 +1002,7 @@ static void M_InitPrisonEggPickups(void)
 
 void M_UpdateNextPrisonEggPickup(void)
 {
-	UINT16 i, j, swap;
+	uint16_t i, j, swap;
 
 	conditionset_t *c;
 	condition_t *cn;
@@ -1063,7 +1063,7 @@ cacheprisoneggpickup:
 			CONS_Printf(" Invalid thisprisoneggpickup, rolling a random one...\n");
 #endif
 
-		UINT16 gettableprisoneggpickups = 0;
+		uint16_t gettableprisoneggpickups = 0;
 
 		for (i = 0; i < gamedata->numprisoneggpickups; i++)
 		{
@@ -1154,7 +1154,7 @@ cacheprisoneggpickup:
 
 static void M_PrecacheLevelLocks(void)
 {
-	UINT16 i, j;
+	uint16_t i, j;
 
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
@@ -1163,7 +1163,7 @@ static void M_PrecacheLevelLocks(void)
 			// SECRET_SKIN, SECRET_COLOR, SECRET_FOLLOWER are instantiated too late to use
 			case SECRET_MAP:
 			{
-				UINT16 map = M_UnlockableMapNum(&unlockables[i]);
+				uint16_t map = M_UnlockableMapNum(&unlockables[i]);
 				if (map < nummapheaders
 					&& mapheaderinfo[map])
 				{
@@ -1176,13 +1176,13 @@ static void M_PrecacheLevelLocks(void)
 
 			case SECRET_ALTMUSIC:
 			{
-				UINT16 map = M_UnlockableMapNum(&unlockables[i]);
+				uint16_t map = M_UnlockableMapNum(&unlockables[i]);
 				const char *tempstr = NULL;
 
 				if (map < nummapheaders
 					&& mapheaderinfo[map])
 				{
-					UINT8 greatersize = max(mapheaderinfo[map]->musname_size, mapheaderinfo[map]->encoremusname_size);
+					uint8_t greatersize = max(mapheaderinfo[map]->musname_size, mapheaderinfo[map]->encoremusname_size);
 					for (j = 1; j < greatersize; j++)
 					{
 						if (mapheaderinfo[map]->cache_muslock[j - 1] != MAXUNLOCKABLES)
@@ -1192,7 +1192,7 @@ static void M_PrecacheLevelLocks(void)
 
 						mapheaderinfo[map]->cache_muslock[j - 1] = i;
 
-						UINT8 positionid = 0;
+						uint8_t positionid = 0;
 
 						if (mapheaderinfo[map]->cup)
 						{
@@ -1224,7 +1224,7 @@ static void M_PrecacheLevelLocks(void)
 
 						if (tempstr == NULL)
 						{
-							UINT16 mapcheck;
+							uint16_t mapcheck;
 							for (mapcheck = 0; mapcheck < map; mapcheck++)
 							{
 								if (!mapheaderinfo[mapcheck] || mapheaderinfo[mapcheck]->cup != NULL)
@@ -1312,7 +1312,7 @@ void M_FinaliseGameData(void)
 
 void M_SetNetUnlocked(void)
 {
-	UINT16 i;
+	uint16_t i;
 
 	// Use your gamedata as baseline
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -1376,7 +1376,7 @@ void M_SetNetUnlocked(void)
 
 void M_UpdateConditionSetsPending(void)
 {
-	UINT32 i, j, k;
+	uint32_t i, j, k;
 	conditionset_t *c;
 	condition_t *cn;
 
@@ -1462,8 +1462,8 @@ void M_UpdateConditionSetsPending(void)
 
 dboolean M_NotFreePlay(void)
 {
-	UINT8 i;
-	UINT8 nump = 0;
+	uint8_t i;
+	uint8_t nump = 0;
 
 	if (K_CanChangeRules(true) == false)
 	{
@@ -1495,7 +1495,7 @@ dboolean M_NotFreePlay(void)
 	return false;
 }
 
-UINT16 M_CheckCupEmeralds(UINT8 difficulty)
+uint16_t M_CheckCupEmeralds(uint8_t difficulty)
 {
 	if (difficulty == 0)
 		return 0;
@@ -1504,7 +1504,7 @@ UINT16 M_CheckCupEmeralds(UINT8 difficulty)
 		difficulty = KARTGP_MASTER;
 
 	cupheader_t *cup;
-	UINT16 ret = 0, seen = 0;
+	uint16_t ret = 0, seen = 0;
 
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
@@ -1516,7 +1516,7 @@ UINT16 M_CheckCupEmeralds(UINT8 difficulty)
 		if (cup->emeraldnum == 0 || cup->emeraldnum > 14)
 			continue;
 
-		UINT16 emerald = 1<<(cup->emeraldnum-1);
+		uint16_t emerald = 1<<(cup->emeraldnum-1);
 
 		// Only count the first reference.
 		if (seen & emerald)
@@ -1549,8 +1549,8 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 		{
 			if (cn->extrainfo1 == GDGT_MAX)
 			{
-				UINT8 i;
-				UINT32 sum = 0;
+				uint8_t i;
+				uint32_t sum = 0;
 
 				for (i = 0; i < GDGT_MAX; i++)
 				{
@@ -1575,7 +1575,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_MAPSPBATTACK: // Requires map x to be beaten in SPB Attack
 		case UC_MAPMYSTICMELODY: // Mystic Melody on map x's Ancient Shrine
 		{
-			UINT8 mvtype = MV_VISITED;
+			uint8_t mvtype = MV_VISITED;
 			if (cn->type == UC_MAPBEATEN)
 				mvtype = MV_BEATEN;
 			else if (cn->type == UC_MAPENCORE)
@@ -1596,18 +1596,18 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 			if (cn->requirement < 0)
 				return false;
 
-			return (skins[cn->requirement]->records.wins >= (UINT32)cn->extrainfo1);
+			return (skins[cn->requirement]->records.wins >= (uint32_t)cn->extrainfo1);
 
 		case UC_ALLCUPRECORDS:
 		{
 			if (gamestate == GS_LEVEL)
 				return false; // this one could be laggy with many cups available
 
-			INT32 requiredid = cn->requirement;
+			int32_t requiredid = cn->requirement;
 			if (requiredid == -1) // stop at all basegame cup
 				requiredid = basenumkartcupheaders;
 
-			UINT8 difficulty = cn->extrainfo2;
+			uint8_t difficulty = cn->extrainfo2;
 			if (difficulty > KARTGP_MASTER)
 				difficulty = KARTGP_MASTER;
 
@@ -1638,7 +1638,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
 		{
-			UINT16 ret = 0;
+			uint16_t ret = 0;
 
 			if (gamestate == GS_LEVEL)
 				return false; // this one could be laggy with many cups available
@@ -1656,7 +1656,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (M_GotEnoughMedals(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
-			INT32 i = cn->requirement-1;
+			int32_t i = cn->requirement-1;
 			if (i >= 0 && i < numemblems && emblemlocations[i].type != ET_NONE)
 				return gamedata->collected[cn->requirement-1];
 			return false;
@@ -1675,7 +1675,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 			if (netgame || demo.playback || Playing())
 				return false;
 
-			UINT16 i, unlocked = cn->extrainfo2, total = 0;
+			uint16_t i, unlocked = cn->extrainfo2, total = 0;
 
 			// Special case for maps
 			if (cn->extrainfo1 == SECRET_MAP)
@@ -1774,7 +1774,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 			|| cn->requirement >= numskincolors)
 				return false;
 
-			UINT16 can_id = skincolors[cn->requirement].cache_spraycan;
+			uint16_t can_id = skincolors[cn->requirement].cache_spraycan;
 
 			if (can_id >= gamedata->numspraycans)
 				return false;
@@ -1919,7 +1919,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 				return false;
 			}
 
-			UINT8 i;
+			uint8_t i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] == false)
@@ -2055,7 +2055,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 				return (((player->roundconditions.hittrackhazard[0] & 1) == 1) == (cn->requirement == 1));
 			}
 
-			INT16 requiredlap = cn->extrainfo1;
+			int16_t requiredlap = cn->extrainfo1;
 
 			if (requiredlap < 0)
 			{
@@ -2072,7 +2072,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 			if (player->latestlap <= (requiredlap - cn->requirement))
 				return false;
 
-			UINT8 requiredbit = 1<<(requiredlap & 7);
+			uint8_t requiredbit = 1<<(requiredlap & 7);
 			requiredlap /= 8;
 
 			if (cn->extrainfo1 == -1)
@@ -2097,7 +2097,7 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 				if (requiredbit != (1<<7))
 				{
 					// Last bit MAYBE not needed, POSITION doesn't count.
-					const UINT8 finalbit = (requiredlap == 0) ? 1 : 0;
+					const uint8_t finalbit = (requiredlap == 0) ? 1 : 0;
 					while (requiredbit != finalbit)
 					{
 						if (!(player->roundconditions.hittrackhazard[requiredlap] & requiredbit))
@@ -2143,8 +2143,8 @@ dboolean M_CheckCondition(condition_t *cn, player_t *player)
 
 static dboolean M_CheckConditionSet(conditionset_t *c, player_t *player)
 {
-	UINT32 i;
-	UINT32 lastID = 0;
+	uint32_t i;
+	uint32_t lastID = 0;
 	condition_t *cn;
 	dboolean achievedSoFar = true;
 
@@ -2181,7 +2181,7 @@ static dboolean M_CheckConditionSet(conditionset_t *c, player_t *player)
 	return achievedSoFar;
 }
 
-static char *M_BuildConditionTitle(UINT16 map)
+static char *M_BuildConditionTitle(uint16_t map)
 {
 	char *title, *ref;
 
@@ -2217,7 +2217,7 @@ static char *M_BuildConditionTitle(UINT16 map)
 	return title;
 }
 
-static const char *M_GetConditionCharacter(INT32 skin, dboolean directlyrequires)
+static const char *M_GetConditionCharacter(int32_t skin, dboolean directlyrequires)
 {
 	// First we check for direct unlock.
 	dboolean permitname = R_SkinUsable(-1, skin, false);
@@ -2227,7 +2227,7 @@ static const char *M_GetConditionCharacter(INT32 skin, dboolean directlyrequires
 		// If there's no direct unlock, we CAN check for if the
 		// character is the Rival of somebody we DO have unlocked...
 
-		UINT8 i, j;
+		uint8_t i, j;
 		for (i = 0; i < numskins; i++)
 		{
 			if (i == skin)
@@ -2239,7 +2239,7 @@ static const char *M_GetConditionCharacter(INT32 skin, dboolean directlyrequires
 			for (j = 0; j < SKINRIVALS; j++)
 			{
 				const char *rivalname = skins[i]->rivals[j];
-				INT32 rivalnum = R_SkinAvailableEx(rivalname, false);
+				int32_t rivalnum = R_SkinAvailableEx(rivalname, false);
 
 				if (rivalnum != skin)
 					continue;
@@ -2265,7 +2265,7 @@ static const char *M_GetConditionCharacter(INT32 skin, dboolean directlyrequires
 		: "???";
 }
 
-static const char *M_GetNthType(UINT8 position)
+static const char *M_GetNthType(uint8_t position)
 {
 	if (position == 1)
 		return "st";
@@ -2279,7 +2279,7 @@ static const char *M_GetNthType(UINT8 position)
 // See also M_CheckCondition
 static const char *M_GetConditionString(condition_t *cn)
 {
-	INT32 i;
+	int32_t i;
 	char *title = NULL;
 	const char *work = NULL;
 
@@ -2496,7 +2496,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
-			INT32 checkLevel = NEXTMAP_INVALID;
+			int32_t checkLevel = NEXTMAP_INVALID;
 
 			i = cn->requirement-1;
 
@@ -2667,7 +2667,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			|| cn->requirement >= numskincolors)
 				return va("INVALID SPRAYCAN COLOR \"%d\"", cn->requirement);
 
-			UINT16 can_id = skincolors[cn->requirement].cache_spraycan;
+			uint16_t can_id = skincolors[cn->requirement].cache_spraycan;
 
 			if (can_id >= gamedata->numspraycans)
 				return va("INVALID SPRAYCAN ID \"%d:%u\"",
@@ -3027,7 +3027,7 @@ static const char *M_GetConditionString(condition_t *cn)
 	return va("UNSUPPORTED CONDITION \"%d\"", cn->type);
 }
 
-char *M_BuildConditionSetString(UINT16 unlockid)
+char *M_BuildConditionSetString(uint16_t unlockid)
 {
 	condition_t *cn;
 	size_t len = 1024, worklen;
@@ -3057,8 +3057,8 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 	struct conditionset_traverser_s {
 		conditionset_t *c;
 		size_t i;
-		UINT32 lastID;
-		UINT8 stopasap;
+		uint32_t lastID;
+		uint8_t stopasap;
 	};
 
 	struct conditionset_traverser_s current = {0};
@@ -3206,7 +3206,7 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 
 static dboolean M_CheckUnlockConditions(player_t *player)
 {
-	UINT32 i;
+	uint32_t i;
 	conditionset_t *c;
 	dboolean ret = false;
 
@@ -3227,7 +3227,7 @@ static dboolean M_CheckUnlockConditions(player_t *player)
 
 dboolean M_UpdateUnlockablesAndExtraEmblems(dboolean loud, dboolean doall)
 {
-	UINT16 i = 0, response = 0, newkeys = 0;
+	uint16_t i = 0, response = 0, newkeys = 0;
 
 	if (!gamedata)
 	{
@@ -3338,9 +3338,9 @@ dboolean M_UpdateUnlockablesAndExtraEmblems(dboolean loud, dboolean doall)
 	return false;
 }
 
-UINT16 M_GetNextAchievedUnlock(dboolean canskipchaokeys)
+uint16_t M_GetNextAchievedUnlock(dboolean canskipchaokeys)
 {
-	UINT16 i;
+	uint16_t i;
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
@@ -3397,19 +3397,19 @@ UINT16 M_GetNextAchievedUnlock(dboolean canskipchaokeys)
 }
 
 // Emblem unlocking shit
-UINT16 M_CheckLevelEmblems(void)
+uint16_t M_CheckLevelEmblems(void)
 {
-	INT32 i;
-	INT32 valToReach;
-	INT16 tag;
-	INT16 levelnum;
+	int32_t i;
+	int32_t valToReach;
+	int16_t tag;
+	int16_t levelnum;
 	dboolean res;
-	UINT16 somethingUnlocked = 0;
+	uint16_t somethingUnlocked = 0;
 
 	// Update Score, Time, Rings emblems
 	for (i = 0; i < numemblems; ++i)
 	{
-		INT32 checkLevel;
+		int32_t checkLevel;
 
 		if (emblemlocations[i].type < ET_TIME || gamedata->collected[i])
 			continue;
@@ -3458,18 +3458,18 @@ UINT16 M_CheckLevelEmblems(void)
 	return somethingUnlocked;
 }
 
-UINT16 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separate print when awarding emblems and it's sorta different enough.
+uint16_t M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separate print when awarding emblems and it's sorta different enough.
 {
-	INT32 i;
-	INT32 embtype;
-	INT16 levelnum;
+	int32_t i;
+	int32_t embtype;
+	int16_t levelnum;
 	dboolean res;
-	UINT16 somethingUnlocked = 0;
-	UINT8 flags;
+	uint16_t somethingUnlocked = 0;
+	uint8_t flags;
 
 	for (i = 0; i < numemblems; ++i)
 	{
-		INT32 checkLevel;
+		int32_t checkLevel;
 
 		if (emblemlocations[i].type != ET_MAP || gamedata->collected[i])
 			continue;
@@ -3544,7 +3544,7 @@ dboolean M_GameAboutToStart(void)
 	);
 }
 
-dboolean M_CheckNetUnlockByID(UINT16 unlockid)
+dboolean M_CheckNetUnlockByID(uint16_t unlockid)
 {
 	if (unlockid >= MAXUNLOCKABLES
 		|| !unlockables[unlockid].conditionset)
@@ -3560,9 +3560,9 @@ dboolean M_CheckNetUnlockByID(UINT16 unlockid)
 	return gamedata->unlocked[unlockid];
 }
 
-dboolean M_SecretUnlocked(INT32 type, dboolean local)
+dboolean M_SecretUnlocked(int32_t type, dboolean local)
 {
-	INT32 i;
+	int32_t i;
 
 #if 0
 	(void)type;
@@ -3595,7 +3595,7 @@ dboolean M_CupLocked(cupheader_t *cup)
 		return false;
 
 #if 0 // perfect uncached behaviour
-	UINT16 i;
+	uint16_t i;
 
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
@@ -3640,7 +3640,7 @@ dboolean M_CupSecondRowLocked(void)
 	return true;
 }
 
-dboolean M_MapLocked(UINT16 mapnum)
+dboolean M_MapLocked(uint16_t mapnum)
 {
 	// No skipping over any part of your marathon.
 	if (marathonmode)
@@ -3658,7 +3658,7 @@ dboolean M_MapLocked(UINT16 mapnum)
 	}
 
 #if 0 // perfect uncached behaviour
-	UINT16 i;
+	uint16_t i;
 
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
@@ -3676,9 +3676,9 @@ dboolean M_MapLocked(UINT16 mapnum)
 	return false;
 }
 
-INT32 M_CountMedals(dboolean all, dboolean extraonly)
+int32_t M_CountMedals(dboolean all, dboolean extraonly)
 {
-	INT32 found = 0, i;
+	int32_t found = 0, i;
 	if (!extraonly)
 	{
 		for (i = 0; i < numemblems; ++i)
@@ -3726,9 +3726,9 @@ INT32 M_CountMedals(dboolean all, dboolean extraonly)
 
 // Theoretically faster than using M_CountMedals()
 // Stops when it reaches the target number of medals.
-dboolean M_GotEnoughMedals(INT32 number)
+dboolean M_GotEnoughMedals(int32_t number)
 {
-	INT32 i, gottenmedals = 0;
+	int32_t i, gottenmedals = 0;
 	for (i = 0; i < numemblems; ++i)
 	{
 		// Not init in SOC
@@ -3768,10 +3768,10 @@ dboolean M_GotEnoughMedals(INT32 number)
 	return false;
 }
 
-dboolean M_GotLowEnoughTime(INT32 tictime)
+dboolean M_GotLowEnoughTime(int32_t tictime)
 {
-	INT32 curtics = 0;
-	INT32 i;
+	int32_t curtics = 0;
+	int32_t i;
 
 	for (i = 0; i < nummapheaders; ++i)
 	{
@@ -3787,7 +3787,7 @@ dboolean M_GotLowEnoughTime(INT32 tictime)
 }
 
 // Gets the skin number for a SECRET_SKIN unlockable.
-INT32 M_UnlockableSkinNum(unlockable_t *unlock)
+int32_t M_UnlockableSkinNum(unlockable_t *unlock)
 {
 	if (unlock->type != SECRET_SKIN)
 	{
@@ -3797,7 +3797,7 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock)
 
 	if (unlock->stringVar && unlock->stringVar[0])
 	{
-		INT32 skinnum;
+		int32_t skinnum;
 
 		if (unlock->stringVarCache != -1)
 		{
@@ -3829,7 +3829,7 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock)
 }
 
 // Gets the skin number for a SECRET_FOLLOWER unlockable.
-INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
+int32_t M_UnlockableFollowerNum(unlockable_t *unlock)
 {
 	if (unlock->type != SECRET_FOLLOWER)
 	{
@@ -3839,7 +3839,7 @@ INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
 
 	if (unlock->stringVar && unlock->stringVar[0])
 	{
-		INT32 skinnum;
+		int32_t skinnum;
 		size_t i;
 		char testname[SKINNAMESIZE+1];
 
@@ -3876,7 +3876,7 @@ INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
 	return -1;
 }
 
-INT32 M_UnlockableColorNum(unlockable_t *unlock)
+int32_t M_UnlockableColorNum(unlockable_t *unlock)
 {
 	if (unlock->type != SECRET_COLOR)
 	{
@@ -3915,7 +3915,7 @@ INT32 M_UnlockableColorNum(unlockable_t *unlock)
 cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 {
 	cupheader_t *cup = kartcupheaders;
-	INT16 val = unlock->variable-1;
+	int16_t val = unlock->variable-1;
 
 	if (unlock->type != SECRET_CUP)
 	{
@@ -3928,7 +3928,7 @@ cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 		if (unlock->stringVarCache == -1)
 		{
 			// Get the cup from the string.
-			UINT32 hash = quickncasehash(unlock->stringVar, MAXCUPNAME);
+			uint32_t hash = quickncasehash(unlock->stringVar, MAXCUPNAME);
 			while (cup)
 			{
 				if (hash == cup->namehash && !strcmp(cup->name, unlock->stringVar))
@@ -3961,7 +3961,7 @@ cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 	return cup;
 }
 
-UINT16 M_UnlockableMapNum(unlockable_t *unlock)
+uint16_t M_UnlockableMapNum(unlockable_t *unlock)
 {
 	if (unlock->type != SECRET_MAP && unlock->type != SECRET_ALTMUSIC)
 	{
@@ -3973,7 +3973,7 @@ UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 	{
 		if (unlock->stringVarCache == -1)
 		{
-			INT32 result = G_MapNumber(unlock->stringVar);
+			int32_t result = G_MapNumber(unlock->stringVar);
 
 			if (result >= nummapheaders)
 				return result;
@@ -3991,11 +3991,11 @@ UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 // Misc Emblem shit
 // ----------------
 
-UINT16 M_EmblemMapNum(emblem_t *emblem)
+uint16_t M_EmblemMapNum(emblem_t *emblem)
 {
 	if (emblem->levelCache == NEXTMAP_INVALID && emblem->level)
 	{
-		UINT16 result = G_MapNumber(emblem->level);
+		uint16_t result = G_MapNumber(emblem->level);
 
 		if (result >= nummapheaders)
 			return result;
@@ -4012,10 +4012,10 @@ UINT16 M_EmblemMapNum(emblem_t *emblem)
 // Pass -1 mapnum to continue from last emblem.
 // NULL if not found.
 // note that this goes in reverse!!
-emblem_t *M_GetLevelEmblems(INT32 mapnum)
+emblem_t *M_GetLevelEmblems(int32_t mapnum)
 {
-	static INT32 map = -1;
-	static INT32 i = -1;
+	static int32_t map = -1;
+	static int32_t i = -1;
 
 	if (mapnum > 0)
 	{
@@ -4028,7 +4028,7 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 		if (emblemlocations[i].type == ET_NONE)
 			continue;
 
-		INT32 checkLevel = M_EmblemMapNum(&emblemlocations[i]);
+		int32_t checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
@@ -4073,9 +4073,9 @@ dboolean M_UseAlternateTitleScreen(void)
 	return cv_alttitle.value && M_SecretUnlocked(SECRET_ALTTITLE, true);
 }
 
-INT32 M_GameDataGameType(INT32 lgametype, dboolean lbattleprisons)
+int32_t M_GameDataGameType(int32_t lgametype, dboolean lbattleprisons)
 {
-	INT32 playtimemode = GDGT_CUSTOM;
+	int32_t playtimemode = GDGT_CUSTOM;
 	if (lgametype == GT_RACE)
 		playtimemode = GDGT_RACE;
 	else if (lgametype == GT_BATTLE)

@@ -30,12 +30,12 @@ static const char *const search_opt[] = {
 // 0 - normal, no interruptions
 // 1 - stop search through current block
 // 2 - stop search completely
-typedef UINT8 (*blockmap_func)(lua_State *, INT32, INT32, mobj_t *);
+typedef uint8_t (*blockmap_func)(lua_State *, int32_t, int32_t, mobj_t *);
 
 static dboolean blockfuncerror = false; // errors should only print once per search blockmap call
 
 // Helper function for "objects" search
-static UINT8 lib_searchBlockmap_Objects(lua_State *L, INT32 x, INT32 y, mobj_t *thing)
+static uint8_t lib_searchBlockmap_Objects(lua_State *L, int32_t x, int32_t y, mobj_t *thing)
 {
 	mobj_t *mobj, *bnext = NULL;
 
@@ -79,10 +79,10 @@ static UINT8 lib_searchBlockmap_Objects(lua_State *L, INT32 x, INT32 y, mobj_t *
 }
 
 // Helper function for "lines" search
-static UINT8 lib_searchBlockmap_Lines(lua_State *L, INT32 x, INT32 y, mobj_t *thing)
+static uint8_t lib_searchBlockmap_Lines(lua_State *L, int32_t x, int32_t y, mobj_t *thing)
 {
-	INT32 offset;
-	const INT32 *list; // Big blockmap
+	int32_t offset;
+	const int32_t *list; // Big blockmap
 	polymaplink_t *plink; // haleyjd 02/22/06
 	line_t *ld;
 
@@ -171,9 +171,9 @@ static UINT8 lib_searchBlockmap_Lines(lua_State *L, INT32 x, INT32 y, mobj_t *th
 }
 
 // Helper function for "polyobjs" search
-static UINT8 lib_searchBlockmap_PolyObjs(lua_State *L, INT32 x, INT32 y, mobj_t *thing)
+static uint8_t lib_searchBlockmap_PolyObjs(lua_State *L, int32_t x, int32_t y, mobj_t *thing)
 {
-	INT32 offset;
+	int32_t offset;
 	polymaplink_t *plink; // haleyjd 02/22/06
 
 	if (x < 0 || y < 0 || x >= bmapwidth || y >= bmapheight)
@@ -229,10 +229,10 @@ static int lib_searchBlockmap(lua_State *L)
 	int searchtype = luaL_checkoption(L, 1, "objects", search_opt);
 	int n;
 	mobj_t *mobj;
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t xl, xh, yl, yh, bx, by;
 	fixed_t x1, x2, y1, y2;
 	dboolean retval = true;
-	UINT8 funcret = 0;
+	uint8_t funcret = 0;
 	blockmap_func searchFunc;
 
 	lua_remove(L, 1); // remove searchtype, stack is now function, mobj, [x1, x2, y1, y2]

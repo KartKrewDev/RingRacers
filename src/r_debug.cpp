@@ -25,7 +25,7 @@
 
 using namespace srb2::r_debug;
 
-UINT32 debugrender_highlight;
+uint32_t debugrender_highlight;
 
 void R_CheckDebugHighlight(debugrender_highlight_t k)
 {
@@ -39,9 +39,9 @@ void R_CheckDebugHighlight(debugrender_highlight_t k)
 	}
 }
 
-INT32 R_AdjustLightLevel(INT32 light)
+int32_t R_AdjustLightLevel(int32_t light)
 {
-	constexpr INT32 kRangeCoarse = (LIGHTLEVELS - 1);
+	constexpr int32_t kRangeCoarse = (LIGHTLEVELS - 1);
 	constexpr fixed_t kRange = kRangeCoarse * FRACUNIT;
 
 	if (!debugrender_highlight && cv_debugrender_contrast.value == 0)
@@ -87,7 +87,7 @@ INT32 R_AdjustLightLevel(INT32 light)
 	return light / FRACUNIT;
 }
 
-UINT8 R_DebugLineColor(const line_t *ld)
+uint8_t R_DebugLineColor(const line_t *ld)
 {
 	const bool alt = (I_GetTime() % 70 < 35);
 

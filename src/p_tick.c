@@ -58,7 +58,7 @@
 tic_t leveltime;
 dboolean thinkersCompleted;
 
-UINT32 thinker_era = 0;
+uint32_t thinker_era = 0;
 
 static dboolean g_freezeCheat;
 static dboolean g_freezeLevel;
@@ -117,13 +117,13 @@ dboolean P_MobjIsFrozen(mobj_t *mobj)
 	return mobj->frozen;
 }
 
-INT32 P_AltFlip(INT32 n, tic_t tics)
+int32_t P_AltFlip(int32_t n, tic_t tics)
 {
 	return leveltime % (2 * tics) < tics ? n : -(n);
 }
 
 // Please read p_tick.h
-INT32 P_LerpFlip(INT32 n, tic_t tics)
+int32_t P_LerpFlip(int32_t n, tic_t tics)
 {
 	const tic_t w = 2 * tics;
 
@@ -143,8 +143,8 @@ thinker_t thlist[NUM_THINKERLISTS];
 
 void Command_Numthinkers_f(void)
 {
-	INT32 num;
-	INT32 count = 0;
+	int32_t num;
+	int32_t count = 0;
 	actionf_p1 action;
 	thinker_t *think;
 	thinklistnum_t start = 0;
@@ -220,7 +220,7 @@ void Command_CountMobjs_f(void)
 {
 	thinker_t *th;
 	mobjtype_t i;
-	INT32 count;
+	int32_t count;
 
 	if (G_GamestateUsesLevel() == false)
 	{
@@ -294,7 +294,7 @@ void Command_CountMobjs_f(void)
 //
 void P_InitThinkers(void)
 {
-	UINT8 i;
+	uint8_t i;
 
 	P_InvalidateThinkersWithoutInit();
 
@@ -412,7 +412,7 @@ void P_RemoveThinkerDelayed(thinker_t *thinker)
 		// the removed mobj is removed after the other object
 		// thinks, the reference management is delayed by one
 		// tic (or two?)
-		const UINT8 delay = 2;
+		const uint8_t delay = 2;
 
 		if (thinker->debug_time > leveltime)
 		{
@@ -594,13 +594,13 @@ static void P_RunThinkers(void)
 
 static inline void P_DeviceRumbleTick(void)
 {
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i <= splitscreen; i++)
 	{
 		player_t *player = &players[g_localplayers[i]];
-		UINT16 low = 0;
-		UINT16 high = 0;
+		uint16_t low = 0;
+		uint16_t high = 0;
 
 		if (player->mo != NULL && !player->exiting)
 		{
@@ -625,7 +625,7 @@ static inline void P_DeviceRumbleTick(void)
 
 void P_RunChaseCameras(void)
 {
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i <= r_splitscreen; i++)
 	{
@@ -676,7 +676,7 @@ static fixed_t P_GetDarkness(tic_t start, tic_t end)
 static void P_TickDarkness(void)
 {
 	const fixed_t globalValue = P_GetDarkness(g_darkness.start, g_darkness.end);
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i <= r_splitscreen; ++i)
 	{
@@ -691,10 +691,10 @@ static void P_TickMusicFade(void)
 {
 	if (leveltime >= g_musicfade.start && leveltime <= g_musicfade.end)
 	{
-		INT32 half = (g_musicfade.end - g_musicfade.start) / 2;
-		INT32 fade = max(1, g_musicfade.fade);
-		INT32 mid = half - fade;
-		INT32 t = abs((INT32)leveltime - (INT32)(g_musicfade.start + half));
+		int32_t half = (g_musicfade.end - g_musicfade.start) / 2;
+		int32_t fade = max(1, g_musicfade.fade);
+		int32_t mid = half - fade;
+		int32_t t = abs((int32_t)leveltime - (int32_t)(g_musicfade.start + half));
 		Music_LevelVolume((max(t, mid) - mid) * 100 / fade);
 	}
 	else if (!g_musicfade.ticked)
@@ -718,7 +718,7 @@ static void P_StartLevelMusic(void)
 void P_Ticker(dboolean run)
 {
 	quake_t *quake = NULL;
-	INT32 i;
+	int32_t i;
 
 	thinkersCompleted = false;
 
@@ -857,7 +857,7 @@ void P_Ticker(dboolean run)
 
 			if (gametype != GT_TUTORIAL)
 			{
-				INT32 mode = M_GameDataGameType(gametype, battleprisons);
+				int32_t mode = M_GameDataGameType(gametype, battleprisons);
 
 				// Gamedata mode playtime
 				if (mode >= 0 && mode < GDGT_MAX)
@@ -937,7 +937,7 @@ void P_Ticker(dboolean run)
 		// Run any "after all the other thinkers" stuff
 		{
 			player_t *finishingPlayers[MAXPLAYERS];
-			UINT8 numingame = 0, numFinishingPlayers = 0;
+			uint8_t numingame = 0, numFinishingPlayers = 0;
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{

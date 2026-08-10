@@ -23,7 +23,7 @@ GLMipmap_t *current_brightmap = NULL;
 dboolean currently_batching = false;
 
 FOutVector* finalVertexArray = NULL;// contains subset of sorted vertices and texture coordinates to be sent to gpu
-UINT32* finalVertexIndexArray = NULL;// contains indexes for glDrawElements, taking into account fan->triangles conversion
+uint32_t* finalVertexIndexArray = NULL;// contains indexes for glDrawElements, taking into account fan->triangles conversion
 //     NOTE have this alloced as 3x finalVertexArray size
 int finalVertexArrayAllocSize = 65536;
 //GLubyte* colorArray = NULL;// contains color data to be sent to gpu, if needed
@@ -33,7 +33,7 @@ int finalVertexArrayAllocSize = 65536;
 
 PolygonArrayEntry* polygonArray = NULL;// contains the polygon data from DrawPolygon, waiting to be processed
 int polygonArraySize = 0;
-UINT32* polygonIndexArray = NULL;// contains sorting pointers for polygonArray
+uint32_t* polygonIndexArray = NULL;// contains sorting pointers for polygonArray
 int polygonArrayAllocSize = 65536;
 
 FOutVector* unsortedVertexArray = NULL;// contains unsorted vertices and texture coordinates from DrawPolygon
@@ -51,9 +51,9 @@ void HWR_StartBatching(void)
 	if (!finalVertexArray)
 	{
 		finalVertexArray = (FOutVector *)malloc(finalVertexArrayAllocSize * sizeof(FOutVector));
-		finalVertexIndexArray = (UINT32 *)malloc(finalVertexArrayAllocSize * 3 * sizeof(UINT32));
+		finalVertexIndexArray = (uint32_t *)malloc(finalVertexArrayAllocSize * 3 * sizeof(uint32_t));
 		polygonArray = (PolygonArrayEntry *)malloc(polygonArrayAllocSize * sizeof(PolygonArrayEntry));
-		polygonIndexArray = (UINT32 *)malloc(polygonArrayAllocSize * sizeof(UINT32));
+		polygonIndexArray = (uint32_t *)malloc(polygonArrayAllocSize * sizeof(uint32_t));
 		unsortedVertexArray = (FOutVector *)malloc(unsortedVertexArrayAllocSize * sizeof(FOutVector));
 	}
 
@@ -110,7 +110,7 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 			polygonArray = new_array;
 			// also need to redo the index array, dont need to copy it though
 			free(polygonIndexArray);
-			polygonIndexArray = (UINT32 *)malloc(polygonArrayAllocSize * sizeof(UINT32));
+			polygonIndexArray = (uint32_t *)malloc(polygonArrayAllocSize * sizeof(uint32_t));
 		}
 
 		while (unsortedVertexArraySize + (int)iNumPts > unsortedVertexArrayAllocSize)
@@ -154,9 +154,9 @@ static int comparePolygons(const void *p1, const void *p2)
 	PolygonArrayEntry* poly1 = &polygonArray[index1];
 	PolygonArrayEntry* poly2 = &polygonArray[index2];
 	int diff;
-	INT64 diff64;
-	UINT32 downloaded1 = 0;
-	UINT32 downloaded2 = 0;
+	int64_t diff64;
+	uint32_t downloaded1 = 0;
+	uint32_t downloaded2 = 0;
 
 	int shader1 = poly1->shader;
 	int shader2 = poly2->shader;
@@ -217,12 +217,12 @@ static int comparePolygonsNoShaders(const void *p1, const void *p2)
 	PolygonArrayEntry* poly1 = &polygonArray[index1];
 	PolygonArrayEntry* poly2 = &polygonArray[index2];
 	int diff;
-	INT64 diff64;
+	int64_t diff64;
 
 	GLMipmap_t *texture1 = poly1->texture;
 	GLMipmap_t *texture2 = poly2->texture;
-	UINT32 downloaded1 = 0;
-	UINT32 downloaded2 = 0;
+	uint32_t downloaded1 = 0;
+	uint32_t downloaded2 = 0;
 	if (poly1->polyFlags & PF_NoTexture || poly1->horizonSpecial)
 		texture1 = NULL;
 	if (poly2->polyFlags & PF_NoTexture || poly2->horizonSpecial)
@@ -374,8 +374,8 @@ void HWR_RenderBatches(void)
 			finalVertexArray = new_array;
 			// also increase size of index array, 3x of vertex array since
 			// going from fans to triangles increases vertex count to 3x
-			new_index_array = (UINT32 *)malloc(finalVertexArrayAllocSize * 3 * sizeof(UINT32));
-			memcpy(new_index_array, finalVertexIndexArray, finalIndexWritePos * sizeof(UINT32));
+			new_index_array = (uint32_t *)malloc(finalVertexArrayAllocSize * 3 * sizeof(uint32_t));
+			memcpy(new_index_array, finalVertexIndexArray, finalIndexWritePos * sizeof(uint32_t));
 			free(finalVertexIndexArray);
 			finalVertexIndexArray = new_index_array;
 		}

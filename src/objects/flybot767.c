@@ -41,7 +41,7 @@ static fixed_t SetFlybotZ(mobj_t *flybot)
 
 void Obj_SpawnFlybotsForPlayer(player_t *player)
 {
-	UINT8 i;
+	uint8_t i;
 	mobj_t *mo = player->mo;
 	mobj_t *hprev = mo;
 	fixed_t radius = mo->radius;
@@ -78,7 +78,7 @@ void Obj_SpawnFlybotsForPlayer(player_t *player)
 
 void Obj_FlybotThink(mobj_t *flybot)
 {
-	UINT16 stunned = UINT16_MAX;
+	uint16_t stunned = UINT16_MAX;
 	angle_t deltaAngle, angle;
 	fixed_t radius, circumference;
 	fixed_t speed = FixedMul(mapobjectscale, flybot->info->speed);
@@ -131,7 +131,7 @@ void Obj_FlybotThink(mobj_t *flybot)
 
 void Obj_FlybotDeath(mobj_t *flybot)
 {
-	UINT8 i;
+	uint8_t i;
 	angle_t angle = 0;
 	fixed_t hThrust = 4*mapobjectscale, vThrust = 4*mapobjectscale;
 	vector3_t mom = {0, 0, 0};

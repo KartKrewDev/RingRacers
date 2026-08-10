@@ -234,7 +234,7 @@ void ACS_Tick(void);
 
 
 /*--------------------------------------------------
-	dboolean ACS_Execute(const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator);
+	dboolean ACS_Execute(const int32_t *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator);
 
 		Runs an ACS script by its string name.
 		Only one instance of the script will run at
@@ -255,11 +255,11 @@ void ACS_Tick(void);
 		true if we were able to run the script, otherwise false.
 --------------------------------------------------*/
 
-dboolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator);
+dboolean ACS_Execute(const char *name, const int32_t *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator);
 
 
 /*--------------------------------------------------
-	dboolean ACS_ExecuteAlways(const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+	dboolean ACS_ExecuteAlways(const int32_t *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 
 		Runs an ACS script by its string name.
 		If the script is already running, this method
@@ -281,11 +281,11 @@ dboolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const 
 		true if we were able to run the script, otherwise false.
 --------------------------------------------------*/
 
-dboolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator);
+dboolean ACS_ExecuteAlways(const char *name, const int32_t *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator);
 
 
 /*--------------------------------------------------
-	INT32 ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+	int32_t ACS_ExecuteResult(const char *name, const int32_t *args, size_t numArgs, activator_t *activator)
 
 		Runs an ACS script by its string name.
 		Will return the scripts special result
@@ -304,7 +304,7 @@ dboolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, 
 		true if we were able to run the script, otherwise false.
 --------------------------------------------------*/
 
-INT32 ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator);
+int32_t ACS_ExecuteResult(const char *name, const int32_t *args, size_t numArgs, activator_t *activator);
 
 
 /*--------------------------------------------------

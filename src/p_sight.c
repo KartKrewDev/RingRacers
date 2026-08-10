@@ -38,7 +38,7 @@ typedef struct
 
 	mobj_t *t1, *t2;
 	dboolean alreadyHates;				// For bot traversal, for if the bot is already in a sector it doesn't want to be
-	UINT8 traversed;
+	uint8_t traversed;
 } los_t;
 
 typedef dboolean (*los_init_t)(mobj_t *, mobj_t *, register los_t *);
@@ -52,7 +52,7 @@ typedef struct
 	los_valid_poly_t validatePolyobj;	// If not NULL, then we will also check polyobject lines using this func.
 } los_funcs_t;
 
-static INT32 sightcounts[2];
+static int32_t sightcounts[2];
 
 #ifdef DEVELOP
 extern consvar_t cv_debugtraversemax;
@@ -67,7 +67,7 @@ extern consvar_t cv_debugtraversemax;
 //
 // killough 4/19/98: made static, cleaned up
 
-static INT32 P_DivlineSide(fixed_t x, fixed_t y, const divline_t *node)
+static int32_t P_DivlineSide(fixed_t x, fixed_t y, const divline_t *node)
 {
 	fixed_t left, right;
 	return
@@ -78,7 +78,7 @@ static INT32 P_DivlineSide(fixed_t x, fixed_t y, const divline_t *node)
 		right == left ? 2 : 1;
 }
 
-static INT32 P_DivlineCrossed(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, const divline_t *node)
+static int32_t P_DivlineCrossed(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, const divline_t *node)
 {
 	return (P_DivlineSide(x1, y1, node) == P_DivlineSide(x2, y2, node));
 }
@@ -365,7 +365,7 @@ static dboolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *lo
 		if (los->t1->player != NULL && los->alreadyHates == false)
 		{
 			// Treat damage / offroad sectors like walls.
-			UINT8 side = P_DivlineSide(los->t2x, los->t2y, divl) & 1;
+			uint8_t side = P_DivlineSide(los->t2x, los->t2y, divl) & 1;
 			sector_t *sector = (side == 1) ? seg->backsector : seg->frontsector;
 
 			if (K_BotHatesThisSector(los->t1->player, sector, g_tm.x, g_tm.y))
@@ -473,7 +473,7 @@ static dboolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_
 static dboolean P_CrossSubsector(size_t num, register los_t *los, register los_funcs_t *funcs)
 {
 	seg_t *seg;
-	INT32 count;
+	int32_t count;
 
 	if (num >= numsubsectors)
 	{
@@ -560,13 +560,13 @@ static dboolean P_CrossSubsector(size_t num, register los_t *los, register los_f
 //  could return 2 which was ambigous, and the former is
 //  better optimised; also removes two casts :-)
 
-static dboolean P_CrossBSPNode(INT32 bspnum, register los_t *los, register los_funcs_t *funcs)
+static dboolean P_CrossBSPNode(int32_t bspnum, register los_t *los, register los_funcs_t *funcs)
 {
 	while (!(bspnum & NF_SUBSECTOR))
 	{
 		register node_t *bsp = nodes + bspnum;
-		INT32 side = R_PointOnSide(los->strace.x, los->strace.y, bsp);
-		INT32 side2 = R_PointOnSide(los->t2x, los->t2y, bsp);
+		int32_t side = R_PointOnSide(los->strace.x, los->strace.y, bsp);
+		int32_t side2 = R_PointOnSide(los->t2x, los->t2y, bsp);
 
 		if (side == side2)
 		{
@@ -757,7 +757,7 @@ static dboolean P_CompareMobjsAcrossLines(mobj_t *t1, mobj_t *t2, register los_f
 	I_Assert(funcs->validate != NULL);
 
 	// the head node is the last node output
-	return P_CrossBSPNode((INT32)numnodes - 1, &los, funcs);
+	return P_CrossBSPNode((int32_t)numnodes - 1, &los, funcs);
 }
 
 //

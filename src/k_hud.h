@@ -29,14 +29,14 @@ extern "C" {
 
 #define HUDTRANS_CAMHEIGHT_MAX (120*FRACUNIT) // The camera height past this point where hud transparency should take affect
 
-extern INT32 MINI_X, MINI_Y;
+extern int32_t MINI_X, MINI_Y;
 
 struct trackingResult_t
 {
 	fixed_t x, y;
 	fixed_t scale;
 	dboolean onScreen;
-	INT32 angle, pitch;
+	int32_t angle, pitch;
 	fixed_t fov;
 };
 
@@ -47,39 +47,39 @@ typedef struct position_t
 
 void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, dboolean reverse);
 
-tic_t K_TranslateTimer(tic_t drawtime, UINT8 mode, INT32 *return_jitter);
+tic_t K_TranslateTimer(tic_t drawtime, uint8_t mode, int32_t *return_jitter);
 
-const char *K_GetItemPatch(UINT8 item, dboolean tiny);
+const char *K_GetItemPatch(uint8_t item, dboolean tiny);
 void K_LoadKartHUDGraphics(void);
 void K_drawKartHUD(void);
 void K_drawKartFreePlay(void);
 void K_drawKartPowerUps(void);
 void K_drawSpectatorHUD(dboolean director);
-void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode);
-INT32 K_drawKartMicroTime(const char *todrawtext, INT32 workx, INT32 worky, INT32 splitflags);
+void K_drawKartTimestamp(tic_t drawtime, int32_t TX, int32_t TY, int32_t splitflags, uint8_t mode);
+int32_t K_drawKartMicroTime(const char *todrawtext, int32_t workx, int32_t worky, int32_t splitflags);
 void K_drawKart2PTimestamp(void);
 void K_drawKart4PTimestamp(void);
 void K_drawEmeraldWin(dboolean overlay);
-void K_DrawMapThumbnail2(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT16 map, const UINT8 *colormap, fixed_t accordion);
+void K_DrawMapThumbnail2(fixed_t x, fixed_t y, fixed_t width, uint32_t flags, uint16_t map, const uint8_t *colormap, fixed_t accordion);
 #define K_DrawMapThumbnail(x, y, w, f, m, c) K_DrawMapThumbnail2(x, y, w, f, m, c, FRACUNIT)
-void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, patch_t *patch, const UINT8 *colormap, fixed_t accordion);
-void K_DrawMapAsFace(INT32 x, INT32 y, UINT32 flags, UINT16 map, const UINT8 *colormap, fixed_t accordion, INT32 unit);
+void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, uint32_t flags, patch_t *patch, const uint8_t *colormap, fixed_t accordion);
+void K_DrawMapAsFace(int32_t x, int32_t y, uint32_t flags, uint16_t map, const uint8_t *colormap, fixed_t accordion, int32_t unit);
 void K_drawTargetHUD(const vector3_t *origin, player_t *player);
-void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], dboolean pressed);
-void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
-void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, dboolean isSmall);
-void K_DrawMarginSticker(INT32 x, INT32 y, INT32 width, INT32 flags, dboolean isSmall, dboolean leftedge);
-INT32 K_GetTransFlagFromFixed(fixed_t value, dboolean midrace);
+void K_drawButton(fixed_t x, fixed_t y, int32_t flags, patch_t *button[2], dboolean pressed);
+void K_drawButtonAnim(int32_t x, int32_t y, int32_t flags, patch_t *button[2], tic_t animtic);
+void K_DrawSticker(int32_t x, int32_t y, int32_t width, int32_t flags, dboolean isSmall);
+void K_DrawMarginSticker(int32_t x, int32_t y, int32_t width, int32_t flags, dboolean isSmall, dboolean leftedge);
+int32_t K_GetTransFlagFromFixed(fixed_t value, dboolean midrace);
 
 void K_DrawKartPositionNumXY(
-	UINT8 num,
-	UINT8 splitIndex,
-	fixed_t fx, fixed_t fy, fixed_t scale, INT32 fflags,
+	uint8_t num,
+	uint8_t splitIndex,
+	fixed_t fx, fixed_t fy, fixed_t scale, int32_t fflags,
 	tic_t counter, dboolean subtract,
 	dboolean exit, dboolean lastLap, dboolean losing
 );
 
-void K_DrawInputDisplay(float x, float y, INT32 flags, char mode, UINT8 pid, dboolean local, dboolean transparent);
+void K_DrawInputDisplay(float x, float y, int32_t flags, char mode, uint8_t pid, dboolean local, dboolean transparent);
 
 extern patch_t *kp_capsuletarget_arrow[2][2];
 extern patch_t *kp_capsuletarget_icon[2];
@@ -163,13 +163,13 @@ playertagtype_t;
 playertagtype_t K_WhichPlayerTag(player_t *p);
 void K_DrawPlayerTag(fixed_t x, fixed_t y, player_t *p, playertagtype_t type, dboolean foreground);
 
-INT32 K_GetMinimapTransFlags(const dboolean usingProgressBar);
-INT32 K_GetMinimapSplitFlags(const dboolean usingProgressBar);
+int32_t K_GetMinimapTransFlags(const dboolean usingProgressBar);
+int32_t K_GetMinimapSplitFlags(const dboolean usingProgressBar);
 position_t K_GetKartObjectPosToMinimapPos(fixed_t objx, fixed_t objy);
 
-INT32 K_DrawGameControl(UINT16 x, UINT16 y, UINT8 player, const char *str, UINT8 alignment, UINT8 font, UINT32 flags);
+int32_t K_DrawGameControl(uint16_t x, uint16_t y, uint8_t player, const char *str, uint8_t alignment, uint8_t font, uint32_t flags);
 
-void K_drawKartTeamScores(dboolean fromintermission, INT32 interoffset);
+void K_drawKartTeamScores(dboolean fromintermission, int32_t interoffset);
 
 #ifdef __cplusplus
 } // extern "C"

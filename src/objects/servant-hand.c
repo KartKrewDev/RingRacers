@@ -56,7 +56,7 @@ void Obj_ServantHandSpawning(player_t *player)
 
 void Obj_ServantHandThink(mobj_t *hand)
 {
-	UINT8 handtimer = 0;
+	uint8_t handtimer = 0;
 	player_t *player = NULL;
 
 	if (P_MobjWasRemoved(hand->target))

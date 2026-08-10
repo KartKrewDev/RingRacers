@@ -27,7 +27,7 @@ static size_t numtracked = 0;
 static size_t numallocated = 0;
 static dboolean initialized = false;
 
-UINT16 guestpwr[PWRLV_NUMTYPES]; // All-zero power level to reference for guests
+uint16_t guestpwr[PWRLV_NUMTYPES]; // All-zero power level to reference for guests
 
 static void SV_InitializeStats(void)
 {
@@ -99,7 +99,7 @@ void SV_LoadStats(void)
 	}
 
 	save.p += headerlen;
-	UINT8 version = READUINT8(save.p);
+	uint8_t version = READUINT8(save.p);
 	if (version > SERVERSTATSVER)
 	{
 		P_SaveBufferFree(&save);
@@ -146,7 +146,7 @@ void SV_SaveStats(void)
 		return;
 
 	// header + version + numtracked + payload
-	if (P_SaveBufferAlloc(&save, headerlen + sizeof(UINT32) + sizeof(UINT8) + (numtracked * sizeof(serverplayer_t))) == false)
+	if (P_SaveBufferAlloc(&save, headerlen + sizeof(uint32_t) + sizeof(uint8_t) + (numtracked * sizeof(serverplayer_t))) == false)
 	{
 		I_Error("No more free memory for saving server stats\n");
 		return;
@@ -183,7 +183,7 @@ void SV_SaveStats(void)
 // New player, grab their stats from trackedList or initialize new ones if they're new
 serverplayer_t *SV_GetStatsByKey(uint8_t *key)
 {
-	UINT32 j, hash;
+	uint32_t j, hash;
 
 	SV_InitializeStats();
 
@@ -219,7 +219,7 @@ serverplayer_t *SV_GetStatsByKey(uint8_t *key)
 	return &trackedList[numtracked - 1];
 }
 
-serverplayer_t *SV_GetStatsByPlayerIndex(UINT8 p)
+serverplayer_t *SV_GetStatsByPlayerIndex(uint8_t p)
 {
 	return SV_GetStatsByKey(players[p].public_key);
 }
@@ -233,7 +233,7 @@ serverplayer_t *SV_GetStats(player_t *player)
 // (NB: Stats changes can be made directly to trackedList through other paths, but will only write to disk here)
 void SV_UpdateStats(void)
 {
-	UINT32 i, j, hash;
+	uint32_t i, j, hash;
 
 	if (!server)
 		return;
@@ -314,13 +314,13 @@ void SV_BumpMatchStats(void)
 
 static void SV_UpdateTempMute(player_t *player, dboolean mute)
 {
-	UINT8 buf[2];
+	uint8_t buf[2];
 
 	if (mute == !!(player->pflags2 & PF2_SERVERTEMPMUTE))
 		return;
 
 	buf[0] = player - players;
-	buf[1] = (UINT8)(mute);
+	buf[1] = (uint8_t)(mute);
 	SendNetXCmd(XD_SERVERTEMPMUTEPLAYER, &buf, 2);
 }
 
@@ -349,9 +349,9 @@ void SV_UpdateTempMutes(void)
 
 		if (i == serverplayer || IsPlayerAdmin(i))
 			SV_UpdateTempMute(player, false);
-		else if (stat->finishedrounds >= (UINT32)cv_gamestochat.value)
+		else if (stat->finishedrounds >= (uint32_t)cv_gamestochat.value)
 			SV_UpdateTempMute(player, false);
-		else if (stat->finishedrounds < (UINT32)cv_gamestochat.value)
+		else if (stat->finishedrounds < (uint32_t)cv_gamestochat.value)
 			SV_UpdateTempMute(player, true);
 	}
 }

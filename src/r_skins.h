@@ -39,25 +39,25 @@ extern "C" {
 struct skin_t
 {
 	char name[SKINNAMESIZE+1]; // name of skin
-	UINT16 skinnum;
-	UINT32 namehash; // quickncasehash(->name, SKINNAMESIZE)
-	UINT16 wadnum;
+	uint16_t skinnum;
+	uint32_t namehash; // quickncasehash(->name, SKINNAMESIZE)
+	uint16_t wadnum;
 	skinflags_t flags;
 
 	char realname[SKINNAMESIZE+1]; // Display name for level completion.
 
 	// SRB2kart
-	UINT8 kartspeed;
-	UINT8 kartweight;
+	uint8_t kartspeed;
+	uint8_t kartweight;
 	//
 
-	INT32 followitem;
+	int32_t followitem;
 
 	// Definable color translation table
-	UINT8 starttranscolor;
-	UINT16 prefcolor;
-	UINT16 supercolor;
-	UINT16 prefoppositecolor; // if 0 use tables instead
+	uint8_t starttranscolor;
+	uint16_t prefcolor;
+	uint16_t supercolor;
+	uint16_t prefoppositecolor; // if 0 use tables instead
 
 	fixed_t highresscale; // scale of highres, default is 0.5
 
@@ -97,10 +97,10 @@ typedef enum {
 	ENGINECLASS_R = 17,
 } engineclass_t;
 
-engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags);
+engineclass_t R_GetEngineClass(int8_t speed, int8_t weight, skinflags_t flags);
 
 /// Externs
-extern INT32 numskins;
+extern int32_t numskins;
 extern skin_t **skins;
 
 extern CV_PossibleValue_t Forceskin_cons_t[];
@@ -109,34 +109,34 @@ extern CV_PossibleValue_t Forceskin_cons_t[];
 
 // Loading
 void R_InitSkins(void);
-void R_AddSkins(UINT16 wadnum, dboolean mainfile);
-void R_PatchSkins(UINT16 wadnum, dboolean mainfile);
+void R_AddSkins(uint16_t wadnum, dboolean mainfile);
+void R_PatchSkins(uint16_t wadnum, dboolean mainfile);
 
 // Access
-INT32 R_SkinAvailable(const char *name);
-INT32 R_SkinAvailableEx(const char *name, dboolean demoskins);
-dboolean R_SkinUsable(INT32 playernum, INT32 skinnum, dboolean demoskins);
-UINT8 *R_GetSkinAvailabilities(dboolean demolock, INT32 botforcecharacter);
-dboolean R_CanShowSkinInDemo(INT32 skinnum);
+int32_t R_SkinAvailable(const char *name);
+int32_t R_SkinAvailableEx(const char *name, dboolean demoskins);
+dboolean R_SkinUsable(int32_t playernum, int32_t skinnum, dboolean demoskins);
+uint8_t *R_GetSkinAvailabilities(dboolean demolock, int32_t botforcecharacter);
+dboolean R_CanShowSkinInDemo(int32_t skinnum);
 
 // Setting
-void SetPlayerSkin(INT32 playernum,const char *skinname);
-void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
+void SetPlayerSkin(int32_t playernum,const char *skinname);
+void SetPlayerSkinByNum(int32_t playernum,int32_t skinnum); // Tails 03-16-2002
 
 // Set backup
-INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, dboolean unlock);
-UINT16 R_BotDefaultSkin(void);
+int32_t GetSkinNumClosestToStats(uint8_t kartspeed, uint8_t kartweight, uint32_t flags, dboolean unlock);
+uint16_t R_BotDefaultSkin(void);
 
 // Heavy Magician
-void SetFakePlayerSkin(player_t* player, INT32 skinnum);
+void SetFakePlayerSkin(player_t* player, int32_t skinnum);
 void SetRandomFakePlayerSkin(player_t* player, dboolean fast, dboolean instant);
 void ClearFakePlayerSkin(player_t* player);
 
 // Visual flair
-UINT32 R_GetLocalRandomSkin(void);
+uint32_t R_GetLocalRandomSkin(void);
 
 // Sprite2
-UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player);
+uint8_t P_GetSkinSprite2(skin_t *skin, uint8_t spr2, player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"

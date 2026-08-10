@@ -64,7 +64,7 @@ struct Graphic : Mobj
 	Graphic* next() const { return Mobj::hnext<Graphic>(); }
 	void next(Graphic* n) { Mobj::hnext(n); }
 
-	Graphic* dress(spritenum_t sprite, UINT32 frame)
+	Graphic* dress(spritenum_t sprite, uint32_t frame)
 	{
 		this->sprite = sprite;
 		this->frame = frame;
@@ -146,8 +146,8 @@ struct Box : AnyBox
 
 		Graphic* node = this;
 		int i = 0;
-		auto dress = [&](Graphic* g, UINT32 ff) { return g->dress(Config::kSprite, Config::kFrames[i++] | ff); };
-		auto side = [&](UINT32 ff)
+		auto dress = [&](Graphic* g, uint32_t ff) { return g->dress(Config::kSprite, Config::kFrames[i++] | ff); };
+		auto side = [&](uint32_t ff)
 		{
 			Side* side = spawn_from<Side>({}, MT_BOX_SIDE);
 			side->owner(this);
@@ -295,16 +295,16 @@ private:
 		search.a -= org + MAXRADIUS;
 		search.b -= org - MAXRADIUS;
 
-		search.a.x = static_cast<UINT32>(search.a.x) >> MAPBLOCKSHIFT;
-		search.b.x = static_cast<UINT32>(search.b.x) >> MAPBLOCKSHIFT;
-		search.a.y = static_cast<UINT32>(search.a.y) >> MAPBLOCKSHIFT;
-		search.b.y = static_cast<UINT32>(search.b.y) >> MAPBLOCKSHIFT;
+		search.a.x = static_cast<uint32_t>(search.a.x) >> MAPBLOCKSHIFT;
+		search.b.x = static_cast<uint32_t>(search.b.x) >> MAPBLOCKSHIFT;
+		search.a.y = static_cast<uint32_t>(search.a.y) >> MAPBLOCKSHIFT;
+		search.b.y = static_cast<uint32_t>(search.b.y) >> MAPBLOCKSHIFT;
 
 		BMBOUNDFIX(search.a.x, search.b.x, search.b.x, search.b.y);
 
-		for (INT32 bx = search.a.x; bx <= search.b.x; ++bx)
+		for (int32_t bx = search.a.x; bx <= search.b.x; ++bx)
 		{
-			for (INT32 by = search.a.y; by <= search.b.y; ++by)
+			for (int32_t by = search.a.y; by <= search.b.y; ++by)
 			{
 				P_BlockThingsIterator(
 					bx,

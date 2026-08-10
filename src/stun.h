@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef void (*stun_callback_t)(UINT32 address);
+typedef void (*stun_callback_t)(uint32_t address);
 
 void    csprng (void * const buffer, const size_t size);
 

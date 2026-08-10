@@ -105,7 +105,7 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 	WRITEUINT32(save->p, player->score);
 	WRITEUINT16(save->p, player->totalring);
 
-	INT32 skin = player->skin;
+	int32_t skin = player->skin;
 	if (skin > numskins)
 		skin = 0;
 
@@ -119,7 +119,7 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 	WRITEUINT16(save->p, player->skincolor);
 	WRITEUINT16(save->p, player->followercolor);
 
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -137,8 +137,8 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 		WRITESTRINGN(save->p, skins[skin]->name, SKINNAMESIZE);
 
 		WRITEUINT8(save->p, players[i].botvars.difficulty);
-		WRITEUINT8(save->p, (UINT8)players[i].botvars.rival);
-		WRITEUINT8(save->p, (UINT8)players[i].botvars.foe);
+		WRITEUINT8(save->p, (uint8_t)players[i].botvars.rival);
+		WRITEUINT8(save->p, (uint8_t)players[i].botvars.foe);
 
 		WRITEUINT32(save->p, players[i].score);
 	}
@@ -153,7 +153,7 @@ static dboolean P_UnArchivePlayer(savebuffer_t *save)
 	savedata.totalring = READUINT16(save->p);
 
 	char skinname[SKINNAMESIZE+1];
-	INT32 skin;
+	int32_t skin;
 
 	READSTRINGN(save->p, skinname, SKINNAMESIZE);
 	skin = R_SkinAvailableEx(skinname, false);
@@ -174,8 +174,8 @@ static dboolean P_UnArchivePlayer(savebuffer_t *save)
 
 	memset(&savedata.bots, 0, sizeof(savedata.bots));
 
-	UINT8 pid;
-	const UINT16 defaultbotskin = R_BotDefaultSkin();
+	uint8_t pid;
+	const uint16_t defaultbotskin = R_BotDefaultSkin();
 
 	while ((pid = READUINT8(save->p)) < MAXPLAYERS)
 	{
@@ -207,15 +207,15 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i, j;
-	UINT32 flags;
+	int32_t i, j;
+	uint32_t flags;
 	size_t q;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_PLAYERS);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		WRITESINT8(save->p, (SINT8)adminplayers[i]);
+		WRITESINT8(save->p, (int8_t)adminplayers[i]);
 
 		for (j = 0; j < PWRLV_NUMTYPES; j++)
 		{
@@ -434,7 +434,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (flags & FLYBOT)
 			WRITEUINT32(save->p, players[i].flybot->mobjnum);
 
-		WRITEUINT32(save->p, (UINT32)players[i].followitem);
+		WRITEUINT32(save->p, (uint32_t)players[i].followitem);
 
 		WRITEUINT32(save->p, players[i].charflags);
 
@@ -948,8 +948,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i, j;
-	UINT32 flags;
+	int32_t i, j;
+	uint32_t flags;
 	size_t q;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_PLAYERS)
@@ -957,7 +957,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		adminplayers[i] = (INT32)READSINT8(save->p);
+		adminplayers[i] = (int32_t)READSINT8(save->p);
 
 		for (j = 0; j < PWRLV_NUMTYPES; j++)
 		{
@@ -1504,17 +1504,17 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		{
 			if (players[i].itemRoulette.itemList.items == NULL)
 			{
-				players[i].itemRoulette.itemList.items = (SINT8*)Z_Calloc(
-					sizeof(SINT8) * players[i].itemRoulette.itemList.cap,
+				players[i].itemRoulette.itemList.items = (int8_t*)Z_Calloc(
+					sizeof(int8_t) * players[i].itemRoulette.itemList.cap,
 					PU_STATIC,
 					NULL
 				);
 			}
 			else
 			{
-				players[i].itemRoulette.itemList.items = (SINT8*)Z_Realloc(
+				players[i].itemRoulette.itemList.items = (int8_t*)Z_Realloc(
 					players[i].itemRoulette.itemList.items,
-					sizeof(SINT8) * players[i].itemRoulette.itemList.cap,
+					sizeof(int8_t) * players[i].itemRoulette.itemList.cap,
 					PU_STATIC,
 					NULL
 				);
@@ -1650,8 +1650,8 @@ static void P_NetArchiveParties(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i, k;
-	UINT8 partySize;
+	int32_t i, k;
+	uint8_t partySize;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_PARTIES);
 
@@ -1677,8 +1677,8 @@ static void P_NetUnArchiveParties(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i, k;
-	UINT8 partySize;
+	int32_t i, k;
+	uint8_t partySize;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_PARTIES)
 		I_Error("Bad $$$.sav at archive block Parties");
@@ -1712,7 +1712,7 @@ static void P_NetArchiveRoundQueue(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	UINT8 i;
+	uint8_t i;
 	WRITEUINT32(save->p, ARCHIVEBLOCK_ROUNDQUEUE);
 
 	WRITEUINT8(save->p, roundqueue.position);
@@ -1726,9 +1726,9 @@ static void P_NetArchiveRoundQueue(savebuffer_t *save)
 		This disincentivises cheaty clients in future tournament environments.
 		~toast 080423 */
 		WRITEUINT8(save->p, roundqueue.entries[i].gametype);
-		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].encore);
-		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].rankrestricted);
-		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].overridden);
+		WRITEUINT8(save->p, (uint8_t)roundqueue.entries[i].encore);
+		WRITEUINT8(save->p, (uint8_t)roundqueue.entries[i].rankrestricted);
+		WRITEUINT8(save->p, (uint8_t)roundqueue.entries[i].overridden);
 	}
 
 	TracyCZoneEnd(__zone);
@@ -1738,7 +1738,7 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	UINT8 i;
+	uint8_t i;
 	if (READUINT32(save->p) != ARCHIVEBLOCK_ROUNDQUEUE)
 		I_Error("Bad $$$.sav at archive block Round-queue");
 
@@ -1767,7 +1767,7 @@ static void P_NetArchiveZVote(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i;
+	int32_t i;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_ZVOTE);
 	WRITEUINT8(save->p, g_midVote.active);
@@ -1808,7 +1808,7 @@ static void P_NetUnArchiveZVote(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i;
+	int32_t i;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_ZVOTE)
 	{
@@ -1820,8 +1820,8 @@ static void P_NetUnArchiveZVote(savebuffer_t *save)
 
 	if (g_midVote.active == true)
 	{
-		UINT8 callerID = READUINT8(save->p);
-		UINT8 victimID = READUINT8(save->p);
+		uint8_t callerID = READUINT8(save->p);
+		uint8_t victimID = READUINT8(save->p);
 
 		if (callerID < MAXPLAYERS)
 		{
@@ -1857,15 +1857,15 @@ static void P_NetUnArchiveZVote(savebuffer_t *save)
 ///
 
 static extracolormap_t *net_colormaps = NULL;
-static UINT32 num_net_colormaps = 0;
-static UINT32 num_ffloors = 0; // for loading
+static uint32_t num_net_colormaps = 0;
+static uint32_t num_ffloors = 0; // for loading
 
 // Copypasta from r_data.c AddColormapToList
 // But also check for equality and return the matching index
-static UINT32 CheckAddNetColormapToList(extracolormap_t *extra_colormap)
+static uint32_t CheckAddNetColormapToList(extracolormap_t *extra_colormap)
 {
 	extracolormap_t *exc, *exc_prev = NULL;
-	UINT32 i = 0;
+	uint32_t i = 0;
 
 	if (!net_colormaps)
 	{
@@ -1891,7 +1891,7 @@ static UINT32 CheckAddNetColormapToList(extracolormap_t *extra_colormap)
 	return i;
 }
 
-static extracolormap_t *GetNetColormapFromList(UINT32 index)
+static extracolormap_t *GetNetColormapFromList(uint32_t index)
 {
 	// For loading, we have to be tricky:
 	// We load the sectors BEFORE knowing the colormap values
@@ -1900,7 +1900,7 @@ static extracolormap_t *GetNetColormapFromList(UINT32 index)
 	// Then when we load the color data, we set up the dummy colormaps
 
 	extracolormap_t *exc, *last_exc = NULL;
-	UINT32 i = 0;
+	uint32_t i = 0;
 
 	if (!net_colormaps) // initialize our list
 		net_colormaps = R_CreateDefaultColormap(false);
@@ -1918,7 +1918,7 @@ static extracolormap_t *GetNetColormapFromList(UINT32 index)
 	if (index >= numsectors*3 + num_ffloors)
 		// if every sector had a unique colormap change AND a fade color thinker which has two colormap entries
 		// AND every ffloor had a fade FOF thinker with one colormap entry
-		I_Error("Colormap %d from server is too high for sectors %d", index, (UINT32)numsectors);
+		I_Error("Colormap %d from server is too high for sectors %d", index, (uint32_t)numsectors);
 
 	// our index doesn't exist, so just make the entry
 	for (; i <= index; i++)
@@ -1955,7 +1955,7 @@ static void P_NetArchiveColormaps(savebuffer_t *save)
 
 	// We save and then we clean up our colormap mess
 	extracolormap_t *exc, *exc_next;
-	UINT32 i = 0;
+	uint32_t i = 0;
 	WRITEUINT32(save->p, num_net_colormaps); // save for safety
 
 	for (exc = net_colormaps; i < num_net_colormaps; i++, exc = exc_next)
@@ -1995,14 +1995,14 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 	// dummy colormaps. Now that we are loading the color data,
 	// set up the dummies.
 	extracolormap_t *exc, *existing_exc, *exc_next = NULL;
-	UINT32 i = 0;
+	uint32_t i = 0;
 
 	num_net_colormaps = READUINT32(save->p);
 
 	for (exc = net_colormaps; i < num_net_colormaps; i++, exc = exc_next)
 	{
-		UINT8 fadestart, fadeend, flags;
-		INT32 rgba, fadergba;
+		uint8_t fadestart, fadeend, flags;
+		int32_t rgba, fadergba;
 #ifdef EXTRACOLORMAPLUMPS
 		char lumpname[9];
 #endif
@@ -2142,7 +2142,7 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 
 static dboolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < NUM_SCRIPT_ARGS; i++)
 		if (sc->args[i] != spawnsc->args[i])
 			return false;
@@ -2152,7 +2152,7 @@ static dboolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 
 static dboolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
 	{
 		if (sc->stringargs[i] == NULL || spawnsc->stringargs[i] == NULL)
@@ -2194,7 +2194,7 @@ static dboolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spaw
 
 static dboolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < NUM_SCRIPT_ARGS; i++)
 		if (li->args[i] != spawnli->args[i])
 			return false;
@@ -2204,7 +2204,7 @@ static dboolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
 
 static dboolean P_LineStringArgsEqual(const line_t *li, const line_t *spawnli)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
 	{
 		if (li->stringargs[i] == NULL || spawnli->stringargs[i] == NULL)
@@ -2248,7 +2248,7 @@ static void ArchiveFFloors(savebuffer_t *save, const sector_t *ss)
 {
 	size_t j = 0; // ss->ffloors is saved as ffloor #0, ss->ffloors->next is #1, etc
 	ffloor_t *rover;
-	UINT8 fflr_diff;
+	uint8_t fflr_diff;
 	for (rover = ss->ffloors; rover; rover = rover->next)
 	{
 		fflr_diff = 0; // reset diff flags
@@ -2273,9 +2273,9 @@ static void ArchiveFFloors(savebuffer_t *save, const sector_t *ss)
 
 static void UnArchiveFFloors(savebuffer_t *save, const sector_t *ss)
 {
-	UINT16 j = 0; // number of current ffloor in loop
-	UINT16 fflr_i; // saved ffloor "number" of next modified ffloor
-	UINT16 fflr_diff; // saved ffloor diff
+	uint16_t j = 0; // number of current ffloor in loop
+	uint16_t fflr_i; // saved ffloor "number" of next modified ffloor
+	uint16_t fflr_diff; // saved ffloor diff
 	ffloor_t *rover;
 
 	rover = ss->ffloors;
@@ -2316,7 +2316,7 @@ static void ArchiveSectors(savebuffer_t *save)
 	size_t i, j;
 	const sector_t *ss = sectors;
 	const sector_t *spawnss = spawnsectors;
-	UINT8 diff, diff2, diff3, diff4, diff5;
+	uint8_t diff, diff2, diff3, diff4, diff5;
 
 	for (i = 0; i < numsectors; i++, ss++, spawnss++)
 	{
@@ -2521,8 +2521,8 @@ static void ArchiveSectors(savebuffer_t *save)
 
 static void UnArchiveSectors(savebuffer_t *save)
 {
-	UINT16 i, j;
-	UINT8 diff, diff2, diff3, diff4, diff5;
+	uint16_t i, j;
+	uint8_t diff, diff2, diff3, diff4, diff5;
 	for (;;)
 	{
 		i = READUINT16(save->p);
@@ -2685,7 +2685,7 @@ static void ArchiveLines(savebuffer_t *save)
 	const line_t *spawnli = spawnlines;
 	const side_t *si;
 	const side_t *spawnsi;
-	UINT8 diff, diff2, diff3;
+	uint8_t diff, diff2, diff3;
 
 	for (i = 0; i < numlines; i++, spawnli++, li++)
 	{
@@ -2783,13 +2783,13 @@ static void ArchiveLines(savebuffer_t *save)
 				WRITEINT32(save->p, si->midtexture);
 			if (diff2 & LD_ARGS)
 			{
-				UINT8 j;
+				uint8_t j;
 				for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 					WRITEINT32(save->p, li->args[j]);
 			}
 			if (diff2 & LD_STRINGARGS)
 			{
-				UINT8 j;
+				uint8_t j;
 				for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 				{
 					size_t len, k;
@@ -2815,10 +2815,10 @@ static void ArchiveLines(savebuffer_t *save)
 
 static void UnArchiveLines(savebuffer_t *save)
 {
-	UINT16 i, j;
+	uint16_t i, j;
 	line_t *li;
 	side_t *si;
-	UINT8 diff, diff2, diff3;
+	uint8_t diff, diff2, diff3;
 
 	for (;;)
 	{
@@ -2938,7 +2938,7 @@ static void P_NetUnArchiveWorld(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	UINT16 i;
+	uint16_t i;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_WORLD)
 		I_Error("Bad $$$.sav at archive block World");
@@ -2966,7 +2966,7 @@ static void P_NetUnArchiveWorld(savebuffer_t *save)
 
 static dboolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < NUM_MAPTHING_ARGS; i++)
 		if (mobj->thing_args[i] != mapthing->thing_args[i])
 			return false;
@@ -2990,7 +2990,7 @@ static dboolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 
 static dboolean P_ThingScriptEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 {
-	UINT8 i;
+	uint8_t i;
 	if (mobj->special != mapthing->special)
 		return false;
 
@@ -3048,7 +3048,7 @@ typedef enum
 	MD_DSCALE      = 1<<28,
 	MD_ARGS        = 1<<29,
 	MD__UNUSED     = 1<<30,
-	MD_MORE        = (INT32)(1U<<31)
+	MD_MORE        = (int32_t)(1U<<31)
 } mobj_diff_t;
 
 typedef enum
@@ -3084,7 +3084,7 @@ typedef enum
 	MD2_FROZEN       = 1<<28,
 	MD2_TERRAIN      = 1<<29,
 	MD2_WATERSKIP    = 1<<30,
-	MD2_MORE         = (INT32)(1U<<31),
+	MD2_MORE         = (int32_t)(1U<<31),
 } mobj_diff2_t;
 
 typedef enum
@@ -3142,33 +3142,33 @@ typedef enum
 	tc_end
 } specials_e;
 
-static inline UINT32 SaveMobjnum(const mobj_t *mobj)
+static inline uint32_t SaveMobjnum(const mobj_t *mobj)
 {
 	if (mobj) return mobj->mobjnum;
 	return 0;
 }
 
-static UINT32 SaveSector(const sector_t *sector)
+static uint32_t SaveSector(const sector_t *sector)
 {
-	if (sector) return (UINT32)(sector - sectors);
+	if (sector) return (uint32_t)(sector - sectors);
 	return 0xFFFFFFFF;
 }
 
-static UINT32 SaveLine(const line_t *line)
+static uint32_t SaveLine(const line_t *line)
 {
-	if (line) return (UINT32)(line - lines);
+	if (line) return (uint32_t)(line - lines);
 	return 0xFFFFFFFF;
 }
 
-static inline UINT32 SavePlayer(const player_t *player)
+static inline uint32_t SavePlayer(const player_t *player)
 {
-	if (player) return (UINT32)(player - players);
+	if (player) return (uint32_t)(player - players);
 	return 0xFFFFFFFF;
 }
 
-static UINT32 SaveSlope(const pslope_t *slope)
+static uint32_t SaveSlope(const pslope_t *slope)
 {
-	if (slope) return (UINT32)(slope->id);
+	if (slope) return (uint32_t)(slope->id);
 	return 0xFFFFFFFF;
 }
 
@@ -3201,12 +3201,12 @@ dboolean TypeIsNetSynced(mobjtype_t type)
 	return true;
 }
 
-static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const mobj_t *mobj = (const mobj_t *)th;
-	UINT32 diff;
-	UINT32 diff2;
-	UINT32 diff3;
+	uint32_t diff;
+	uint32_t diff2;
+	uint32_t diff3;
 	size_t j;
 
 	if (TypeIsNetSynced(mobj->type) == false)
@@ -3308,7 +3308,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff |= MD_SPRITE;
 	if (mobj->frame != mobj->state->frame)
 		diff |= MD_FRAME;
-	if (mobj->anim_duration != (UINT16)mobj->state->var2)
+	if (mobj->anim_duration != (uint16_t)mobj->state->var2)
 		diff |= MD_FRAME;
 	if (mobj->eflags)
 		diff |= MD_EFLAGS;
@@ -3571,7 +3571,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff2 & MD2_CVMEM)
 		WRITEINT32(save->p, mobj->cvmem);
 	if (diff2 & MD2_SKIN)
-		WRITEUINT16(save->p, (UINT16)((skin_t *)mobj->skin)->skinnum);
+		WRITEUINT16(save->p, (uint16_t)((skin_t *)mobj->skin)->skinnum);
 	if (diff2 & MD2_COLOR)
 		WRITEUINT16(save->p, mobj->color);
 	if (diff2 & MD2_EXTVAL1)
@@ -3600,8 +3600,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	}
 	if (diff2 & MD2_RENDERFLAGS)
 	{
-		UINT32 rf = mobj->renderflags;
-		UINT32 q = rf & RF_DONTDRAW;
+		uint32_t rf = mobj->renderflags;
+		uint32_t q = rf & RF_DONTDRAW;
 
 		if (q != RF_DONTDRAW // visible for more than one local player
 		&& q != (RF_DONTDRAWP1|RF_DONTDRAWP2|RF_DONTDRAWP3)
@@ -3723,14 +3723,14 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	WRITEUINT32(save->p, mobj->mobjnum);
 }
 
-static void SaveNoEnemiesThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveNoEnemiesThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const noenemies_t *ht  = (const noenemies_t*)th;
 	WRITEUINT8(save->p, type);
 	WRITEUINT32(save->p, SaveLine(ht->sourceline));
 }
 
-static void SaveBounceCheeseThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveBounceCheeseThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const bouncecheese_t *ht  = (const bouncecheese_t*)th;
 	WRITEUINT8(save->p, type);
@@ -3743,7 +3743,7 @@ static void SaveBounceCheeseThinker(savebuffer_t *save, const thinker_t *th, con
 	WRITECHAR(save->p, ht->low);
 }
 
-static void SaveContinuousFallThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveContinuousFallThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const continuousfall_t *ht  = (const continuousfall_t*)th;
 	WRITEUINT8(save->p, type);
@@ -3755,7 +3755,7 @@ static void SaveContinuousFallThinker(savebuffer_t *save, const thinker_t *th, c
 	WRITEFIXED(save->p, ht->destheight);
 }
 
-static void SaveMarioBlockThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveMarioBlockThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const mariothink_t *ht  = (const mariothink_t*)th;
 	WRITEUINT8(save->p, type);
@@ -3767,7 +3767,7 @@ static void SaveMarioBlockThinker(savebuffer_t *save, const thinker_t *th, const
 	WRITEINT16(save->p, ht->tag);
 }
 
-static void SaveMarioCheckThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveMarioCheckThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const mariocheck_t *ht  = (const mariocheck_t*)th;
 	WRITEUINT8(save->p, type);
@@ -3775,7 +3775,7 @@ static void SaveMarioCheckThinker(savebuffer_t *save, const thinker_t *th, const
 	WRITEUINT32(save->p, SaveSector(ht->sector));
 }
 
-static void SaveThwompThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveThwompThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const thwomp_t *ht  = (const thwomp_t*)th;
 	WRITEUINT8(save->p, type);
@@ -3792,7 +3792,7 @@ static void SaveThwompThinker(savebuffer_t *save, const thinker_t *th, const UIN
 	WRITEINT32(save->p, ht->initDelay);
 }
 
-static void SaveFloatThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveFloatThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const floatthink_t *ht  = (const floatthink_t*)th;
 	WRITEUINT8(save->p, type);
@@ -3801,7 +3801,7 @@ static void SaveFloatThinker(savebuffer_t *save, const thinker_t *th, const UINT
 	WRITEINT16(save->p, ht->tag);
 }
 
-static void SaveEachTimeThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveEachTimeThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const eachtime_t *ht  = (const eachtime_t*)th;
 	size_t i;
@@ -3814,7 +3814,7 @@ static void SaveEachTimeThinker(savebuffer_t *save, const thinker_t *th, const U
 	WRITECHAR(save->p, ht->triggerOnExit);
 }
 
-static void SaveRaiseThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveRaiseThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const raise_t *ht  = (const raise_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3828,7 +3828,7 @@ static void SaveRaiseThinker(savebuffer_t *save, const thinker_t *th, const UINT
 	WRITEUINT8(save->p, ht->flags);
 }
 
-static void SaveCeilingThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveCeilingThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const ceiling_t *ht = (const ceiling_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3850,7 +3850,7 @@ static void SaveCeilingThinker(savebuffer_t *save, const thinker_t *th, const UI
 	WRITEFIXED(save->p, ht->returnSpeed);
 }
 
-static void SaveFloormoveThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveFloormoveThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const floormove_t *ht = (const floormove_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3871,7 +3871,7 @@ static void SaveFloormoveThinker(savebuffer_t *save, const thinker_t *th, const 
 	WRITEFIXED(save->p, ht->returnSpeed);
 }
 
-static void SaveLightflashThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveLightflashThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const lightflash_t *ht = (const lightflash_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3880,7 +3880,7 @@ static void SaveLightflashThinker(savebuffer_t *save, const thinker_t *th, const
 	WRITEINT32(save->p, ht->minlight);
 }
 
-static void SaveStrobeThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveStrobeThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const strobe_t *ht = (const strobe_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3892,7 +3892,7 @@ static void SaveStrobeThinker(savebuffer_t *save, const thinker_t *th, const UIN
 	WRITEINT32(save->p, ht->brighttime);
 }
 
-static void SaveGlowThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveGlowThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const glow_t *ht = (const glow_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3903,7 +3903,7 @@ static void SaveGlowThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	WRITEINT16(save->p, ht->speed);
 }
 
-static inline void SaveFireflickerThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static inline void SaveFireflickerThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const fireflicker_t *ht = (const fireflicker_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3914,7 +3914,7 @@ static inline void SaveFireflickerThinker(savebuffer_t *save, const thinker_t *t
 	WRITEINT16(save->p, ht->minlight);
 }
 
-static void SaveElevatorThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveElevatorThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const elevator_t *ht = (const elevator_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3935,7 +3935,7 @@ static void SaveElevatorThinker(savebuffer_t *save, const thinker_t *th, const U
 	WRITEFIXED(save->p, ht->ceilingwasheight);
 }
 
-static void SaveCrumbleThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveCrumbleThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const crumble_t *ht = (const crumble_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3952,7 +3952,7 @@ static void SaveCrumbleThinker(savebuffer_t *save, const thinker_t *th, const UI
 	WRITEUINT8(save->p, ht->flags);
 }
 
-static inline void SaveScrollThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static inline void SaveScrollThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const scroll_t *ht = (const scroll_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3968,7 +3968,7 @@ static inline void SaveScrollThinker(savebuffer_t *save, const thinker_t *th, co
 	WRITEUINT8(save->p, ht->type);
 }
 
-static inline void SaveFrictionThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static inline void SaveFrictionThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const friction_t *ht = (const friction_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3979,7 +3979,7 @@ static inline void SaveFrictionThinker(savebuffer_t *save, const thinker_t *th, 
 	WRITEUINT8(save->p, ht->roverfriction);
 }
 
-static inline void SavePusherThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static inline void SavePusherThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const pusher_t *ht = (const pusher_t *)th;
 	WRITEUINT8(save->p, type);
@@ -3994,7 +3994,7 @@ static inline void SavePusherThinker(savebuffer_t *save, const thinker_t *th, co
 	WRITEINT32(save->p, ht->slider);
 }
 
-static void SaveLaserThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveLaserThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const laserthink_t *ht = (const laserthink_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4003,7 +4003,7 @@ static void SaveLaserThinker(savebuffer_t *save, const thinker_t *th, const UINT
 	WRITEUINT8(save->p, ht->nobosses);
 }
 
-static void SaveLightlevelThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveLightlevelThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const lightlevel_t *ht = (const lightlevel_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4015,7 +4015,7 @@ static void SaveLightlevelThinker(savebuffer_t *save, const thinker_t *th, const
 	WRITEINT32(save->p, ht->timer);
 }
 
-static void SaveExecutorThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveExecutorThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const executor_t *ht = (const executor_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4025,7 +4025,7 @@ static void SaveExecutorThinker(savebuffer_t *save, const thinker_t *th, const U
 	WRITEINT32(save->p, ht->timer);
 }
 
-static void SaveDisappearThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveDisappearThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const disappear_t *ht = (const disappear_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4038,7 +4038,7 @@ static void SaveDisappearThinker(savebuffer_t *save, const thinker_t *th, const 
 	WRITEINT32(save->p, ht->exists);
 }
 
-static void SaveFadeThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveFadeThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const fade_t *ht = (const fade_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4050,7 +4050,7 @@ static void SaveFadeThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	WRITEINT16(save->p, ht->destvalue);
 	WRITEINT16(save->p, ht->destlightlevel);
 	WRITEINT16(save->p, ht->speed);
-	WRITEUINT8(save->p, (UINT8)ht->ticbased);
+	WRITEUINT8(save->p, (uint8_t)ht->ticbased);
 	WRITEINT32(save->p, ht->timer);
 	WRITEUINT8(save->p, ht->doexists);
 	WRITEUINT8(save->p, ht->dotranslucent);
@@ -4061,19 +4061,19 @@ static void SaveFadeThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	WRITEUINT8(save->p, ht->exactalpha);
 }
 
-static void SaveFadeColormapThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SaveFadeColormapThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const fadecolormap_t *ht = (const fadecolormap_t *)th;
 	WRITEUINT8(save->p, type);
 	WRITEUINT32(save->p, SaveSector(ht->sector));
 	WRITEUINT32(save->p, CheckAddNetColormapToList(ht->source_exc));
 	WRITEUINT32(save->p, CheckAddNetColormapToList(ht->dest_exc));
-	WRITEUINT8(save->p, (UINT8)ht->ticbased);
+	WRITEUINT8(save->p, (uint8_t)ht->ticbased);
 	WRITEINT32(save->p, ht->duration);
 	WRITEINT32(save->p, ht->timer);
 }
 
-static void SavePlaneDisplaceThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SavePlaneDisplaceThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const planedisplace_t *ht = (const planedisplace_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4084,7 +4084,7 @@ static void SavePlaneDisplaceThinker(savebuffer_t *save, const thinker_t *th, co
 	WRITEUINT8(save->p, ht->type);
 }
 
-static inline void SaveDynamicLineSlopeThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static inline void SaveDynamicLineSlopeThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const dynlineplanethink_t* ht = (const dynlineplanethink_t*)th;
 
@@ -4095,7 +4095,7 @@ static inline void SaveDynamicLineSlopeThinker(savebuffer_t *save, const thinker
 	WRITEFIXED(save->p, ht->extent);
 }
 
-static inline void SaveDynamicVertexSlopeThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static inline void SaveDynamicVertexSlopeThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	size_t i;
 	const dynvertexplanethink_t* ht = (const dynvertexplanethink_t*)th;
@@ -4110,7 +4110,7 @@ static inline void SaveDynamicVertexSlopeThinker(savebuffer_t *save, const think
 	WRITEUINT8(save->p, ht->relative);
 }
 
-static inline void SavePolyrotatetThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static inline void SavePolyrotatetThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const polyrotate_t *ht = (const polyrotate_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4120,7 +4120,7 @@ static inline void SavePolyrotatetThinker(savebuffer_t *save, const thinker_t *t
 	WRITEUINT8(save->p, ht->turnobjs);
 }
 
-static void SavePolymoveThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SavePolymoveThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const polymove_t *ht = (const polymove_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4132,7 +4132,7 @@ static void SavePolymoveThinker(savebuffer_t *save, const thinker_t *th, const U
 	WRITEANGLE(save->p, ht->angle);
 }
 
-static void SavePolywaypointThinker(savebuffer_t *save, const thinker_t *th, UINT8 type)
+static void SavePolywaypointThinker(savebuffer_t *save, const thinker_t *th, uint8_t type)
 {
 	const polywaypoint_t *ht = (const polywaypoint_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4146,7 +4146,7 @@ static void SavePolywaypointThinker(savebuffer_t *save, const thinker_t *th, UIN
 	WRITEUINT8(save->p, ht->stophere);
 }
 
-static void SavePolyslidedoorThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SavePolyslidedoorThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const polyslidedoor_t *ht = (const polyslidedoor_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4165,7 +4165,7 @@ static void SavePolyslidedoorThinker(savebuffer_t *save, const thinker_t *th, co
 	WRITEUINT8(save->p, ht->closing);
 }
 
-static void SavePolyswingdoorThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SavePolyswingdoorThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const polyswingdoor_t *ht = (const polyswingdoor_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4179,7 +4179,7 @@ static void SavePolyswingdoorThinker(savebuffer_t *save, const thinker_t *th, co
 	WRITEUINT8(save->p, ht->closing);
 }
 
-static void SavePolydisplaceThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SavePolydisplaceThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const polydisplace_t *ht = (const polydisplace_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4190,7 +4190,7 @@ static void SavePolydisplaceThinker(savebuffer_t *save, const thinker_t *th, con
 	WRITEFIXED(save->p, ht->oldHeights);
 }
 
-static void SavePolyrotdisplaceThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SavePolyrotdisplaceThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const polyrotdisplace_t *ht = (const polyrotdisplace_t *)th;
 	WRITEUINT8(save->p, type);
@@ -4201,16 +4201,16 @@ static void SavePolyrotdisplaceThinker(savebuffer_t *save, const thinker_t *th, 
 	WRITEFIXED(save->p, ht->oldHeights);
 }
 
-static void SavePolyfadeThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
+static void SavePolyfadeThinker(savebuffer_t *save, const thinker_t *th, const uint8_t type)
 {
 	const polyfade_t *ht = (const polyfade_t *)th;
 	WRITEUINT8(save->p, type);
 	WRITEINT32(save->p, ht->polyObjNum);
 	WRITEINT32(save->p, ht->sourcevalue);
 	WRITEINT32(save->p, ht->destvalue);
-	WRITEUINT8(save->p, (UINT8)ht->docollision);
-	WRITEUINT8(save->p, (UINT8)ht->doghostfade);
-	WRITEUINT8(save->p, (UINT8)ht->ticbased);
+	WRITEUINT8(save->p, (uint8_t)ht->docollision);
+	WRITEUINT8(save->p, (uint8_t)ht->doghostfade);
+	WRITEUINT8(save->p, (uint8_t)ht->ticbased);
 	WRITEINT32(save->p, ht->duration);
 	WRITEINT32(save->p, ht->timer);
 }
@@ -4225,7 +4225,7 @@ static void P_NetArchiveThinkers(savebuffer_t *save)
 	TracyCZone(__zone, true);
 
 	const thinker_t *th;
-	UINT32 i;
+	uint32_t i;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_THINKERS);
 
@@ -4233,7 +4233,7 @@ static void P_NetArchiveThinkers(savebuffer_t *save)
 
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
-		UINT32 numsaved = 0;
+		uint32_t numsaved = 0;
 		// save off the current thinkers
 		for (th = thlist[i].next; th != &thlist[i]; th = th->next)
 		{
@@ -4492,15 +4492,15 @@ static void P_NetUnArchiveWaypoints(savebuffer_t *save)
 	if (READUINT32(save->p) != ARCHIVEBLOCK_WAYPOINTS)
 		I_Error("Bad $$$.sav at archive block Waypoints!");
 	else {
-		UINT32 numArchiveWaypoints = READUINT32(save->p);
+		uint32_t numArchiveWaypoints = READUINT32(save->p);
 		size_t numSpawnedWaypoints = K_GetNumWaypoints();
 
 		if (numArchiveWaypoints != numSpawnedWaypoints) {
 			I_Error("Bad $$$.sav: More saved waypoints than created!");
 		} else {
 			waypoint_t *waypoint;
-			UINT32 i;
-			UINT32 temp;
+			uint32_t i;
+			uint32_t temp;
 			for (i = 0U; i < numArchiveWaypoints; i++) {
 				waypoint = K_GetWaypointFromIndex(i);
 				temp = READUINT32(save->p);
@@ -4519,7 +4519,7 @@ static void P_NetArchiveTubeWaypoints(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i, j;
+	int32_t i, j;
 
 	for (i = 0; i < NUMTUBEWAYPOINTSEQUENCES; i++)
 	{
@@ -4537,8 +4537,8 @@ static void P_NetUnArchiveTubeWaypoints(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i, j;
-	UINT32 mobjnum;
+	int32_t i, j;
+	uint32_t mobjnum;
 
 	for (i = 0; i < NUMTUBEWAYPOINTSEQUENCES; i++)
 	{
@@ -4559,7 +4559,7 @@ static void P_NetUnArchiveTubeWaypoints(savebuffer_t *save)
 // relink to this; the savegame contains the old position in the pointer
 // field copyed in the info field temporarily, but finally we just search
 // for the old position and relink to it.
-mobj_t *P_FindNewPosition(UINT32 oldposition)
+mobj_t *P_FindNewPosition(uint32_t oldposition)
 {
 	thinker_t *th;
 	mobj_t *mobj;
@@ -4579,31 +4579,31 @@ mobj_t *P_FindNewPosition(UINT32 oldposition)
 	return NULL;
 }
 
-static inline mobj_t *LoadMobj(UINT32 mobjnum)
+static inline mobj_t *LoadMobj(uint32_t mobjnum)
 {
 	if (mobjnum == 0) return NULL;
 	return (mobj_t *)(size_t)mobjnum;
 }
 
-static sector_t *LoadSector(UINT32 sector)
+static sector_t *LoadSector(uint32_t sector)
 {
 	if (sector >= numsectors) return NULL;
 	return &sectors[sector];
 }
 
-static line_t *LoadLine(UINT32 line)
+static line_t *LoadLine(uint32_t line)
 {
 	if (line >= numlines) return NULL;
 	return &lines[line];
 }
 
-static inline player_t *LoadPlayer(UINT32 player)
+static inline player_t *LoadPlayer(uint32_t player)
 {
 	if (player >= MAXPLAYERS) return NULL;
 	return &players[player];
 }
 
-static inline pslope_t *LoadSlope(UINT32 slopeid)
+static inline pslope_t *LoadSlope(uint32_t slopeid)
 {
 	pslope_t *p = slopelist;
 	if (slopeid > slopecount) return NULL;
@@ -4633,10 +4633,10 @@ static void CalculateDoomednumToMobjtype(void)
 static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 {
 	mobj_t *mobj;
-	UINT32 diff;
-	UINT32 diff2;
-	UINT32 diff3;
-	INT32 i;
+	uint32_t diff;
+	uint32_t diff2;
+	uint32_t diff3;
+	int32_t i;
 	fixed_t z, floorz, ceilingz;
 	ffloor_t *floorrover = NULL, *ceilingrover = NULL;
 	size_t j;
@@ -4659,20 +4659,20 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff2 & MD2_FLOORROVER)
 	{
 		sector_t *sec = LoadSector(READUINT32(save->p));
-		UINT16 id = READUINT16(save->p);
+		uint16_t id = READUINT16(save->p);
 		floorrover = P_GetFFloorByID(sec, id);
 	}
 
 	if (diff2 & MD2_CEILINGROVER)
 	{
 		sector_t *sec = LoadSector(READUINT32(save->p));
-		UINT16 id = READUINT16(save->p);
+		uint16_t id = READUINT16(save->p);
 		ceilingrover = P_GetFFloorByID(sec, id);
 	}
 
 	if (diff & MD_SPAWNPOINT)
 	{
-		UINT16 spawnpointnum = READUINT16(save->p);
+		uint16_t spawnpointnum = READUINT16(save->p);
 
 		if (mapthings[spawnpointnum].type == 1713) // NiGHTS Hoop special case
 		{
@@ -4795,7 +4795,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	else
 	{
 		mobj->frame = mobj->state->frame;
-		mobj->anim_duration = (UINT16)mobj->state->var2;
+		mobj->anim_duration = (uint16_t)mobj->state->var2;
 	}
 	if (diff & MD_EFLAGS)
 		mobj->eflags = READUINT32(save->p);
@@ -5006,7 +5006,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	}
 	if (diff2 & MD2_TERRAIN)
 	{
-		UINT32 terrain_index = READUINT32(save->p);
+		uint32_t terrain_index = READUINT32(save->p);
 		if (terrain_index > 0)
 			mobj->terrain = K_GetTerrainByIndex(terrain_index - 1);
 		mobj->terrainOverlay = (mobj_t *)(size_t)READUINT32(save->p);
@@ -5768,10 +5768,10 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 
 	thinker_t *currentthinker;
 	thinker_t *next;
-	UINT8 tclass;
-	UINT8 restoreNum = false;
-	UINT32 i;
-	UINT32 numloaded = 0;
+	uint8_t tclass;
+	uint8_t restoreNum = false;
+	uint32_t i;
+	uint32_t numloaded = 0;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_THINKERS)
 		I_Error("Bad $$$.sav at archive block Thinkers");
@@ -6009,13 +6009,13 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 	if (restoreNum)
 	{
 		executor_t *delay = NULL;
-		UINT32 mobjnum;
+		uint32_t mobjnum;
 		for (currentthinker = thlist[THINK_MAIN].next; currentthinker != &thlist[THINK_MAIN]; currentthinker = currentthinker->next)
 		{
 			if (currentthinker->function.acp1 != (actionf_p1)T_ExecutorDelay)
 				continue;
 			delay = (executor_t *)currentthinker;
-			if (!(mobjnum = (UINT32)(size_t)delay->caller))
+			if (!(mobjnum = (uint32_t)(size_t)delay->caller))
 				continue;
 			delay->caller = P_FindNewPosition(mobjnum);
 		}
@@ -6035,7 +6035,7 @@ static inline void P_ArchivePolyObj(savebuffer_t *save, polyobj_t *po)
 {
 	TracyCZone(__zone, true);
 
-	UINT8 diff = 0;
+	uint8_t diff = 0;
 	WRITEINT32(save->p, po->id);
 	WRITEANGLE(save->p, po->angle);
 
@@ -6061,10 +6061,10 @@ static inline void P_UnArchivePolyObj(savebuffer_t *save, polyobj_t *po)
 {
 	TracyCZone(__zone, true);
 
-	INT32 id;
-	UINT32 angle;
+	int32_t id;
+	uint32_t angle;
 	fixed_t x, y;
-	UINT8 diff;
+	uint8_t diff;
 
 	// nullify all polyobject thinker pointers;
 	// the thinkers themselves will fight over who gets the field
@@ -6100,7 +6100,7 @@ static inline void P_ArchivePolyObjects(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i;
+	int32_t i;
 
 	WRITEUINT32(save->p, ARCHIVEBLOCK_POBJS);
 
@@ -6117,7 +6117,7 @@ static inline void P_UnArchivePolyObjects(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	INT32 i, numSavedPolys;
+	int32_t i, numSavedPolys;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_POBJS)
 		I_Error("Bad $$$.sav at archive block Pobjs");
@@ -6135,7 +6135,7 @@ static inline void P_UnArchivePolyObjects(savebuffer_t *save)
 
 static mobj_t *RelinkMobj(mobj_t **ptr)
 {
-	UINT32 temp = (UINT32)(size_t)*ptr;
+	uint32_t temp = (uint32_t)(size_t)*ptr;
 	*ptr = NULL;
 	return P_SetTarget(ptr, P_FindNewPosition(temp));
 }
@@ -6149,7 +6149,7 @@ static void P_RelinkPointers(void)
 {
 	thinker_t *currentthinker;
 	mobj_t *mobj;
-	UINT32 temp, i;
+	uint32_t temp, i;
 
 	P_LoadMobjPointers(RelinkMobjVoid);
 
@@ -6245,7 +6245,7 @@ static void P_RelinkPointers(void)
 		}
 		if (players[i].currentwaypoint)
 		{
-			temp = (UINT32)(size_t)players[i].currentwaypoint;
+			temp = (uint32_t)(size_t)players[i].currentwaypoint;
 			players[i].currentwaypoint = K_GetWaypointFromIndex(temp);
 			if (players[i].currentwaypoint == NULL)
 			{
@@ -6254,7 +6254,7 @@ static void P_RelinkPointers(void)
 		}
 		if (players[i].nextwaypoint)
 		{
-			temp = (UINT32)(size_t)players[i].nextwaypoint;
+			temp = (uint32_t)(size_t)players[i].nextwaypoint;
 			players[i].nextwaypoint = K_GetWaypointFromIndex(temp);
 			if (players[i].nextwaypoint == NULL)
 			{
@@ -6263,7 +6263,7 @@ static void P_RelinkPointers(void)
 		}
 		if (players[i].respawn.wp)
 		{
-			temp = (UINT32)(size_t)players[i].respawn.wp;
+			temp = (uint32_t)(size_t)players[i].respawn.wp;
 			players[i].respawn.wp = K_GetWaypointFromIndex(temp);
 			if (players[i].respawn.wp == NULL)
 			{
@@ -6430,8 +6430,8 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	// Grand Prix information
 
 	WRITEUINT8(save->p, grandprixinfo.gamespeed);
-	WRITEUINT8(save->p, (UINT8)grandprixinfo.encore);
-	WRITEUINT8(save->p, (UINT8)grandprixinfo.masterbots);
+	WRITEUINT8(save->p, (uint8_t)grandprixinfo.encore);
+	WRITEUINT8(save->p, (uint8_t)grandprixinfo.masterbots);
 
 	WRITEUINT32(save->p, grandprixinfo.specialDamage);
 
@@ -6443,9 +6443,9 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	WRITEUINT8(save->p, roundqueue.size);
 	WRITEUINT8(save->p, roundqueue.roundnum);
 
-	UINT8 i;
-	UINT16 mapnum;
-	UINT16 gtnum;
+	uint8_t i;
+	uint16_t mapnum;
+	uint16_t gtnum;
 
 	for (i = 0; i < roundqueue.size; i++)
 	{
@@ -6509,7 +6509,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT32(save->p, rank->rings);
 		WRITEUINT32(save->p, rank->totalRings);
 
-		WRITEUINT8(save->p, (UINT8)rank->specialWon);
+		WRITEUINT8(save->p, (uint8_t)rank->specialWon);
 
 		WRITEINT32(save->p, rank->scorePosition);
 		WRITEINT32(save->p, rank->scoreGPPoints);
@@ -6525,8 +6525,8 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		{
 			const gpRank_level_t *lvl = &rank->levels[i];
 
-			UINT32 mapHash = 0; // no good default, will all-but-guarantee bad save
-			UINT16 id = lvl->id-1; // GAMEMAP BASED AAAGH
+			uint32_t mapHash = 0; // no good default, will all-but-guarantee bad save
+			uint16_t id = lvl->id-1; // GAMEMAP BASED AAAGH
 			if (id < nummapheaders && mapheaderinfo[id] != NULL)
 			{
 				mapHash = mapheaderinfo[id]->lumpnamehash;
@@ -6540,7 +6540,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 			WRITEUINT16(save->p, lvl->totalPrisons);
 			WRITEUINT16(save->p, lvl->continues);
 
-			UINT8 j;
+			uint8_t j;
 			for (j = 0; j < rank->numPlayers; j++)
 			{
 				const gpRank_level_perplayer_t *plr = &lvl->perPlayer[j];
@@ -6549,8 +6549,8 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 				WRITEUINT8(save->p, plr->rings);
 				WRITEUINT16(save->p, plr->exp);
 				WRITEUINT16(save->p, plr->prisons);
-				WRITEUINT8(save->p, (UINT8)plr->gotSpecialPrize);
-				WRITESINT8(save->p, (SINT8)plr->grade);
+				WRITEUINT8(save->p, (uint8_t)plr->gotSpecialPrize);
+				WRITESINT8(save->p, (int8_t)plr->grade);
 			}
 		}
 
@@ -6562,7 +6562,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 
 	WRITEUINT8(save->p, (marathonmode & ~MA_INIT));
 
-	UINT32 writetime = marathontime;
+	uint32_t writetime = marathontime;
 	if (!(marathonmode & MA_INGAME))
 		writetime += TICRATE*5; // live event backup penalty because we don't know how long it takes to get to the next map
 	WRITEUINT32(save->p, writetime);
@@ -6594,7 +6594,7 @@ void P_GetBackupCupData(savebuffer_t *save)
 	// Find the relevant cup.
 	char cupname[MAXCUPNAME];
 	READSTRINGL(save->p, cupname, sizeof(cupname));
-	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
+	uint32_t hash = quickncasehash(cupname, MAXCUPNAME);
 
 	for (cupsavedata.cup = kartcupheaders; cupsavedata.cup; cupsavedata.cup = cupsavedata.cup->next)
 	{
@@ -6642,7 +6642,7 @@ static dboolean P_UnArchiveSPGame(savebuffer_t *save)
 	// Find the relevant cup.
 	char cupname[MAXCUPNAME];
 	READSTRINGL(save->p, cupname, sizeof(cupname));
-	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
+	uint32_t hash = quickncasehash(cupname, MAXCUPNAME);
 
 	for (grandprixinfo.cup = kartcupheaders; grandprixinfo.cup; grandprixinfo.cup = grandprixinfo.cup->next)
 	{
@@ -6668,7 +6668,7 @@ static dboolean P_UnArchiveSPGame(savebuffer_t *save)
 	G_GPCupIntoRoundQueue(grandprixinfo.cup, GT_RACE, grandprixinfo.encore);
 
 	roundqueue.position = READUINT8(save->p);
-	UINT8 size = READUINT8(save->p);
+	uint8_t size = READUINT8(save->p);
 	roundqueue.roundnum = READUINT8(save->p);
 
 	if (roundqueue.size != size)
@@ -6683,9 +6683,9 @@ static dboolean P_UnArchiveSPGame(savebuffer_t *save)
 		return false;
 	}
 
-	UINT8 i, j;
-	UINT16 mapnum;
-	INT32 gtnum;
+	uint8_t i, j;
+	uint16_t mapnum;
+	int32_t gtnum;
 
 	for (i = 0; i < roundqueue.size; i++)
 	{
@@ -6725,7 +6725,7 @@ static dboolean P_UnArchiveSPGame(savebuffer_t *save)
 		}
 		else
 		{
-			UINT32 val = READUINT32(save->p);
+			uint32_t val = READUINT32(save->p);
 
 			if (roundqueue.entries[i].rankrestricted && roundqueue.position != i+1)
 			{
@@ -6800,7 +6800,7 @@ static dboolean P_UnArchiveSPGame(savebuffer_t *save)
 		{
 			gpRank_level_t *const lvl = &rank->levels[i];
 
-			UINT32 mapHash = READUINT32(save->p);
+			uint32_t mapHash = READUINT32(save->p);
 
 			// Hidden Palace can adjust cup composition, and this level stuff is
 			// purely visual anyway, so don't be as strict as the earlier check.
@@ -6810,7 +6810,7 @@ static dboolean P_UnArchiveSPGame(savebuffer_t *save)
 				if (seeninqueue[j] == true)
 					continue;
 
-				UINT16 id = roundqueue.entries[j].mapnum;
+				uint16_t id = roundqueue.entries[j].mapnum;
 
 				if (mapheaderinfo[id]->lumpnamehash != mapHash)
 					continue;
@@ -6877,7 +6877,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, dboolean resending)
 	WRITEINT16(save->p, g_lastgametype);
 
 	{
-		UINT32 pig = 0;
+		uint32_t pig = 0;
 		for (i = 0; i < MAXPLAYERS; i++)
 			pig |= (playeringame[i] != 0)<<i;
 		WRITEUINT32(save->p, pig);
@@ -6885,7 +6885,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, dboolean resending)
 
 	for (i = 0; i < MAXUNLOCKABLES;)
 	{
-		UINT8 btemp = 0;
+		uint8_t btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
 			btemp |= (netUnlocked[j+i] << j);
 		WRITEUINT8(save->p, btemp);
@@ -6915,7 +6915,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, dboolean resending)
 	WRITESINT8(save->p, g_pickedVote);
 
 	{
-		UINT8 globools = 0;
+		uint8_t globools = 0;
 		if (stagefailed)
 			globools |= 1;
 		if (stoppedclock)
@@ -7035,7 +7035,7 @@ static dboolean P_NetUnArchiveMisc(savebuffer_t *save, dboolean reloading)
 	size_t i, j;
 	size_t numTasks;
 
-	const INT16 prevgamemap = gamemap;
+	const int16_t prevgamemap = gamemap;
 
 	if (READUINT32(save->p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -7057,7 +7057,7 @@ static dboolean P_NetUnArchiveMisc(savebuffer_t *save, dboolean reloading)
 	g_lastgametype = READINT16(save->p);
 
 	{
-		UINT32 pig = READUINT32(save->p);
+		uint32_t pig = READUINT32(save->p);
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			playeringame[i] = (pig & (1<<i)) != 0;
@@ -7067,7 +7067,7 @@ static dboolean P_NetUnArchiveMisc(savebuffer_t *save, dboolean reloading)
 
 	for (i = 0; i < MAXUNLOCKABLES;)
 	{
-		UINT8 rtemp = READUINT8(save->p);
+		uint8_t rtemp = READUINT8(save->p);
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
 			netUnlocked[j+i] = ((rtemp >> j) & 1);
 		i += j;
@@ -7303,7 +7303,7 @@ static dboolean P_NetUnArchiveMisc(savebuffer_t *save, dboolean reloading)
 	g_pickedVote = READSINT8(save->p);
 
 	{
-		UINT8 globools = READUINT8(save->p);
+		uint8_t globools = READUINT8(save->p);
 		stagefailed = !!(globools & 1);
 		stoppedclock = !!(globools & (1<<1));
 	}
@@ -7401,8 +7401,8 @@ static dboolean P_NetUnArchiveMisc(savebuffer_t *save, dboolean reloading)
 	numTasks = READUINT32(save->p);
 	for (i = 0; i < numTasks; i++)
 	{
-		INT16 basetime;
-		INT16 timer;
+		int16_t basetime;
+		int16_t timer;
 		char command[MAXTEXTCMD];
 
 		basetime = READINT16(save->p);
@@ -7422,7 +7422,7 @@ static inline void P_ArchiveLuabanksAndConsistency(savebuffer_t *save)
 {
 	TracyCZone(__zone, true);
 
-	UINT8 i, banksinuse = NUM_LUABANKS;
+	uint8_t i, banksinuse = NUM_LUABANKS;
 
 	while (banksinuse && !luabanks[banksinuse-1])
 		banksinuse--; // get the last used bank
@@ -7449,7 +7449,7 @@ static inline dboolean P_UnArchiveLuabanksAndConsistency(savebuffer_t *save)
 	{
 		case 0xb7: // luabanks marker
 			{
-				UINT8 i, banksinuse = READUINT8(save->p);
+				uint8_t i, banksinuse = READUINT8(save->p);
 				if (banksinuse > NUM_LUABANKS)
 				{
 					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Too many banks in use)\n"));
@@ -7505,8 +7505,8 @@ static inline void P_NetUnArchiveRNG(savebuffer_t *save)
 
 	for (i = 0; i < PRNUMSYNCED; i++)
 	{
-		UINT32 init = READUINT32(save->p);
-		UINT32 seed = READUINT32(save->p);
+		uint32_t init = READUINT32(save->p);
+		uint32_t seed = READUINT32(save->p);
 
 		P_SetRandSeedNet((pr_class_t)i, init, seed);
 	}
@@ -7529,7 +7529,7 @@ void P_SaveNetGame(savebuffer_t *save, dboolean resending)
 
 	thinker_t *th;
 	mobj_t *mobj;
-	UINT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
+	uint32_t i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
 
 	CV_SaveNetVars(&save->p);
 	P_NetArchiveMisc(save, resending);
@@ -7653,10 +7653,10 @@ dboolean P_LoadNetGame(savebuffer_t *save, dboolean reloading)
 	return ret;
 }
 
-dboolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, void *user)
+dboolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, int32_t tag, void *user)
 {
 	I_Assert(save->buffer == NULL);
-	save->buffer = (UINT8 *)Z_Malloc(alloc_size, tag, user);
+	save->buffer = (uint8_t *)Z_Malloc(alloc_size, tag, user);
 
 	if (save->buffer == NULL)
 	{
@@ -7670,7 +7670,7 @@ dboolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, vo
 	return true;
 }
 
-dboolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, size_t existing_size)
+dboolean P_SaveBufferFromExisting(savebuffer_t *save, uint8_t *existing_buffer, size_t existing_size)
 {
 	I_Assert(save->buffer == NULL);
 
@@ -7697,7 +7697,7 @@ dboolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump)
 		return false;
 	}
 
-	save->buffer = (UINT8 *)W_CacheLumpNum(lump, PU_STATIC);
+	save->buffer = (uint8_t *)W_CacheLumpNum(lump, PU_STATIC);
 
 	if (save->buffer == NULL)
 	{

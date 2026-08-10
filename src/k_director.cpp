@@ -42,7 +42,7 @@ static bool race_rules()
 #define WALKBACKDIST 600				// how close should a trailing player be before we switch?
 #define PINCHDIST 30000					// how close should the leader be to be considered "end of race"?
 
-static fixed_t K_GetFinishGap(INT32 leader, INT32 follower)
+static fixed_t K_GetFinishGap(int32_t leader, int32_t follower)
 {
 	fixed_t dista = players[follower].distancetofinish;
 	fixed_t distb = players[leader].distancetofinish;
@@ -59,29 +59,29 @@ static fixed_t K_GetFinishGap(INT32 leader, INT32 follower)
 
 struct DirectorInfo
 {
-    UINT8 viewnum;						// which screen does this director apply to?
+    uint8_t viewnum;						// which screen does this director apply to?
     dboolean active = false;				// is view point switching enabled?
     tic_t cooldown = SWITCHTIME;		// how long has it been since we last switched?
     tic_t freeze = 0;					// when nonzero, fixed switch pending, freeze logic!
-    INT32 attacker = 0;					// who to switch to when freeze delay elapses
-    INT32 maxdist = 0;					// how far is the closest player from finishing?
+    int32_t attacker = 0;					// who to switch to when freeze delay elapses
+    int32_t maxdist = 0;					// how far is the closest player from finishing?
 
     struct PlayerStat
 	{
-		INT32 sorted = -1;				// position-1 goes in, player index comes out.
-		INT32 gap = INT32_MAX;			// gap between a given position and their closest pursuer
-		INT32 boredom = 0;				// how long has a given position had no credible attackers?
+		int32_t sorted = -1;				// position-1 goes in, player index comes out.
+		int32_t gap = INT32_MAX;			// gap between a given position and their closest pursuer
+		int32_t boredom = 0;				// how long has a given position had no credible attackers?
 	}
 	playerstat[MAXPLAYERS];
 
-	DirectorInfo(UINT8 viewnum_) : viewnum(viewnum_) {}
+	DirectorInfo(uint8_t viewnum_) : viewnum(viewnum_) {}
 
-	INT32 viewplayernum() const { return displayplayers[viewnum]; }
+	int32_t viewplayernum() const { return displayplayers[viewnum]; }
 	player_t* viewplayer() const { return &players[viewplayernum()]; }
 
 	void update()
 	{
-		INT32 targetposition;
+		int32_t targetposition;
 
 		update_positions();
 
@@ -112,7 +112,7 @@ struct DirectorInfo
 		// we adjust for this when comparing to player->position or when looking at the leading player, Don't Freak Out
 		for (targetposition = 1; targetposition < MAXPLAYERS; targetposition++)
 		{
-			INT32 target;
+			int32_t target;
 
 			// you are out of players, try again
 			if (playerstat[targetposition].sorted == -1)
@@ -170,7 +170,7 @@ struct DirectorInfo
 		}
 	}
 
-	void force_switch(INT32 player, INT32 time)
+	void force_switch(int32_t player, int32_t time)
 	{
 		if (players[player].exiting)
 		{
@@ -184,8 +184,8 @@ struct DirectorInfo
 private:
 	void update_positions()
 	{
-		INT32 playernum;
-		INT32 position;
+		int32_t playernum;
+		int32_t position;
 		player_t* target;
 
 		for (PlayerStat& stat : playerstat)
@@ -219,7 +219,7 @@ private:
 
 			if (playerstat[position].gap >= BREAKAWAYDIST)
 			{
-				playerstat[position].boredom = std::min<INT32>(BOREDOMTIME * 2, playerstat[position].boredom + 1);
+				playerstat[position].boredom = std::min<int32_t>(BOREDOMTIME * 2, playerstat[position].boredom + 1);
 			}
 			else if (playerstat[position].boredom > 0)
 			{
@@ -251,7 +251,7 @@ private:
 		return true;
 	}
 
-	void change(INT32 player, dboolean force)
+	void change(int32_t player, dboolean force)
 	{
 		if (!active)
 		{
@@ -275,7 +275,7 @@ private:
 
 struct DirectorInfoManager
 {
-	DirectorInfo& operator [](UINT8 viewnum)
+	DirectorInfo& operator [](uint8_t viewnum)
 	{
 		SRB2_ASSERT(viewnum < MAXSPLITSCREENPLAYERS);
 		return info_[viewnum];
@@ -317,10 +317,10 @@ void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 void K_DrawDirectorDebugger(void)
 {
-	INT32 position;
-	INT32 leader;
-	INT32 follower;
-	INT32 ytxt;
+	int32_t position;
+	int32_t leader;
+	int32_t follower;
+	int32_t ytxt;
 
 	if (!cv_kartdebugdirector.value)
 	{
@@ -377,7 +377,7 @@ void K_UpdateDirector(void)
 	}
 }
 
-void K_ToggleDirector(UINT8 viewnum, dboolean active)
+void K_ToggleDirector(uint8_t viewnum, dboolean active)
 {
 	DirectorInfo& directorinfo = g_directorinfo[viewnum];
 
@@ -389,12 +389,12 @@ void K_ToggleDirector(UINT8 viewnum, dboolean active)
 	directorinfo.active = active;
 }
 
-dboolean K_DirectorIsEnabled(UINT8 viewnum)
+dboolean K_DirectorIsEnabled(uint8_t viewnum)
 {
 	return g_directorinfo[viewnum].active;
 }
 
-dboolean K_DirectorIsAvailable(UINT8 viewnum)
+dboolean K_DirectorIsAvailable(uint8_t viewnum)
 {
 	return viewnum <= r_splitscreen && viewnum < G_PartySize(consoleplayer) &&
 		displayplayers[viewnum] != G_PartyMember(consoleplayer, viewnum);

@@ -31,7 +31,7 @@ menuitem_t PLAY_GamemodesMenu[] =
 
 menu_t PLAY_GamemodesDef = KARTGAMEMODEMENU(PLAY_GamemodesMenu, &PLAY_MainDef);
 
-void M_SetupGametypeMenu(INT32 choice)
+void M_SetupGametypeMenu(int32_t choice)
 {
 	if (choice != -1)
 		PLAY_GamemodesDef.prevMenu = currentMenu;

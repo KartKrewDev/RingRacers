@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-UINT8 *android_surface;
+uint8_t *android_surface;
 
 JNIEnv* jni_env;
 jobject androidVideo;

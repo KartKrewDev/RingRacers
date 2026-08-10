@@ -41,7 +41,7 @@
 #include "hardware/hw_md2.h"
 #endif
 
-INT32 numskins = 0;
+int32_t numskins = 0;
 skin_t **skins;
 
 unloaded_skin_t *unloadedskins = NULL;
@@ -60,9 +60,9 @@ CV_PossibleValue_t Forceskin_cons_t[MAXSKINS+2];
 // For super players, does the same as above - but tries the super equivalent for each sprite2 before the non-super version.
 //
 
-UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player)
+uint8_t P_GetSkinSprite2(skin_t *skin, uint8_t spr2, player_t *player)
 {
-	UINT8 super = 0, i = 0;
+	uint8_t super = 0, i = 0;
 
 	(void)player;
 
@@ -105,7 +105,7 @@ UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player)
 
 static void Sk_SetDefaultValue(skin_t *skin)
 {
-	INT32 i;
+	int32_t i;
 	//
 	// set default skin values
 	//
@@ -139,9 +139,9 @@ static void Sk_SetDefaultValue(skin_t *skin)
 
 // Grab the default skin
 #define DEFAULTBOTSKINNAME "eggrobo"
-UINT16 R_BotDefaultSkin(void)
+uint16_t R_BotDefaultSkin(void)
 {
-	static INT32 defaultbotskin = -1;
+	static int32_t defaultbotskin = -1;
 
 	if (demo.playback)
 		return R_SkinAvailableEx(DEFAULTBOTSKINNAME, true);
@@ -157,7 +157,7 @@ UINT16 R_BotDefaultSkin(void)
 		}
 	}
 
-	return (UINT16)defaultbotskin;
+	return (uint16_t)defaultbotskin;
 }
 #undef DEFAULTBOTSKINNAME
 
@@ -173,8 +173,8 @@ void R_InitSkins(void)
 
 	for (i = 0; i < numwadfiles; i++)
 	{
-		R_AddSkins((UINT16)i, true);
-		R_PatchSkins((UINT16)i, true);
+		R_AddSkins((uint16_t)i, true);
+		R_PatchSkins((uint16_t)i, true);
 		R_LoadSpriteInfoLumps(i, wadfiles[i]->numlumps);
 
 #ifdef HAVE_DISCORDRPC
@@ -188,12 +188,12 @@ void R_InitSkins(void)
 	M_UpdateConditionSetsPending();
 }
 
-UINT8 *R_GetSkinAvailabilities(dboolean demolock, INT32 botforcecharacter)
+uint8_t *R_GetSkinAvailabilities(dboolean demolock, int32_t botforcecharacter)
 {
-	UINT16 i;
-	UINT8 shif, byte;
-	INT32 skinid;
-	static UINT8 responsebuffer[MAXAVAILABILITY];
+	uint16_t i;
+	uint8_t shif, byte;
+	int32_t skinid;
+	static uint8_t responsebuffer[MAXAVAILABILITY];
 	const dboolean forbots = (botforcecharacter != -1);
 
 	memset(&responsebuffer, 0, sizeof(responsebuffer));
@@ -225,12 +225,12 @@ UINT8 *R_GetSkinAvailabilities(dboolean demolock, INT32 botforcecharacter)
 
 // returns true if available in circumstances, otherwise nope
 // warning don't use with an invalid skinnum other than -1 which always returns true
-dboolean R_SkinUsable(INT32 playernum, INT32 skinnum, dboolean demoskins)
+dboolean R_SkinUsable(int32_t playernum, int32_t skinnum, dboolean demoskins)
 {
 	dboolean needsunlocked = false;
 	dboolean useplayerstruct = ((Playing() || demo.playback) && playernum >= 0);
-	UINT16 i;
-	INT32 skinid;
+	uint16_t i;
+	int32_t skinid;
 
 	if (skinnum == -1)
 	{
@@ -291,8 +291,8 @@ dboolean R_SkinUsable(INT32 playernum, INT32 skinnum, dboolean demoskins)
 	if (useplayerstruct)
 	{
 		// Use the netgame synchronized unlocks.
-		UINT8 shif = (skinnum % 8);
-		UINT8 byte = (skinnum / 8);
+		uint8_t shif = (skinnum % 8);
+		uint8_t byte = (skinnum / 8);
 		return !!(players[playernum].availabilities[byte] & (1 << shif));
 	}
 
@@ -304,7 +304,7 @@ dboolean R_SkinUsable(INT32 playernum, INT32 skinnum, dboolean demoskins)
 	return (dboolean)(gamedata->unlocked[i]);
 }
 
-dboolean R_CanShowSkinInDemo(INT32 skinnum)
+dboolean R_CanShowSkinInDemo(int32_t skinnum)
 {
 	if (modeattacking == ATTACKING_NONE && !(demo.playback && demo.attract))
 		return true;
@@ -312,10 +312,10 @@ dboolean R_CanShowSkinInDemo(INT32 skinnum)
 }
 
 // Returns a random unlocked skin ID.
-UINT32 R_GetLocalRandomSkin(void)
+uint32_t R_GetLocalRandomSkin(void)
 {
-	UINT16 i, usableskins = 0;
-	UINT16 grabskins[MAXSKINS];
+	uint16_t i, usableskins = 0;
+	uint16_t grabskins[MAXSKINS];
 
 	for (i = 0; i < numskins; i++)
 	{
@@ -332,15 +332,15 @@ UINT32 R_GetLocalRandomSkin(void)
 
 // returns the skin number if the skin name is found (loaded from pwad)
 // warning return -1 if not found
-INT32 R_SkinAvailable(const char *name)
+int32_t R_SkinAvailable(const char *name)
 {
 	return R_SkinAvailableEx(name, true);
 }
 
-INT32 R_SkinAvailableEx(const char *name, dboolean demoskins)
+int32_t R_SkinAvailableEx(const char *name, dboolean demoskins)
 {
-	INT32 i;
-	UINT32 hash = quickncasehash(name, SKINNAMESIZE);
+	int32_t i;
+	uint32_t hash = quickncasehash(name, SKINNAMESIZE);
 
 	if (demo.playback && demoskins)
 	{
@@ -370,7 +370,7 @@ INT32 R_SkinAvailableEx(const char *name, dboolean demoskins)
 }
 
 // Returns engine class dependent on skin properties
-engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags)
+engineclass_t R_GetEngineClass(int8_t speed, int8_t weight, skinflags_t flags)
 {
 	if (flags & SF_IRONMAN)
 		return ENGINECLASS_J;
@@ -392,7 +392,7 @@ engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags)
 }
 
 // Auxillary function that actually sets the skin
-static void SetSkin(player_t *player, INT32 skinnum)
+static void SetSkin(player_t *player, int32_t skinnum)
 {
 	if (demo.playback)
 		skinnum = demo.skinlist[skinnum].mapping;
@@ -431,9 +431,9 @@ static void SetSkin(player_t *player, INT32 skinnum)
 
 // Gets the player to the first usuable skin in the game.
 // (If your mod locked them all, then you kinda stupid)
-static INT32 GetPlayerDefaultSkin(INT32 playernum)
+static int32_t GetPlayerDefaultSkin(int32_t playernum)
 {
-	INT32 i, skincount = (demo.playback ? demo.numskins : numskins);
+	int32_t i, skincount = (demo.playback ? demo.numskins : numskins);
 
 	for (i = 0; i < skincount; i++)
 	{
@@ -448,9 +448,9 @@ static INT32 GetPlayerDefaultSkin(INT32 playernum)
 }
 
 // network code calls this when a 'skin change' is received
-void SetPlayerSkin(INT32 playernum, const char *skinname)
+void SetPlayerSkin(int32_t playernum, const char *skinname)
 {
-	INT32 i = R_SkinAvailable(skinname);
+	int32_t i = R_SkinAvailable(skinname);
 	player_t *player = &players[playernum];
 
 	if ((i != -1) && R_SkinUsable(playernum, i, false))
@@ -469,7 +469,7 @@ void SetPlayerSkin(INT32 playernum, const char *skinname)
 
 // Same as SetPlayerSkin, but uses the skin #.
 // network code calls this when a 'skin change' is received
-void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
+void SetPlayerSkinByNum(int32_t playernum, int32_t skinnum)
 {
 	player_t *player = &players[playernum];
 
@@ -488,7 +488,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 }
 
 // Set mo skin but not player_t skin, for ironman
-void SetFakePlayerSkin(player_t* player, INT32 skinid)
+void SetFakePlayerSkin(player_t* player, int32_t skinid)
 {
 	if (player->fakeskin != skinid)
 	{
@@ -517,9 +517,9 @@ void SetFakePlayerSkin(player_t* player, INT32 skinid)
 // Loudly rerandomize
 void SetRandomFakePlayerSkin(player_t* player, dboolean fast, dboolean instant)
 {
-	INT32 i;
-	UINT16 usableskins = 0, maxskinpick;
-	UINT16 grabskins[MAXSKINS];
+	int32_t i;
+	uint16_t usableskins = 0, maxskinpick;
+	uint16_t grabskins[MAXSKINS];
 
 	maxskinpick = (demo.playback ? demo.numskins : numskins);
 
@@ -556,7 +556,7 @@ void SetRandomFakePlayerSkin(player_t* player, dboolean fast, dboolean instant)
 
 		mobj_t *parent = player->mo;
 		fixed_t baseangle = P_RandomRange(PR_DECORATION, 0, 359);
-		INT32 j;
+		int32_t j;
 
 		for (j = 0; j < 6; j++)	// 0-3 = sides, 4 = top, 5 = bottom
 		{
@@ -600,8 +600,8 @@ void SetRandomFakePlayerSkin(player_t* player, dboolean fast, dboolean instant)
 // Return to base skin from an SF_IRONMAN randomization
 void ClearFakePlayerSkin(player_t* player)
 {
-	UINT16 skinid;
-	UINT32 flags;
+	uint16_t skinid;
+	uint32_t flags;
 
 	if (demo.playback)
 	{
@@ -628,12 +628,12 @@ void ClearFakePlayerSkin(player_t* player)
 }
 
 // Finds a skin with the closest stats if the expected skin doesn't exist.
-INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, dboolean unlock)
+int32_t GetSkinNumClosestToStats(uint8_t kartspeed, uint8_t kartweight, uint32_t flags, dboolean unlock)
 {
-	INT32 i, closest_skin = 0;
-	UINT8 closest_stats, stat_diff;
+	int32_t i, closest_skin = 0;
+	uint8_t closest_stats, stat_diff;
 	dboolean doflagcheck = true;
-	UINT32 flagcheck = flags;
+	uint32_t flagcheck = flags;
 
 flaglessretry:
 	closest_stats = stat_diff = UINT8_MAX;
@@ -680,9 +680,9 @@ flaglessretry:
 // the first 6 characters (this is so we can have S_SKIN1, S_SKIN2..
 // for wad editors that don't like multiple resources of the same name)
 //
-static UINT16 W_CheckForSkinMarkerInPwad(UINT16 wadid, UINT16 startlump)
+static uint16_t W_CheckForSkinMarkerInPwad(uint16_t wadid, uint16_t startlump)
 {
-	UINT16 i;
+	uint16_t i;
 	const char *S_SKIN = "S_SKIN";
 	lumpinfo_t *lump_p;
 
@@ -711,9 +711,9 @@ static UINT16 W_CheckForSkinMarkerInPwad(UINT16 wadid, UINT16 startlump)
 // the first 6 characters (this is so we can have P_SKIN1, P_SKIN2..
 // for wad editors that don't like multiple resources of the same name)
 //
-static UINT16 W_CheckForPatchSkinMarkerInPwad(UINT16 wadid, UINT16 startlump)
+static uint16_t W_CheckForPatchSkinMarkerInPwad(uint16_t wadid, uint16_t startlump)
 {
-	UINT16 i;
+	uint16_t i;
 	const char *P_SKIN = "P_SKIN";
 	lumpinfo_t *lump_p;
 
@@ -728,10 +728,10 @@ static UINT16 W_CheckForPatchSkinMarkerInPwad(UINT16 wadid, UINT16 startlump)
 	return INT16_MAX; // not found
 }
 
-static void R_LoadSkinSprites(UINT16 wadnum, UINT16 *lump, UINT16 *lastlump, skin_t *skin)
+static void R_LoadSkinSprites(uint16_t wadnum, uint16_t *lump, uint16_t *lastlump, skin_t *skin)
 {
-	UINT16 newlastlump;
-	UINT8 sprite2;
+	uint16_t newlastlump;
+	uint8_t sprite2;
 
 	*lump += 1; // start after S_SKIN
 	*lastlump = W_CheckNumForNamePwad("S_END",wadnum,*lump); // stop at S_END
@@ -775,8 +775,8 @@ static dboolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value
 		size_t len = strlen(value);
 		size_t i;
 		char rivalname[SKINNAMESIZE+1] = "";
-		UINT8 pos = 0;
-		UINT8 numrivals = 0;
+		uint8_t pos = 0;
+		uint8_t numrivals = 0;
 
 		// Can't use strtok, because the above function's already using it.
 		// Using it causes it to upset the saved pointer,
@@ -832,7 +832,7 @@ static dboolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value
 
 #define GETSKINCOLOR(field) else if (!stricmp(stoken, #field)) \
 { \
-	UINT16 color = R_GetColorByName(value); \
+	uint16_t color = R_GetColorByName(value); \
 	skin->field = (color ? color : SKINCOLOR_GREEN); \
 }
 	GETSKINCOLOR(prefcolor)
@@ -840,7 +840,7 @@ static dboolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value
 #undef GETSKINCOLOR
 	else if (!stricmp(stoken, "supercolor"))
 	{
-		UINT16 color = R_GetSuperColorByName(value);
+		uint16_t color = R_GetSuperColorByName(value);
 		skin->supercolor = (color ? color : SKINCOLOR_SUPERGOLD1);
 	}
 
@@ -917,9 +917,9 @@ static dboolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value
 //
 // Find skin sprites, sounds & optional status bar face, & add them
 //
-void R_AddSkins(UINT16 wadnum, dboolean mainfile)
+void R_AddSkins(uint16_t wadnum, dboolean mainfile)
 {
-	UINT16 lump, lastlump = 0;
+	uint16_t lump, lastlump = 0;
 	char *buf;
 	char *buf2;
 	char *stoken;
@@ -979,7 +979,7 @@ void R_AddSkins(UINT16 wadnum, dboolean mainfile)
 			// Others can't go in there because we don't want them to be patchable.
 			if (!stricmp(stoken, "name"))
 			{
-				INT32 skinnum = R_SkinAvailableEx(value, false);
+				int32_t skinnum = R_SkinAvailableEx(value, false);
 				strlwr(value);
 				if (skinnum == -1)
 					STRBUFCPY(skin->name, value);
@@ -1068,7 +1068,7 @@ next_token:
 				}
 
 				// Now... we assign everything which used this pointer the new skin id.
-				UINT8 i;
+				uint8_t i;
 
 				cupheader_t *cup;
 				for (cup = kartcupheaders; cup; cup = cup->next)
@@ -1110,9 +1110,9 @@ next_token:
 //
 // Patch skin sprites
 //
-void R_PatchSkins(UINT16 wadnum, dboolean mainfile)
+void R_PatchSkins(uint16_t wadnum, dboolean mainfile)
 {
-	UINT16 lump, lastlump = 0;
+	uint16_t lump, lastlump = 0;
 	char *buf;
 	char *buf2;
 	char *stoken;
@@ -1127,7 +1127,7 @@ void R_PatchSkins(UINT16 wadnum, dboolean mainfile)
 
 	while ((lump = W_CheckForPatchSkinMarkerInPwad(wadnum, lastlump)) != INT16_MAX)
 	{
-		INT32 skinnum = 0;
+		int32_t skinnum = 0;
 
 		// advance by default
 		lastlump = lump + 1;

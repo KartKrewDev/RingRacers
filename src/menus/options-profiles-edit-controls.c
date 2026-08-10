@@ -141,7 +141,7 @@ menu_t OPTIONS_ProfileControlsDef = {
 /*
 static void SetDeviceOnPress(void)
 {
-	UINT8 i;
+	uint8_t i;
 
 	for (i=0; i < MAXDEVICES; i++)
 	{
@@ -161,7 +161,7 @@ static dboolean M_ClearCurrentControl(void)
 	if (currentMenu->menuitems[itemOn].mvar1)
 	{
 		// clear controls for that key
-		INT32 i;
+		int32_t i;
 
 		for (i = 0; i < MAXINPUTMAPPING; i++)
 			optionsmenu.tempcontrols[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
@@ -174,8 +174,8 @@ static dboolean M_ClearCurrentControl(void)
 
 void M_HandleProfileControls(void)
 {
-	const UINT8 pid = 0;
-	UINT8 maxscroll = currentMenu->numitems - 5;
+	const uint8_t pid = 0;
+	uint8_t maxscroll = currentMenu->numitems - 5;
 	M_OptionsTick();
 
 	optionsmenu.contx += (optionsmenu.tcontx - optionsmenu.contx)/2;
@@ -231,7 +231,7 @@ void M_HandleProfileControls(void)
 	}
 }
 
-void M_ProfileTryController(INT32 choice)
+void M_ProfileTryController(int32_t choice)
 {
 	(void)choice;
 
@@ -241,11 +241,11 @@ void M_ProfileTryController(INT32 choice)
 	G_ApplyControlScheme(0, optionsmenu.tempcontrols);
 }
 
-static void M_ProfileControlSaveResponse(INT32 choice)
+static void M_ProfileControlSaveResponse(int32_t choice)
 {
 	if (choice == MA_YES)
 	{
-		SINT8 belongsto = PR_ProfileUsedBy(optionsmenu.profile);
+		int8_t belongsto = PR_ProfileUsedBy(optionsmenu.profile);
 		// Save the profile
 		memcpy(&optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 
@@ -265,7 +265,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 	M_GoBack(0);
 }
 
-void M_ProfileControlsConfirm(INT32 choice)
+void M_ProfileControlsConfirm(int32_t choice)
 {
 	if (!memcmp(optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault)))
 	{
@@ -294,9 +294,9 @@ void M_ProfileControlsConfirm(INT32 choice)
 	}
 }
 
-dboolean M_ProfileControlsInputs(INT32 ch)
+dboolean M_ProfileControlsInputs(int32_t ch)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	(void)ch;
 
 	// By default, accept all inputs.
@@ -307,7 +307,7 @@ dboolean M_ProfileControlsInputs(INT32 ch)
 			if (menucmd[pid].dpad_ud != menucmd[pid].prev_dpad_ud || menucmd[pid].dpad_lr != menucmd[pid].prev_dpad_lr)
 				S_StartSound(NULL, sfx_s3k5b);
 
-			UINT32 newbuttons = menucmd[pid].buttons & ~(menucmd[pid].buttonsHeld);
+			uint32_t newbuttons = menucmd[pid].buttons & ~(menucmd[pid].buttonsHeld);
 
 			if (newbuttons & MBT_L)
 				S_StartSound(NULL, sfx_kc69);
@@ -387,7 +387,7 @@ dboolean M_ProfileControlsInputs(INT32 ch)
 	return false;
 }
 
-void M_ProfileSetControl(INT32 ch)
+void M_ProfileSetControl(int32_t ch)
 {
 	(void) ch;
 
@@ -396,7 +396,7 @@ void M_ProfileSetControl(INT32 ch)
 	G_ResetAllDeviceGameKeyDown();
 }
 
-static void M_ProfileDefaultControlsResponse(INT32 ch)
+static void M_ProfileDefaultControlsResponse(int32_t ch)
 {
 	if (ch == MA_YES)
 	{
@@ -405,7 +405,7 @@ static void M_ProfileDefaultControlsResponse(INT32 ch)
 	}
 }
 
-void M_ProfileDefaultControls(INT32 ch)
+void M_ProfileDefaultControls(int32_t ch)
 {
 	(void)ch;
 	M_StartMessage(
@@ -418,7 +418,7 @@ void M_ProfileDefaultControls(INT32 ch)
 	);
 }
 
-static void M_ProfileClearControlsResponse(INT32 ch)
+static void M_ProfileClearControlsResponse(int32_t ch)
 {
 	if (ch == MA_YES)
 	{
@@ -427,7 +427,7 @@ static void M_ProfileClearControlsResponse(INT32 ch)
 	}
 }
 
-void M_ProfileClearControls(INT32 ch)
+void M_ProfileClearControls(int32_t ch)
 {
 	(void)ch;
 	M_StartMessage(
@@ -451,21 +451,21 @@ void M_MapProfileControl(event_t *ev)
 	if (optionsmenu.bindtimer > TICRATE*5 - 9) // grace period after entering the bind dialog
 		return;
 
-	INT32 *DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
+	int32_t *DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
 
 	if (!DeviceGameKeyDownArray)
 		return;
 
 	// Find every held button.
 	dboolean noinput = true;
-	for (INT32 c = 1; c < NUMINPUTS; ++c)
+	for (int32_t c = 1; c < NUMINPUTS; ++c)
 	{
 		if (DeviceGameKeyDownArray[c] < 3*JOYAXISRANGE/4)
 			continue;
 
 		noinput = false;
 
-		for (UINT8 i = 0; i < MAXINPUTMAPPING; ++i)
+		for (uint8_t i = 0; i < MAXINPUTMAPPING; ++i)
 		{
 			// If this key is already bound, don't bind it again.
 			if (optionsmenu.bindinputs[i] == c)
@@ -487,12 +487,12 @@ void M_MapProfileControl(event_t *ev)
 			// dialog, then buffer a keyup without pressing
 			// anything else. If this happens, don't wipe the
 			// binds, just ignore it.
-			const UINT8 zero[sizeof optionsmenu.bindinputs] = {0};
+			const uint8_t zero[sizeof optionsmenu.bindinputs] = {0};
 			if (!memcmp(zero, optionsmenu.bindinputs, sizeof zero))
 				return;
 		}
 
-		INT32 controln = currentMenu->menuitems[itemOn].mvar1;
+		int32_t controln = currentMenu->menuitems[itemOn].mvar1;
 		memcpy(&optionsmenu.tempcontrols[controln], optionsmenu.bindinputs, sizeof optionsmenu.bindinputs);
 		optionsmenu.bindtimer = 0;
 

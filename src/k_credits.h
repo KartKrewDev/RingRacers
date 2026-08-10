@@ -34,7 +34,7 @@ void F_ContinueCredits(void);
 
 void F_TickCreditsDemoExit(void);
 
-INT32 F_CreditsDemoExitFade(void);
+int32_t F_CreditsDemoExitFade(void);
 
 void F_ConsiderCreditsMusicUpdate(void);
 

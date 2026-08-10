@@ -49,14 +49,14 @@ drawseg_t *drawsegs = NULL;
 drawseg_t *ds_p = NULL;
 
 // indicates doors closed wrt automap bugfix:
-INT32 doorclosed;
+int32_t doorclosed;
 
 // A wall was drawn covering the whole screen, which means we
 // can block off the BSP across that seg.
 dboolean g_walloffscreen;
 
-static std::vector<std::vector<INT32>> node_cache;
-static std::vector<INT32>* current_node_cache;
+static std::vector<std::vector<int32_t>> node_cache;
+static std::vector<int32_t>* current_node_cache;
 
 dboolean R_NoEncore(sector_t *sector, levelflat_t *flat, dboolean ceiling)
 {
@@ -136,7 +136,7 @@ void R_CrunchWallSegment(cliprange_t *start, cliprange_t *next)
 }
 
 template <ClipType Type>
-void R_ClipWallSegment(INT32 first, INT32 last)
+void R_ClipWallSegment(int32_t first, int32_t last)
 {
 	cliprange_t *next;
 	cliprange_t *start;
@@ -245,7 +245,7 @@ void R_ClearClipSegs(void)
 	solidsegs[1].last = 0x7fffffff;
 	newend = solidsegs + 2;
 }
-void R_PortalClearClipSegs(INT32 start, INT32 end)
+void R_PortalClearClipSegs(int32_t start, int32_t end)
 {
 	solidsegs[0].first = -0x7fffffff;
 	solidsegs[0].last = start-1;
@@ -262,8 +262,8 @@ void R_PortalClearClipSegs(INT32 start, INT32 end)
 //
 // Similar for ceiling, only reflected.
 //
-sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
-	INT32 *ceilinglightlevel, dboolean back)
+sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, int32_t *floorlightlevel,
+	int32_t *ceilinglightlevel, dboolean back)
 {
 	if (floorlightlevel)
 		*floorlightlevel = sec->floorlightsec == -1 ?
@@ -280,9 +280,9 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 	{
 		const sector_t *s = &sectors[sec->heightsec];
 		mobj_t *viewmobj = viewplayer->mo;
-		INT32 heightsec;
+		int32_t heightsec;
 		dboolean underwater;
-		UINT8 i = R_GetViewNumber();
+		uint8_t i = R_GetViewNumber();
 
 		if (camera[i].chase)
 			heightsec = R_PointInSubsector(camera[i].x, camera[i].y)->sector->heightsec;
@@ -442,7 +442,7 @@ dboolean R_ShouldFlipTripWire(const line_t *ld)
 //
 static void R_AddLine(seg_t *line)
 {
-	INT32 x1, x2;
+	int32_t x1, x2;
 	angle_t angle1, angle2, span, tspan;
 	static sector_t tempsec;
 	dboolean bothceilingssky = false, bothfloorssky = false;
@@ -513,8 +513,8 @@ static void R_AddLine(seg_t *line)
 		{
 			size_t p;
 			mtag_t tag = Tag_FGet(&line->linedef->tags);
-			INT32 li1 = line->linedef-lines;
-			INT32 li2;
+			int32_t li1 = line->linedef-lines;
+			int32_t li2;
 
 			for (p = 0; (li2 = Tag_Iterate_Lines(tag, p)) >= 0; p++)
 			{
@@ -665,7 +665,7 @@ clipsolid:
 // 0 | 0 | 1 | 2
 // 1 | 4 | 5 | 6
 // 2 | 8 | 9 | A
-INT32 checkcoord[12][4] =
+int32_t checkcoord[12][4] =
 {
 	{3, 0, 2, 1},
 	{3, 0, 2, 0},
@@ -683,8 +683,8 @@ INT32 checkcoord[12][4] =
 static dboolean R_CheckBBox(const fixed_t *bspcoord)
 {
 	angle_t angle1, angle2;
-	INT32 sx1, sx2, boxpos;
-	const INT32* check;
+	int32_t sx1, sx2, boxpos;
+	const int32_t* check;
 	cliprange_t *start;
 
 	// Find the corners of the box that define the edges from current viewpoint.
@@ -762,7 +762,7 @@ void R_SortPolyObjects(subsector_t *sub)
 	if (numpolys)
 	{
 		polyobj_t *po;
-		INT32 i = 0;
+		int32_t i = 0;
 
 		// allocate twice the number needed to minimize allocations
 		if (num_po_ptrs < numpolys*2)
@@ -906,7 +906,7 @@ drawseg_t *firstseg;
 
 static void R_Subsector(size_t num)
 {
-	INT32 count, floorlightlevel, ceilinglightlevel, light;
+	int32_t count, floorlightlevel, ceilinglightlevel, light;
 	seg_t *line;
 	subsector_t *sub;
 	static sector_t tempsec; // Deep water hack
@@ -1255,7 +1255,7 @@ void R_Prep3DFloors(sector_t *sector)
 	ffloor_t *rover;
 	ffloor_t *best;
 	fixed_t bestheight, maxheight;
-	INT32 count, i;
+	int32_t count, i;
 	sector_t *sec;
 	pslope_t *bestslope = NULL;
 	fixed_t heighttest; // I think it's better to check the Z height at the sector's center
@@ -1368,9 +1368,9 @@ void R_Prep3DFloors(sector_t *sector)
 	}
 }
 
-INT32 R_GetPlaneLight(sector_t *sector, fixed_t planeheight, dboolean underside)
+int32_t R_GetPlaneLight(sector_t *sector, fixed_t planeheight, dboolean underside)
 {
-	INT32 i;
+	int32_t i;
 
 	if (!underside)
 	{
@@ -1396,10 +1396,10 @@ INT32 R_GetPlaneLight(sector_t *sector, fixed_t planeheight, dboolean underside)
 //
 // killough 5/2/98: reformatted, removed tail recursion
 
-void R_RenderBSPNode(INT32 bspnum)
+void R_RenderBSPNode(int32_t bspnum)
 {
 	node_t *bsp;
-	INT32 side;
+	int32_t side;
 
 	ZoneScoped;
 
@@ -1462,7 +1462,7 @@ static bool render_cache(size_t cachenum)
 		return false;
 	}
 
-	for (INT32 bspnum : node_cache[cachenum])
+	for (int32_t bspnum : node_cache[cachenum])
 		R_Subsector(bspnum);
 
 	return true;
@@ -1471,5 +1471,5 @@ static bool render_cache(size_t cachenum)
 void R_RenderFirstBSPNode(size_t cachenum)
 {
 	if (!render_cache(cachenum))
-		R_RenderBSPNode((INT32)numnodes - 1);
+		R_RenderBSPNode((int32_t)numnodes - 1);
 }

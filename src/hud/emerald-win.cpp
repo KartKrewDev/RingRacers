@@ -54,7 +54,7 @@ void K_drawEmeraldWin(dboolean overlay)
 	constexpr tic_t kFlashStart = (6 * kDelay) + kSlide;
 	constexpr tic_t kFlash = 10;
 
-	INT32 flags = 0;
+	int32_t flags = 0;
 
 	tic_t t = leveltime - g_emeraldWin;
 

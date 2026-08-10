@@ -58,14 +58,14 @@ static dboolean Z_calloc = false;
 typedef struct memblock_s
 {
 	void **user;
-	INT32 tag; // purgelevel
-	UINT32 id; // Should be ZONEID
+	int32_t tag; // purgelevel
+	uint32_t id; // Should be ZONEID
 
 	size_t size; // including the header and blocks
 	size_t realsize; // size of real data only
 
 	const char *ownerfile;
-	INT32 ownerline;
+	int32_t ownerline;
 
 	struct memblock_s *next, *prev;
 } memblock_t;
@@ -104,7 +104,7 @@ static void Command_Memdump_f(void);
   */
 void Z_Init(void)
 {
-	UINT64 total, memfree;
+	uint64_t total, memfree;
 
 	memset(&head, 0x00, sizeof(head));
 
@@ -129,7 +129,7 @@ void Z_Init(void)
   *             assumed to have been allocated with Z_Malloc/Z_Calloc.
   * \sa Z_FreeTags
   */
-void Z_Free2(void *ptr, const char *file, INT32 line)
+void Z_Free2(void *ptr, const char *file, int32_t line)
 {
 	memblock_t *block;
 
@@ -213,8 +213,8 @@ static void *xm(size_t size)
   * \note You can pass Z_Malloc() a NULL user if the tag is less than PU_PURGELEVEL.
   * \sa Z_CallocAlign, Z_ReallocAlign
   */
-void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits,
-	const char *file, INT32 line)
+void *Z_Malloc2(size_t size, int32_t tag, void *user, int32_t alignbits,
+	const char *file, int32_t line)
 {
 	memblock_t *block;
 	void *ptr;
@@ -277,7 +277,7 @@ void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits,
   * \note You can pass Z_Calloc() a NULL user if the tag is less than PU_PURGELEVEL.
   * \sa Z_MallocAlign, Z_ReallocAlign
   */
-void *Z_Calloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line)
+void *Z_Calloc2(size_t size, int32_t tag, void *user, int32_t alignbits, const char *file, int32_t line)
 {
 #ifdef VALGRIND_MEMPOOL_ALLOC
 	Z_calloc = true;
@@ -301,7 +301,7 @@ void *Z_Calloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char 
   * \note You can pass Z_Realloc() a NULL user if the tag is less than PU_PURGELEVEL.
   * \sa Z_MallocAlign, Z_CallocAlign
   */
-void *Z_Realloc2(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line)
+void *Z_Realloc2(void *ptr, size_t size, int32_t tag, void *user, int32_t alignbits, const char *file, int32_t line)
 {
 	void *rez;
 	memblock_t *block;
@@ -360,7 +360,7 @@ void *Z_Realloc2(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits,
   * \param lowtag The lowest tag to consider.
   * \param hightag The highest tag to consider.
   */
-void Z_FreeTags(INT32 lowtag, INT32 hightag)
+void Z_FreeTags(int32_t lowtag, int32_t hightag)
 {
 	memblock_t *block, *next;
 	TracyCZone(__zone, true);
@@ -392,7 +392,7 @@ void Z_FreeTags(INT32 lowtag, INT32 hightag)
   * \param hightag The highest tag to consider.
   * \param iterfunc The iterator function.
   */
-void Z_IterateTags(INT32 lowtag, INT32 hightag, dboolean (*iterfunc)(void *))
+void Z_IterateTags(int32_t lowtag, int32_t hightag, dboolean (*iterfunc)(void *))
 {
 	memblock_t *block, *next;
 	TracyCZone(__zone, true);
@@ -424,7 +424,7 @@ void Z_IterateTags(INT32 lowtag, INT32 hightag, dboolean (*iterfunc)(void *))
 #define CLEANUPCOUNT 2000
 
 // number of function calls left before next cleanup
-static INT32 nextcleanup = CLEANUPCOUNT;
+static int32_t nextcleanup = CLEANUPCOUNT;
 
 /** This was in Z_Malloc, but was freeing data at
   * unsafe times. Now it is only called when it is safe
@@ -450,10 +450,10 @@ void Z_CheckMemCleanup(void)
   * \param i Identifies from where in the code Z_CheckHeap was called.
   * \author Graue <graue@oceanbase.org>
   */
-void Z_CheckHeap(INT32 i)
+void Z_CheckHeap(int32_t i)
 {
 	memblock_t *block;
-	UINT32 blocknumon = 0;
+	uint32_t blocknumon = 0;
 	void *given;
 
 	for (block = head.next; block != &head; block = block->next)
@@ -525,9 +525,9 @@ void Z_CheckHeap(INT32 i)
   * \sa Z_SetUser
   */
 #ifdef PARANOIA
-void Z_ChangeTag2(void *ptr, INT32 tag, const char *file, INT32 line)
+void Z_ChangeTag2(void *ptr, int32_t tag, const char *file, int32_t line)
 #else
-void Z_ChangeTag(void *ptr, INT32 tag)
+void Z_ChangeTag(void *ptr, int32_t tag)
 #endif
 {
 	memblock_t *block;
@@ -556,7 +556,7 @@ void Z_ChangeTag(void *ptr, INT32 tag)
   * \sa Z_ChangeTag
   */
 #ifdef PARANOIA
-void Z_SetUser2(void *ptr, void **newuser, const char *file, INT32 line)
+void Z_SetUser2(void *ptr, void **newuser, const char *file, int32_t line)
 #else
 void Z_SetUser(void *ptr, void **newuser)
 #endif
@@ -591,7 +591,7 @@ void Z_SetUser(void *ptr, void **newuser)
   * \return Number of bytes currently allocated in the heap for the
   *         given tags.
   */
-size_t Z_TagsUsage(INT32 lowtag, INT32 hightag)
+size_t Z_TagsUsage(int32_t lowtag, int32_t hightag)
 {
 	size_t cnt = 0;
 	memblock_t *rover;
@@ -615,7 +615,7 @@ size_t Z_TagsUsage(INT32 lowtag, INT32 hightag)
   */
 static void Command_Memfree_f(void)
 {
-	UINT64 freebytes, totalbytes;
+	uint64_t freebytes, totalbytes;
 
 	Z_CheckHeap(-1);
 	CONS_Printf("\x82%s", M_GetText("Memory Info\n"));
@@ -661,8 +661,8 @@ static void Command_Memfree_f(void)
 static void Command_Memdump_f(void)
 {
 	memblock_t *block;
-	INT32 mintag = 0, maxtag = INT32_MAX;
-	INT32 i;
+	int32_t mintag = 0, maxtag = INT32_MAX;
+	int32_t i;
 
 	if ((i = COM_CheckParm("-min")))
 		mintag = atoi(COM_Argv(i + 1));

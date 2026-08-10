@@ -25,7 +25,7 @@ menuitem_t PLAY_MainMenu[] =
 
 menu_t PLAY_MainDef = KARTGAMEMODEMENU(PLAY_MainMenu, &PLAY_CharSelectDef);
 
-void M_SetupPlayMenu(INT32 choice)
+void M_SetupPlayMenu(int32_t choice)
 {
 #ifdef TESTERS
 	(void)choice;

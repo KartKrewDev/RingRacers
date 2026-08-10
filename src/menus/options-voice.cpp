@@ -59,7 +59,7 @@ static void draw_routine()
 	int range = 220;
 	float last_peak = g_local_voice_last_peak * range;
 	dboolean detected = g_local_voice_detected;
-	INT32 color = detected ? 65 : 23;
+	int32_t color = detected ? 65 : 23;
 
 	V_DrawFill(x, y, range + 2, 10, 31);
 	V_DrawFill(x + 1, y + 1, (int) last_peak, 8, color);
@@ -74,7 +74,7 @@ static void tick_routine()
 	M_OptionsTick();
 }
 
-static dboolean input_routine(INT32)
+static dboolean input_routine(int32_t)
 {
 	return false;
 }

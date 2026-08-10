@@ -88,7 +88,7 @@ using namespace srb2;
 
 /**	\brief
 */
-static INT32 numVidModes = -1;
+static int32_t numVidModes = -1;
 
 /**	\brief
 */
@@ -97,7 +97,7 @@ static char vidModeName[33][32]; // allow 33 different modes
 rendermode_t rendermode = render_soft;
 rendermode_t chosenrendermode = render_none; // set by command line arguments
 
-UINT8 graphics_started = 0; // Is used in console.c and screen.c
+uint8_t graphics_started = 0; // Is used in console.c and screen.c
 
 // To disable fullscreen at startup; is set in VID_PrepareModeList
 dboolean allow_fullscreen = false;
@@ -109,10 +109,10 @@ static bool disable_mouse = false;
 #define MOUSEBUTTONS_MAX MOUSEBUTTONS
 
 // first entry in the modelist which is not bigger than MAXVIDWIDTHxMAXVIDHEIGHT
-static      INT32          firstEntry = 0;
+static      int32_t          firstEntry = 0;
 
 // Total mouse motion X/Y offsets
-static      INT32        mousemovex = 0, mousemovey = 0;
+static      int32_t        mousemovex = 0, mousemovey = 0;
 
 // SDL vars
 static      SDL_Surface *vidSurface = NULL;
@@ -134,7 +134,7 @@ static std::unique_ptr<rhi::Rhi> g_rhi;
 static uint32_t g_rhi_generation = 0;
 
 // windowed video modes from which to choose from.
-static INT32 windowedModes[MAXWINMODES][2] =
+static int32_t windowedModes[MAXWINMODES][2] =
 {
 	{1920,1200}, // 1.60,6.00
 	{1920,1080}, // 1.66
@@ -167,7 +167,7 @@ static void ValidateDisplay(void)
 	// Validate display ID, otherwise use main display
 	if (cv_display.value == 0)
 	{
-		CV_SetValue(&cv_display, static_cast<INT32>(SDL_GetPrimaryDisplay()));
+		CV_SetValue(&cv_display, static_cast<int32_t>(SDL_GetPrimaryDisplay()));
 	}
 }
 
@@ -254,7 +254,7 @@ static void SDLSetMode(int width, int height, bool fullscreen, bool reposition)
 	}
 }
 
-static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
+static int32_t Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 {
 	if (code >= SDL_SCANCODE_A && code <= SDL_SCANCODE_Z)
 	{
@@ -389,7 +389,7 @@ static void VID_Command_Info_f (void)
 static void VID_Command_ModeList_f(void)
 {
 	// List windowed modes
-	INT32 i = 0;
+	int32_t i = 0;
 	for (i = 0; i < MAXWINMODES; i++)
 	{
 		CONS_Printf("%2d: %dx%d\n", i, windowedModes[i][0], windowedModes[i][1]);
@@ -399,7 +399,7 @@ static void VID_Command_ModeList_f(void)
 
 static void VID_Command_Mode_f (void)
 {
-	INT32 modenum;
+	int32_t modenum;
 
 	if (COM_Argc()!= 2)
 	{
@@ -420,10 +420,10 @@ static inline void SDLJoyRemap(event_t *event)
 	(void)event;
 }
 
-static INT32 SDLJoyAxis(const Sint16 axis, UINT8 pid)
+static int32_t SDLJoyAxis(const Sint16 axis, uint8_t pid)
 {
 	// -32768 to 32767
-	INT32 raxis = axis / 32;
+	int32_t raxis = axis / 32;
 
 	if (Joystick[pid].bGamepadStyle)
 	{
@@ -631,7 +631,7 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 static void Impl_HandleControllerAxisEvent(SDL_GamepadAxisEvent evt)
 {
 	event_t event;
-	INT32 value;
+	int32_t value;
 
 	event.type = ev_gamepad_axis;
 
@@ -1027,8 +1027,8 @@ void I_GetEvent(void)
 		//SDL_memset(&event, 0, sizeof(event_t));
 		event.type = ev_mouse;
 		event.data1 = 0;
-		event.data2 = (INT32)lround(mousemovex * ((float)wwidth / (float)realwidth));
-		event.data3 = (INT32)lround(mousemovey * ((float)wheight / (float)realheight));
+		event.data2 = (int32_t)lround(mousemovex * ((float)wwidth / (float)realwidth));
+		event.data3 = (int32_t)lround(mousemovey * ((float)wheight / (float)realheight));
 		D_PostEvent(&event);
 	}
 
@@ -1102,7 +1102,7 @@ static SDL_Rect src_rect = { 0, 0, 0, 0 };
 //
 void I_UpdateNoVsync(void)
 {
-	INT32 real_vidwait = cv_vidwait.value;
+	int32_t real_vidwait = cv_vidwait.value;
 	cv_vidwait.value = 0;
 	I_FinishUpdate();
 	cv_vidwait.value = real_vidwait;
@@ -1111,7 +1111,7 @@ void I_UpdateNoVsync(void)
 //
 // I_ReadScreen
 //
-void I_ReadScreen(UINT8 *scr)
+void I_ReadScreen(uint8_t *scr)
 {
 	if (rendermode == render_opengl)
 		I_Error ("I_ReadScreen: called while in Legacy GL mode");
@@ -1136,7 +1136,7 @@ void I_SetPalette(RGBA_t *palette)
 }
 
 // return number of fullscreen + X11 modes
-INT32 VID_NumModes(void)
+int32_t VID_NumModes(void)
 {
 	if (USE_FULLSCREEN && numVidModes != -1)
 		return numVidModes - firstEntry;
@@ -1144,7 +1144,7 @@ INT32 VID_NumModes(void)
 		return MAXWINMODES;
 }
 
-const char *VID_GetModeName(INT32 modeNum)
+const char *VID_GetModeName(int32_t modeNum)
 {
 #if 0
 	if (USE_FULLSCREEN && numVidModes != -1) // fullscreen modes
@@ -1174,7 +1174,7 @@ const char *VID_GetModeName(INT32 modeNum)
 	return &vidModeName[modeNum][0];
 }
 
-INT32 VID_GetModeForSize(INT32 w, INT32 h)
+int32_t VID_GetModeForSize(int32_t w, int32_t h)
 {
 	int i;
 	for (i = 0; i < MAXWINMODES; i++)
@@ -1186,7 +1186,7 @@ INT32 VID_GetModeForSize(INT32 w, INT32 h)
 	}
 	return -1;
 #if 0
-	INT32 matchMode = -1, i;
+	int32_t matchMode = -1, i;
 	VID_PrepareModeList();
 	if (USE_FULLSCREEN && numVidModes != -1)
 	{
@@ -1254,7 +1254,7 @@ void VID_PrepareModeList(void)
 	// Under SDL3, we just use the windowed modes list, and scale in windowed fullscreen.
 	allow_fullscreen = true;
 #if 0
-	INT32 i;
+	int32_t i;
 
 	firstEntry = 0;
 
@@ -1390,8 +1390,8 @@ dboolean VID_CheckRenderer(void)
 	return rendererchanged;
 }
 
-static UINT32 refresh_rate;
-static UINT32 VID_GetRefreshRate(void)
+static uint32_t refresh_rate;
+static uint32_t VID_GetRefreshRate(void)
 {
 	if (SDL_WasInit(SDL_INIT_VIDEO) == 0)
 	{
@@ -1408,10 +1408,10 @@ static UINT32 VID_GetRefreshRate(void)
 		return 0;
 	}
 
-	return static_cast<UINT32>(m->refresh_rate);
+	return static_cast<uint32_t>(m->refresh_rate);
 }
 
-INT32 VID_SetMode(INT32 modeNum)
+int32_t VID_SetMode(int32_t modeNum)
 {
 	vid.recalc = 1;
 	vid.bpp = 1;
@@ -1528,7 +1528,7 @@ void I_StartupGraphics(void)
 	// Takes priority over the config.
 	if (M_CheckParm("-renderer"))
 	{
-		INT32 i = 0;
+		int32_t i = 0;
 		CV_PossibleValue_t *renderer_list = cv_renderer_t;
 		const char *modeparm = M_GetNextParm();
 		while (renderer_list[i].strvalue)
@@ -1705,7 +1705,7 @@ rhi::Rhi* srb2::sys::get_rhi(rhi::Handle<rhi::Rhi> handle)
 
 #endif
 
-UINT32 I_GetRefreshRate(void)
+uint32_t I_GetRefreshRate(void)
 {
 	// Moved to VID_GetRefreshRate.
 	// Precalculating it like that won't work as

@@ -58,14 +58,14 @@ enum acs_tagType_e
 class ThreadInfo : public ACSVM::ThreadInfo
 {
 public:
-	UINT32 thread_era;			// If equal to thinker_era, mobj pointers are safe.
+	uint32_t thread_era;			// If equal to thinker_era, mobj pointers are safe.
 	mobj_t *mo;					// Object that activated this thread.
 	line_t *line;				// Linedef that activated this thread.
-	UINT8 side;					// Front / back side of said linedef.
+	uint8_t side;					// Front / back side of said linedef.
 	sector_t *sector;			// Sector that activated this thread.
 	polyobj_t *po;				// Polyobject that activated this thread.
 	bool fromLineSpecial;		// Called from P_ProcessLineSpecial.
-	UINT32 dialogue_era;		// Prevents overlapping dialogue scripts.
+	uint32_t dialogue_era;		// Prevents overlapping dialogue scripts.
 
 	ThreadInfo() :
 		thread_era { thinker_era },

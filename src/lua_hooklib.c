@@ -69,7 +69,7 @@ static int * hookRefs;
 static int   nextid;
 
 // After a hook errors once, don't print the error again.
-static UINT8 * hooksErrored;
+static uint8_t * hooksErrored;
 
 static int errorRef;
 
@@ -261,7 +261,7 @@ typedef struct Hook_State Hook_State;
 typedef void (*Hook_Callback)(Hook_State *);
 
 struct Hook_State {
-	INT32        status;/* return status to calling function */
+	int32_t        status;/* return status to calling function */
 	void       * userdata;
 	int          hook_type;
 	mobjtype_t   mobj_type;/* >0 if mobj hook */
@@ -630,7 +630,7 @@ void LUA_HookVoid(int type)
 		call_hooks(&hook, 0, res_none);
 }
 
-void LUA_HookInt(INT32 number, int hook_type)
+void LUA_HookInt(int32_t number, int hook_type)
 {
 	Hook_State hook;
 	if (prepare_hook(&hook, 0, hook_type))
@@ -786,8 +786,8 @@ static int damage_hook
 		mobj_t *target,
 		mobj_t *inflictor,
 		mobj_t *source,
-		INT32   damage,
-		UINT8   damagetype,
+		int32_t   damage,
+		uint8_t   damagetype,
 		int     hook_type,
 		Hook_Callback results_handler
 ){
@@ -805,19 +805,19 @@ static int damage_hook
 	return hook.status;
 }
 
-int LUA_HookShouldDamage(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+int LUA_HookShouldDamage(mobj_t *target, mobj_t *inflictor, mobj_t *source, int32_t damage, uint8_t damagetype)
 {
 	return damage_hook(target, inflictor, source, damage, damagetype,
 			MOBJ_HOOK(ShouldDamage), res_force);
 }
 
-int LUA_HookMobjDamage(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
+int LUA_HookMobjDamage(mobj_t *target, mobj_t *inflictor, mobj_t *source, int32_t damage, uint8_t damagetype)
 {
 	return damage_hook(target, inflictor, source, damage, damagetype,
 			MOBJ_HOOK(MobjDamage), res_true);
 }
 
-int LUA_HookMobjDeath(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype)
+int LUA_HookMobjDeath(mobj_t *target, mobj_t *inflictor, mobj_t *source, uint8_t damagetype)
 {
 	return damage_hook(target, inflictor, source, 0, damagetype,
 			MOBJ_HOOK(MobjDeath), res_true);
@@ -836,7 +836,7 @@ int LUA_HookMobjMoveBlocked(mobj_t *t1, mobj_t *t2, line_t *line)
 	return hook.status;
 }
 
-void LUA_HookSpecialExecute(activator_t *activator, INT32 *args, char **stringargs)
+void LUA_HookSpecialExecute(activator_t *activator, int32_t *args, char **stringargs)
 {
 	Hook_State hook;
 	if (prepare_string_hook
@@ -880,7 +880,7 @@ int LUA_HookPlayerMsg(int source, int target, int flags, char *msg)
 	return hook.status;
 }
 
-int LUA_HookHurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 damagetype)
+int LUA_HookHurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source, uint8_t damagetype)
 {
 	Hook_State hook;
 	if (prepare_hook(&hook, false, HOOK(HurtMsg)))
@@ -1059,13 +1059,13 @@ static void res_gprankpoints(Hook_State *hook)
 {
 	if (!lua_isnil(gL, -1))
 	{
-		INT16 *points = (INT16*)hook->userdata;
+		int16_t *points = (int16_t*)hook->userdata;
 		*points = lua_tointeger(gL, -1);
 		hook->status = true;
 	}
 }
 
-int LUA_HookGPRankPoints(UINT8 position, UINT8 numplayers, INT16 *points)
+int LUA_HookGPRankPoints(uint8_t position, uint8_t numplayers, int16_t *points)
 {
 	Hook_State hook;
 	if (prepare_hook(&hook, 0, HOOK(GPRankPoints)))

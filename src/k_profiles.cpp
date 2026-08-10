@@ -41,9 +41,9 @@ CV_PossibleValue_t lastprofile_cons_t[] = {{-1, "MIN"}, {MAXPROFILES, "MAX"}, {0
 
 // List of all the profiles.
 static profile_t *profilesList[MAXPROFILES+1]; // +1 because we're gonna add a default "GUEST' profile.
-static UINT8 numprofiles = 0; // # of loaded profiles
+static uint8_t numprofiles = 0; // # of loaded profiles
 
-INT32 PR_GetNumProfiles(void)
+int32_t PR_GetNumProfiles(void)
 {
 	return numprofiles;
 }
@@ -58,9 +58,9 @@ static void PR_GenerateProfileKeys(profile_t *newprofile)
 profile_t* PR_MakeProfile(
 	const char *prname,
 	const char *pname,
-	const char *sname, const UINT16 col,
-	const char *fname, const UINT16 fcol,
-	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
+	const char *sname, const uint16_t col,
+	const char *fname, const uint16_t fcol,
+	int32_t controlarray[num_gamecontrols][MAXINPUTMAPPING],
 	dboolean guest)
 {
 	profile_t *newprofile = static_cast<profile_t*>(Z_Calloc(sizeof(profile_t), PU_STATIC, NULL));
@@ -102,7 +102,7 @@ profile_t* PR_MakeProfile(
 	return newprofile;
 }
 
-profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum)
+profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const uint16_t col, const char *fname, uint16_t fcol, uint8_t pnum)
 {
 	// Generate profile using the player's gamecontrol, as we set them directly when making profiles from menus.
 	profile_t *newprofile = PR_MakeProfile(prname, pname, sname, col, fname, fcol, gamecontrol[pnum], false);
@@ -135,7 +135,7 @@ dboolean PR_AddProfile(profile_t *p)
 		return false;
 }
 
-profile_t* PR_GetProfile(INT32 num)
+profile_t* PR_GetProfile(int32_t num)
 {
 	if (num < numprofiles)
 		return profilesList[num];
@@ -143,9 +143,9 @@ profile_t* PR_GetProfile(INT32 num)
 		return NULL;
 }
 
-dboolean PR_DeleteProfile(INT32 num)
+dboolean PR_DeleteProfile(int32_t num)
 {
-	UINT8 i;
+	uint8_t i;
 	profile_t* sacrifice;
 
 	if (num <= 0 || num > numprofiles)
@@ -216,8 +216,8 @@ void PR_InitNewProfile(void)
 {
 	char pname[PROFILENAMELEN+1] = "PRF";
 	profile_t *dprofile;
-	UINT8 usenum = numprofiles-1;
-	UINT8 i;
+	uint8_t usenum = numprofiles-1;
+	uint8_t i;
 	dboolean nameok = false;
 
 	pname[4] = '\0';
@@ -547,9 +547,9 @@ void PR_LoadProfiles(void)
 				newprof->fov = 100;
 			}
 
-			auto unbound = [](const INT32* map)
+			auto unbound = [](const int32_t* map)
 			{
-				INT32 zero[MAXINPUTMAPPING] = {};
+				int32_t zero[MAXINPUTMAPPING] = {};
 				return !memcmp(map, zero, sizeof zero);
 			};
 			if (unbound(newprof->controls[gc_talk]))
@@ -586,7 +586,7 @@ void PR_LoadProfiles(void)
 	profilesList[PROFILE_GUEST] = dprofile;
 }
 
-static void PR_ApplyProfile_Appearance(profile_t *p, UINT8 playernum)
+static void PR_ApplyProfile_Appearance(profile_t *p, uint8_t playernum)
 {
 	CV_StealthSet(&cv_skin[playernum], p->skinname);
 	CV_StealthSetValue(&cv_playercolor[playernum], p->color);
@@ -597,7 +597,7 @@ static void PR_ApplyProfile_Appearance(profile_t *p, UINT8 playernum)
 	CV_StealthSetValue(&cv_followercolor[playernum], p->followercolor);
 }
 
-static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
+static void PR_ApplyProfile_Settings(profile_t *p, uint8_t playernum)
 {
 	// toggles -- be sure to also adjust M_ProfileEditApply
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
@@ -613,7 +613,7 @@ static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 	G_ApplyControlScheme(playernum, p->controls);
 }
 
-static void PR_ApplyProfile_Memory(UINT8 profilenum, UINT8 playernum)
+static void PR_ApplyProfile_Memory(uint8_t profilenum, uint8_t playernum)
 {
 	// set memory cvar
 	CV_StealthSetValue(&cv_lastprofile[playernum], profilenum);
@@ -625,7 +625,7 @@ static void PR_ApplyProfile_Memory(UINT8 profilenum, UINT8 playernum)
 	}
 }
 
-void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
+void PR_ApplyProfile(uint8_t profilenum, uint8_t playernum)
 {
 	profile_t *p = PR_GetProfile(profilenum);
 
@@ -643,7 +643,7 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	PR_ApplyProfile_Memory(profilenum, playernum);
 }
 
-void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum)
+void PR_ApplyProfileLight(uint8_t profilenum, uint8_t playernum)
 {
 	profile_t *p = PR_GetProfile(profilenum);
 
@@ -658,7 +658,7 @@ void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum)
 	PR_ApplyProfile_Appearance(p, playernum);
 }
 
-void PR_ApplyProfileToggles(UINT8 profilenum, UINT8 playernum)
+void PR_ApplyProfileToggles(uint8_t profilenum, uint8_t playernum)
 {
 	profile_t *p = PR_GetProfile(profilenum);
 
@@ -673,7 +673,7 @@ void PR_ApplyProfileToggles(UINT8 profilenum, UINT8 playernum)
 	PR_ApplyProfile_Settings(p, playernum);
 }
 
-void PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
+void PR_ApplyProfilePretend(uint8_t profilenum, uint8_t playernum)
 {
 	profile_t *p = PR_GetProfile(profilenum);
 
@@ -689,9 +689,9 @@ void PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
 	PR_ApplyProfile_Memory(profilenum, playernum);
 }
 
-UINT8 PR_GetProfileNum(profile_t *p)
+uint8_t PR_GetProfileNum(profile_t *p)
 {
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < MAXPROFILES+1; i++)
 	{
 		profile_t *comp = PR_GetProfile(i);
@@ -701,10 +701,10 @@ UINT8 PR_GetProfileNum(profile_t *p)
 	return 0;
 }
 
-SINT8 PR_ProfileUsedBy(profile_t *p)
+int8_t PR_ProfileUsedBy(profile_t *p)
 {
-	UINT8 i;
-	UINT8 prn = PR_GetProfileNum(p);
+	uint8_t i;
+	uint8_t prn = PR_GetProfileNum(p);
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -717,8 +717,8 @@ SINT8 PR_ProfileUsedBy(profile_t *p)
 
 profile_t *PR_GetPlayerProfile(player_t *player)
 {
-	const UINT8 playerNum = (player - players);
-	UINT8 i;
+	const uint8_t playerNum = (player - players);
+	uint8_t i;
 
 	if (demo.playback)
 	{
@@ -736,14 +736,14 @@ profile_t *PR_GetPlayerProfile(player_t *player)
 	return NULL;
 }
 
-profile_t *PR_GetLocalPlayerProfile(INT32 player)
+profile_t *PR_GetLocalPlayerProfile(int32_t player)
 {
 	if (player >= MAXSPLITSCREENPLAYERS)
 		return NULL;
 	return PR_GetProfile(cv_lastprofile[player].value);
 }
 
-dboolean PR_IsLocalPlayerGuest(INT32 player)
+dboolean PR_IsLocalPlayerGuest(int32_t player)
 {
 	return !(cv_lastprofile[player].value);
 }

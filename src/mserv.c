@@ -69,7 +69,7 @@ msg_server_t *ms_ServerList;
 I_mutex       ms_ServerList_mutex;
 #endif
 
-UINT16 current_port = 0;
+uint16_t current_port = 0;
 
 /** Adds variables and commands relating to the master server.
   *

@@ -16,12 +16,12 @@
 
 struct setup_explosions_s setup_explosions[CSEXPLOSIONS];
 
-void M_SetupReadyExplosions(dboolean charsel, UINT16 basex, UINT16 basey, UINT16 color)
+void M_SetupReadyExplosions(dboolean charsel, uint16_t basex, uint16_t basey, uint16_t color)
 {
-	UINT8 i, j;
-	UINT8 e = 0;
-	UINT16 maxx = (charsel ? 9 : gamedata->challengegridwidth);
-	UINT16 maxy = (charsel ? 9 : CHALLENGEGRIDHEIGHT);
+	uint8_t i, j;
+	uint8_t e = 0;
+	uint16_t maxx = (charsel ? 9 : gamedata->challengegridwidth);
+	uint16_t maxy = (charsel ? 9 : CHALLENGEGRIDHEIGHT);
 
 	while (setup_explosions[e].tics)
 	{
@@ -32,12 +32,12 @@ void M_SetupReadyExplosions(dboolean charsel, UINT16 basex, UINT16 basey, UINT16
 
 	for (i = 0; i < 3; i++)
 	{
-		UINT8 t = 5 + (i*2);
-		UINT8 offset = (i+1);
+		uint8_t t = 5 + (i*2);
+		uint8_t offset = (i+1);
 
 		for (j = 0; j < 4; j++)
 		{
-			INT16 x = basex, y = basey;
+			int16_t x = basex, y = basey;
 
 			switch (j)
 			{

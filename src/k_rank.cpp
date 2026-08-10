@@ -35,10 +35,10 @@
 // and true level loading and clean up all of the
 // global variable garbage it uses ... but I stopped
 // myself. So here's code duplication hell instead.
-static UINT32 g_rankCapsules_mapthingsPos[UINT16_MAX];
+static uint32_t g_rankCapsules_mapthingsPos[UINT16_MAX];
 static size_t g_rankCapsules_nummapthings = 0;
 static dboolean g_rankCapsules_udmf = false;
-static UINT32 g_rankCapsules_count = 0;
+static uint32_t g_rankCapsules_count = 0;
 
 /*--------------------------------------------------
 	static void RankCapsules_TextmapCount(size_t size)
@@ -53,10 +53,10 @@ static UINT32 g_rankCapsules_count = 0;
 	Return:-
 		N/A
 --------------------------------------------------*/
-static UINT32 RankCapsules_TextmapCount(size_t size)
+static uint32_t RankCapsules_TextmapCount(size_t size)
 {
 	const char *tkn = M_TokenizerRead(0);
-	UINT8 brackets = 0;
+	uint8_t brackets = 0;
 
 	g_rankCapsules_nummapthings = 0;
 
@@ -127,7 +127,7 @@ static void RankCapsules_LoadTextmap(void)
 
 			if (fastcmp(param, "type"))
 			{
-				UINT16 type = atol(val);
+				uint16_t type = atol(val);
 
 				if (type == mobjinfo[MT_BATTLECAPSULE].doomednum
 					|| type == mobjinfo[MT_CDUFO].doomednum)
@@ -143,7 +143,7 @@ static void RankCapsules_LoadTextmap(void)
 
 #if 0
 /*--------------------------------------------------
-	static void RankCapsules_LoadThingsLump(UINT8 *data)
+	static void RankCapsules_LoadThingsLump(uint8_t *data)
 
 		Loads binary map data for the result of
 		RankCapsules_CountFromMap.
@@ -154,13 +154,13 @@ static void RankCapsules_LoadTextmap(void)
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void RankCapsules_LoadThingsLump(UINT8 *data)
+static void RankCapsules_LoadThingsLump(uint8_t *data)
 {
 	size_t i;
 
 	for (i = 0; i < g_rankCapsules_nummapthings; i++)
 	{
-		UINT16 type = 0;
+		uint16_t type = 0;
 
 		data += 2; // x
 		data += 2; // y
@@ -218,7 +218,7 @@ static dboolean RankCapsules_LoadMapData(const virtres_t *virt)
 		}
 
 		// Traditional doom map format just assumes the number of elements from the lump sizes.
-		g_rankCapsules_nummapthings = virtthings->size / (5 * sizeof (INT16));
+		g_rankCapsules_nummapthings = virtthings->size / (5 * sizeof (int16_t));
 	}
 
 	// Load map data.
@@ -240,7 +240,7 @@ static dboolean RankCapsules_LoadMapData(const virtres_t *virt)
 }
 
 /*--------------------------------------------------
-	static UINT32 RankCapsules_CountFromMap(INT32 cuplevelnum)
+	static uint32_t RankCapsules_CountFromMap(int32_t cuplevelnum)
 
 		Counts the number of capsules in a map, without
 		needing to fully load it.
@@ -251,7 +251,7 @@ static dboolean RankCapsules_LoadMapData(const virtres_t *virt)
 	Return:-
 		Number of MT_BATTLECAPSULE instances found.
 --------------------------------------------------*/
-static UINT32 RankCapsules_CountFromMap(const INT32 cupLevelNum)
+static uint32_t RankCapsules_CountFromMap(const int32_t cupLevelNum)
 {
 	lumpnum_t lp = mapheaderinfo[cupLevelNum]->lumpnum;
 	virtres_t *virt = NULL;
@@ -289,9 +289,9 @@ static UINT32 RankCapsules_CountFromMap(const INT32 cupLevelNum)
 --------------------------------------------------*/
 void gpRank_t::Init(void)
 {
-	UINT8 numHumans = 0;
-	UINT32 exp = 0;
-	INT32 i;
+	uint8_t numHumans = 0;
+	uint32_t exp = 0;
+	int32_t i;
 
 	memset(this, 0, sizeof(gpRank_t));
 	skin = MAXSKINS;
@@ -330,7 +330,7 @@ void gpRank_t::Init(void)
 
 	for (i = 0; i < grandprixinfo.cup->numlevels; i++)
 	{
-		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
+		const int32_t cupLevelNum = grandprixinfo.cup->cachedlevels[i];
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
 			exp += EXP_TARGET;
@@ -346,7 +346,7 @@ void gpRank_t::Init(void)
 	// for an accurate count of how many capsules they have.
 	for (i = 0; i < grandprixinfo.cup->numbonus; i++)
 	{
-		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS + i];
+		const int32_t cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS + i];
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
 			totalPrisons += RankCapsules_CountFromMap(cupLevelNum);
@@ -360,14 +360,14 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 }
 
 /*--------------------------------------------------
-	void K_RejiggerGPRankData(gpRank_t *rankData, UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt)
+	void K_RejiggerGPRankData(gpRank_t *rankData, uint16_t removedmap, uint16_t removedgt, uint16_t addedmap, uint16_t addedgt)
 
 		See header file for description.
 --------------------------------------------------*/
-void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt)
+void gpRank_t::Rejigger(uint16_t removedmap, uint16_t removedgt, uint16_t addedmap, uint16_t addedgt)
 {
-	INT32 i;
-	UINT32 deltaPoints = 0;
+	int32_t i;
+	uint32_t deltaPoints = 0;
 
 	if ((removedgt == GT_RACE) != (addedgt == GT_RACE))
 	{
@@ -383,9 +383,9 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 			totalPoints = 0;
 	}
 
-	INT32 deltaExp = 0;
-	INT32 deltaPrisons = 0;
-	INT32 deltaRings = 0;
+	int32_t deltaExp = 0;
+	int32_t deltaPrisons = 0;
+	int32_t deltaRings = 0;
 
 	if (removedmap < nummapheaders && mapheaderinfo[removedmap] != NULL
 	&& removedgt < numgametypes && gametypes[removedgt])
@@ -449,7 +449,7 @@ void gpRank_t::Rejigger(UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UI
 	}
 }
 
-void K_RejiggerGPRankData(gpRank_t *rankData, UINT16 removedmap, UINT16 removedgt, UINT16 addedmap, UINT16 addedgt)
+void K_RejiggerGPRankData(gpRank_t *rankData, uint16_t removedmap, uint16_t removedgt, uint16_t addedmap, uint16_t addedgt)
 {
 	rankData->Rejigger(removedmap, removedgt, addedmap, addedgt);
 }
@@ -496,7 +496,7 @@ void gpRank_t::Update(void)
 	lvl->totalExp = EXP_TARGET;
 	lvl->totalPrisons = maptargets;
 
-	UINT8 i;
+	uint8_t i;
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false
@@ -508,7 +508,7 @@ void gpRank_t::Update(void)
 
 		player_t *const player = &players[i];
 
-		UINT8 podiumPosition = K_GetPodiumPosition(player);
+		uint8_t podiumPosition = K_GetPodiumPosition(player);
 		if (podiumPosition < position) // port priority
 		{
 			position = podiumPosition;
@@ -551,7 +551,7 @@ void K_UpdateGPRank(gpRank_t *rankData)
 
 gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 {
-	INT32 retGrade = GRADE_E;
+	int32_t retGrade = GRADE_E;
 
 	{
 		extern consvar_t cv_debugrank;
@@ -629,16 +629,16 @@ fixed_t K_CalculateGPPercent(gpRank_t *rankData)
 	rankData->scoreContinues = 0;
 	rankData->scoreTotal = 0;
 
-	const INT32 expWeight = (rankData->totalExp > 0) ? RANK_WEIGHT_EXP : 0;
-	const INT32 prisonsWeight = (rankData->totalPrisons > 0) ? RANK_WEIGHT_PRISONS : 0;
+	const int32_t expWeight = (rankData->totalExp > 0) ? RANK_WEIGHT_EXP : 0;
+	const int32_t prisonsWeight = (rankData->totalPrisons > 0) ? RANK_WEIGHT_PRISONS : 0;
 
-	const INT32 total = RANK_WEIGHT_POSITION + expWeight + prisonsWeight + RANK_WEIGHT_RINGS;
-	const INT32 continuesPenalty = total / RANK_CONTINUE_PENALTY_DIV;
+	const int32_t total = RANK_WEIGHT_POSITION + expWeight + prisonsWeight + RANK_WEIGHT_RINGS;
+	const int32_t continuesPenalty = total / RANK_CONTINUE_PENALTY_DIV;
 
 	if (rankData->position > 0)
 	{
-		const INT32 sc = (rankData->position - 1);
-		const INT32 loser = (RANK_NEUTRAL_POSITION - 1);
+		const int32_t sc = (rankData->position - 1);
+		const int32_t loser = (RANK_NEUTRAL_POSITION - 1);
 		rankData->scorePosition += ((loser - sc) * RANK_WEIGHT_POSITION) / loser;
 	}
 
@@ -681,11 +681,11 @@ fixed_t K_CalculateGPPercent(gpRank_t *rankData)
 }
 
 /*--------------------------------------------------
-	UINT16 K_GetGradeColor(gp_rank_e grade)
+	uint16_t K_GetGradeColor(gp_rank_e grade)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT16 K_GetGradeColor(gp_rank_e grade)
+uint16_t K_GetGradeColor(gp_rank_e grade)
 {
 	switch (grade)
 	{

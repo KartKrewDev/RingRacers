@@ -34,7 +34,7 @@ extern "C" {
 
 // detect a bug if we increase JOYBUTTONS above DIJOYSTATE's number of buttons
 #if (JOYBUTTONS > 64)
-"JOYBUTTONS is greater than INT64 bits can hold"
+"JOYBUTTONS is greater than int64_t bits can hold"
 #endif
 
 /**	\brief	The struct JoyType_s
@@ -47,10 +47,10 @@ struct JoyType_t
 {
 	/*! if true, we MUST Poll() to get new joystick data,
 	that is: we NEED the DIRECTINPUTDEVICE2 ! (watchout NT compatibility) */
-	INT32 bJoyNeedPoll;
+	int32_t bJoyNeedPoll;
 	/*! this joystick is a gamepad, read: digital axes
 	if FALSE, interpret the joystick event data as JOYAXISRANGE (see above) */
-	INT32 bGamepadStyle;
+	int32_t bGamepadStyle;
 
 };
 /**	\brief Joystick info
@@ -59,12 +59,12 @@ struct JoyType_t
 
 extern JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
-void I_SetGamepadPlayerIndex(INT32 device_id, INT32 index);
-void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue);
-void I_GetGamepadGuid(INT32 device_id, char *out, int out_len);
-void I_GetGamepadName(INT32 device_id, char *out, int out_len);
-void I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength);
-void I_GamepadRumbleTriggers(INT32 device_id, UINT16 left_strength, UINT16 right_strength);
+void I_SetGamepadPlayerIndex(int32_t device_id, int32_t index);
+void I_SetGamepadIndicatorColor(int32_t device_id, uint8_t red, uint8_t green, uint8_t blue);
+void I_GetGamepadGuid(int32_t device_id, char *out, int out_len);
+void I_GetGamepadName(int32_t device_id, char *out, int out_len);
+void I_GamepadRumble(int32_t device_id, uint16_t low_strength, uint16_t high_strength);
+void I_GamepadRumbleTriggers(int32_t device_id, uint16_t left_strength, uint16_t right_strength);
 
 #ifdef __cplusplus
 } // extern "C"

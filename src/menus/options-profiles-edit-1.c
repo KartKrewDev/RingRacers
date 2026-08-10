@@ -57,9 +57,9 @@ menu_t OPTIONS_EditProfileDef = {
 };
 
 // Returns true if the profile can be saved, false otherwise. Also starts messages if necessary.
-static dboolean M_ProfileEditEnd(const UINT8 pid)
+static dboolean M_ProfileEditEnd(const uint8_t pid)
 {
-	UINT8 i;
+	uint8_t i;
 
 	// Guest profile, you can't edit that one!
 	if (optionsmenu.profilen == 0)
@@ -93,7 +93,7 @@ static dboolean M_ProfileEditEnd(const UINT8 pid)
 
 static void M_ProfileEditApply(void)
 {
-	SINT8 belongsto = PR_ProfileUsedBy(optionsmenu.profile);
+	int8_t belongsto = PR_ProfileUsedBy(optionsmenu.profile);
 	// Save the profile
 	optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;
 	optionsmenu.profile->autoroulette = cv_dummyprofileautoroulette.value;
@@ -142,11 +142,11 @@ static void M_ProfileEditExit(void)
 }
 
 // For profile edit, just make sure going back resets the card to its position, the rest is taken care of automatically.
-dboolean M_ProfileEditInputs(INT32 ch)
+dboolean M_ProfileEditInputs(int32_t ch)
 {
 
 	(void) ch;
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
 	if (M_MenuBackPressed(pid))
 	{
@@ -205,9 +205,9 @@ void M_HandleProfileEdit(void)
 }
 
 // Confirm Profile edi via button.
-void M_ConfirmProfile(INT32 choice)
+void M_ConfirmProfile(int32_t choice)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 	(void) choice;
 
 	if (M_ProfileEditEnd(pid))
@@ -228,7 +228,7 @@ void M_ConfirmProfile(INT32 choice)
 }
 
 // Prompt a device selection window (just tap any button on the device you want)
-void M_ProfileDeviceSelect(INT32 choice)
+void M_ProfileDeviceSelect(int32_t choice)
 {
 	(void)choice;
 

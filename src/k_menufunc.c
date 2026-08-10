@@ -52,11 +52,11 @@ dboolean menuactive = false;
 menu_t *currentMenu = &MAIN_ProfilesDef;
 menu_t *restoreMenu = NULL;
 
-INT16 itemOn = 0; // menu item skull is on, Hack by Tails 09-18-2002
-INT16 skullAnimCounter = 8; // skull animation counter
+int16_t itemOn = 0; // menu item skull is on, Hack by Tails 09-18-2002
+int16_t skullAnimCounter = 8; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
 
-INT32 menuKey = -1; // keyboard key pressed for menu
+int32_t menuKey = -1; // keyboard key pressed for menu
 menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 // Prevent early resetting in Attack modes when setting a new best time.
@@ -150,7 +150,7 @@ static void M_AddFloatVar(consvar_t *cv, fixed_t step)
 	CV_Set(cv, s);
 }
 
-void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
+void M_ChangeCvarDirect(int32_t choice, consvar_t *cv)
 {
 	// Backspace sets values to default value
 	if (choice == -1)
@@ -182,7 +182,7 @@ void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 	}
 }
 
-static void M_ChangeCvarResponse(INT32 choice)
+static void M_ChangeCvarResponse(int32_t choice)
 {
 	if (choice != MA_YES)
 		return;
@@ -191,7 +191,7 @@ static void M_ChangeCvarResponse(INT32 choice)
 	M_ChangeCvarDirect(choice, cvar);
 }
 
-static void M_ChangeCvar(INT32 choice)
+static void M_ChangeCvar(int32_t choice)
 {
 	consvar_t *cvar = currentMenu->menuitems[itemOn].itemaction.cvar;
 
@@ -250,7 +250,7 @@ static const char *M_QueryCvarAction(const char *replace)
 
 dboolean M_NextOpt(void)
 {
-	INT16 oldItemOn = itemOn; // prevent infinite loop
+	int16_t oldItemOn = itemOn; // prevent infinite loop
 
 	if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_PASSWORD)
 		(currentMenu->menuitems[itemOn].itemaction.cvar)->value = 0;
@@ -279,7 +279,7 @@ dboolean M_NextOpt(void)
 
 dboolean M_PrevOpt(void)
 {
-	INT16 oldItemOn = itemOn; // prevent infinite loop
+	int16_t oldItemOn = itemOn; // prevent infinite loop
 
 	if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_PASSWORD)
 		(currentMenu->menuitems[itemOn].itemaction.cvar)->value = 0;
@@ -363,7 +363,7 @@ dboolean M_Responder(event_t *ev)
 	if (gamestate == GS_MENU && ev->type == ev_gamepad_device_removed && G_GetPlayerForDevice(ev->device) != -1)
 	{
 		int i;
-		INT32 player = G_GetPlayerForDevice(ev->device);
+		int32_t player = G_GetPlayerForDevice(ev->device);
 
 		// Unassign all controllers
 		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
@@ -481,7 +481,7 @@ dboolean M_Responder(event_t *ev)
 				// Quick Spectate (L+R+A+Start online)
 				if (G_GametypeHasSpectators())
 				{
-					UINT8 workingpid = 0;
+					uint8_t workingpid = 0;
 					for (workingpid = 0; workingpid <= splitscreen; workingpid++)
 					{
 						if (players[g_localplayers[workingpid]].spectator == true)
@@ -755,7 +755,7 @@ void M_StartControlPanel(void)
 		return;
 	}
 
-	INT32 i;
+	int32_t i;
 
 	G_ResetAllDeviceGameKeyDown();
 	memset(menucmd, 0, sizeof (menucmd));
@@ -860,7 +860,7 @@ void M_StartControlPanel(void)
 			// options don't need initializing here.
 
 			// make sure we don't overstep that.
-			const INT32 maxp = PR_GetNumProfiles();
+			const int32_t maxp = PR_GetNumProfiles();
 			if (optionsmenu.profilen > maxp)
 				optionsmenu.profilen = maxp;
 			else if (optionsmenu.profilen < 0)
@@ -948,7 +948,7 @@ void M_ClearMenusNoTitle(dboolean callexitmenufunc)
 	menuactive = false;
 }
 
-void M_SelectableClearMenus(INT32 choice)
+void M_SelectableClearMenus(int32_t choice)
 {
 	(void)choice;
 	M_ClearMenus(true);
@@ -959,7 +959,7 @@ void M_SelectableClearMenus(INT32 choice)
 //
 void M_SetupNextMenu(menu_t *menudef, dboolean notransition)
 {
-	INT16 i;
+	int16_t i;
 
 	if (!notransition)
 	{
@@ -1035,9 +1035,9 @@ void M_SetupNextMenu(menu_t *menudef, dboolean notransition)
 #endif
 }
 
-void M_GoBack(INT32 choice)
+void M_GoBack(int32_t choice)
 {
-	const INT16 behaviourflags = currentMenu->behaviourflags;
+	const int16_t behaviourflags = currentMenu->behaviourflags;
 
 	(void)choice;
 
@@ -1068,7 +1068,7 @@ void M_GoBack(INT32 choice)
 //
 // M_Ticker
 //
-void M_SetMenuDelay(UINT8 i)
+void M_SetMenuDelay(uint8_t i)
 {
 	menucmd[i].delayCount++;
 	if (menucmd[i].delayCount < 1)
@@ -1084,9 +1084,9 @@ void M_SetMenuDelay(UINT8 i)
 	}
 }
 
-void M_UpdateMenuCMD(UINT8 i, dboolean bailrequired, dboolean chat_open)
+void M_UpdateMenuCMD(uint8_t i, dboolean bailrequired, dboolean chat_open)
 {
-	UINT8 mp = max(1, setup_numplayers);
+	uint8_t mp = max(1, setup_numplayers);
 
 	menucmd[i].prev_dpad_ud = menucmd[i].dpad_ud;
 	menucmd[i].prev_dpad_lr = menucmd[i].dpad_lr;
@@ -1139,7 +1139,7 @@ void M_UpdateMenuCMD(UINT8 i, dboolean bailrequired, dboolean chat_open)
 	}
 }
 
-dboolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
+dboolean M_MenuButtonPressed(uint8_t pid, uint32_t bt)
 {
 	if (menucmd[pid].buttonsHeld & bt)
 	{
@@ -1149,40 +1149,40 @@ dboolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 	return !!(menucmd[pid].buttons & bt);
 }
 
-dboolean M_MenuButtonHeld(UINT8 pid, UINT32 bt)
+dboolean M_MenuButtonHeld(uint8_t pid, uint32_t bt)
 {
 	return !!(menucmd[pid].buttons & bt);
 }
 
 // Returns true if we press the confirmation button
-dboolean M_MenuConfirmPressed(UINT8 pid)
+dboolean M_MenuConfirmPressed(uint8_t pid)
 {
 	 return M_MenuButtonPressed(pid, MBT_A);
 }
 
-dboolean M_MenuConfirmHeld(UINT8 pid)
+dboolean M_MenuConfirmHeld(uint8_t pid)
 {
 	 return M_MenuButtonHeld(pid, MBT_A);
 }
 
 // Returns true if we press the Cancel button
-dboolean M_MenuBackPressed(UINT8 pid)
+dboolean M_MenuBackPressed(uint8_t pid)
 {
 	 return (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X));
 }
 
-dboolean M_MenuBackHeld(UINT8 pid)
+dboolean M_MenuBackHeld(uint8_t pid)
 {
 	 return (M_MenuButtonHeld(pid, MBT_B) || M_MenuButtonHeld(pid, MBT_X));
 }
 
 // Retrurns true if we press the tertiary option button (C)
-dboolean M_MenuExtraPressed(UINT8 pid)
+dboolean M_MenuExtraPressed(uint8_t pid)
 {
 	 return M_MenuButtonPressed(pid, MBT_C);
 }
 
-dboolean M_MenuExtraHeld(UINT8 pid)
+dboolean M_MenuExtraHeld(uint8_t pid)
 {
 	 return M_MenuButtonHeld(pid, MBT_C);
 }
@@ -1190,10 +1190,10 @@ dboolean M_MenuExtraHeld(UINT8 pid)
 
 static void M_HandleMenuInput(void)
 {
-	void (*routine)(INT32 choice); // for some casting problem
-	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
-	SINT8 lr = 0, ud = 0;
-	INT32 thisMenuKey = menuKey;
+	void (*routine)(int32_t choice); // for some casting problem
+	uint8_t pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+	int8_t lr = 0, ud = 0;
+	int32_t thisMenuKey = menuKey;
 
 	menuKey = -1;
 
@@ -1409,7 +1409,7 @@ static void M_HandleMenuInput(void)
 
 void M_Ticker(void)
 {
-	INT32 i;
+	int32_t i;
 
 	HU_TickSongCredits();
 

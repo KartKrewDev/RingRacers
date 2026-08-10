@@ -31,7 +31,7 @@ static void prepare_rastertab(void);
 
 static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, vissprite_t *vis);
 
-static void rasterize_segment_tex(INT32 x1, INT32 y1, INT32 x2, INT32 y2, INT32 tv1, INT32 tv2, INT32 tc, INT32 dir)
+static void rasterize_segment_tex(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t tv1, int32_t tv2, int32_t tc, int32_t dir)
 {
 	{
 		fixed_t xs, xe, count;
@@ -137,11 +137,11 @@ void R_DrawFloorSplat(vissprite_t *spr)
 	fixed_t xscale, yscale;
 	fixed_t xoffset, yoffset;
 	fixed_t leftoffset, topoffset;
-	INT32 i;
+	int32_t i;
 
 	dboolean hflip = (spr->xiscale < 0);
 	dboolean vflip = (spr->cut & SC_VFLIP);
-	UINT8 flipflags = 0;
+	uint8_t flipflags = 0;
 
 	renderflags_t renderflags = spr->renderflags;
 
@@ -304,8 +304,8 @@ void R_DrawFloorSplat(vissprite_t *spr)
 static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, vissprite_t *vis)
 {
 	// rasterizing
-	INT32 miny = viewheight + 1, maxy = 0;
-	INT32 y, x1, ry1, x2, y2, i;
+	int32_t miny = viewheight + 1, maxy = 0;
+	int32_t y, x1, ry1, x2, y2, i;
 	fixed_t offsetx = 0, offsety = 0;
 	fixed_t planeheight = 0;
 	fixed_t step;
@@ -373,7 +373,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 	// do segment d -> left side of texture
 	RASTERPARAMS(0,3,pSplat->width-1,0,0,1);
 
-	ds.source = (UINT8 *)pSplat->pic;
+	ds.source = (uint8_t *)pSplat->pic;
 	ds.flatwidth = pSplat->width;
 	ds.flatheight = pSplat->height;
 
@@ -455,7 +455,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 
 		if (x1 > x2)
 		{
-			INT32 swap = x1;
+			int32_t swap = x1;
 			x1 = x2;
 			x2 = swap;
 		}
@@ -536,7 +536,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 
 static void prepare_rastertab(void)
 {
-	INT32 i;
+	int32_t i;
 	prastertab = rastertab;
 	for (i = 0; i < vid.height; i++)
 	{

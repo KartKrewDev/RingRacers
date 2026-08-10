@@ -35,10 +35,10 @@ EXPORT dboolean HWRAPI(Init) (void);
 EXPORT void HWRAPI(Shutdown) (void);
 #endif
 EXPORT void HWRAPI(SetPalette) (RGBA_t *ppal);
-EXPORT void HWRAPI(FinishUpdate) (INT32 waitvbl);
+EXPORT void HWRAPI(FinishUpdate) (int32_t waitvbl);
 EXPORT void HWRAPI(Draw2DLine) (F2DCoord *v1, F2DCoord *v2, RGBA_t Color);
 EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags);
-EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, UINT32 *IndexArray);
+EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, uint32_t *IndexArray);
 EXPORT void HWRAPI(RenderSkyDome) (gl_sky_t *sky);
 EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags);
 EXPORT void HWRAPI(ResetRenderState) (void);
@@ -46,18 +46,18 @@ EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask, FBOOLEAN DepthMask, FRGBAFl
 EXPORT void HWRAPI(SetTexture) (GLMipmap_t *TexInfo);
 EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *TexInfo);
 EXPORT void HWRAPI(DeleteTexture) (GLMipmap_t *TexInfo);
-EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height, INT32 dst_stride, UINT16 *dst_data);
-EXPORT void HWRAPI(GClipRect) (INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, float nearclip);
+EXPORT void HWRAPI(ReadRect) (int32_t x, int32_t y, int32_t width, int32_t height, int32_t dst_stride, uint16_t *dst_data);
+EXPORT void HWRAPI(GClipRect) (int32_t minx, int32_t miny, int32_t maxx, int32_t maxy, float nearclip);
 EXPORT void HWRAPI(ClearMipMapCache) (void);
 
 //Hurdler: added for backward compatibility
-EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value);
+EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, int32_t Value);
 
 //Hurdler: added for new development
-EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, float duration, float tics, INT32 nextFrameIndex, FTransform *pos, float hscale, float vscale, UINT8 flipped, UINT8 hflipped, FSurfaceInfo *Surface);
+EXPORT void HWRAPI(DrawModel) (model_t *model, int32_t frameIndex, float duration, float tics, int32_t nextFrameIndex, FTransform *pos, float hscale, float vscale, uint8_t flipped, uint8_t hflipped, FSurfaceInfo *Surface);
 EXPORT void HWRAPI(CreateModelVBOs) (model_t *model);
 EXPORT void HWRAPI(SetTransform) (FTransform *stransform);
-EXPORT INT32 HWRAPI(GetTextureUsed) (void);
+EXPORT int32_t HWRAPI(GetTextureUsed) (void);
 
 EXPORT void HWRAPI(FlushScreenTextures) (void);
 EXPORT void HWRAPI(StartScreenWipe) (void);
@@ -76,7 +76,7 @@ EXPORT void HWRAPI(CleanShaders) (void);
 EXPORT void HWRAPI(SetShader) (int type);
 EXPORT void HWRAPI(UnSetShader) (void);
 
-EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value);
+EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, int32_t value);
 EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, dboolean isfragment);
 
 // ==========================================================================

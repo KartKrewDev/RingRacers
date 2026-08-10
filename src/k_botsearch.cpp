@@ -50,8 +50,8 @@ static struct eggboxSearch_s
 {
 	fixed_t distancetocheck;
 	fixed_t eggboxx, eggboxy;
-	UINT8 randomitems;
-	UINT8 eggboxes;
+	uint8_t randomitems;
+	uint8_t eggboxes;
 } g_eggboxSearch;
 
 static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
@@ -88,15 +88,15 @@ static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
 }
 
 /*--------------------------------------------------
-	UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
+	uint8_t K_EggboxStealth(fixed_t x, fixed_t y)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
+uint8_t K_EggboxStealth(fixed_t x, fixed_t y)
 {
 	ZoneScoped;
 
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t xl, xh, yl, yh, bx, by;
 
 	g_eggboxSearch.eggboxx = x;
 	g_eggboxSearch.eggboxy = y;
@@ -250,7 +250,7 @@ dboolean K_BotHatesThisSector(const player_t *player, sector_t *sec, fixed_t x, 
 }
 
 /*--------------------------------------------------
-	static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
+	static void K_AddAttackObject(mobj_t *thing, uint8_t side, uint8_t weight)
 
 		Adds an object to the list that the bot wants to go towards.
 
@@ -268,18 +268,18 @@ static struct nudgeSearch_s
 	angle_t angle;
 	fixed_t distancetocheck;
 
-	INT64 gotoAvgX[2], gotoAvgY[2];
-	UINT32 gotoObjs[2];
+	int64_t gotoAvgX[2], gotoAvgY[2];
+	uint32_t gotoObjs[2];
 
-	INT64 avoidAvgX[2], avoidAvgY[2];
-	UINT32 avoidObjs[2];
+	int64_t avoidAvgX[2], avoidAvgY[2];
+	uint32_t avoidObjs[2];
 } g_nudgeSearch;
 
-static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
+static void K_AddAttackObject(mobj_t *thing, uint8_t side, uint8_t weight)
 {
 	fixed_t x, y;
 	angle_t a, dir;
-	UINT8 i;
+	uint8_t i;
 
 	I_Assert(side <= 1);
 
@@ -308,7 +308,7 @@ static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
 }
 
 /*--------------------------------------------------
-	static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
+	static void K_AddDodgeObject(mobj_t *thing, uint8_t side, uint8_t weight)
 
 		Adds an object to the list that the bot wants to dodge.
 
@@ -320,11 +320,11 @@ static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
+static void K_AddDodgeObject(mobj_t *thing, uint8_t side, uint8_t weight)
 {
 	fixed_t x, y;
 	angle_t a, dir;
-	UINT8 i;
+	uint8_t i;
 
 	I_Assert(side <= 1);
 
@@ -353,7 +353,7 @@ static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 }
 
 /*--------------------------------------------------
-	static dboolean K_PlayerAttackSteer(mobj_t *thing, dboolean friendly_fire, UINT8 side, UINT8 weight, dboolean attackCond, dboolean dodgeCond)
+	static dboolean K_PlayerAttackSteer(mobj_t *thing, dboolean friendly_fire, uint8_t side, uint8_t weight, dboolean attackCond, dboolean dodgeCond)
 
 		Checks two conditions to determine if the object should be
 		attacked or dodged.
@@ -369,7 +369,7 @@ static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 	Return:-
 		true if either condition is successful.
 --------------------------------------------------*/
-static dboolean K_PlayerAttackSteer(mobj_t *thing, dboolean friendly_fire, UINT8 side, UINT8 weight, dboolean attackCond, dboolean dodgeCond)
+static dboolean K_PlayerAttackSteer(mobj_t *thing, dboolean friendly_fire, uint8_t side, uint8_t weight, dboolean attackCond, dboolean dodgeCond)
 {
 	if (friendly_fire == true && attackCond == true && dodgeCond == false)
 	{
@@ -408,9 +408,9 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 {
 	ZoneScoped;
 
-	INT16 angledelta, anglediff;
+	int16_t angledelta, anglediff;
 	angle_t destangle, angle;
-	UINT8 side = 0;
+	uint8_t side = 0;
 
 	if (!g_nudgeSearch.botmo || P_MobjWasRemoved(g_nudgeSearch.botmo) || !g_nudgeSearch.botmo->player)
 	{
@@ -510,8 +510,8 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 
 			if (P_CanPickupItem(g_nudgeSearch.botmo->player, PICKUP_ITEMBOX)) // Can pick up an actual item
 			{
-				const UINT8 stealth = K_EggboxStealth(thing->x, thing->y);
-				const UINT8 requiredstealth = (g_nudgeSearch.botmo->player->botvars.difficulty * g_nudgeSearch.botmo->player->botvars.difficulty);
+				const uint8_t stealth = K_EggboxStealth(thing->x, thing->y);
+				const uint8_t requiredstealth = (g_nudgeSearch.botmo->player->botvars.difficulty * g_nudgeSearch.botmo->player->botvars.difficulty);
 
 				if (stealth >= requiredstealth)
 				{
@@ -648,7 +648,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 			}
 			else
 			{
-				UINT8 weight = 20;
+				uint8_t weight = 20;
 
 				if (thing->extravalue2 > 0)
 				{
@@ -697,7 +697,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *p
 
 	const precise_t time = I_GetPreciseTime();
 
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t xl, xh, yl, yh, bx, by;
 
 	fixed_t distToPredict = 0;
 	fixed_t radToPredict = 0;
@@ -711,8 +711,8 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, const player_t *p
 	fixed_t nudgeDist = 0;
 	angle_t nudgeDir = 0;
 
-	SINT8 gotoSide = -1;
-	UINT8 i;
+	int8_t gotoSide = -1;
+	uint8_t i;
 
 	if (predict == NULL)
 	{
@@ -898,7 +898,7 @@ static struct bullySearch_s
 
 static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 {
-	INT16 anglediff;
+	int16_t anglediff;
 	fixed_t fulldist;
 	fixed_t ourweight, theirweight, weightdiff;
 	angle_t ourangle, destangle, angle;
@@ -973,18 +973,18 @@ static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 }
 
 /*--------------------------------------------------
-	INT32 K_PositionBully(const player_t *player)
+	int32_t K_PositionBully(const player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-INT32 K_PositionBully(const player_t *player)
+int32_t K_PositionBully(const player_t *player)
 {
 	ZoneScoped;
 
-	INT32 xl, xh, yl, yh, bx, by;
+	int32_t xl, xh, yl, yh, bx, by;
 
 	angle_t ourangle, destangle, angle;
-	INT16 anglediff;
+	int16_t anglediff;
 
 	g_bullySearch.botmo = player->mo;
 	g_bullySearch.distancetocheck = 1024*player->mo->scale;

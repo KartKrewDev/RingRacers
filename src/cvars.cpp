@@ -93,7 +93,7 @@ struct consvar_t::Builder
 		return *this;
 	}
 
-	Builder& step_amount(INT32 step_amount)
+	Builder& step_amount(int32_t step_amount)
 	{
 		var_.step_amount = step_amount;
 		return *this;
@@ -129,7 +129,7 @@ struct consvar_t::Builder
 		return *this;
 	}
 
-	Builder& flags(INT32 flags)
+	Builder& flags(int32_t flags)
 	{
 		var_.flags |= flags;
 		return *this;
@@ -138,7 +138,7 @@ struct consvar_t::Builder
 	Builder& on_off() { return values(CV_OnOff); }
 	Builder& yes_no() { return values(CV_YesNo); }
 
-	Builder& min_max(INT32 min, INT32 max, values_list_t values = {})
+	Builder& min_max(int32_t min, int32_t max, values_list_t values = {})
 	{
 		return combine_values({{min, "MIN"}, {max, "MAX"}}, values);
 	}

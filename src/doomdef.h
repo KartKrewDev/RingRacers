@@ -191,17 +191,17 @@ extern char logfilename[1024];
 struct skincolor_t
 {
 	char name[MAXCOLORNAME+1];  // Skincolor name
-	UINT8 ramp[COLORRAMPSIZE];  // Colormap ramp
-	UINT16 invcolor;            // Signpost color
-	UINT8 invshade;             // Signpost color shade
-	UINT16 chatcolor;           // Chat color
+	uint8_t ramp[COLORRAMPSIZE];  // Colormap ramp
+	uint16_t invcolor;            // Signpost color
+	uint8_t invshade;             // Signpost color shade
+	uint16_t chatcolor;           // Chat color
 	dboolean accessible;         // Accessible by the color command + setup menu
-	UINT16 cache_spraycan;		// Cache for associated spraycan id
+	uint16_t cache_spraycan;		// Cache for associated spraycan id
 };
 
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
-UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin);
+uint16_t K_GetEffectiveFollowerColor(uint16_t followercolor, follower_t *follower, uint16_t playercolor, skin_t *playerskin);
 
 typedef enum
 {
@@ -403,7 +403,7 @@ typedef enum
 	NUMSUPERCOLORS = ((SKINCOLOR_FIRSTFREESLOT - FIRSTSUPERCOLOR)/5)
 } skincolornum_t;
 
-extern UINT16 numskincolors;
+extern uint16_t numskincolors;
 
 extern skincolor_t skincolors[MAXSKINCOLORS];
 
@@ -476,7 +476,7 @@ typedef enum
 
 void CONS_Printf(const char *fmt, ...) FUNCPRINTF;
 void CONS_Alert(alerttype_t level, const char *fmt, ...) FUNCDEBUG;
-void CONS_Debug(UINT32 debugflags, const char *fmt, ...) FUNCDEBUG;
+void CONS_Debug(uint32_t debugflags, const char *fmt, ...) FUNCDEBUG;
 
 // For help debugging functions.
 #define POTENTIALLYUNUSED CONS_Alert(CONS_WARNING, "(%s:%d) Unused code appears to be used.\n", __FILE__, __LINE__)
@@ -502,13 +502,13 @@ char *va(const char *format, ...) FUNCPRINTF;
 
 char *M_GetToken(const char *inputString);
 void M_UnGetToken(void);
-UINT32 M_GetTokenPos(void);
+uint32_t M_GetTokenPos(void);
 
 void M_TokenizerOpen(const char *inputString, size_t inputLength);
 void M_TokenizerClose(void);
-const char *M_TokenizerRead(UINT32 i);
-UINT32 M_TokenizerGetEndPos(void);
-void M_TokenizerSetEndPos(UINT32 newPos);
+const char *M_TokenizerRead(uint32_t i);
+uint32_t M_TokenizerGetEndPos(void);
+void M_TokenizerSetEndPos(uint32_t newPos);
 dboolean M_TokenizerJustReadString(void);
 
 char *sizeu1(size_t num);
@@ -527,14 +527,14 @@ extern int SUBVERSION;
 // characters will be required! =P
 // P.S. 8 is also what comptime generates
 #define GIT_SHA_ABBREV (4)
-extern UINT8 comprevision_abbrev_bin[GIT_SHA_ABBREV];
+extern uint8_t comprevision_abbrev_bin[GIT_SHA_ABBREV];
 
 extern dboolean devparm; // development mode (-debug)
 
 // m_cheat.c
-extern UINT32 cht_debug;
+extern uint32_t cht_debug;
 
-typedef INT32 debugFlags_t;
+typedef int32_t debugFlags_t;
 #define DBG_NONE			(0x00000000)
 #define DBG_BASIC			(0x00000001)
 #define DBG_DETAILED		(0x00000002)
@@ -570,25 +570,25 @@ extern struct debugFlagNames_s const debug_flag_names[];
 #define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
 
 // Modifier key variables, accessible anywhere
-extern UINT8 shiftdown, ctrldown, altdown;
+extern uint8_t shiftdown, ctrldown, altdown;
 extern dboolean capslock;
 
 // WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) FixedDiv((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160), fovtan[viewssnum])
+#define AIMINGTODY(a) FixedDiv((FINETANGENT((2048+(((int32_t)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160), fovtan[viewssnum])
 
 // if we ever make our alloc stuff...
 #define ZZ_Alloc(x) Z_Malloc(x, PU_STATIC, NULL)
 #define ZZ_Calloc(x) Z_Calloc(x, PU_STATIC, NULL)
 
 // i_system.c, replace getchar() once the keyboard has been appropriated
-INT32 I_GetKey(void);
+int32_t I_GetKey(void);
 
 /* http://www.cse.yorku.ca/~oz/hash.html */
 static inline
-UINT32 quickncasehash (const char *p, size_t n)
+uint32_t quickncasehash (const char *p, size_t n)
 {
 	size_t i = 0;
-	UINT32 x = 5381;
+	uint32_t x = 5381;
 
 	while (i < n && p[i])
 	{

@@ -40,9 +40,9 @@ struct sprcache_t
 extern sprcache_t *spritecachedinfo;
 
 extern lighttable_t *colormaps;
-extern UINT8 *encoremap;
+extern uint8_t *encoremap;
 #ifdef HASINVERT
-extern UINT8 invertmap[256];
+extern uint8_t invertmap[256];
 #endif
 
 #define LIGHTLEVELS 32
@@ -53,10 +53,10 @@ extern UINT8 invertmap[256];
 extern extracolormap_t *extra_colormaps;
 
 // for global animation
-extern INT32 *texturetranslation;
+extern int32_t *texturetranslation;
 
 // for brightmaps
-extern INT32 *texturebrightmaps;
+extern int32_t *texturebrightmaps;
 
 // Sprites
 extern size_t numspritelumps, max_spritelumps;
@@ -66,7 +66,7 @@ extern size_t numspritelumps, max_spritelumps;
 //
 #define UDMF_CURRENT_VERSION (2)
 extern dboolean udmf;
-extern INT32 udmf_version;
+extern int32_t udmf_version;
 
 extern size_t numsprites;
 extern spritedef_t *sprites;
@@ -100,7 +100,7 @@ extern side_t *spawnsides;
 //
 extern fixed_t viewx, viewy, viewz;
 extern angle_t viewangle, aimingangle, viewroll;
-extern UINT8 viewssnum; // splitscreen view number
+extern uint8_t viewssnum; // splitscreen view number
 extern dboolean viewsky, skyVisible;
 extern dboolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible of each splitscreen player
 extern sector_t *viewsector;
@@ -113,7 +113,7 @@ extern consvar_t cv_maxportals;
 extern angle_t clipangle[MAXSPLITSCREENPLAYERS];
 extern angle_t doubleclipangle[MAXSPLITSCREENPLAYERS];
 
-extern INT32 viewangletox[MAXSPLITSCREENPLAYERS][FINEANGLES/2];
+extern int32_t viewangletox[MAXSPLITSCREENPLAYERS][FINEANGLES/2];
 extern angle_t xtoviewangle[MAXSPLITSCREENPLAYERS][MAXVIDWIDTH+1];
 
 extern fixed_t rw_distance;

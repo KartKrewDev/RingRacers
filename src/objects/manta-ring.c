@@ -53,7 +53,7 @@
 
 static dboolean MantaAlreadyTouched(mobj_t *manta, player_t *player)
 {
-	INT32 touchFlag = 0;
+	int32_t touchFlag = 0;
 
 	if (manta_chase(manta) != NULL && P_MobjWasRemoved(manta_chase(manta)) == false
 		&& player->mo == manta_chase(manta))
@@ -78,8 +78,8 @@ static void Obj_MantaCollide(mobj_t *manta, mobj_t *other)
 	fixed_t distance = INT32_MAX;
 	fixed_t size = INT32_MAX;
 
-	INT32 addBoost = 0;
-	INT32 touchFlag = 0;
+	int32_t addBoost = 0;
+	int32_t touchFlag = 0;
 
 	size_t i;
 
@@ -121,7 +121,7 @@ static void Obj_MantaCollide(mobj_t *manta, mobj_t *other)
 
 	if (other->player != NULL)
 	{
-		UINT8 snd = 0;
+		uint8_t snd = 0;
 
 		if (other->player->speedboost > FRACUNIT/4)
 		{
@@ -160,7 +160,7 @@ static void Obj_MantaCollide(mobj_t *manta, mobj_t *other)
 
 static void RunMantaCollide(mobj_t *manta)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -197,7 +197,7 @@ static void RunMantaCollide(mobj_t *manta)
 
 static void RunMantaVisual(mobj_t *manta)
 {
-	INT32 i;
+	int32_t i;
 
 	if (manta->fuse < 5*TICRATE)
 	{
@@ -213,7 +213,7 @@ static void RunMantaVisual(mobj_t *manta)
 
 	for (i = 0; i <= r_splitscreen; i++)
 	{
-		const UINT8 pID = displayplayers[i];
+		const uint8_t pID = displayplayers[i];
 		player_t *player = &players[pID];
 
 		if (MantaAlreadyTouched(manta, player) == false)
@@ -250,7 +250,7 @@ void Obj_MantaRingThink(mobj_t *manta)
 mobj_t *Obj_MantaRingCreate(mobj_t *spb, mobj_t *owner, mobj_t *chase)
 {
 	mobj_t *manta = NULL;
-	INT32 delay = 0;
+	int32_t delay = 0;
 
 	manta = P_SpawnMobjFromMobj(spb, 0, 0, 0, MT_MANTARING);
 

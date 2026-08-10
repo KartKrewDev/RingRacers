@@ -21,7 +21,7 @@ static void draw_routine(void)
 {
 	M_DrawRaceDifficulty();
 
-	INT32 tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
+	int32_t tx = M_EaseWithTransition(Easing_Linear, 5 * 48);
 
 	if (gametypes[menugametype]->rules & GTR_CIRCUIT) // TODO: speed == KARTSPEED_AUTO
 	{
@@ -128,7 +128,7 @@ void M_PopupMasterServerRules(void)
 #endif
 }
 
-void M_MPHostInit(INT32 choice)
+void M_MPHostInit(int32_t choice)
 {
 	(void)choice;
 	mpmenu.modewinextend[0][0] = 1;
@@ -146,9 +146,9 @@ void M_MPHostInit(INT32 choice)
 	// M_MPOptSelectInit.
 }
 
-void M_HandleHostMenuGametype(INT32 choice)
+void M_HandleHostMenuGametype(int32_t choice)
 {
-	const UINT32 forbidden = GTR_FORBIDMP;
+	const uint32_t forbidden = GTR_FORBIDMP;
 
 	if (choice > 0)
 	{
@@ -166,7 +166,7 @@ void M_HandleHostMenuGametype(INT32 choice)
 	}
 }
 
-void M_MPSetupNetgameMapSelect(INT32 choice)
+void M_MPSetupNetgameMapSelect(int32_t choice)
 {
 	(void)choice;
 

@@ -74,14 +74,14 @@ static void tick_routine(void)
 	g_drace_timer.dist = -1;
 }
 
-static dboolean input_routine(INT32 ch)
+static dboolean input_routine(int32_t ch)
 {
 	if (g_drace_timer.dist != -1)
 	{
 		return true;
 	}
 
-	UINT8 pid = 0;
+	uint8_t pid = 0;
 	(void)ch;
 
 	int i;
@@ -118,7 +118,7 @@ menu_t PLAY_RaceDifficultyDef = {
 	input_routine
 };
 
-void M_SetupDifficultyOptions(INT32 choice)
+void M_SetupDifficultyOptions(int32_t choice)
 {
 	PLAY_RaceDifficulty[drace_gpdifficulty].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_mrkartspeed].status = IT_DISABLED;
@@ -168,7 +168,7 @@ void M_SetupDifficultyOptions(INT32 choice)
 	}
 }
 
-void M_SetupDifficultySelect(INT32 choice)
+void M_SetupDifficultySelect(int32_t choice)
 {
 	(void)choice;
 

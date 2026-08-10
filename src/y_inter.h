@@ -25,38 +25,38 @@ typedef struct
 	dboolean showrank; // show rank-restricted queue entry at the end, if it exists
 	dboolean encore; // encore mode
 	dboolean isduel; // duel mode
-	UINT8 winningteam; // teamplay
+	uint8_t winningteam; // teamplay
 	dboolean showroundnum; // round number
 
 	char headerstring[64]; // holds levelnames up to 64 characters
 
-	UINT8 numplayers; // Number of players being displayed
-	UINT8 halfway; // Position at which column switches
+	uint8_t numplayers; // Number of players being displayed
+	uint8_t halfway; // Position at which column switches
 
-	SINT8 num[MAXPLAYERS]; // Player #
-	UINT8 pos[MAXPLAYERS]; // player positions. used for ties
+	int8_t num[MAXPLAYERS]; // Player #
+	uint8_t pos[MAXPLAYERS]; // player positions. used for ties
 
-	UINT32 val[MAXPLAYERS]; // Gametype-specific value
+	uint32_t val[MAXPLAYERS]; // Gametype-specific value
 	char strval[MAXPLAYERS][MAXPLAYERNAME+1];
 
-	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
-	UINT8 jitter[MAXPLAYERS]; // wiggle
+	int16_t increase[MAXPLAYERS]; // how much did the score increase by?
+	uint8_t jitter[MAXPLAYERS]; // wiggle
 
-	SINT8 grade[MAXPLAYERS]; // grade, if not a bot
+	int8_t grade[MAXPLAYERS]; // grade, if not a bot
 
-	UINT8 mainplayer; // Most successful local player
-	INT32 linemeter; // For GP only
+	uint8_t mainplayer; // Most successful local player
+	int32_t linemeter; // For GP only
 } y_data_t;
 
-void Y_DrawIntermissionHeader(INT32 x, INT32 y, dboolean gotthrough, const char *headerstring, dboolean showroundnum, dboolean small);
+void Y_DrawIntermissionHeader(int32_t x, int32_t y, dboolean gotthrough, const char *headerstring, dboolean showroundnum, dboolean small);
 void Y_IntermissionDrawer(void);
 void Y_Ticker(void);
 
 // Specific sub-drawers
-void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset);
-void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, dboolean doanimations, dboolean widescreen, dboolean adminmode);
-void Y_DrawIntermissionButton(INT32 startslide, INT32 through, dboolean widescreen);
-void Y_DrawRankMode(INT32 x, INT32 y, dboolean center);
+void Y_PlayerStandingsDrawer(y_data_t *standings, int32_t xoffset);
+void Y_RoundQueueDrawer(y_data_t *standings, int32_t offset, dboolean doanimations, dboolean widescreen, dboolean adminmode);
+void Y_DrawIntermissionButton(int32_t startslide, int32_t through, dboolean widescreen);
+void Y_DrawRankMode(int32_t x, int32_t y, dboolean center);
 
 void Y_StartIntermission(void);
 void Y_MidIntermission(void);

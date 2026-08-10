@@ -186,7 +186,7 @@ musicdef_t* TuneManager::find_musicdef() const
 
 void TuneManager::adjust_volume() const
 {
-	UINT8 i;
+	uint8_t i;
 	const musicdef_t* def = S_FindMusicDef(current_song_.c_str(), &i);
 
 	if (!def)

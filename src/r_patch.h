@@ -30,7 +30,7 @@ dboolean Patch_WasFreedThisFrame(void);
 void Patch_ResetFreedThisFrame(void);
 
 #define Patch_FreeTag(tagnum) Patch_FreeTags(tagnum, tagnum)
-void Patch_FreeTags(INT32 lowtag, INT32 hightag);
+void Patch_FreeTags(int32_t lowtag, int32_t hightag);
 
 void Patch_GenerateFlat(patch_t *patch, pictureflags_t flags);
 
@@ -40,15 +40,15 @@ void *Patch_CreateGL(patch_t *patch);
 #endif
 
 #ifdef ROTSPRITE
-void Patch_Rotate(patch_t *patch, INT32 angle, INT32 xpivot, INT32 ypivot, dboolean flip);
-patch_t *Patch_GetRotated(patch_t *patch, INT32 angle, dboolean flip);
+void Patch_Rotate(patch_t *patch, int32_t angle, int32_t xpivot, int32_t ypivot, dboolean flip);
+patch_t *Patch_GetRotated(patch_t *patch, int32_t angle, dboolean flip);
 patch_t *Patch_GetRotatedSprite(
 	spriteframe_t *sprite,
 	size_t frame, size_t spriteangle,
 	dboolean flip, dboolean adjustfeet,
-	void *info, INT32 rotationangle);
+	void *info, int32_t rotationangle);
 
-INT32 R_GetRollAngle(angle_t rollangle);
+int32_t R_GetRollAngle(angle_t rollangle);
 angle_t R_GetPitchRollAngle(mobj_t *mobj, player_t *viewPlayer);
 angle_t R_ModelRotationAngle(mobj_t *mobj, player_t *viewPlayer);
 angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer);

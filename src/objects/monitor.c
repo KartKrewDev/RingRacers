@@ -31,8 +31,8 @@
 {dispoffset, nsides, (statenum_t[]){__VA_ARGS__, 0}}
 
 static const struct monitor_part_config {
-	INT32 dispoffset;
-	UINT8 nsides;
+	int32_t dispoffset;
+	uint8_t nsides;
 	statenum_t * states;
 } monitor_parts[] = {
 	MONITOR_PART_DEFINE (0, 3,
@@ -53,7 +53,7 @@ static const struct monitor_part_config {
 #define monitor_rammingspeed(o) ((o)->movefactor)
 #define monitor_combohit(o) ((o)->cusval)
 
-static inline UINT8
+static inline uint8_t
 get_monitor_itemcount (const mobj_t *monitor)
 {
 	// protects against divide by zero
@@ -72,7 +72,7 @@ static const sprcache_t * get_state_sprcache (statenum_t);
 static const sprcache_t *
 get_sprcache
 (		spritenum_t sprite,
-		UINT8 frame)
+		uint8_t frame)
 {
 	const spritedef_t *sprdef = &sprites[sprite];
 
@@ -98,7 +98,7 @@ get_state_sprcache (statenum_t statenum)
 static inline fixed_t
 get_inradius
 (		fixed_t length,
-		INT32 nsides)
+		int32_t nsides)
 {
 	return FixedDiv(length, 2 * TRUETAN(FINE180 / nsides));
 }
@@ -149,7 +149,7 @@ spawn_part_side
 		const struct monitor_part_config * p,
 		size_t side)
 {
-	INT32 i = 0;
+	int32_t i = 0;
 
 	while (p->states[i])
 	{
@@ -177,7 +177,7 @@ spawn_monitor_parts
 	const fixed_t rad = get_inradius(width, p->nsides);
 	const fixed_t angle_factor = ANGLE_MAX / p->nsides;
 
-	INT32 i;
+	int32_t i;
 	angle_t ang = 0;
 
 	for (i = 0; i < p->nsides; ++i)
@@ -214,8 +214,8 @@ spawn_shard
 	const fixed_t half = FixedDiv(
 			monitor->height, monitor->scale) / 2;
 
-	const UINT16 rad = (monitor->radius / monitor->scale) / 4;
-	const UINT16 tall = (half / FRACUNIT) / 4;
+	const uint16_t rad = (monitor->radius / monitor->scale) / 4;
+	const uint16_t tall = (half / FRACUNIT) / 4;
 
 
 	// note: determinate random argument eval order
@@ -273,7 +273,7 @@ spawn_monitor_explosion (mobj_t *monitor)
 {
 	mobj_t *smoldering = P_SpawnMobjFromMobj(monitor, 0, 0, 0, MT_SMOLDERING);
 
-	UINT8 i;
+	uint8_t i;
 
 	// Note that a Broly Ki is purposefully not spawned. This
 	// is to reduce visual clutter since these monitors would
@@ -328,10 +328,10 @@ kill_monitor_part (mobj_t *part)
 	part->flags &= ~(MF_NOGRAVITY);
 }
 
-static inline UINT32
-restore_item_rng (UINT32 seed)
+static inline uint32_t
+restore_item_rng (uint32_t seed)
 {
-	const UINT32 oldseed = P_GetRandSeed(PR_ITEM_SPAWNER);
+	const uint32_t oldseed = P_GetRandSeed(PR_ITEM_SPAWNER);
 
 	P_SetRandSeedNet(PR_ITEM_SPAWNER,
 			P_GetInitSeed(PR_ITEM_SPAWNER), seed);
@@ -339,13 +339,13 @@ restore_item_rng (UINT32 seed)
 	return oldseed;
 }
 
-static inline SINT8
+static inline int8_t
 get_item_result (void)
 {
 	return K_GetTotallyRandomResult(0);
 }
 
-static SINT8
+static int8_t
 get_cycle_result
 (		const mobj_t * monitor,
 		size_t cycle)
@@ -353,10 +353,10 @@ get_cycle_result
 	const size_t rem = cycle %
 		get_monitor_itemcount(monitor);
 
-	SINT8 result;
+	int8_t result;
 	size_t i;
 
-	const UINT32 oldseed = restore_item_rng(
+	const uint32_t oldseed = restore_item_rng(
 			monitor_rngseed(monitor));
 
 	for (i = 0; i <= rem; ++i)
@@ -386,7 +386,7 @@ is_flickering (const mobj_t *part)
 static void
 flicker
 (		mobj_t * part,
-		UINT8 interval)
+		uint8_t interval)
 {
 	const tic_t age = get_age(part_monitor(part));
 
@@ -409,7 +409,7 @@ project_icon (mobj_t *part)
 	// Item displayed on monitor cycles every N tics
 	if (age % 64 == 0)
 	{
-		const SINT8 result = get_cycle_result(monitor,
+		const int8_t result = get_cycle_result(monitor,
 				part_index(part) + (age / 64));
 
 		K_UpdateMobjItemOverlay(part,
@@ -497,8 +497,8 @@ Obj_MonitorSpawnParts (mobj_t *monitor)
 mobj_t *
 Obj_SpawnMonitor
 (		mobj_t * origin,
-		UINT8 numItemTypes,
-		UINT8 emerald)
+		uint8_t numItemTypes,
+		uint8_t emerald)
 {
 	mobj_t *monitor = P_SpawnMobj(origin->x, origin->y,
 			origin->z, MT_MONITOR);
@@ -604,7 +604,7 @@ fixed_t
 Obj_MonitorGetDamage
 (		mobj_t * monitor,
 		mobj_t * inflictor,
-		UINT8 damagetype)
+		uint8_t damagetype)
 {
 	fixed_t damage;
 
@@ -674,7 +674,7 @@ void
 Obj_MonitorOnDamage
 (		mobj_t * monitor,
 		mobj_t * inflictor,
-		INT32 damage)
+		int32_t damage)
 {
 	monitor->fuse = BATTLE_DESPAWN_TIME;
 	monitor_damage(monitor) = damage;
@@ -690,19 +690,19 @@ Obj_MonitorOnDeath
 (		mobj_t * monitor,
 		mobj_t * source)
 {
-	const UINT8 itemcount = get_monitor_itemcount(monitor);
+	const uint8_t itemcount = get_monitor_itemcount(monitor);
 	const angle_t ang = ANGLE_MAX / itemcount;
-	const SINT8 flip = P_MobjFlip(monitor);
+	const int8_t flip = P_MobjFlip(monitor);
 
-	INT32 i;
+	int32_t i;
 
-	UINT32 sharedseed = restore_item_rng(
+	uint32_t sharedseed = restore_item_rng(
 			monitor_rngseed(monitor));
 
 	for (i = 0; i < itemcount; ++i)
 	{
-		const SINT8 result = get_item_result();
-		const UINT32 localseed = restore_item_rng(sharedseed);
+		const int8_t result = get_item_result();
+		const uint32_t localseed = restore_item_rng(sharedseed);
 
 		mobj_t *drop = adjust_monitor_drop(monitor,
 				K_FlingPaperItem(
@@ -760,7 +760,7 @@ Obj_MonitorShardThink (mobj_t *shard)
 	shard->renderflags ^= RF_DONTDRAW;
 }
 
-UINT32
+uint32_t
 Obj_MonitorGetEmerald (const mobj_t *monitor)
 {
 	return monitor_emerald(monitor);

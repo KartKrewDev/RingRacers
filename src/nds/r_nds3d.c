@@ -31,14 +31,14 @@ FCOORD NEAR_CLIPPING_PLANE = 0.9f;
 float fov = 90.0f;
 
 static FBITFIELD CurrentPolyFlags = 0xFFFFFFFF;
-static UINT32 CurrentGLPolyFmt = POLY_CULL_NONE;
-static UINT8 CurrentPolyAlpha = 31;
-static UINT16 myPaletteData[256];
+static uint32_t CurrentGLPolyFmt = POLY_CULL_NONE;
+static uint8_t CurrentPolyAlpha = 31;
+static uint16_t myPaletteData[256];
 static FTextureInfo* gr_cachetail = NULL;
 static FTextureInfo* gr_cachehead = NULL;
-static INT32 NextTexAvail = FIRST_TEX_AVAIL;
-static UINT32 tex_downloaded = 0;
-static INT32 texids[MAX_SRB2_TEXTURES];
+static int32_t NextTexAvail = FIRST_TEX_AVAIL;
+static uint32_t tex_downloaded = 0;
+static int32_t texids[MAX_SRB2_TEXTURES];
 static dboolean scalehack = false;
 
 
@@ -74,7 +74,7 @@ static void SetNoTexture(void)
 }
 
 
-static void SetAlpha(UINT8 alpha)
+static void SetAlpha(uint8_t alpha)
 {
 	CurrentPolyAlpha = alpha >> 3;
 	glPolyFmt(CurrentGLPolyFmt | POLY_ALPHA(CurrentPolyAlpha));
@@ -94,13 +94,13 @@ void NDS3D_Shutdown(void) {}
 
 void NDS3D_SetPalette(RGBA_t *ppal, RGBA_t *pgamma)
 {
-	INT32 i;
+	int32_t i;
 
 	for (i = 0; i < 256; i++)
 	{
-		UINT8 red   = (UINT8)min((ppal[i].s.red*pgamma->s.red)/127,     255) >> 3;
-		UINT8 green = (UINT8)min((ppal[i].s.green*pgamma->s.green)/127, 255) >> 3;
-		UINT8 blue  = (UINT8)min((ppal[i].s.blue*pgamma->s.blue)/127,   255) >> 3;
+		uint8_t red   = (uint8_t)min((ppal[i].s.red*pgamma->s.red)/127,     255) >> 3;
+		uint8_t green = (uint8_t)min((ppal[i].s.green*pgamma->s.green)/127, 255) >> 3;
+		uint8_t blue  = (uint8_t)min((ppal[i].s.blue*pgamma->s.blue)/127,   255) >> 3;
 
 		myPaletteData[i] = ARGB16(ppal[i].s.alpha ? 1 : 0, red, green, blue);
 	}
@@ -108,7 +108,7 @@ void NDS3D_SetPalette(RGBA_t *ppal, RGBA_t *pgamma)
 	Flush();
 }
 
-void NDS3D_FinishUpdate(INT32 waitvbl)
+void NDS3D_FinishUpdate(int32_t waitvbl)
 {
 	(void)waitvbl;
 
@@ -222,8 +222,8 @@ void NDS3D_SetTexture(FTextureInfo *TexInfo)
 	}
 	else if (TexInfo->grInfo.data)
 	{
-		UINT8 wtype, htype;
-		INT32 texparam = GL_TEXTURE_COLOR0_TRANSPARENT;
+		uint8_t wtype, htype;
+		int32_t texparam = GL_TEXTURE_COLOR0_TRANSPARENT;
 
 		// We rely on the numerical values of GL_TEXTURE_SIZE_ENUM here.
 		wtype = TEXTURE_SIZE_8;
@@ -276,7 +276,7 @@ void NDS3D_SetTexture(FTextureInfo *TexInfo)
 	}
 }
 
-void NDS3D_ReadRect(INT32 x, INT32 y, INT32 width, INT32 height, INT32 dst_stride, UINT16 *dst_data)
+void NDS3D_ReadRect(int32_t x, int32_t y, int32_t width, int32_t height, int32_t dst_stride, uint16_t *dst_data)
 {
 	(void)x;
 	(void)y;
@@ -286,7 +286,7 @@ void NDS3D_ReadRect(INT32 x, INT32 y, INT32 width, INT32 height, INT32 dst_strid
 	(void)dst_data;
 }
 
-void NDS3D_GClipRect(INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, float nearclip)
+void NDS3D_GClipRect(int32_t minx, int32_t miny, int32_t maxx, int32_t maxy, float nearclip)
 {
 	(void)minx;
 	(void)miny;
@@ -303,13 +303,13 @@ void NDS3D_GClipRect(INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, float nearc
 
 void NDS3D_ClearMipMapCache(void) {}
 
-void NDS3D_SetSpecialState(hwdspecialstate_t IdState, INT32 Value)
+void NDS3D_SetSpecialState(hwdspecialstate_t IdState, int32_t Value)
 {
 	(void)IdState;
 	(void)Value;
 }
 
-void NDS3D_DrawMD2(INT32 *gl_cmd_buffer, md2_frame_t *frame, FTransform *pos, float scale)
+void NDS3D_DrawMD2(int32_t *gl_cmd_buffer, md2_frame_t *frame, FTransform *pos, float scale)
 {
 	(void)gl_cmd_buffer;
 	(void)frame;
@@ -317,7 +317,7 @@ void NDS3D_DrawMD2(INT32 *gl_cmd_buffer, md2_frame_t *frame, FTransform *pos, fl
 	(void)scale;
 }
 
-void NDS3D_DrawMD2i(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration, UINT32 tics, md2_frame_t *nextframe, FTransform *pos, float scale, UINT8 flipped, UINT8 *color)
+void NDS3D_DrawMD2i(int32_t *gl_cmd_buffer, md2_frame_t *frame, uint32_t duration, uint32_t tics, md2_frame_t *nextframe, FTransform *pos, float scale, uint8_t flipped, uint8_t *color)
 {
 	(void)gl_cmd_buffer;
 	(void)frame;
@@ -332,7 +332,7 @@ void NDS3D_DrawMD2i(INT32 *gl_cmd_buffer, md2_frame_t *frame, UINT32 duration, U
 
 void NDS3D_SetTransform(FTransform *ptransform)
 {
-	static INT32 special_splitscreen;
+	static int32_t special_splitscreen;
 	glLoadIdentity();
 	if (ptransform)
 	{
@@ -373,12 +373,12 @@ void NDS3D_SetTransform(FTransform *ptransform)
 	}
 }
 
-INT32 NDS3D_GetTextureUsed(void)
+int32_t NDS3D_GetTextureUsed(void)
 {
 	return 0;
 }
 
-INT32 NDS3D_GetRenderVersion(void)
+int32_t NDS3D_GetRenderVersion(void)
 {
 	return 0;
 }

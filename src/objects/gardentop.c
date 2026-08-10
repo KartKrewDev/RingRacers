@@ -111,10 +111,10 @@ grind_spark_base_scale (player_t *player)
 		/ GARDENTOP_MAXGRINDTIME;
 }
 
-static inline INT32
+static inline int32_t
 get_player_steer_tilt
 (		player_t * player,
-		INT32 stages)
+		int32_t stages)
 {
 	return player->steering
 		* stages
@@ -140,7 +140,7 @@ goofy_shake (fixed_t n)
 static inline void
 init_top
 (		mobj_t * top,
-		INT32 mode)
+		int32_t mode)
 {
 	top_mode(top) = mode;
 	top_float(top) = 0;
@@ -169,11 +169,11 @@ spawn_spark
 static void
 spawn_spark_circle
 (		mobj_t * top,
-		UINT8 n)
+		uint8_t n)
 {
 	const angle_t a = ANGLE_MAX / n;
 
-	UINT8 i;
+	uint8_t i;
 
 	for (i = 0; i < n; ++i)
 	{
@@ -337,7 +337,7 @@ tilt (mobj_t *top)
 {
 	player_t *player = get_top_rider_player(top);
 
-	INT32 tilt = top->rollangle;
+	int32_t tilt = top->rollangle;
 
 	if (is_top_grind_input(top))
 	{

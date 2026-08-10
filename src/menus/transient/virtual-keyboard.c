@@ -20,7 +20,7 @@
 struct menutyping_s menutyping;
 
 // keyboard layouts
-INT16 virtualKeyboard[5][NUMVIRTUALKEYSINROW] = {
+int16_t virtualKeyboard[5][NUMVIRTUALKEYSINROW] = {
 
 	{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0',  KEY_BACKSPACE, 1},
 	{'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p',  '-', '='},
@@ -29,7 +29,7 @@ INT16 virtualKeyboard[5][NUMVIRTUALKEYSINROW] = {
 	{KEY_RSHIFT, 1, 1, KEY_SPACE, 1, 1, 1, 1, KEY_ENTER, 1, 1, 1}
 };
 
-INT16 shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW] = {
+int16_t shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW] = {
 
 	{'!', '@', '#', '$', '%', '^', '&', '*', '(', ')', KEY_BACKSPACE, 1},
 	{'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '_', '+'},
@@ -46,7 +46,7 @@ typedef enum
 	CVCPM_PASTE
 } cvarcopypastemode_t;
 
-dboolean M_ChangeStringCvar(INT32 choice)
+dboolean M_ChangeStringCvar(int32_t choice)
 {
 	size_t len;
 	cvarcopypastemode_t copypastemode = CVCPM_NONE;
@@ -206,9 +206,9 @@ void M_AbortVirtualKeyboard(void)
 		M_GoBack(0);
 }
 
-void M_MenuTypingInput(INT32 key)
+void M_MenuTypingInput(int32_t key)
 {
-	const UINT8 pid = 0;
+	const uint8_t pid = 0;
 
 	// Determine when to check for keyboard inputs or controller inputs using menuKey, which is the key passed here as argument.
 	if (key > 0)
@@ -236,7 +236,7 @@ void M_MenuTypingInput(INT32 key)
 	else
 	{
 		// Opening
-		const UINT8 destination = (menutyping.keyboardtyping ? 9 : 18);
+		const uint8_t destination = (menutyping.keyboardtyping ? 9 : 18);
 
 		if (menutyping.menutypingfade > destination)
 		{
@@ -357,8 +357,8 @@ void M_MenuTypingInput(INT32 key)
 		else if (M_MenuConfirmPressed(pid))
 		{
 			// Add the character. First though, check what we're pressing....
-			INT32 tempkeyboardx = menutyping.keyboardx;
-			INT16 c = 0;
+			int32_t tempkeyboardx = menutyping.keyboardx;
+			int16_t c = 0;
 			while ((c = virtualKeyboard[menutyping.keyboardy][tempkeyboardx]) == 1
 			&& tempkeyboardx > 0)
 				tempkeyboardx--;
@@ -378,7 +378,7 @@ void M_MenuTypingInput(INT32 key)
 				}
 				else
 				{
-					M_ChangeStringCvar((INT32)c);	// Write!
+					M_ChangeStringCvar((int32_t)c);	// Write!
 					menutyping.keyboardshift = false;			// undo shift if it had been pressed
 				}
 

@@ -23,13 +23,13 @@ extern "C" {
 
 struct mapUserProperty_t
 {
-	UINT32 hash;
+	uint32_t hash;
 	char *key;
 
 	mapUserPropertyType_e type;
 
 	dboolean valueBool;
-	INT32 valueInt;
+	int32_t valueInt;
 	fixed_t valueFixed;
 	char *valueStr;
 };
