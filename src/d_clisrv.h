@@ -14,6 +14,8 @@
 #ifndef D_CLISRV_H
 #define D_CLISRV_H
 
+#include <time.h>
+
 #include "d_ticcmd.h"
 #include "d_net.h"
 #include "d_netcmd.h"
