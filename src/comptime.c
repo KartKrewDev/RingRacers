@@ -26,6 +26,7 @@
 
 #if (defined(CMAKECONFIG))
 #include "config.h"
+#include "config_comptime.h"
 
 #ifndef CMAKE_BUILD_TYPE
 #define CMAKE_BUILD_TYPE "None"

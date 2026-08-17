@@ -9,8 +9,6 @@
  * variables, so you can insert them here too.
  */
 
-#include "config_comptime.h"
-
 #cmakedefine HAVE_STRUPR
 #cmakedefine HAVE_STRLWR
 #cmakedefine HAVE_STRCASESTR
