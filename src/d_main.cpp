@@ -1950,7 +1950,7 @@ void D_SRB2Main(void)
 		{
 			if (!(pstartmap = wadnamemap))
 				I_Error("Bad '%s' level warp.\n"
-#if defined (_WIN32)
+#if (defined (_WIN32)) || (defined(__linux__))
 				"Are you using MSDOS 8.3 filenames in Zone Builder?\n"
 				"\n"
 				"To check: edit the Ring Racers game configuration in Zone Builder.\n"
