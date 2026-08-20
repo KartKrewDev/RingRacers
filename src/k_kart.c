@@ -4295,7 +4295,7 @@ fixed_t K_GetKartSpeed(const player_t *player, dboolean doboostpower, dboolean d
 fixed_t K_GetKartAccel(const player_t *player)
 {
 	fixed_t k_accel = 121;
-	uint8_t stat = (9 - player->kartspeed);
+	int16_t stat = (9 - player->kartspeed);
 
 	if (K_PodiumSequence() == true)
 	{
@@ -4303,7 +4303,11 @@ fixed_t K_GetKartAccel(const player_t *player)
 		stat = 1;
 	}
 
-	k_accel += 17 * stat; // 121 - 257
+	k_accel += 17 * stat;
+	if (k_accel < 4)
+	{
+		k_accel = 4;
+	}
 
 	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
