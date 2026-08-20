@@ -7846,10 +7846,9 @@ void DoSayPacket(int8_t target, uint8_t flags, uint8_t source, char *message)
 
 void DoSayPacketFromCommand(int8_t target, size_t usedargs, uint8_t flags)
 {
-	char buf[2 + HU_MAXMSGLEN + 1];
+	char msg[HU_MAXMSGLEN + 1];
 	size_t numwords, ix;
-	char *msg = &buf[3];
-	const size_t msgspace = sizeof buf - 2;
+	const size_t msgspace = sizeof msg;
 
 	numwords = COM_Argc() - usedargs;
 	I_Assert(numwords > 0);
