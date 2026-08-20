@@ -47,8 +47,6 @@ static dboolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source
 
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
-static void Command_PlaySound(void);
-static void Got_PlaySound(const uint8_t **p, int32_t playernum);
 static void Command_MusicDef_f(void);
 
 void Captioning_OnChange(void);
@@ -193,8 +191,6 @@ void S_RegisterSoundStuff(void)
 
 	COM_AddDebugCommand("tunes", Command_Tunes_f);
 	COM_AddDebugCommand("restartaudio", Command_RestartAudio_f);
-	COM_AddDebugCommand("playsound", Command_PlaySound);
-	RegisterNetXCmd(XD_PLAYSOUND, Got_PlaySound);
 	COM_AddDebugCommand("musicdef", Command_MusicDef_f);
 }
 
@@ -2619,7 +2615,7 @@ static void Command_RestartAudio_f(void)
 	S_AttemptToRestoreMusic();
 }
 
-static void Command_PlaySound(void)
+void Command_PlaySound(void)
 {
 	const char *sound;
 	const size_t argc = COM_Argc();
@@ -2663,7 +2659,7 @@ static void Command_PlaySound(void)
 	SendNetXCmd(XD_PLAYSOUND, buf, buf_p - buf);
 }
 
-static void Got_PlaySound(const uint8_t **cp, int32_t playernum)
+void Got_PlaySound(const uint8_t **cp, int32_t playernum)
 {
 	int32_t sound_id = READINT32(*cp);
 
