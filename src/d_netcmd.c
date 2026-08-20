@@ -488,6 +488,10 @@ void D_RegisterServerCommands(void)
 		extern struct CVarList *cvlist_server;
 		CV_RegisterList(cvlist_server);
 	}
+	// s_sound
+
+	COM_AddDebugCommand("playsound", Command_PlaySound);
+	RegisterNetXCmd(XD_PLAYSOUND, Got_PlaySound);
 }
 
 // =========================================================================
